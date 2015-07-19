@@ -3,7 +3,7 @@ Roadie
 
 An opinionated mobile friendly web based audio streaming application.
 
-Roadie was built to be able to handle music collections with tens of thousands of songs. 
+Roadie was built to be able to handle music collections with [tens of thousands of songs](http://www.redferret.net/?page_id=38781).
 
 Recommended Version
 -------------------
