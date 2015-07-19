@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+<div id="scan-container" class="container"></div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    var socket = null;
+    $(function() {
+        socket = new WebSocket("ws://" + document.domain + ":5000/scanner/");
+
+        socket.onopen = function() {
+            socket.send("Joined");
+        };
+        socket.onmessage = function(message) {
+            var txt = message.data;
+            $(".container").append("<p>" + txt + "</p>");
+        };
+        function submit() {
+            var text = $("input#message").val();
+            socket.send(text);
+            $("input#message").val('');              
+        };
+    });
+    </script>
+{% endblock %}

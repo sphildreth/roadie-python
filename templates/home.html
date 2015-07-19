@@ -1,0 +1,102 @@
+{% extends "layout.html" %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="collection-filter-container">
+        <div class="row">
+            <div class="form-group">
+                <i class="fa fa-search fa-2x pull-left"></i>
+                <input id="filter" class="pull-left form-control" placeholder="Search" type="text" />
+            </div>
+        </div>
+    </div>
+    <div class="collection-container">
+        <div data-bind='attr: { "data-filter-count": count'></div>
+        <div data-bind="foreach: rows">
+           <div class="artist row" data-bind='attr: { "data-artist-id": ArtistId }'>
+                <div class="col-md-1">
+                    <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
+                </div>
+                <div class="col-md-3">
+                    <h3 data-bind="text: Artist" class="label label-primary"></h3>
+                </div>                
+                <div class="col-md-7">
+                    <ul class="releases" data-bind="foreach: Releases">
+                        <li data-bind='attr: { "data-release-id": ReleaseId'>
+                            <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
+                            <span class="year label label-default" data-bind="text: Year"></span>
+                            <span class="title label label-primary" data-bind="text: Title"></span>
+                            <ul class="tracks" data-bind='foreach: Tracks'>
+                                <li data-bind='attr: { "data-track-id": TrackId'>
+                                    <span class="trackNumber label label-default" data-bind="text: lpad(TrackNumber(),2)"></span>
+                                    <span class="title label label-primary" data-bind="text: Title"></span>
+                                    <span class="length label label-default" data-bind="text: Length"></span>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+           </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+
+    var lpad = function(n, width, z) {
+        z = z || '0';
+        n = n + '';
+        if(n == 'null') {
+            n = '';
+        }
+        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    };
+
+    var viewModel =  ko.mapping.fromJS({ rows: [], count: 0 });
+
+    var getListParams = function() {
+        return "filter=" + getFilter() + "&skip=" + getSkip() + "&limit=" + getLimit();
+    };
+    var getFilter = function() {
+        return $("#filter").val().trim();
+    };
+    var getSkip = function() {
+        return 0;
+    }
+    var getLimit = function() {
+        return 10;
+    };
+    var updateList = function() {
+        var ajaxStart = new Date();
+        $.ajax({
+            type: 'POST',
+            url: '/api/v1.0/artists?' + getListParams(),
+            contentType: "application/javascript",
+            success: function(data) {
+                var foo = new Date();
+                ko.mapping.fromJS(data, viewModel);
+                var bar = new Date();
+                var baz = new Date();
+                baz.setTime(bar.getTime() - foo.getTime());
+                var ajaxElapsed = new Date();
+                ajaxElapsed.setTime(ajaxElapsed.getTime() - ajaxStart.getTime());
+                console.log('Update Data: Ajax Fetch: ' + ajaxElapsed.getMilliseconds() + ', Mapping:' + baz.getMilliseconds())
+            },
+            error:function(jq, st, error){
+                alert(error);
+            }
+        });
+    };
+
+    $(function() {
+        updateList();
+
+        ko.applyBindings(viewModel);
+
+        $("#filter").on('keyup', _.debounce(function(e) {
+            updateList();
+        }, 300));
+
+    });
+    </script>
+{% endblock %}
