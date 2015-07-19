@@ -213,6 +213,13 @@ class Scanner:
             print("Unexpected error:", sys.exc_info())
             return False
 
+    def readImageThumbnailBytesFromFile(self, path):
+        img = Image.open(path)
+        img.thumbnail(self.thumbnailSize)
+        b = io.BytesIO()
+        img.save(b, "JPEG")
+        return b.getvalue()
+
     # If should be moved then move over and return new filename
     def moveToLibrary(self, artist, id3, mp3):
         try:
@@ -245,7 +252,8 @@ class Scanner:
                     print("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     if self.showTagsOnly:
-                        pass
+                        continue
+                    mp3Folder = os.path.split(mp3)[0]
                     artist = Artist.objects(Name=id3.artist).first()
                     if not artist:
                         artist = Artist(Name=id3.artist)
@@ -284,11 +292,11 @@ class Scanner:
                         self.printDebug("Added Artist Name [" + artist.Name + "], Id [" + str(object_id) + "]")
                     if not self.shouldMoveToLibrary(artist, id3, mp3):
                         self.printDebug("Skipped Moving To Library [" + mp3 + "]")
-                        pass
+                        continue
                     newFilePath = self.moveToLibrary(artist, id3, mp3)
                     if not newFilePath:
                         self.printDebug("Skipped Moving To Library [" + mp3 + "]")
-                        pass
+                        continue
                     albumFolder = os.path.split(newFilePath)[0]
                     release = Release.objects(Title=id3.album, Artist=artist).first()
                     if not release:
@@ -341,14 +349,26 @@ class Scanner:
                                 release.Thumbnail.write(ba)
                                 release.Thumbnail.close()
                             else:
-                                # TODO see if 'cover' file exists and load from that else query MusicBrainz
-                                coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
-                                if coverArtBytes:
-                                    img = Image.open(io.BytesIO(coverArtBytes))
-                                    img.thumbnail(self.thumbnailSize)
-                                    b = io.BytesIO()
-                                    img.save(b, "JPEG")
-                                    ba = b.getvalue()
+                                ba = None
+                                coverFile = os.path.join(mp3Folder, "cover.jpg")
+                                if os.path.isfile(coverFile):
+                                    ba = self.readImageThumbnailBytesFromFile(coverFile)
+                                else:
+                                    coverFile = os.path.join(mp3Folder, "front.jpg")
+                                    if os.path.isfile(coverFile):
+                                        ba = self.readImageThumbnailBytesFromFile(coverFile)
+
+                                if not ba:
+                                    coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
+                                    if coverArtBytes:
+                                        self.printDebug("Using MusicBrainz Cover Art")
+                                        img = Image.open(io.BytesIO(coverArtBytes))
+                                        img.thumbnail(self.thumbnailSize)
+                                        b = io.BytesIO()
+                                        img.save(b, "JPEG")
+                                        ba = b.getvalue()
+
+                                if ba:
                                     release.Thumbnail.new_file()
                                     release.Thumbnail.write(ba)
                                     release.Thumbnail.close()
@@ -386,8 +406,9 @@ class Scanner:
             for coverImage in self.inboundCoverImages():
                 im = Image.open(coverImage)
                 newPath = os.path.join(albumFolder, "cover.jpg")
-                im.save(newPath)
                 self.printDebug("Copied Cover File [" + newPath + "]")
+                if not self.showTagsOnly:
+                    im.save(newPath)
 
 
 

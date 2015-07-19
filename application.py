@@ -43,6 +43,12 @@ def before_request():
 def index():
     return render_template('home.html')
 
+@app.route('/artist/<artist_id>')
+def artist(artist_id):
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
+        return render_template('404.html'), 404
+    return render_template('artist.html', artist=artist)
 
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):
