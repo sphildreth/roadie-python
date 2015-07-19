@@ -21,8 +21,8 @@
                     <a data-bind='attr: { "href": "/artist/" + ArtistId() }'><h3 data-bind="text: Artist" class="label label-primary"></h3></a>
                 </div>                
                 <div class="col-md-7">
-                    <ul class="releases" data-bind="foreach: Releases">
-                        <li data-bind='attr: { "data-release-id": ReleaseId }'>
+                    <div class="releases-container" data-bind="foreach: Releases">
+                        <div class="release" data-bind='attr: { "data-release-id": ReleaseId }'>
                             <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
                             <span class="year label label-default" data-bind="text: Year"></span>
                             <span class="title label label-primary" data-bind="text: Title"></span>
@@ -33,8 +33,8 @@
                                     <span class="length label label-default" data-bind="text: Length"></span>
                                 </li>
                             </ul>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
                 </div>
            </div>
         </div>

@@ -50,6 +50,12 @@ div.collection-container ul.tracks {
   margin-right: 8px;
 }
 
+.release {
+    display: inline-block;
+    width: 30%;
+}
+
+
 .form-signin {
   max-width: 330px;
   padding: 15px;

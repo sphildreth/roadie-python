@@ -92,8 +92,13 @@ class Label(Document):
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     MusicBrainzId = StringField()
     Name = StringField(required=True)
-    Tags = ListField(StringField(max_length=30))
+    Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
+    meta = {
+        'indexes': [
+            {'fields': ['Name'], 'unique': True }
+        ]
+    }
 
     def __unicode__(self):
         return self.Name
@@ -112,7 +117,7 @@ class Artist(Document):
     RealName = StringField()
     SortName = StringField()
     Thumbnail = EmbeddedDocumentField(ThumbnailImage)
-    Tags = ListField(StringField(max_length=30))
+    Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
@@ -129,7 +134,7 @@ class Artist(Document):
 
 
 class Track(Document):
-    Artist = ReferenceField(Artist, required=True)
+    Artist = ReferenceField(Artist, required=True, reverse_delete_rule=CASCADE)
     FileName = StringField()
     FilePath = StringField()
     # MD5 of file
@@ -138,7 +143,7 @@ class Track(Document):
     # Seconds long
     Length = FloatField()
     MusicBrainzId = StringField()
-    Tags = ListField(StringField(max_length=30))
+    Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     meta = {
         'indexes': [
@@ -179,15 +184,15 @@ class ReleaseLabel(EmbeddedDocument):
 class Release(Document):
     IsVirtual = BooleanField()
     AlternateNames = SortedListField(StringField())
-    Artist = ReferenceField(Artist, required=True)
+    Artist = ReferenceField(Artist, required=True, reverse_delete_rule=CASCADE)
     Images = ListField(EmbeddedDocumentField(Image))
     Genres = ListField(ReferenceField(Genre))
     Labels = ListField(EmbeddedDocumentField(ReleaseLabel), default=[])
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     MusicBrainzId = StringField()
-    ReleaseDate = DateTimeField(required=True)
+    ReleaseDate = StringField(required=True)
     Thumbnail = FileField()
-    Tags = ListField(StringField(max_length=30))
+    Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     Tracks = ListField(EmbeddedDocumentField(TrackRelease), default=[])
     TrackCount = IntField()

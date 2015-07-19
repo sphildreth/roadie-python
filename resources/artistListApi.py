@@ -45,7 +45,7 @@ class ArtistListApi(Resource):
                     })
                 releaseInfo.append({
                     "ReleaseId": str(release.id),
-                    "Year": release.ReleaseDate.year,
+                    "Year": release.ReleaseDate,
                     "Title": release.Title,
                     "Tracks": trackInfo,
                     "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
