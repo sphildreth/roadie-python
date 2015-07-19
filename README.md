@@ -22,6 +22,10 @@ Requirements
 * MongoDB
 * Python 3
 
+Installation
+------------
+Please see [the wiki](https://github.com/sphildreth/roadie/wiki/Installation)
+
 License
 -------
 MIT
