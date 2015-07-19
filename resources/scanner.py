@@ -308,7 +308,7 @@ class Scanner:
                             if not 'track-count' in mbMedium:
                                 mbMedium = mbRelease['medium-list'][1]
                             release.TrackCount = mbMedium['track-count']
-                            release.DiscCount = mbMedium['disc-count']
+                            release.DiscCount = mbMedium['disc-count'] or 1
                             if 'label-info-list' in mbRelease:
                                 for mbLabel in mbRelease['label-info-list']:
                                     label = Label.objects(Name=mbLabel['label']['name']).first()
