@@ -2,6 +2,7 @@ import io
 import os
 import json
 import datetime
+from bson import objectid
 from PIL import Image
 from flask import Flask, render_template, send_file, Response, request,\
                   flash, url_for, redirect, abort, session, abort, g
@@ -49,6 +50,35 @@ def artist(artist_id):
     if not artist:
         return render_template('404.html'), 404
     return render_template('artist.html', artist=artist)
+
+@app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
+def getArtistImage(artist_id,grid_id,height,width):
+    artist = Artist.objects(id=artist_id).first()
+    artistImage = None
+
+    if artist:
+        for ai in artist.Images:
+            if ai.element.grid_id == objectid.ObjectId(grid_id):
+                artistImage = ai
+                break
+
+    try:
+        if artistImage:
+            image = artistImage.element.read()
+            h = int(height)
+            w = int(width)
+            img = Image.open(io.BytesIO(image)).convert('RGB')
+            size = h,w
+            img.thumbnail(size)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            ba = b.getvalue()
+            return send_file(io.BytesIO(ba),
+                     attachment_filename=artistImage.element.filename,
+                     mimetype='image/jpg')
+    except:
+        return send_file("static/img/artist.gif")
+
 
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):

@@ -26,12 +26,12 @@ class ArtistListApi(Resource):
         if args.filter:
             artists = Artist.objects(Name__icontains = args.filter)[get_skip:get_limit]
         else:
-            artists = Artist.objects()[:get_limit]
+            artists = Artist.objects().order_by('SortName')[:get_limit]
 
         rows = []
         for artist in artists:
             releaseInfo = []
-            releases = Release.objects(Artist=artist)
+            releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
             for release in releases:
                 trackInfo = []
                 for track in release.Tracks:

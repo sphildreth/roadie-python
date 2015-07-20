@@ -31,17 +31,25 @@ class ID3:
         self.artist = short_tags.get('artist', [''])[0].strip().title()
         self.duration = "%u:%.2d" % (full_tags.info.length / 60, full_tags.info.length % 60)
         trackNumber = short_tags.get('tracknumber', [''])[0]
-        if("/" in trackNumber):
-            self.track = int(trackNumber.split("/")[0])
-        else:
-            self.track = int(trackNumber)
+        self.track = 0
+        try:
+            if trackNumber and "/" in trackNumber:
+                self.track = int(trackNumber.split("/")[0])
+            elif trackNumber:
+                self.track = int(trackNumber)
+        except:
+            pass
         self.length = full_tags.info.length
         self.bitrate = full_tags.info.bitrate
         discNumber = short_tags.get('discnumber', [''])[0]
-        if discNumber:
-            self.disc = int(discNumber)
-        else:
-            self.disc = 1;
+        self.disc = 0
+        try:
+            if discNumber and "/" in discNumber:
+                self.disc = int(discNumber.split("/")[0])
+            elif discNumber:
+                self.disc = int(discNumber)
+        except:
+            pass
         self.year = short_tags.get('date', [''])[0]
         self.title = short_tags.get('title', [''])[0].strip().title()
         self.comment = comments[0].title()

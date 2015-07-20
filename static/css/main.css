@@ -3,11 +3,12 @@ body.roadie {
   padding: 0;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #444;
+  background-color: #BDBDBD;
 }
 
 li.username {
   color: white;
-  margin-top: 20px;
+  margin-top: 12px;
   display: inline-block;
   text-transform: capitalize;
 }
@@ -32,7 +33,7 @@ div.collection-container .artist .thumbnail {
 
 div.collection-container ul {
   overflow: auto;
-  font-family:monospace;
+  font-family: monospace;
   font-size: 16px;
   list-style: none;
 }
@@ -41,6 +42,7 @@ div.collection-container ul.tracks {
   max-height: 250px;
   overflow: auto;
 }
+
 
 .artist .thumb {
   margin: 5px 0;
@@ -53,6 +55,20 @@ div.collection-container ul.tracks {
 .release {
     display: inline-block;
     width: 30%;
+}
+
+.artist-detail-container div.row {
+    border: 1px solid;
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.artist-detail-container .btn-toolbar {
+    margin-bottom: 15px;
+}
+.artist-detail-container img {
+    margin-right: 5px;
 }
 
 

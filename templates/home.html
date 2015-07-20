@@ -18,19 +18,19 @@
                     <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
                 </div>
                 <div class="col-md-3">
-                    <a data-bind='attr: { "href": "/artist/" + ArtistId() }'><h3 data-bind="text: Artist" class="label label-primary"></h3></a>
+                    <a data-bind='attr: { "href": "/artist/" + ArtistId() }'><h4><span data-bind="text: Artist" class="label label-default"></span></h4></a>
                 </div>                
                 <div class="col-md-7">
                     <div class="releases-container" data-bind="foreach: Releases">
                         <div class="release" data-bind='attr: { "data-release-id": ReleaseId }'>
                             <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
-                            <span class="year label label-default" data-bind="text: Year"></span>
-                            <span class="title label label-primary" data-bind="text: Title"></span>
+                            <h5><span class="year label label-primary" data-bind="text: Year"></span></h5>
+                            <h5><span class="title label label-default" data-bind="text: Title"></span></h5>
                             <ul class="tracks" data-bind='foreach: Tracks'>
                                 <li data-bind='attr: { "data-track-id": TrackId'>
-                                    <span class="trackNumber label label-default" data-bind="text: lpad(TrackNumber(),2)"></span>
-                                    <span class="title label label-primary" data-bind="text: Title"></span>
-                                    <span class="length label label-default" data-bind="text: Length"></span>
+                                    <span class="trackNumber label label-primary" data-bind="text: lpad(TrackNumber(),2)"></span>
+                                    <span class="title label label-default" data-bind="text: Title"></span>
+                                    <span class="length label label-info" data-bind="text: Length"></span>
                                 </li>
                             </ul>
                         </div>

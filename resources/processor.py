@@ -32,13 +32,17 @@ class Processor:
         self.showTagsOnly = showTagsOnly or False
 
     def inboundCoverImages(self):
-        image_filter = ['jpg','bmp','png','gif']
-        cover_filter = ['cover', 'front']
-        for r,d,f in os.walk(self.InboundFolder):
-            for file in f:
-                head, tail = file.split('.')
-                if file[-3:] in image_filter and head in cover_filter:
-                    yield os.path.join(r, file)
+        try:
+            image_filter = ['jpg','bmp','png','gif']
+            cover_filter = ['cover', 'front']
+            for r,d,f in os.walk(self.InboundFolder):
+                for file in f:
+                    head, tail = file.split('.')
+                    if file[-3:] in image_filter and head in cover_filter:
+                        yield os.path.join(r, file)
+        except:
+            print("Unexpected error:", sys.exc_info())
+            pass
 
     def inboundMp3Files(self):
         for root, dirs, files in os.walk(self.InboundFolder):
@@ -52,7 +56,7 @@ class Processor:
 
     def printDebug(self, message):
         if self.debug:
-            print(message)
+            print(message.encode('utf-8'))
 
     def artistFolder(self, artist):
         artistFolder = artist.SortName or artist.Name
@@ -113,7 +117,7 @@ class Processor:
         print("Scanning Folder [" + self.InboundFolder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
-        startTime = time()
+        startTime = datetime.now()
         mp3Folder = None
         lastMp3Folder = None
         for mp3 in self.inboundMp3Files():
@@ -183,7 +187,7 @@ class Processor:
                     if release:
                         self.printDebug("| Found Release [" + str(release) + "]")
                     else:
-                        release = Release(Title=id3.album, Artist=artist)
+                        release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
                         mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
                         if mbRelease:
                             release.Artist = artist
@@ -229,10 +233,16 @@ class Processor:
                                 tags.append(format)
                             release.Tags = tags
                             if id3.imageBytes:
-                                img = Image.open(io.BytesIO(id3.imageBytes))
-                                img.thumbnail(self.thumbnailSize)
-                                b = io.BytesIO()
-                                img.save(b, "JPEG")
+                                try:
+                                    img = Image.open(io.BytesIO(id3.imageBytes))
+                                    img.thumbnail(self.thumbnailSize)
+                                    b = io.BytesIO()
+                                    img.save(b, "JPEG")
+                                except:
+                                    img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                    img.thumbnail(self.thumbnailSize)
+                                    b = io.BytesIO()
+                                    img.save(b, "JPEG")
                                 ba = b.getvalue()
                                 release.Thumbnail.new_file()
                                 release.Thumbnail.write(ba)
@@ -273,8 +283,8 @@ class Processor:
                 if not self.showTagsOnly:
                     im.save(newPath)
 
-        elapsedTime = time() - startTime
-        print("Scanning Complete. Elapsed Time [" + str(elapsedTime))
+        elapsedTime = datetime.now() - startTime
+        print("Scanning Complete. Elapsed Time [" + str(elapsedTime) + "]")
 
 
 p = argparse.ArgumentParser(description='Scan Inbound and Library Folders For Updates.')

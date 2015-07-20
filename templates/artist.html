@@ -3,12 +3,117 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="row">
-        <h2>{{ artist.Name }}</h2>
-        WIP
+    <div class="artist-detail-container" data-artist-id="{{ artist.id }}">
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-play"></i> Play <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Play All</a></li>
+                <li><a href="#">Play Top Rated</a></li>
+                <li><a href="#">Play Most Popular</a></li>
+              </ul>
+            </div>
+            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+              <div class="btn-group">
+                <a href="/admin/artist/edit/?id={{ artist.id }}&url=/artist/{{ artist.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+             </div>
+            {% endif %}
+        </div>
+        <div class="row title">
+            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+            <h2>{{ artist.Name }}</h2>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <h4><span class="label label-primary">Profile</span></h4>
+                <p>{{ artist.Profile }}</p>
+            </div>
+            <div class="col-md-6">
+                {% for image in artist.Images %}
+                    <div class="col-md-3">
+                        <a href="javascript:void();"
+                           data-title="{{ image.element.filename }}"
+                           data-url="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/2048/2048"
+                           target="_blank" class="thumbnail">
+                            <img src="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="row details">
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Sort Name</span></h4>
+                    <span class="label label-default">{{ artist.SortName }}</span>
+                </div>
+                <div>
+                    <h4><span class="label label-primary">Real Name</span></h4>
+                    <span class="label label-default">{{ artist.RealName }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Artist Type</span></h4>
+                    <span class="label label-default">{{ artist.ArtistType.Name }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Begin Date</span></h4>
+                    <span class="label label-default">{{ artist.BeginDate }}</span>
+                </div>
+
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">End Date</span></h4>
+                    <span class="label label-default">{{ artist.EndDate }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="row lists">
+            <div class="col-md-4">
+                <h4><span class="label label-primary">Alternate Names</span></h4>
+                <ul>
+                    {% for alternateName in artist.AlternateNames %}
+                    <li><span class="label label-default">{{ alternateName }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h4><span class="label label-primary">Tags</span></h4>
+                <ul>
+                    {% for tag in artist.Tags %}
+                    <li><span class="label label-default">{{ tag }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h4><span class="label label-primary">Urls</span></h4>
+                <ul>
+                    {% for url in artist.Urls %}
+                    <li><a href="{{ url.Url }}" target="_blank"><span class="label label-default">{{ url.Title }}</span></a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class=""
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
+        $(function() {
+            $(".artist-detail-container a.thumbnail").on("click", function(e) {
+                var $t = $(this);
+                bootbox.dialog({
+                    title: $t.data("title"),
+                    size: 'large',
+                    message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
+                });
+            });
+        });
     </script>
 {% endblock %}

@@ -29,7 +29,7 @@ class Quality(Document):
 
 
 class Image(EmbeddedDocument):
-    element = ImageField(size=(1024, 1024, True))
+    element = ImageField()
 
 
 class ThumbnailImage(EmbeddedDocument):
