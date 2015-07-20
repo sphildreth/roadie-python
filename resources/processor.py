@@ -1,9 +1,14 @@
 # Process that looks at and processes files/directories in inbound folder
+# --- Find or Make Artist For File
+# --- Find or Make Release For File
+# --- Determine if File Should Be Moved if so move
 # --- Each folder call scanner
 # --- If folder is empty delete
+import linecache
 import io
 import os
 import sys
+import shutil
 import json
 import hashlib
 import argparse
@@ -16,32 +21,47 @@ from mongoengine import connect
 from models import Artist, ArtistType, Label, Release, ReleaseLabel, ThumbnailImage, Track, TrackRelease
 from musicBrainz import MusicBrainz
 from id3 import ID3
+from utility import Utility
+from scanner import Scanner
 
+class Processor(object):
 
-class Processor:
-
-    def __init__(self,debug,showTagsOnly):
+    def __init__(self,debug,showTagsOnly,dontDeleteInboundFolders):
         with open("../settings.json", "r") as rf:
             config = json.load(rf)
         self.InboundFolder = config['ROADIE_INBOUND_FOLDER']
         self.LibraryFolder = config['ROADIE_LIBRARY_FOLDER']
+        # TODO if set then process music files; like clear comments
+        self.processingOptions = config['ROADIE_PROCESSING']
+        self.isProcessingLibrary = self.LibraryFolder.startswith(self.InboundFolder)
         self.dbName = config['MONGODB_SETTINGS']['DB']
         self.host = config['MONGODB_SETTINGS']['host']
         self.thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
         self.debug = debug or False
         self.showTagsOnly = showTagsOnly or False
+        self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
 
-    def inboundCoverImages(self):
+    def splitext(path):
+        for ext in ['.tar.gz', '.tar.bz2']:
+            if path.endswith(ext):
+                return path[:-len(ext)], path[-len(ext):]
+        return os.path.splitext(path)
+
+    def releaseCoverImages(self, folder):
+        if self.isProcessingLibrary:
+            self.printDebug("Processing Library Skipping Images")
+            return False
         try:
-            image_filter = ['jpg','bmp','png','gif']
+            image_filter = ['.jpg', '.jpeg', '.bmp','.png','.gif']
             cover_filter = ['cover', 'front']
-            for r,d,f in os.walk(self.InboundFolder):
+            for r,d,f in os.walk(folder):
                 for file in f:
-                    head, tail = file.split('.')
-                    if file[-3:] in image_filter and head in cover_filter:
+                    root, file = os.path.split(file)
+                    root, ext = os.path.splitext(file)
+                    if ext.lower() in image_filter and root.lower() in cover_filter:
                         yield os.path.join(r, file)
         except:
-            print("Unexpected error:", sys.exc_info())
+            Utility.PrintException()
             pass
 
     def inboundMp3Files(self):
@@ -63,7 +83,7 @@ class Processor:
         return os.path.join(self.LibraryFolder, self.makeFileFriendly(artistFolder))
 
     def albumFolder(self, artist, id3):
-        return os.path.join(self.artistFolder(artist), "[" + id3.year.zfill(4) + "] " + self.makeFileFriendly(id3.album))
+        return os.path.join(self.artistFolder(artist), "[" + id3.year.zfill(4)[:4] + "] " + self.makeFileFriendly(id3.album))
 
     def trackName(self, id3):
         return str(id3.track).zfill(2) + " " + self.makeFileFriendly(id3.title) + ".mp3"
@@ -72,6 +92,10 @@ class Processor:
     def shouldMoveToLibrary(self, artist, id3, mp3):
         try:
             fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3))
+            head, tail = os.path.split(fileFolderLibPath)
+            # File is already in library likely just rescanning for updates
+            if self.LibraryFolder.startswith(head):
+                return False
             os.makedirs(fileFolderLibPath, exist_ok=True)
             fullFileLibPath = os.path.join(fileFolderLibPath, self.makeFileFriendly(self.trackName(id3)))
             if not os.path.isfile(fullFileLibPath):
@@ -92,11 +116,11 @@ class Processor:
                     return False
             return True
         except:
-            print("Unexpected error:", sys.exc_info())
+            Utility.PrintException()
             return False
 
     def readImageThumbnailBytesFromFile(self, path):
-        img = Image.open(path)
+        img = Image.open(path).convert('RGB')
         img.thumbnail(self.thumbnailSize)
         b = io.BytesIO()
         img.save(b, "JPEG")
@@ -110,38 +134,42 @@ class Processor:
             move(mp3, newFilename)
             return newFilename
         except:
-            print("Unexpected error:", sys.exc_info())
+            Utility.PrintException()
             return None
 
     def process(self):
-        print("Scanning Folder [" + self.InboundFolder + "]")
+        print("Processing Folder [" + self.InboundFolder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         startTime = datetime.now()
         mp3Folder = None
-        lastMp3Folder = None
+        newMp3Folder= None
+        lastID3Artist = None
+        lastID3Album = None
+        artist = None
+        release = None
         for mp3 in self.inboundMp3Files():
             mp3Folder = os.path.split(mp3)[0]
-            if mp3Folder == lastMp3Folder:
-                continue
-            try:
-                id3 = ID3(mp3)
-            except:
-                print("Unexpected error:", sys.exc_info())
-                id3 = None
+            id3 = ID3(mp3)
             if id3 != None:
                 if not id3.isValid():
                     print("*! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     if self.showTagsOnly:
                         continue
-                    artist = Artist.objects(Name=id3.artist).first()
-                    if artist:
-                        self.printDebug("\ Found Artist Name [" + str(artist) + "]")
-                    else:
+                    # Get Artist
+                    if lastID3Artist != id3.artist:
+                        artist = None
+                    if not artist:
+                        lastID3Artist = id3.artist
+                        artist = Artist.objects(Name=id3.artist).first()
+                    if not artist:
+                        # Artist not found create
+                        print("not found [" + id3.artist + "]")
                         artist = Artist(Name=id3.artist)
                         mbArtist = mb.lookupArtist(id3.artist)
                         if mbArtist:
+                            # Populate with some MusicBrainz details
                             artist.MusicBrainzId = mbArtist['id']
                             begin = None
                             if 'life-span' in mbArtist:
@@ -174,6 +202,7 @@ class Processor:
                                         alias.append(a['alias'].strip().title())
                             artist.AlternateNames = alias
                         ba = None
+                        # See if a file exists to use for the Artist thumbnail
                         artistFile = os.path.join(mp3Folder, "artist.jpg")
                         if os.path.isfile(artistFile):
                             ba = self.readImageThumbnailBytesFromFile(artistFile)
@@ -181,15 +210,21 @@ class Processor:
                             artist.Thumbnail.new_file()
                             artist.Thumbnail.write(ba)
                             artist.Thumbnail.close()
-                        object_id = Artist.save(artist)
-                        self.printDebug("+ Added Artist Name [" + artist.Name + "], Id [" + str(object_id) + "]")
-                    release = Release.objects(Title=id3.album, Artist=artist).first()
-                    if release:
-                        self.printDebug("| Found Release [" + str(release) + "]")
-                    else:
+                        # Save The Artist
+                        Artist.save(artist)
+                        self.printDebug("+ Added Artist Name [" + artist.Name + "]")
+                    # Get the Release
+                    if lastID3Album != id3.album:
+                        release = None
+                    if not release:
+                        lastID3Album = id3.album
+                        release = Release.objects(Title=id3.album, Artist=artist).first()
+                    if not release:
+                        # Release not found create
                         release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
                         mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
                         if mbRelease:
+                            # Populate with some MusicBrainz details
                             release.Artist = artist
                             date = None;
                             if id3.year:
@@ -232,65 +267,68 @@ class Processor:
                             if format:
                                 tags.append(format)
                             release.Tags = tags
-                            if id3.imageBytes:
-                                try:
-                                    img = Image.open(io.BytesIO(id3.imageBytes))
-                                    img.thumbnail(self.thumbnailSize)
-                                    b = io.BytesIO()
-                                    img.save(b, "JPEG")
-                                except:
-                                    img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
-                                    img.thumbnail(self.thumbnailSize)
-                                    b = io.BytesIO()
-                                    img.save(b, "JPEG")
-                                ba = b.getvalue()
-                                release.Thumbnail.new_file()
-                                release.Thumbnail.write(ba)
-                                release.Thumbnail.close()
+                        # Get Release Thumbnail bytes
+                        ba = None
+                        # See if the tag cover art exists
+                        if id3.imageBytes:
+                            img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                            img.thumbnail(self.thumbnailSize)
+                            b = io.BytesIO()
+                            img.save(b, "JPEG")
+                            ba = b.getvalue()
+                        else:
+                            # See if cover file found in Release Folder
+                            coverFile = os.path.join(mp3Folder, "cover.jpg")
+                            if os.path.isfile(coverFile):
+                                ba = self.readImageThumbnailBytesFromFile(coverFile)
                             else:
-                                ba = None
-                                coverFile = os.path.join(mp3Folder, "cover.jpg")
+                                coverFile = os.path.join(mp3Folder, "front.jpg")
                                 if os.path.isfile(coverFile):
                                     ba = self.readImageThumbnailBytesFromFile(coverFile)
-                                else:
-                                    coverFile = os.path.join(mp3Folder, "front.jpg")
-                                    if os.path.isfile(coverFile):
-                                        ba = self.readImageThumbnailBytesFromFile(coverFile)
+                            # if no bytes found see if MusicBrainz has cover art
+                            if not ba:
+                                coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
+                                if coverArtBytes:
+                                    img = Image.open(io.BytesIO(coverArtBytes))
+                                    img.thumbnail(self.thumbnailSize)
+                                    b = io.BytesIO()
+                                    img.save(b, "JPEG")
+                                    ba = b.getvalue()
+                        # If Cover Art Thumbnail bytes found then set to Release Thumbnail
+                        if ba:
+                            release.Thumbnail.new_file()
+                            release.Thumbnail.write(ba)
+                            release.Thumbnail.close()
+                        Release.save(release)
+                        self.printDebug("+ Added Release: Title [" + release.Title + "]")
+                    if self.shouldMoveToLibrary(artist, id3, mp3):
+                        newMp3 = self.moveToLibrary(artist, id3, mp3)
+                        head, tail = os.path.split(newMp3)
+                        newMp3Folder = head
 
-                                if not ba:
-                                    coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
-                                    if coverArtBytes:
-                                        self.printDebug("Using MusicBrainz Cover Art")
-                                        img = Image.open(io.BytesIO(coverArtBytes))
-                                        img.thumbnail(self.thumbnailSize)
-                                        b = io.BytesIO()
-                                        img.save(b, "JPEG")
-                                        ba = b.getvalue()
-
-                                if ba:
-                                    release.Thumbnail.new_file()
-                                    release.Thumbnail.write(ba)
-                                    release.Thumbnail.close()
-                        object_id = Release.save(release)
-                        self.printDebug("+ Added Release: Title [" + release.Title + "], Id [" + str(object_id) + "]")
-            lastMp3Folder = mp3Folder
-
-        if mp3Folder:
-            for coverImage in self.inboundCoverImages():
-                im = Image.open(coverImage)
-                newPath = os.path.join(mp3Folder, "cover.jpg")
-                self.printDebug("Copied Cover File [" + newPath + "]")
+        if mp3Folder and newMp3Folder:
+            for coverImage in self.releaseCoverImages(mp3Folder):
+                im = Image.open(coverImage).convert('RGB')
+                newPath = os.path.join(newMp3Folder, "cover.jpg")
+                self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
                 if not self.showTagsOnly:
                     im.save(newPath)
+        if mp3Folder:
+            if not self.showTagsOnly:
+                scanner = Scanner(self.debug, self.showTagsOnly)
+                scannedSuccesfully = scanner.scan(newMp3Folder or mp3Folder, artist, release)
+                if scannedSuccesfully and not self.dontDeleteInboundFolders:
+                    shutil.rmtree(mp3Folder)
 
         elapsedTime = datetime.now() - startTime
-        print("Scanning Complete. Elapsed Time [" + str(elapsedTime) + "]")
+        print("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
 
 
-p = argparse.ArgumentParser(description='Scan Inbound and Library Folders For Updates.')
+p = argparse.ArgumentParser(description='Process Inbound and Library Folders For Updates.')
 p.add_argument('--verbose', '-v', action='store_true', help='Enable Verbose Print Statements')
+p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true', help='Dont Delete Any Processed Inbound Folders')
 p.add_argument('--showTagsOnly', '-st', action='store_true', help='Only Show Tags for Found Files')
 args = p.parse_args()
 
-pp = Processor(args.verbose, args.showTagsOnly)
+pp = Processor(args.verbose, args.showTagsOnly, args.dontDeleteInboundFolders)
 pp.process()

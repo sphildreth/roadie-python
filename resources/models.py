@@ -62,6 +62,12 @@ class User(Document):
     Active = BooleanField(default=True)
     Avatar = EmbeddedDocumentField(ThumbnailImage)
     Roles = ListField(ReferenceField(UserRole), default=[])
+    meta = {
+        'indexes': [
+            {'fields': ['Username'], 'unique': True },
+            {'fields': ['Password'], 'unique': True }
+        ]
+    }
 
     def is_authenticated(self):
         return True
@@ -143,6 +149,7 @@ class Track(Document):
     # Seconds long
     Length = FloatField()
     MusicBrainzId = StringField()
+    PlayedCount = IntField()
     Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     meta = {
@@ -153,6 +160,22 @@ class Track(Document):
 
     def __unicode__(self):
         return self.Title
+
+class UserTrack(Document):
+    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
+    Track = ReferenceField(Track, required=True, reverse_delete_rule=CASCADE)
+    PlayedCount = IntField()
+    Rating = IntField()
+    IsFavorite = BooleanField()
+    meta = {
+        'indexes': [
+            'User',
+            'Track'
+        ]
+    }
+
+    def __unicode__(self):
+        return self.User.name + "::" + Track.Title
 
 
 class TrackRelease(EmbeddedDocument):

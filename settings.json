@@ -4,10 +4,14 @@
         "DB": "roadie",
         "host": "192.168.2.254"
     },
-    "ROADIE_INBOUND_FOLDER": "D:/incoming/complete/audio/",
+    "ROADIE_INBOUND_FOLDER": "D:/incoming/complete/audio/13 - Meghan Trainor - Title (Deluxe Edition)/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library",
     "ROADIE_THUMBNAILS" : {
         "Height": 60,
         "Width": 60
+    },
+    "ROADIE_PROCESSING": {
+        "DoAudioCleanup": "True",
+        "ClearComments": "True"
     }
 }
