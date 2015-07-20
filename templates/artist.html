@@ -23,7 +23,7 @@
         </div>
         <div class="row title">
             <img class="thumb pull-left" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
-            <h2>{{ artist.Name }}</h2>
+            <h2><span class="label label-default">{{ artist.Name }}</span></h2>
         </div>
         <div class="row">
             <div class="col-md-6">
@@ -100,7 +100,27 @@
                 </ul>
             </div>
         </div>
-        <div class=""
+        <div class="release-info-container">
+            {% for release in releases %}
+                <div class="row" data-release-id="{{ release.id }}">
+                    <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
+                    <h4><span class="label label-info">{{ release.ReleaseDate }}</span>
+                        <span class="label label-default">{{ release.Title }}</span></h4>
+                    <ul class="tracks">
+                        {% for track in release.Tracks %}
+                        <li>
+                            <span class="trackNumber label label-primary">{{ track.TrackNumber }}</span>
+                            <span class="title label label-default">{{ track.Track.Title }}</span>
+                            <span class="length label label-info">{{ track.Track.Length }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="meta pull-right">
+            <p><span class="label label-info">Last Modified: {{ artist.LastUpdated }}</span></p>
+        </div>
     </div>
 {% endblock %}
 {% block script_content %}

@@ -24,11 +24,11 @@
                     <div class="releases-container" data-bind="foreach: Releases">
                         <div class="release" data-bind='attr: { "data-release-id": ReleaseId }'>
                             <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
-                            <h5><span class="year label label-primary" data-bind="text: Year"></span></h5>
+                            <h5><span class="year label label-info" data-bind="text: Year"></span></h5>
                             <h5><span class="title label label-default" data-bind="text: Title"></span></h5>
                             <ul class="tracks" data-bind='foreach: Tracks'>
                                 <li data-bind='attr: { "data-track-id": TrackId'>
-                                    <span class="trackNumber label label-primary" data-bind="text: lpad(TrackNumber(),2)"></span>
+                                    <span class="trackNumber label label-info" data-bind="text: lpad(TrackNumber(),2)"></span>
                                     <span class="title label label-default" data-bind="text: Title"></span>
                                     <span class="length label label-info" data-bind="text: Length"></span>
                                 </li>

@@ -49,7 +49,8 @@ def artist(artist_id):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
         return render_template('404.html'), 404
-    return render_template('artist.html', artist=artist)
+    releases = Release.objects(Artist=artist)
+    return render_template('artist.html', artist=artist, releases=releases)
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id,grid_id,height,width):
