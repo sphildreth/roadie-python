@@ -13,7 +13,7 @@ from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.models import Artist, ArtistType, Genre, Label,\
-                             Quality, Release, Track, User, UserRole
+                             Quality, Release, Track, User, UserRole, UserTrack
 from flask.ext.mongoengine import MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user,\
                             current_user, login_required
@@ -197,6 +197,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Release))
     admin.add_view(RoadieModelView(Track))
     admin.add_view(RoadieModelView(User))
+    admin.add_view(RoadieModelView(UserTrack))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))
     admin.add_view(RoadieModelView(Genre, category='Reference Fields'))
     admin.add_view(RoadieModelView(Quality, category='Reference Fields'))

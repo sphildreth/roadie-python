@@ -27,6 +27,10 @@ class MusicBrainz:
 
 
     def searchForRelease(self, artistId, title):
+
+        if not artistId or not title:
+            return None
+
         cacheKey = artistId + "." + title.replace(" ", "")
         if cacheKey in self.searchReleases:
             return self.searchReleases[cacheKey]

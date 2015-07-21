@@ -31,6 +31,7 @@ class Processor(object):
             config = json.load(rf)
         self.InboundFolder = config['ROADIE_INBOUND_FOLDER']
         self.LibraryFolder = config['ROADIE_LIBRARY_FOLDER']
+        self.IsProcessingLibrary = self.InboundFolder == self.LibraryFolder
         # TODO if set then process music files; like clear comments
         self.processingOptions = config['ROADIE_PROCESSING']
         self.isProcessingLibrary = self.LibraryFolder.startswith(self.InboundFolder)
@@ -48,9 +49,6 @@ class Processor(object):
         return os.path.splitext(path)
 
     def releaseCoverImages(self, folder):
-        if self.isProcessingLibrary:
-            self.printDebug("Processing Library Skipping Images")
-            return False
         try:
             image_filter = ['.jpg', '.jpeg', '.bmp','.png','.gif']
             cover_filter = ['cover', 'front']
@@ -64,10 +62,15 @@ class Processor(object):
             Utility.PrintException()
             pass
 
-    def inboundMp3Files(self):
+    def inboundFolders(self):
         for root, dirs, files in os.walk(self.InboundFolder):
+            for dir in dirs:
+                yield os.path.join(root, dir)
+
+    def folderMp3Files(self, folder):
+        for root, dirs, files in os.walk(folder):
             for filename in files:
-                if os.path.splitext(filename)[1] == ".mp3":
+               if os.path.splitext(filename)[1] == ".mp3":
                     yield os.path.join(root, filename)
 
 
@@ -89,7 +92,7 @@ class Processor(object):
         return str(id3.track).zfill(2) + " " + self.makeFileFriendly(id3.title) + ".mp3"
 
     # Determine if the found file should be moved into the library; check for existing and see if better
-    def shouldMoveToLibrary(self, artist, id3, mp3):
+    def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
         try:
             fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3))
             head, tail = os.path.split(fileFolderLibPath)
@@ -106,7 +109,7 @@ class Processor(object):
                 existingId3 = ID3(fullFileLibPath)
                 if not existingId3.isValid():
                     return True
-                existingId3Hash = hashlib.md5(str(existingId3).encode('utf-8')).hexdigest()
+                existingId3Hash = hashlib.md5((str(artistId) + str(existingId3)).encode('utf-8')).hexdigest()
                 id3Hash = hashlib.md5(str(id3).encode('utf-8')).hexdigest()
                 if existingId3Hash == id3Hash:
                     # If the hashes are equal its Likely the same file
@@ -120,11 +123,14 @@ class Processor(object):
             return False
 
     def readImageThumbnailBytesFromFile(self, path):
-        img = Image.open(path).convert('RGB')
-        img.thumbnail(self.thumbnailSize)
-        b = io.BytesIO()
-        img.save(b, "JPEG")
-        return b.getvalue()
+        try:
+            img = Image.open(path).convert('RGB')
+            img.thumbnail(self.thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            return b.getvalue()
+        except:
+            return None
 
     # If should be moved then move over and return new filename
     def moveToLibrary(self, artist, id3, mp3):
@@ -138,187 +144,203 @@ class Processor(object):
             return None
 
     def process(self):
-        print("Processing Folder [" + self.InboundFolder + "]")
+        print(("Processing Inbound Folder [" + self.InboundFolder + "]").encode('utf-8'))
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         startTime = datetime.now()
         mp3Folder = None
-        newMp3Folder= None
+        newMp3Folder = None
         lastID3Artist = None
         lastID3Album = None
         artist = None
         release = None
-        for mp3 in self.inboundMp3Files():
-            mp3Folder = os.path.split(mp3)[0]
-            id3 = ID3(mp3)
-            if id3 != None:
-                if not id3.isValid():
-                    print("*! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
-                else:
-                    if self.showTagsOnly:
-                        continue
-                    # Get Artist
-                    if lastID3Artist != id3.artist:
-                        artist = None
-                    if not artist:
-                        lastID3Artist = id3.artist
-                        artist = Artist.objects(Name=id3.artist).first()
-                    if not artist:
-                        # Artist not found create
-                        print("not found [" + id3.artist + "]")
-                        artist = Artist(Name=id3.artist)
-                        mbArtist = mb.lookupArtist(id3.artist)
-                        if mbArtist:
-                            # Populate with some MusicBrainz details
-                            artist.MusicBrainzId = mbArtist['id']
-                            begin = None
-                            if 'life-span' in mbArtist:
-                                if 'begin' in mbArtist['life-span']:
-                                    begin = parse(mbArtist['life-span']['begin'])
-                            artist.BeginDate = begin
-                            ended =mbArtist['life-span']['ended']
-                            if ended != "false":
-                                ended = None
+
+        # Get all the folder in the InboundFolder
+        for mp3Folder in self.inboundFolders():
+            foundMp3Files = 0
+
+            # Delete any empty folder if enabled
+            if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
+                self.printDebug("X Deleted Empty Folder [" + mp3Folder + "]")
+                os.rmdir(mp3Folder)
+                continue
+
+            # Get all the MP3 files in the Folder and process
+            for mp3 in self.folderMp3Files(mp3Folder):
+                id3 = ID3(mp3)
+                if id3 != None:
+                    if not id3.isValid():
+                        print("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
+                    else:
+                        foundMp3Files += 1
+                        if self.showTagsOnly:
+                            continue
+                        # Get Artist
+                        if lastID3Artist != id3.artist:
+                            artist = None
+                        if not artist:
+                            lastID3Artist = id3.artist
+                            artist = Artist.objects(Name=id3.artist).first()
+                        if not artist:
+                            # Artist not found create
+                            artist = Artist(Name=id3.artist)
+                            mbArtist = mb.lookupArtist(id3.artist)
+                            if mbArtist:
+                                # Populate with some MusicBrainz details
+                                artist.MusicBrainzId = mbArtist['id']
+                                begin = None
                                 if 'life-span' in mbArtist:
-                                    if 'end' in mbArtist['life-span']:
-                                        ended = parse(mbArtist['life-span']['end'])
-                                artist.EndDate = ended
-                            artistType = None
-                            if 'type' in mbArtist:
-                                artistType = ArtistType.objects(Name=mbArtist['type']).first()
-                            if artistType:
-                                artist.ArtistType = artistType
-                            artist.SortName = mbArtist['sort-name']
-                            tags = []
-                            if 'tag-list' in mbArtist:
-                                for tag in mbArtist['tag-list']:
-                                    if tag:
-                                        tags.append(tag['name'].strip().title())
-                            artist.Tags = tags
-                            alias = []
-                            if 'alias-list' in mbArtist:
-                                for a in mbArtist['alias-list']:
-                                    if a and 'alias' in a:
-                                        alias.append(a['alias'].strip().title())
-                            artist.AlternateNames = alias
-                        ba = None
-                        # See if a file exists to use for the Artist thumbnail
-                        artistFile = os.path.join(mp3Folder, "artist.jpg")
-                        if os.path.isfile(artistFile):
-                            ba = self.readImageThumbnailBytesFromFile(artistFile)
-                        if ba:
-                            artist.Thumbnail.new_file()
-                            artist.Thumbnail.write(ba)
-                            artist.Thumbnail.close()
-                        # Save The Artist
-                        Artist.save(artist)
-                        self.printDebug("+ Added Artist Name [" + artist.Name + "]")
-                    # Get the Release
-                    if lastID3Album != id3.album:
-                        release = None
-                    if not release:
-                        lastID3Album = id3.album
-                        release = Release.objects(Title=id3.album, Artist=artist).first()
-                    if not release:
-                        # Release not found create
-                        release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
-                        mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
-                        if mbRelease:
-                            # Populate with some MusicBrainz details
-                            release.Artist = artist
-                            date = None;
-                            if id3.year:
-                                date = id3.year
-                            if 'date' in mbRelease and not date:
-                                date = parse(mbRelease['date'])
-                            release.ReleaseDate = date or '---'
-                            release.MusicBrainzId = mbRelease['id']
-                            mbMedium = mbRelease['medium-list'][0]
-                            if not 'track-count' in mbMedium:
-                                mbMedium = mbRelease['medium-list'][1]
-                            release.TrackCount = mbMedium['track-count']
-                            release.DiscCount = mbMedium['disc-count'] or 1
-                            if 'label-info-list' in mbRelease:
-                                for mbLabel in mbRelease['label-info-list']:
-                                    label = None
-                                    if 'name' in mbLabel['label']:
-                                        mbLabelName = mbLabel['label']['name']
-                                        if mbLabelName:
-                                            mbLabelName = mbLabelName.strip().title()
-                                            label = Label.objects(Name=mbLabelName).first()
-                                            if not label:
-                                                label = Label(Name=mbLabelName)
-                                                label.MusicBrainzId = mbLabel['label']['id']
-                                                object_id = Label.save(label)
-                                                self.printDebug("+ Added Label Name [" + label.Name + "], Id [" + str(object_id) + "]")
-                                    if label:
-                                        catalogNumber = None
-                                        if 'catalog-number' in mbLabel:
-                                            catalogNumber = mbLabel['catalog-number'].strip().title()
-                                        releaseLabel = ReleaseLabel(Label=label, CatalogNumber=catalogNumber)
-                                        release.Labels.append(releaseLabel)
-                            tags = []
-                            if 'release-group' in mbRelease:
-                                if 'type' in mbRelease['release-group']:
-                                    tags.append(mbRelease['release-group']['type'].strip().title())
-                            format = None
-                            if 'format' in mbMedium:
-                                format = mbMedium['format']
-                            if format:
-                                tags.append(format)
-                            release.Tags = tags
-                        # Get Release Thumbnail bytes
-                        ba = None
-                        # See if the tag cover art exists
-                        if id3.imageBytes:
-                            img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
-                            img.thumbnail(self.thumbnailSize)
-                            b = io.BytesIO()
-                            img.save(b, "JPEG")
-                            ba = b.getvalue()
-                        else:
-                            # See if cover file found in Release Folder
-                            coverFile = os.path.join(mp3Folder, "cover.jpg")
-                            if os.path.isfile(coverFile):
-                                ba = self.readImageThumbnailBytesFromFile(coverFile)
+                                    if 'begin' in mbArtist['life-span']:
+                                        begin = parse(mbArtist['life-span']['begin'])
+                                artist.BeginDate = begin
+                                ended =mbArtist['life-span']['ended']
+                                if ended != "false":
+                                    ended = None
+                                    if 'life-span' in mbArtist:
+                                        if 'end' in mbArtist['life-span']:
+                                            ended = parse(mbArtist['life-span']['end'])
+                                    artist.EndDate = ended
+                                artistType = None
+                                if 'type' in mbArtist:
+                                    artistType = ArtistType.objects(Name=mbArtist['type']).first()
+                                if artistType:
+                                    artist.ArtistType = artistType
+                                artist.SortName = mbArtist['sort-name']
+                                tags = []
+                                if 'tag-list' in mbArtist:
+                                    for tag in mbArtist['tag-list']:
+                                        if tag:
+                                            tags.append(tag['name'].strip().title())
+                                artist.Tags = tags
+                                alias = []
+                                if 'alias-list' in mbArtist:
+                                    for a in mbArtist['alias-list']:
+                                        if a and 'alias' in a:
+                                            alias.append(a['alias'].strip().title())
+                                artist.AlternateNames = alias
+                            ba = None
+                            # See if a file exists to use for the Artist thumbnail
+                            artistFile = os.path.join(mp3Folder, "artist.jpg")
+                            if os.path.isfile(artistFile):
+                                ba = self.readImageThumbnailBytesFromFile(artistFile)
+                            if ba:
+                                artist.Thumbnail.new_file()
+                                artist.Thumbnail.write(ba)
+                                artist.Thumbnail.close()
+                            # Save The Artist
+                            Artist.save(artist)
+                            self.printDebug("+ Added Artist Name [" + artist.Name + "]")
+                        # Get the Release
+                        if lastID3Album != id3.album:
+                            release = None
+                        if not release:
+                            lastID3Album = id3.album
+                            release = Release.objects(Title=id3.album, Artist=artist).first()
+                        if not release:
+                            # Release not found create
+                            release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
+                            mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
+                            if mbRelease:
+                                # Populate with some MusicBrainz details
+                                release.Artist = artist
+                                date = None;
+                                if id3.year:
+                                    date = id3.year
+                                if 'date' in mbRelease and not date:
+                                    date = parse(mbRelease['date'])
+                                release.ReleaseDate = date or '---'
+                                release.MusicBrainzId = mbRelease['id']
+                                mbMedium = mbRelease['medium-list'][0]
+                                if not 'track-count' in mbMedium:
+                                    mbMedium = mbRelease['medium-list'][1]
+                                release.TrackCount = mbMedium['track-count']
+                                release.DiscCount = mbMedium['disc-count'] or 1
+                                if 'label-info-list' in mbRelease:
+                                    for mbLabel in mbRelease['label-info-list']:
+                                        label = None
+                                        if 'name' in mbLabel['label']:
+                                            mbLabelName = mbLabel['label']['name']
+                                            if mbLabelName:
+                                                mbLabelName = mbLabelName.strip().title()
+                                                label = Label.objects(Name=mbLabelName).first()
+                                                if not label:
+                                                    label = Label(Name=mbLabelName)
+                                                    label.MusicBrainzId = mbLabel['label']['id']
+                                                    object_id = Label.save(label)
+                                                    self.printDebug("+ Added Label Name [" + label.Name + "], Id [" + str(object_id) + "]")
+                                        if label:
+                                            catalogNumber = None
+                                            if 'catalog-number' in mbLabel:
+                                                catalogNumber = mbLabel['catalog-number'].strip().title()
+                                            releaseLabel = ReleaseLabel(Label=label, CatalogNumber=catalogNumber)
+                                            release.Labels.append(releaseLabel)
+                                tags = []
+                                if 'release-group' in mbRelease:
+                                    if 'type' in mbRelease['release-group']:
+                                        tags.append(mbRelease['release-group']['type'].strip().title())
+                                format = None
+                                if 'format' in mbMedium:
+                                    format = mbMedium['format']
+                                if format:
+                                    tags.append(format)
+                                release.Tags = tags
+                            # Get Release Thumbnail bytes
+                            ba = None
+                            # See if the tag cover art exists
+                            if id3.imageBytes:
+                                img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                img.thumbnail(self.thumbnailSize)
+                                b = io.BytesIO()
+                                img.save(b, "JPEG")
+                                ba = b.getvalue()
                             else:
-                                coverFile = os.path.join(mp3Folder, "front.jpg")
+                                # See if cover file found in Release Folder
+                                coverFile = os.path.join(mp3Folder, "cover.jpg")
                                 if os.path.isfile(coverFile):
                                     ba = self.readImageThumbnailBytesFromFile(coverFile)
-                            # if no bytes found see if MusicBrainz has cover art
-                            if not ba:
-                                coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
-                                if coverArtBytes:
-                                    img = Image.open(io.BytesIO(coverArtBytes))
-                                    img.thumbnail(self.thumbnailSize)
-                                    b = io.BytesIO()
-                                    img.save(b, "JPEG")
-                                    ba = b.getvalue()
-                        # If Cover Art Thumbnail bytes found then set to Release Thumbnail
-                        if ba:
-                            release.Thumbnail.new_file()
-                            release.Thumbnail.write(ba)
-                            release.Thumbnail.close()
-                        Release.save(release)
-                        self.printDebug("+ Added Release: Title [" + release.Title + "]")
-                    if self.shouldMoveToLibrary(artist, id3, mp3):
-                        newMp3 = self.moveToLibrary(artist, id3, mp3)
-                        head, tail = os.path.split(newMp3)
-                        newMp3Folder = head
+                                else:
+                                    coverFile = os.path.join(mp3Folder, "front.jpg")
+                                    if os.path.isfile(coverFile):
+                                        ba = self.readImageThumbnailBytesFromFile(coverFile)
+                                # if no bytes found see if MusicBrainz has cover art
+                                if not ba:
+                                    coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
+                                    if coverArtBytes:
+                                        img = Image.open(io.BytesIO(coverArtBytes))
+                                        img.thumbnail(self.thumbnailSize)
+                                        b = io.BytesIO()
+                                        img.save(b, "JPEG")
+                                        ba = b.getvalue()
+                            # If Cover Art Thumbnail bytes found then set to Release Thumbnail
+                            if ba:
+                                release.Thumbnail.new_file()
+                                release.Thumbnail.write(ba)
+                                release.Thumbnail.close()
+                            Release.save(release)
+                            self.printDebug("+ Added Release: Title [" + release.Title + "]")
+                        if self.shouldMoveToLibrary(artist, artist.id, id3, mp3):
+                            newMp3 = self.moveToLibrary(artist, id3, mp3)
+                            head, tail = os.path.split(newMp3)
+                            newMp3Folder = head
 
-        if mp3Folder and newMp3Folder:
-            for coverImage in self.releaseCoverImages(mp3Folder):
-                im = Image.open(coverImage).convert('RGB')
-                newPath = os.path.join(newMp3Folder, "cover.jpg")
-                self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
-                if not self.showTagsOnly:
-                    im.save(newPath)
-        if mp3Folder:
-            if not self.showTagsOnly:
+            if newMp3Folder:
+                for coverImage in self.releaseCoverImages(mp3Folder):
+                    im = Image.open(coverImage).convert('RGB')
+                    newPath = os.path.join(newMp3Folder, "cover.jpg")
+                    self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                    if not self.showTagsOnly:
+                        im.save(newPath)
+
+            if not self.showTagsOnly and artist and release and id3:
                 scanner = Scanner(self.debug, self.showTagsOnly)
-                scannedSuccesfully = scanner.scan(newMp3Folder or mp3Folder, artist, release)
-                if scannedSuccesfully and not self.dontDeleteInboundFolders:
+                f = newMp3Folder
+                if not f:
+                    f = mp3Folder
+                scannedSuccesfully = scanner.scan(f, artist, release)
+                if not self.isProcessingLibrary and mp3Folder and scannedSuccesfully and not self.dontDeleteInboundFolders:
                     shutil.rmtree(mp3Folder)
+
+            self.printDebug("Processed Folder [" + mp3Folder + "] Found [" + str(foundMp3Files) + "] MP3 Files")
 
         elapsedTime = datetime.now() - startTime
         print("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")

@@ -12,9 +12,12 @@ class ID3:
         self._load(path)
 
     def isValid(self):
-        if self.artist and self.year and self.album and self.track and self.title and self.bitrate and self.length:
-            return True
-        else:
+        try:
+            if self.artist and self.year and self.album and self.track and self.title and self.bitrate and self.length:
+                return True
+            else:
+                return False
+        except:
             return False
 
     def __str__(self):

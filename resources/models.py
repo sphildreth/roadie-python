@@ -64,8 +64,7 @@ class User(Document):
     Roles = ListField(ReferenceField(UserRole), default=[])
     meta = {
         'indexes': [
-            {'fields': ['Username'], 'unique': True },
-            {'fields': ['Password'], 'unique': True }
+            {'fields': ['Username'] }
         ]
     }
 
@@ -97,12 +96,12 @@ class Label(Document):
     EndDate = DateTimeField()
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     MusicBrainzId = StringField()
-    Name = StringField(required=True)
+    Name = StringField(required=True, unique=True)
     Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
-            {'fields': ['Name'], 'unique': True }
+            {'fields': ['Name'] }
         ]
     }
 

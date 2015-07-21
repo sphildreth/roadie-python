@@ -44,10 +44,10 @@ class Scanner(object):
             raise RuntimeError("Invalid Release")
         if not folder:
             raise RuntimeError("Invalid Folder")
-        print("Scanning Folder [" + folder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         startTime = datetime.now()
+        foundGoodMp3s = False
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 != None:
@@ -57,6 +57,7 @@ class Scanner(object):
                 if not id3.isValid():
                     print("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
+                    foundGoodMp3s = True
                     if self.showTagsOnly:
                         continue
                     track = Track.objects(Title=id3.title, Artist=artist).first()
@@ -65,7 +66,7 @@ class Scanner(object):
                         head, tail = os.path.split(mp3)
                         track.FileName = tail
                         track.FilePath = head
-                        track.Hash = hashlib.md5(str(id3).encode('utf-8')).hexdigest()
+                        track.Hash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
                         mbTracks = mb.tracksForRelease(release.MusicBrainzId)
                         if mbTracks:
                             try:
@@ -92,8 +93,8 @@ class Scanner(object):
                         self.printDebug("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Id [" + str(object_id) + "]")
         # TODO Get any tracks for folder and verify they exist
         elapsedTime = datetime.now() - startTime
-        print("Scanning Complete. Elapsed Time [" + str(elapsedTime) + "]")
-        return True
+        print(("Scanning Folder [" + folder + "] Elapsed Time [" + str(elapsedTime) + "]").encode('utf-8'))
+        return foundGoodMp3s
 
 # parser = argparse.ArgumentParser(description='Scan given Folder for DB Updates.')
 # parser.add_argument('--folder', '-f', required=True, help='Folder To Scan')
