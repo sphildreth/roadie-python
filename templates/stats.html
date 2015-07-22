@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="stats-container">
+        <h3>Statics, Charts and Useless Facts</h3>
+        <div class="row bordered">
+            <div class="col-md-6">
+                <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
+                {% for artist,count in top10Artists %}
+                <div class="col-md-9">
+                    <img class="pull-left thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
+                </div>
+                <div class="col-md-3">
+                    <h4><span class="label label-default">{{ count }}</span></h4>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-6">
+                <h4><span class="label label-primary">Top 10 Artists With Most Tracks</span></h4>
+                {% for artist,count in top10ArtistsByTracks %}
+                <div class="col-md-9">
+                    <img class="pull-left thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
+                </div>
+                <div class="col-md-3">
+                    <h4><span class="label label-default">{{ count }}</span></h4>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+    });
+    </script>
+{% endblock %}

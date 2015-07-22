@@ -101,22 +101,26 @@
             </div>
         </div>
         <div class="release-info-container">
-            {% for release in releases %}
-                <div class="row" data-release-id="{{ release.id }}">
+            <div class="row">
+            {% for release in releases|sort(attribute='ReleaseDate') %}
+                <div class="release pull-left" data-release-id="{{ release.id }}">
                     <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
+                    <a href="/release/{{ release.id }}">
                     <h4><span class="label label-info">{{ release.ReleaseDate }}</span>
                         <span class="label label-default">{{ release.Title }}</span></h4>
+                    </a>
                     <ul class="tracks">
-                        {% for track in release.Tracks %}
+                        {% for track in release.Tracks|sort(attribute='TrackNumber') %}
                         <li>
-                            <span class="trackNumber label label-primary">{{ track.TrackNumber }}</span>
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
                             <span class="title label label-default">{{ track.Track.Title }}</span>
-                            <span class="length label label-info">{{ track.Track.Length }}</span>
+                            <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
             {% endfor %}
+            </div>
         </div>
         <div class="meta pull-right">
             <p><span class="label label-info">Last Modified: {{ artist.LastUpdated }}</span></p>

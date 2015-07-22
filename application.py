@@ -3,6 +3,7 @@ import os
 import json
 import datetime
 from bson import objectid
+from math import floor
 from PIL import Image
 from flask import Flask, render_template, send_file, Response, request,\
                   flash, url_for, redirect, abort, session, abort, g
@@ -22,6 +23,8 @@ from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
+from collections import OrderedDict
+from operator import itemgetter
 
 
 app = Flask(__name__)
@@ -34,6 +37,52 @@ flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
 
+def format_tracktime(value):
+    return datetime.timedelta(seconds=value)
+
+def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
+
+    if hasattr(value, 'seconds'):
+        seconds = value.seconds + value.days * 24 * 3600
+    else:
+        seconds = int(value)
+
+    seconds_total = seconds
+
+    minutes = int(floor(seconds / 60))
+    minutes_total = minutes
+    seconds -= minutes * 60
+
+    hours = int(floor(minutes / 60))
+    hours_total = hours
+    minutes -= hours * 60
+
+    days = int(floor(hours / 24))
+    days_total = days
+    hours -= days * 24
+
+    years = int(floor(days / 365))
+    years_total = years
+    days -= years * 365
+
+    return time_format.format(**{
+        'seconds': seconds,
+        'seconds2': str(seconds).zfill(2),
+        'minutes': minutes,
+        'minutes2': str(minutes).zfill(2),
+        'hours': hours,
+        'hours2': str(hours).zfill(2),
+        'days': days,
+        'years': years,
+        'seconds_total': seconds_total,
+        'minutes_total': minutes_total,
+        'hours_total': hours_total,
+        'days_total': days_total,
+        'years_total': years_total,
+    })
+
+app.jinja_env.filters['format_tracktime'] = format_tracktime
+app.jinja_env.filters['format_timedelta'] = format_timedelta
 
 @app.before_request
 def before_request():
@@ -42,7 +91,8 @@ def before_request():
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    counts = {'artists': "{0:,}".format(Artist.objects().count()), 'releases': "{0:,}".format(Release.objects().count()), 'tracks': "{0:,}".format(Track.objects().count()) }
+    return render_template('home.html', counts=counts)
 
 @app.route('/artist/<artist_id>')
 def artist(artist_id):
@@ -51,6 +101,39 @@ def artist(artist_id):
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
     return render_template('artist.html', artist=artist, releases=releases)
+
+@app.route('/release/<release_id>')
+def release(release_id):
+    release = Release.objects(id=release_id).first()
+    if not release:
+        return render_template('404.html'), 404
+    return render_template('release.html', release=release)
+
+
+@app.route('/stats')
+def stats():
+    top10ArtistsByReleases = Release.objects().aggregate(
+        { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
+        { "$sort":  { "count": -1}},
+        { "$limit": 10 }
+    )
+    top10Artists = {}
+    for a in top10ArtistsByReleases:
+        artist = Artist.objects(id=a['_id']).first()
+        top10Artists[artist] = str(a['count']).zfill(3)
+
+    top10ArtistsByTracks = Track.objects().aggregate(
+        { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
+        { "$sort":  { "count": -1}},
+        { "$limit": 10 }
+    )
+    top10ArtistsTracks = {}
+    for a in top10ArtistsByTracks:
+        artist = Artist.objects(id=a['_id']).first()
+        top10ArtistsTracks[artist] = str(a['count']).zfill(4)
+
+    return render_template('stats.html',top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
+                                       ,top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True))
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id,grid_id,height,width):
@@ -84,15 +167,19 @@ def getArtistImage(artist_id,grid_id,height,width):
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):
     artist = Artist.objects(id=artist_id).first()
-
     try:
         if artist:
             image = artist.Thumbnail.read()
-            return send_file(io.BytesIO(image),
+            bytes = io.BytesIO(image)
+            if not bytes or len(image) == 0:
+                raise RuntimeError("Bad Image Thumbnail")
+            return send_file(bytes,
                          attachment_filename='thumbnail.jpg',
                          mimetype='image/jpg')
     except:
-        return send_file("static/img/artist.gif")
+        return send_file("static/img/artist.gif",
+                         attachment_filename='thumbnail.jpg',
+                         mimetype='image/jpg')
 
 
 @app.route("/images/release/thumbnail/<release_id>")
@@ -101,11 +188,16 @@ def getReleaseThumbnailImage(release_id):
     try:
         if release:
             image = release.Thumbnail.read()
-            return send_file(io.BytesIO(image),
+            bytes = io.BytesIO(image)
+            if not bytes or len(image) == 0:
+                raise RuntimeError("Bad Image Thumbnail")
+            return send_file(bytes,
                          attachment_filename='thumbnail.jpg',
                          mimetype='image/jpg')
     except:
-        return send_file("static/img/release.gif")
+        return send_file("static/img/release.gif",
+                         attachment_filename='thumbnail.jpg',
+                         mimetype='image/jpg')
 
 
 api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
@@ -209,3 +301,4 @@ if __name__ == '__main__':
     ])
     server.listen(5000)
     IOLoop.instance().start()
+

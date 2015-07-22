@@ -35,10 +35,11 @@
               <ul class="dropdown-menu">
                 {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
                     <li><a href="/admin"><i class="fa fa-cog"></i> Admin</a></li>
+                    <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
                 {% endif %}      
               </ul>
             </li>
-            <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
+              <li><a href="/stats"><i class="fa fa-pie-chart"></i> Stats</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right">
               {% if current_user.is_authenticated() %}

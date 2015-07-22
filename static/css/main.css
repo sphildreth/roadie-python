@@ -6,6 +6,10 @@ body.roadie {
   background-color: #BDBDBD;
 }
 
+body.roadie .navbar-default {
+    margin-bottom: 9px;
+}
+
 li.username {
   color: white;
   margin-top: 12px;
@@ -13,13 +17,14 @@ li.username {
   text-transform: capitalize;
 }
 
-div.collection-filter-container {
-  margin-top: 10px;
-}
-
-div.collection-filter-container input {
-  width: 90%;
-  margin-left: 5px;
+.record-counts-container {
+    font-size: 14px;
+    text-align:right;
+    background-color: #5882FA;
+    color: white;
+    padding: 9px 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
 }
 
 div.collection-container .artist {
@@ -53,11 +58,11 @@ div.collection-container ul.tracks {
 }
 
 .release {
-    display: inline-block;
-    width: 30%;
+  display: inline-block;
+  min-height: 400px;
 }
 
-.artist-detail-container div.row {
+.artist-detail-container div.row, div.bordered {
     border: 1px solid;
     border-radius: 15px;
     padding: 10px;
@@ -71,7 +76,25 @@ div.collection-container ul.tracks {
     margin-right: 5px;
 }
 
+.release-info-container .release:nth-child(even) {
+    background-color: #A4A4A4;
+}
+.release-info-container ul.tracks {
+    display: inline-block;
+    margin-left: 0px;
+}
 
+.release-info-container ul.tracks {
+    list-style: none;
+}
+.release-info-container ul.tracks span.title {
+  width: 300px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+/* Login/Logout Related */
 .form-signin {
   max-width: 330px;
   padding: 15px;
@@ -105,9 +128,4 @@ div.collection-container ul.tracks {
   margin-bottom: 10px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-}
-
-
-.collection-filter-container {
-  margin: 15px;
 }

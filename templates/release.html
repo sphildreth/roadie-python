@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="release-detail-container" data-release-id="{{ release.id }}">
+        <div class="btn-toolbar" role="toolbar">
+            <div class="btn-group">
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-play"></i> Play <span class="caret"></span>
+              </button>
+              <ul class="dropdown-menu">
+                <li><a href="#">Play All</a></li>
+              </ul>
+            </div>
+            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+              <div class="btn-group">
+                <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+             </div>
+            {% endif %}
+        </div>
+        <div class="row title">
+            <img class="thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+            <h2><span class="label label-default">{{ release.Title }}</span></h2>
+        </div>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+    });
+    </script>
+{% endblock %}

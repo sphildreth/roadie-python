@@ -2,11 +2,18 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="collection-filter-container">
-        <div class="row">
-            <div class="form-group">
-                <i class="fa fa-search fa-2x pull-left"></i>
-                <input id="filter" class="pull-left form-control" placeholder="Search" type="text" />
+    <div class="row">
+        <div class="col-sm-7 col-md-9">
+            <div class="input-group collection-filter-container">
+                <span class="input-group-addon" id="basic-filter"><i class="fa fa-search"></i></span>
+                <input id="filter" class="form-control" placeholder="Search" type="text" aria-describedby="basic-filter" />
+            </div>
+        </div>
+        <div class="col-sm-5 col-md-3">
+            <div class="record-counts-container pull-right">
+                <span class="artist-count">Artists: <span class="badge">{{ counts.artists }}</span></span>
+                <span class="release-count">Releases: <span class="badge">{{ counts.releases }}</span></span>
+                <span class="track-count">Tracks: <span class="badge">{{ counts.tracks }}</span></span>
             </div>
         </div>
     </div>
