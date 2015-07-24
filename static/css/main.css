@@ -17,7 +17,7 @@ li.username {
   text-transform: capitalize;
 }
 
-.record-counts-container {
+.release-counts-container {
     font-size: 14px;
     text-align:right;
     background-color: #5882FA;
@@ -63,17 +63,17 @@ div.collection-container ul.tracks {
   min-width: 430px;
 }
 
-.artist-detail-container div.row, div.bordered {
+div.bordered {
     border: 1px solid;
     border-radius: 15px;
     padding: 10px;
     margin-bottom: 10px;
 }
 
-.artist-detail-container .btn-toolbar {
+.edit-toolbar {
     margin-bottom: 15px;
 }
-.artist-detail-container img {
+.title img {
     margin-right: 5px;
 }
 
@@ -96,6 +96,19 @@ div.collection-container ul.tracks {
 }
 .release-info-container .row {
   min-width: 450px;
+}
+
+.counts-header h3 {
+    margin-top: 4px;
+}
+
+.release-detail-container h2 {
+    margin-top:7px;
+}
+
+.release-detail-container h5 {
+    margin:0;
+    padding:0;
 }
 
 /* Login/Logout Related */

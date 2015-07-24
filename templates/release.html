@@ -1,9 +1,10 @@
 {% extends "layout.html" %}
+{% block title %}{{ release.Title }}{% endblock %}
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
     <div class="release-detail-container" data-release-id="{{ release.id }}">
-        <div class="btn-toolbar" role="toolbar">
+        <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
               <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="fa fa-play"></i> Play <span class="caret"></span>
@@ -18,8 +19,9 @@
              </div>
             {% endif %}
         </div>
-        <div class="row title">
+        <div class="row title bordered">
             <img class="thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+            <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
         </div>
     </div>

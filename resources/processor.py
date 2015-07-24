@@ -42,12 +42,6 @@ class Processor(object):
         self.showTagsOnly = showTagsOnly or False
         self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
 
-    def splitext(path):
-        for ext in ['.tar.gz', '.tar.bz2']:
-            if path.endswith(ext):
-                return path[:-len(ext)], path[-len(ext):]
-        return os.path.splitext(path)
-
     def releaseCoverImages(self, folder):
         try:
             image_filter = ['.jpg', '.jpeg', '.bmp','.png','.gif']
@@ -73,7 +67,7 @@ class Processor(object):
         for root, dirs, files in os.walk(folder):
             for filename in files:
                if os.path.splitext(filename)[1] == ".mp3":
-                    yield os.path.join(root, filename)
+                    yield root, os.path.join(root, filename)
 
 
     def makeFileFriendly(self,string):
@@ -96,9 +90,16 @@ class Processor(object):
     def shouldDeleteFolder(self, mp3Folder, newMp3Filename):
         if self.dontDeleteInboundFolders:
             return False
+
+        # Is folder to delete empty?
+        if not os.listdir(mp3Folder):
+            return True
+
+        # If the folder to delete is the same as the new folder then false
         if os.path.samefile(mp3Folder, newMp3Filename):
             return False
-        return True
+        else:
+            return True
 
     # Determine if the found file should be moved into the library; check for existing and see if better
     def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
@@ -141,17 +142,19 @@ class Processor(object):
     def moveToLibrary(self, artist, id3, mp3):
         try:
             newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3), self.trackName(id3))
+            isMp3File = os.path.isfile(mp3)
+            isNewFilenameFile =os.path.isfile(newFilename)
             # If it already exists delete it as the shouldMove function determines if the file should be overwritten or not
-            if os.path.isfile(newFilename) and not os.path.samefile(mp3, newFilename):
+            if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
                 try:
-                    # os.remove(newFilename)
+                    os.remove(newFilename)
                     self.printDebug("x Deleting Existing [" + newFilename + "]")
                 except OSError:
                     pass
 
-            if not os.path.samefile(mp3, newFilename):
+            if isMp3File and (mp3 != newFilename):
                 try:
-                #  move(mp3, newFilename)
+                    move(mp3, newFilename)
                     self.printDebug("= Moving [" + mp3 + "] => [" + newFilename + "]")
                 except OSError:
                     pass
@@ -165,8 +168,8 @@ class Processor(object):
         print(("Processing Inbound Folder [" + self.InboundFolder + "]").encode('utf-8'))
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
+        scanner = Scanner(self.debug, self.showTagsOnly)
         startTime = datetime.now()
-        mp3Folder = None
         newMp3Folder = None
         lastID3Artist = None
         lastID3Album = None
@@ -186,8 +189,11 @@ class Processor(object):
                     print("Error Deleting [" + mp3Folder + "]")
                 continue
 
+            mp3RootFolder = None
             # Get all the MP3 files in the Folder and process
-            for mp3 in self.folderMp3Files(mp3Folder):
+            for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                mp3RootFolder = rootFolder
+                self.printDebug("Processing MP3 File [" + mp3 + "]...")
                 id3 = ID3(mp3, self.processingOptions)
                 if id3 != None:
                     if not id3.isValid():
@@ -201,7 +207,11 @@ class Processor(object):
                             artist = None
                         if not artist:
                             lastID3Artist = id3.artist
+                            # get artist by ID3 Tag Name
                             artist = Artist.objects(Name=id3.artist).first()
+                            # If not found get by artists by alternate names
+                            if not artist:
+                                artist = Artist.objects(AlternateNames=id3.artist).first()
                         if not artist:
                             # Artist not found create
                             artist = Artist(Name=id3.artist)
@@ -309,11 +319,14 @@ class Processor(object):
                             ba = None
                             # See if the tag cover art exists
                             if id3.imageBytes:
-                                img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
-                                img.thumbnail(self.thumbnailSize)
-                                b = io.BytesIO()
-                                img.save(b, "JPEG")
-                                ba = b.getvalue()
+                                try:
+                                    img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                    img.thumbnail(self.thumbnailSize)
+                                    b = io.BytesIO()
+                                    img.save(b, "JPEG")
+                                    ba = b.getvalue()
+                                except:
+                                    pass
                             else:
                                 # See if cover file found in Release Folder
                                 coverFile = os.path.join(mp3Folder, "cover.jpg")
@@ -327,11 +340,14 @@ class Processor(object):
                                 if not ba:
                                     coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
                                     if coverArtBytes:
-                                        img = Image.open(io.BytesIO(coverArtBytes))
-                                        img.thumbnail(self.thumbnailSize)
-                                        b = io.BytesIO()
-                                        img.save(b, "JPEG")
-                                        ba = b.getvalue()
+                                        try:
+                                            img = Image.open(io.BytesIO(coverArtBytes))
+                                            img.thumbnail(self.thumbnailSize)
+                                            b = io.BytesIO()
+                                            img.save(b, "JPEG")
+                                            ba = b.getvalue()
+                                        except:
+                                            pass
                             # If Cover Art Thumbnail bytes found then set to Release Thumbnail
                             if ba:
                                 release.Thumbnail.new_file()
@@ -344,26 +360,25 @@ class Processor(object):
                             head, tail = os.path.split(newMp3)
                             newMp3Folder = head
 
-            if newMp3Folder:
-                for coverImage in self.releaseCoverImages(mp3Folder):
-                    im = Image.open(coverImage).convert('RGB')
-                    newPath = os.path.join(newMp3Folder, "cover.jpg")
-                    self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
-                    if not self.showTagsOnly:
-                        im.save(newPath)
+            if mp3RootFolder:
+                if newMp3Folder:
+                    for coverImage in self.releaseCoverImages(mp3RootFolder):
+                        im = Image.open(coverImage).convert('RGB')
+                        newPath = os.path.join(newMp3Folder, "cover.jpg")
+                        self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                        if not self.showTagsOnly:
+                            im.save(newPath)
+                    scanner.scan(newMp3Folder, artist, release)
+                else:
+                    scanner.scan(mp3RootFolder, artist, release)
 
-            if not self.showTagsOnly and artist and release and id3:
-                scanner = Scanner(self.debug, self.showTagsOnly)
-                f = newMp3Folder
-                if not f:
-                    f = mp3Folder
-                scannedSuccesfully = scanner.scan(f, artist, release)
-                if scannedSuccesfully and self.shouldDeleteFolder(mp3Folder, newMp3Folder):
-                    try:
-                        shutil.rmtree(mp3Folder)
-                        self.print("x Deleted Processed Folder [" + mp3Folder + "]")
-                    except OSError:
-                        pass
+                if not self.showTagsOnly and artist and release and id3:
+                    if self.shouldDeleteFolder(mp3RootFolder, newMp3Folder):
+                        try:
+                         #   shutil.rmtree(mp3RootFolder)
+                            self.printDebug("x Deleted Processed Folder [" + mp3RootFolder + "]")
+                        except OSError:
+                            pass
 
             self.printDebug("Processed Folder [" + mp3Folder + "] Processed [" + str(foundMp3Files) + "] MP3 Files")
 

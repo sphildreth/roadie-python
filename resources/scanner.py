@@ -45,10 +45,12 @@ class Scanner(object):
         if not folder:
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
+        foundReleaseTracks = 0
+        createdReleaseTracks = 0
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         startTime = datetime.now()
-
+        self.printDebug("Scanning Folder [" + folder + "]")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.showTagsOnly:
             for track in Track.objects(FilePath=folder):
@@ -76,6 +78,7 @@ class Scanner(object):
                             track.delete()
 
         # For each file found in folder get ID3 info and insert record into Track DB
+        scannedMp3Files = 0
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 != None:
@@ -121,7 +124,16 @@ class Scanner(object):
                         release.Tracks.append(releaseTrack)
                         object_id = Release.save(release)
                         self.printDebug("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Id [" + str(object_id) + "]")
+                        createdReleaseTracks += 1
+                    else:
+                        foundReleaseTracks += 1
+                    scannedMp3Files += 1
 
         elapsedTime = datetime.now() - startTime
-        print(("Scanning Folder [" + folder + "] Complete. Elapsed Time [" + str(elapsedTime) + "]").encode('utf-8'))
+        matches = scannedMp3Files == (createdReleaseTracks + foundReleaseTracks)
+        print(("Scanning Folder [" + folder + "] Complete, Scanned [" +
+               ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +
+               "] Release Tracks, Found [" + str(foundReleaseTracks) +
+               "] Release Tracks. Sane Counts [" + str(matches) + "] Elapsed Time [" + str(elapsedTime) +
+               "]").encode('utf-8'))
         return foundGoodMp3s

@@ -29,33 +29,34 @@ class ArtistListApi(Resource):
             artists = Artist.objects().order_by('SortName')[:get_limit]
 
         rows = []
-        for artist in artists:
-            releaseInfo = []
-            releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
-            for release in releases:
-                trackInfo = []
-                for track in release.Tracks:
-                    trackLength = datetime.timedelta(seconds=track.Track.Length);
-                    trackInfo.append({
-                        "TrackId": str(track.Track.id),
-                        "TrackNumber": track.TrackNumber,
-                        "ReleaseMediaNumber": track.ReleaseMediaNumber,
-                        "Length": ":".join(str(trackLength).split(":")[1:3]),
-                        "Title": track.Track.Title
+        if artists:
+            for artist in artists:
+                releaseInfo = []
+                releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
+                for release in releases:
+                    trackInfo = []
+                    for track in release.Tracks:
+                        trackLength = datetime.timedelta(seconds=track.Track.Length);
+                        trackInfo.append({
+                            "TrackId": str(track.Track.id),
+                            "TrackNumber": track.TrackNumber,
+                            "ReleaseMediaNumber": track.ReleaseMediaNumber,
+                            "Length": ":".join(str(trackLength).split(":")[1:3]),
+                            "Title": track.Track.Title
+                        })
+                    releaseInfo.append({
+                        "ReleaseId": str(release.id),
+                        "Year": release.ReleaseDate,
+                        "Title": release.Title,
+                        "Tracks": trackInfo,
+                        "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                     })
-                releaseInfo.append({
-                    "ReleaseId": str(release.id),
-                    "Year": release.ReleaseDate,
-                    "Title": release.Title,
-                    "Tracks": trackInfo,
-                    "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
+                rows.append({
+                    "Artist": artist.Name,
+                    "ArtistId": str(artist.id),
+                    "Releases": releaseInfo,
+                    "ThumbnailUrl": "/images/artist/thumbnail/" + str(artist.id)
                 })
-            rows.append({
-                "Artist": artist.Name,
-                "ArtistId": str(artist.id),
-                "Releases": releaseInfo,
-                "ThumbnailUrl": "/images/artist/thumbnail/" + str(artist.id)
-            })
 
 
         return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=artists.count(), message="OK")

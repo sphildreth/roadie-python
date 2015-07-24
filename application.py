@@ -91,8 +91,7 @@ def before_request():
 
 @app.route('/')
 def index():
-    counts = {'artists': "{0:,}".format(Artist.objects().count()), 'releases': "{0:,}".format(Release.objects().count()), 'tracks': "{0:,}".format(Track.objects().count()) }
-    return render_template('home.html', counts=counts)
+    return render_template('home.html')
 
 @app.route('/artist/<artist_id>')
 def artist(artist_id):
@@ -100,7 +99,8 @@ def artist(artist_id):
     if not artist:
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
-    return render_template('artist.html', artist=artist, releases=releases)
+    counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()), 'tracks': "{0:,}".format(Track.objects(Artist=artist).count()) }
+    return render_template('artist.html', artist=artist, releases=releases, counts=counts)
 
 @app.route('/release/<release_id>')
 def release(release_id):
@@ -112,6 +112,11 @@ def release(release_id):
 
 @app.route('/stats')
 def stats():
+    counts = {'artists': "{0:,}".format(Artist.objects().count()),
+              'labels':"{0:,}".format(Label.objects().count()),
+              'releases': "{0:,}".format(Release.objects().count()),
+              'tracks': "{0:,}".format(Track.objects().count())
+              }
     top10ArtistsByReleases = Release.objects().aggregate(
         { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
         { "$sort":  { "count": -1}},
@@ -133,7 +138,8 @@ def stats():
         top10ArtistsTracks[artist] = str(a['count']).zfill(4)
 
     return render_template('stats.html',top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
-                                       ,top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True))
+                                       ,top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
+                                       ,counts=counts)
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id,grid_id,height,width):

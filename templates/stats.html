@@ -1,9 +1,18 @@
 {% extends "layout.html" %}
+{% block title %}Stats{% endblock %}
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
     <div class="stats-container">
-        <h3>Statics, Charts and Useless Facts</h3>
+        <div class="row counts-header">
+            <div class="release-counts-container pull-right">
+                <span class="label-count">Labels: <span class="badge">{{ counts.labels }}</span></span>
+                <span class="artist-count">Artists: <span class="badge">{{ counts.artists }}</span></span>
+                <span class="release-count">Releases: <span class="badge">{{ counts.releases }}</span></span>
+                <span class="track-count">Tracks: <span class="badge">{{ counts.tracks }}</span></span>
+            </div>
+            <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
+        </div>
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
