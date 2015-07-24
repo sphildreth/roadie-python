@@ -365,7 +365,7 @@ class Processor(object):
                     except OSError:
                         pass
 
-            self.printDebug("Processed Folder [" + mp3Folder + "] Found [" + str(foundMp3Files) + "] MP3 Files")
+            self.printDebug("Processed Folder [" + mp3Folder + "] Processed [" + str(foundMp3Files) + "] MP3 Files")
 
         elapsedTime = datetime.now() - startTime
         print("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")

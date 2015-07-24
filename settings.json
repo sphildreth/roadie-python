@@ -1,10 +1,10 @@
 {
-    "SECRET_KEY": "3829838302382134",
+    "SECRET_KEY": "a9kf^!y@rd-ci0&7l#da6ko$(l@_$9(y^r^a@2j+8!7zpk!zw88wi069",
     "MONGODB_SETTINGS": {
         "DB": "roadie",
         "host": "192.168.2.254"
     },
-    "ROADIE_INBOUND_FOLDER": "Z:/library/2Pac/[1995] Me Against The World/",
+    "ROADIE_INBOUND_FOLDER": "Z:/library/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
         "Height": 60,

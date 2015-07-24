@@ -56,22 +56,18 @@ class Scanner(object):
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     self.printDebug("x Deleting Track [" + track.Title + "]: File [" + filename + "] Not Found.")
-                    for release in Release.objects(Artist = track.Artist):
-                        for rt in release.Tracks:
-                            if rt.Track.id == track.id:
-                                self.printDebug("x Deleting Release [" + release.Title + "] Track [" + track.Title + "]: File [" + filename + "] Not Found.")
-                                release.Tracks.pull(rt)
+                    Release.objects(Artist = track.Artist).update_one(pull__Tracks__Track = track)
                     track.delete()
                 else:
                     id3 = ID3(filename)
                     # File has invalid ID3 tags now
                     if not id3.isValid():
                         print("Track Has Invalid or Missing ID3 Tags [" + filename + "]")
-                    #    try:
-                     #       os.remove(filename)
-                      #  except OSError:
-                      #      pass
-                      #  track.delete()
+                        try:
+                            os.remove(filename)
+                        except OSError:
+                            pass
+                        track.delete()
                     else:
                         #See if tags match track details if not matching delete and let scan process find and add it proper
                         id3Hash = hashlib.md5((str(track.Artist.id) + str(id3)).encode('utf-8')).hexdigest()
@@ -129,12 +125,3 @@ class Scanner(object):
         elapsedTime = datetime.now() - startTime
         print(("Scanning Folder [" + folder + "] Complete. Elapsed Time [" + str(elapsedTime) + "]").encode('utf-8'))
         return foundGoodMp3s
-
-# parser = argparse.ArgumentParser(description='Scan given Folder for DB Updates.')
-# parser.add_argument('--folder', '-f', required=True, help='Folder To Scan')
-# parser.add_argument('--verbose', '-v', action='store_true', help='Enable Verbose Print Statements')
-# parser.add_argument('--showTagsOnly', '-st', action='store_true', help='Only Show Tags for Found Files')
-# args = parser.parse_args()
-#
-# scanner = Scanner(args.folder, args.verbose, args.showTagsOnly)
-# scanner.scan()
