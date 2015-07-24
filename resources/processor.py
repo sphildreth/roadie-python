@@ -64,6 +64,8 @@ class Processor(object):
 
     def inboundFolders(self):
         for root, dirs, files in os.walk(self.InboundFolder):
+            if not dirs:
+                yield root
             for dir in dirs:
                 yield os.path.join(root, dir)
 
@@ -91,14 +93,17 @@ class Processor(object):
     def trackName(self, id3):
         return str(id3.track).zfill(2) + " " + self.makeFileFriendly(id3.title) + ".mp3"
 
+    def shouldDeleteFolder(self, mp3Folder, newMp3Filename):
+        if self.dontDeleteInboundFolders:
+            return False
+        if os.path.samefile(mp3Folder, newMp3Filename):
+            return False
+        return True
+
     # Determine if the found file should be moved into the library; check for existing and see if better
     def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
         try:
             fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3))
-            head, tail = os.path.split(fileFolderLibPath)
-            # File is already in library likely just rescanning for updates
-            if self.LibraryFolder.startswith(head):
-                return False
             os.makedirs(fileFolderLibPath, exist_ok=True)
             fullFileLibPath = os.path.join(fileFolderLibPath, self.makeFileFriendly(self.trackName(id3)))
             if not os.path.isfile(fullFileLibPath):
@@ -106,7 +111,7 @@ class Processor(object):
                 return True
             else:
                 # Does exist see if the one being copied is 'better' then the existing
-                existingId3 = ID3(fullFileLibPath)
+                existingId3 = ID3(fullFileLibPath, self.processingOptions)
                 if not existingId3.isValid():
                     return True
                 existingId3Hash = hashlib.md5((str(artistId) + str(existingId3)).encode('utf-8')).hexdigest()
@@ -136,8 +141,21 @@ class Processor(object):
     def moveToLibrary(self, artist, id3, mp3):
         try:
             newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3), self.trackName(id3))
-            self.printDebug("Moving [" + mp3 + "] => [" + newFilename + "]")
-            move(mp3, newFilename)
+            # If it already exists delete it as the shouldMove function determines if the file should be overwritten or not
+            if os.path.isfile(newFilename) and not os.path.samefile(mp3, newFilename):
+                try:
+                    # os.remove(newFilename)
+                    self.printDebug("x Deleting Existing [" + newFilename + "]")
+                except OSError:
+                    pass
+
+            if not os.path.samefile(mp3, newFilename):
+                try:
+                #  move(mp3, newFilename)
+                    self.printDebug("= Moving [" + mp3 + "] => [" + newFilename + "]")
+                except OSError:
+                    pass
+
             return newFilename
         except:
             Utility.PrintException()
@@ -161,13 +179,16 @@ class Processor(object):
 
             # Delete any empty folder if enabled
             if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
-                self.printDebug("X Deleted Empty Folder [" + mp3Folder + "]")
-                os.rmdir(mp3Folder)
+                try:
+                    self.printDebug("X Deleted Empty Folder [" + mp3Folder + "]")
+                    os.rmdir(mp3Folder)
+                except OSError:
+                    print("Error Deleting [" + mp3Folder + "]")
                 continue
 
             # Get all the MP3 files in the Folder and process
             for mp3 in self.folderMp3Files(mp3Folder):
-                id3 = ID3(mp3)
+                id3 = ID3(mp3, self.processingOptions)
                 if id3 != None:
                     if not id3.isValid():
                         print("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
@@ -337,8 +358,12 @@ class Processor(object):
                 if not f:
                     f = mp3Folder
                 scannedSuccesfully = scanner.scan(f, artist, release)
-                if not self.isProcessingLibrary and mp3Folder and scannedSuccesfully and not self.dontDeleteInboundFolders:
-                    shutil.rmtree(mp3Folder)
+                if scannedSuccesfully and self.shouldDeleteFolder(mp3Folder, newMp3Folder):
+                    try:
+                        shutil.rmtree(mp3Folder)
+                        self.print("x Deleted Processed Folder [" + mp3Folder + "]")
+                    except OSError:
+                        pass
 
             self.printDebug("Processed Folder [" + mp3Folder + "] Found [" + str(foundMp3Files) + "] MP3 Files")
 

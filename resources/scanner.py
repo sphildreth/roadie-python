@@ -44,16 +44,45 @@ class Scanner(object):
             raise RuntimeError("Invalid Release")
         if not folder:
             raise RuntimeError("Invalid Folder")
+        foundGoodMp3s = False
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         startTime = datetime.now()
-        foundGoodMp3s = False
+
+        # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
+        if not self.showTagsOnly:
+            for track in Track.objects(FilePath=folder):
+                filename = os.path.join(track.FilePath, track.FileName)
+                # File no longer exists for track
+                if not os.path.isfile(filename):
+                    self.printDebug("x Deleting Track [" + track.Title + "]: File [" + filename + "] Not Found.")
+                    for release in Release.objects(Artist = track.Artist):
+                        for rt in release.Tracks:
+                            if rt.Track.id == track.id:
+                                self.printDebug("x Deleting Release [" + release.Title + "] Track [" + track.Title + "]: File [" + filename + "] Not Found.")
+                                release.Tracks.pull(rt)
+                    track.delete()
+                else:
+                    id3 = ID3(filename)
+                    # File has invalid ID3 tags now
+                    if not id3.isValid():
+                        print("Track Has Invalid or Missing ID3 Tags [" + filename + "]")
+                    #    try:
+                     #       os.remove(filename)
+                      #  except OSError:
+                      #      pass
+                      #  track.delete()
+                    else:
+                        #See if tags match track details if not matching delete and let scan process find and add it proper
+                        id3Hash = hashlib.md5((str(track.Artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                        if id3Hash != track.Hash:
+                            self.printDebug("x Deleting Track [" + track.Title + "]: Hash Mismatch")
+                            track.delete()
+
+        # For each file found in folder get ID3 info and insert record into Track DB
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 != None:
-                # self.printDebug("--- IsValid: [" + str(id3.isValid()) + "] " +  id3.artist + " : (" + str(id3.year) + ") "\
-                #           + id3.album + " : " + str(id3.disc) + "::" + str(id3.track).zfill(2) + " " + id3.title + " ("\
-                #           + str(id3.bitrate) + "bps::" + str(id3.length) + ")" )
                 if not id3.isValid():
                     print("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
@@ -83,17 +112,22 @@ class Scanner(object):
                         self.printDebug("+ Added Track: Title [" + release.Title + "], Id [" + str(object_id) + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
-                        if rt.Track.Hash == track.Hash and rt.TrackNumber == id3.track and rt.ReleaseMediaNumber == id3.disc:
-                            releaseTrack = rt
-                            break;
+                        try:
+                            if rt.Track.Hash == track.Hash and \
+                               rt.TrackNumber == id3.track and \
+                               rt.ReleaseMediaNumber == id3.disc:
+                                releaseTrack = rt
+                                break;
+                        except:
+                            pass
                     if not releaseTrack:
                         releaseTrack = TrackRelease(Track=track, TrackNumber=id3.track, ReleaseMediaNumber=id3.disc)
                         release.Tracks.append(releaseTrack)
                         object_id = Release.save(release)
                         self.printDebug("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Id [" + str(object_id) + "]")
-        # TODO Get any tracks for folder and verify they exist
+
         elapsedTime = datetime.now() - startTime
-        print(("Scanning Folder [" + folder + "] Elapsed Time [" + str(elapsedTime) + "]").encode('utf-8'))
+        print(("Scanning Folder [" + folder + "] Complete. Elapsed Time [" + str(elapsedTime) + "]").encode('utf-8'))
         return foundGoodMp3s
 
 # parser = argparse.ArgumentParser(description='Scan given Folder for DB Updates.')

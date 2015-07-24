@@ -8,8 +8,8 @@ from utility import Utility
 
 class ID3:
 
-    def __init__(self,path):
-        self._load(path)
+    def __init__(self,path,config=None):
+        self._load(path,config)
 
     def isValid(self):
         try:
@@ -20,10 +20,15 @@ class ID3:
         except:
             return False
 
+    def info(self):
+        return "--- IsValid: [" + str(self.isValid()) + "] " +  self.artist + " : (" + str(self.year) + ") "\
+               + self.album + " : " + str(self.disc) + "::" + str(self.track).zfill(2) + " " + self.title + " ("\
+               + str(self.bitrate) + "bps::" + str(self.length) + ")"
+
     def __str__(self):
         return self.artist + "." + str(self.year) + "." + self.album  + "." + str(self.track) + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
 
-    def _load(self, filename):
+    def _load(self, filename, config):
         try:
             short_tags = full_tags = mutagen.File(filename)
             comments = []
@@ -59,6 +64,12 @@ class ID3:
                 pass
             self.year = short_tags.get('date', [''])[0]
             self.title = short_tags.get('title', [''])[0].strip().title()
+            if self.title and config:
+                if 'TitleReplacements' in config:
+                    for rpl in config['TitleReplacements']:
+                        for key,val in rpl.items():
+                            self.title = self.title.replace(key, val)
+                self.title = " ".join(self.title.strip().title().split())
             self.comment = comments[0].title()
             self.genre = ''
             genres = short_tags.get('genre', [''])

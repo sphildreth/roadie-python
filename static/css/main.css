@@ -60,6 +60,7 @@ div.collection-container ul.tracks {
 .release {
   display: inline-block;
   min-height: 400px;
+  min-width: 430px;
 }
 
 .artist-detail-container div.row, div.bordered {
@@ -92,6 +93,9 @@ div.collection-container ul.tracks {
   display: inline-block;
   text-overflow: ellipsis;
   text-align: left;
+}
+.release-info-container .row {
+  min-width: 450px;
 }
 
 /* Login/Logout Related */
