@@ -91,7 +91,7 @@ class User(Document):
 
 
 class Label(Document):
-    AlternateNames = SortedListField(StringField())
+    AlternateNames = SortedListField(StringField(), default=[])
     BeginDate = DateTimeField()
     EndDate = DateTimeField()
     LastUpdated = DateTimeField(default=datetime.datetime.now)
@@ -110,7 +110,7 @@ class Label(Document):
 
 
 class Artist(Document):
-    AlternateNames = SortedListField(StringField())
+    AlternateNames = SortedListField(StringField(), default=[])
     ArtistType = ReferenceField(ArtistType)
     BeginDate = DateTimeField()
     EndDate = DateTimeField()
@@ -121,7 +121,7 @@ class Artist(Document):
     Profile = StringField()
     RealName = StringField()
     SortName = StringField()
-    Thumbnail = EmbeddedDocumentField(ThumbnailImage)
+    Thumbnail = FileField()
     Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {

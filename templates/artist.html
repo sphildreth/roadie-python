@@ -4,7 +4,7 @@
 {% endblock %}
 {% block body_content %}
     <div class="artist-detail-container" data-artist-id="{{ artist.id }}">
-        <div class="record-counts-container pull-right">
+        <div class="release-counts-container pull-right">
             <span class="release-count">Releases: <span class="badge">{{ counts.releases }}</span></span>
             <span class="track-count">Tracks: <span class="badge">{{ counts.tracks }}</span></span>
         </div>
@@ -22,6 +22,7 @@
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/artist/edit/?id={{ artist.id }}&url=/artist/{{ artist.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <button id="delete-artist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
              </div>
             {% endif %}
         </div>
@@ -41,11 +42,17 @@
                            data-title="{{ image.element.filename }}"
                            data-url="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/2048/2048"
                            target="_blank" class="thumbnail">
-                            <img src="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
+                            <img data-image-id="{{ image.element.grid_id }}" data-toggle="context" data-target="#context-menu-{{ image.element.grid_id }}" src="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
                         </a>
+                    </div>
+                    <div id="context-menu-{{ image.element.grid_id }}" data-image-id="{{ image.element.grid_id }}" class="context-menu">
+                        <ul class="dropdown-menu" role="menu">
+                        <li><a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist Image</a></li>
+                        </ul>
                     </div>
                 {% endfor %}
             </div>
+
         </div>
         <div class="row details bordered">
             <div class="col-md-3">
@@ -110,14 +117,14 @@
                 <div class="release pull-left" data-release-id="{{ release.id }}">
                     <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
                     <a href="/release/{{ release.id }}">
-                    <h4><span class="label label-info">{{ release.ReleaseDate }}</span>
-                        <span class="label label-default">{{ release.Title }}</span></h4>
+                    <h4><span class="label label-info releasedate">{{ release.ReleaseDate }}</span>
+                        <span class="label label-default releasetitle">{{ release.Title }}</span></h4>
                     </a>
                     <ul class="tracks">
                         {% for track in release.Tracks|sort(attribute='TrackNumber') %}
                         <li>
                             <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
-                            <span class="title label label-default">{{ track.Track.Title }}</span>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
                             <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                         </li>
                         {% endfor %}
@@ -133,6 +140,7 @@
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
+        var artistId = '{{ artist.id }}';
         $(function() {
             $(".artist-detail-container a.thumbnail").on("click", function(e) {
                 var $t = $(this);
@@ -142,6 +150,42 @@
                     message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
                 });
             });
+            $("#delete-artist").on("click", function(e) {
+                bootbox.confirm("Continue To Delete Artist?", function(result) {
+                    if(result) {
+                        var $t = $(this);
+                        $.ajax({
+                            type: 'POST',
+                            url: '/artist/delete/' + artistId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    window.location.href = '/';
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    }
+                });
+            });
+                $("a.setArtistImage").on("click", function(e) {
+                var $t = $(this);
+                var imageId = $t.parents(".context-menu").data("image-id");
+                $.ajax({
+                    type: 'POST',
+                    url: '/artist/setimage/' + artistId + '/' + imageId,
+                    contentType: "application/javascript",
+                    success: function(data) {
+                        $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            });
+            $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
 {% endblock %}

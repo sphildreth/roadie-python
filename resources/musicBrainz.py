@@ -41,7 +41,7 @@ class MusicBrainz:
         except:
             result = None
 
-        if result and result['release-list'][0]:
+        if result and 'release-list' in result and len(result['release-list']) > 0:
             self.searchReleases[cacheKey] = result['release-list'][0]
             return self.searchReleases[cacheKey]
 

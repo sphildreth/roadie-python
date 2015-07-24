@@ -10,12 +10,30 @@ body.roadie .navbar-default {
     margin-bottom: 9px;
 }
 
+.thumbnail-container {
+    min-width: 60px;
+    min-height: 60px;
+    display:inline-block;
+    margin: 2px 5px;
+}
+
+.thumbnail-container img {
+    display: block;
+    margin: auto;
+}
+
+.context-menu li {
+    cursor: pointer;
+}
+
 li.username {
   color: white;
   margin-top: 12px;
   display: inline-block;
   text-transform: capitalize;
 }
+
+
 
 .release-counts-container {
     font-size: 14px;
@@ -49,8 +67,8 @@ div.collection-container ul.tracks {
 }
 
 
-.artist .thumb {
-  margin: 5px 0;
+img.thumb {
+    margin: 5px 5px 4px 2px;
 }
 
 .releases .thumb {
@@ -80,22 +98,56 @@ div.bordered {
 .release-info-container .release:nth-child(even) {
     background-color: #A4A4A4;
 }
-.release-info-container ul.tracks {
+ul.tracks {
     display: inline-block;
-    margin-left: 0px;
+    margin:0;
+    padding-left: 10px;
 }
 
 .release-info-container ul.tracks {
     list-style: none;
 }
-.release-info-container ul.tracks span.title {
-  width: 300px;
+.release-info-container ul.tracks span.trackNumber {
+  width: 28px;
   display: inline-block;
   text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: right;
+}
+
+.release-info-container ul.tracks span.title {
+  width: 317px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
   text-align: left;
 }
+.release-info-container ul.tracks span.length {
+  width: 58px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: right;
+}
+
 .release-info-container .row {
   min-width: 450px;
+}
+
+.release-info-container .release .releasedate {
+    max-width: 80px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-align: left;
+}
+
+.release-info-container .release .releasetitle {
+    max-width: 300px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    text-align: left;
 }
 
 .counts-header h3 {
@@ -109,6 +161,29 @@ div.bordered {
 .release-detail-container h5 {
     margin:0;
     padding:0;
+}
+
+.release-detail-container .tracks {
+    font-size: 18px;
+}
+
+.release-detail-container .artist-info {
+    padding-left: 8px;
+    display: inline-block;
+    width: 90%;
+}
+.release-detail-container .artist-info img {
+    width: 18px;
+}
+
+.release-detail-container .tracks .trackNumber {
+    text-align: right;
+}
+
+.release-detail-container .tracks .title {
+    width: 100%;
+    text-align: left;
+    display:inline-block;
 }
 
 /* Login/Logout Related */

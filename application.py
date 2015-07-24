@@ -5,7 +5,7 @@ import datetime
 from bson import objectid
 from math import floor
 from PIL import Image
-from flask import Flask, render_template, send_file, Response, request,\
+from flask import Flask, jsonify, render_template, send_file, Response, request,\
                   flash, url_for, redirect, abort, session, abort, g
 import flask_admin as admin
 from flask_admin.contrib.mongoengine import ModelView
@@ -31,6 +31,7 @@ app = Flask(__name__)
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
+thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 db = MongoEngine(app)
 app.session_interface = MongoEngineSessionInterface(db)
 flask_bcrypt = Bcrypt(app)
@@ -101,6 +102,56 @@ def artist(artist_id):
     releases = Release.objects(Artist=artist)
     counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()), 'tracks': "{0:,}".format(Track.objects(Artist=artist).count()) }
     return render_template('artist.html', artist=artist, releases=releases, counts=counts)
+
+
+@app.route('/artist/delete/<artist_id>', methods=['POST'])
+def deleteArtist(artist_id):
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
+        return jsonify(message="ERROR")
+    try:
+        Artist.delete(artist)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+@app.route('/release/delete/<release_id>', methods=['POST'])
+def deleteRelease(release_id):
+    release = Release.objects(id=release_id).first()
+    if not release:
+        return jsonify(message="ERROR")
+    try:
+        Release.delete(release)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+
+@app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
+def setArtistImage(artist_id, image_id):
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
+        return jsonify(message="ERROR")
+
+    artistImage = None
+    for ai in artist.Images:
+        if ai.element.grid_id == objectid.ObjectId(image_id):
+            artistImage = ai
+            break
+    if artistImage:
+        image = artistImage.element.read()
+        img = Image.open(io.BytesIO(image)).convert('RGB')
+        img.thumbnail(thumbnailSize)
+        b = io.BytesIO()
+        img.save(b, "JPEG")
+        bBytes = b.getvalue()
+        artist.Thumbnail.new_file()
+        artist.Thumbnail.write(bBytes)
+        artist.Thumbnail.close()
+        Artist.save(artist)
+        return jsonify(message="OK")
+    return jsonify(message="ERROR")
+
 
 @app.route('/release/<release_id>')
 def release(release_id):
@@ -213,6 +264,15 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+@app.after_request
+def add_header(response):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    response.headers['X-UA-Compatible'] = 'IE=Edge,chrome=1'
+    response.headers['Cache-Control'] = 'public, max-age=0'
+    return response
 
 @login_manager.user_loader
 def load_user(id):

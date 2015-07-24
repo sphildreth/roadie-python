@@ -16,19 +16,72 @@
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <button id="delete-release" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
              </div>
             {% endif %}
         </div>
         <div class="row title bordered">
             <img class="thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
-            <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
+            <span class="artist-info">
+                <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
+                <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
+            </span>
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
+        </div>
+        <div class="row tracks bordered">
+            {% for track in release.Tracks|sort(attribute='TrackNumber') %}
+                <div class="row">
+                    <div class="col-xs-1 col-sm-1 col-md-1">
+                        <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                    </div>
+                    <div class="col-xs-8 col-sm-8 col-md-9">
+                        <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2">
+                        <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <div class="row lists bordered">
+            <div class="col-md-4">
+                <h4><span class="label label-primary">Tags</span></h4>
+                <ul>
+                    {% for tag in release.Tags %}
+                    <li><span class="label label-default">{{ tag }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="meta pull-right">
+            <p><span class="label label-info">Last Modified: {{ release.LastUpdated }}</span></p>
         </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
+    var releaseId = '{{ release.id }}';
     $(function() {
+        $("#delete-release").on("click", function(e) {
+            bootbox.confirm("Continue To Delete Release?", function(result) {
+                if(result) {
+                    var $t = $(this);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/release/delete/' + releaseId,
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            if(data.message == "OK") {
+                                window.location.href = '/artist/{{ release.Artist.id }}';
+                            }
+                        },
+                        error:function(jq, st, error){
+                            alert(error);
+                        }
+                    });
+                }
+            });
+        });
     });
     </script>
 {% endblock %}

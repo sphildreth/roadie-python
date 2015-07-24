@@ -18,7 +18,9 @@
                 <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
                 {% for artist,count in top10Artists %}
                 <div class="col-md-9">
-                    <img class="pull-left thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    <div class="thumbnail-container pull-left">
+                        <img class="thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    </div>
                     <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
                 </div>
                 <div class="col-md-3">
@@ -30,7 +32,9 @@
                 <h4><span class="label label-primary">Top 10 Artists With Most Tracks</span></h4>
                 {% for artist,count in top10ArtistsByTracks %}
                 <div class="col-md-9">
-                    <img class="pull-left thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    <div class="thumbnail-container pull-left">
+                        <img class=" thumb" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                    </div>
                     <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
                 </div>
                 <div class="col-md-3">
