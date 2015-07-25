@@ -42,45 +42,47 @@ def format_tracktime(value):
     return datetime.timedelta(seconds=value)
 
 def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
+    try:
+        if hasattr(value, 'seconds'):
+            seconds = value.seconds + value.days * 24 * 3600
+        else:
+            seconds = int(value)
 
-    if hasattr(value, 'seconds'):
-        seconds = value.seconds + value.days * 24 * 3600
-    else:
-        seconds = int(value)
+        seconds_total = seconds
 
-    seconds_total = seconds
+        minutes = int(floor(seconds / 60))
+        minutes_total = minutes
+        seconds -= minutes * 60
 
-    minutes = int(floor(seconds / 60))
-    minutes_total = minutes
-    seconds -= minutes * 60
+        hours = int(floor(minutes / 60))
+        hours_total = hours
+        minutes -= hours * 60
 
-    hours = int(floor(minutes / 60))
-    hours_total = hours
-    minutes -= hours * 60
+        days = int(floor(hours / 24))
+        days_total = days
+        hours -= days * 24
 
-    days = int(floor(hours / 24))
-    days_total = days
-    hours -= days * 24
+        years = int(floor(days / 365))
+        years_total = years
+        days -= years * 365
 
-    years = int(floor(days / 365))
-    years_total = years
-    days -= years * 365
-
-    return time_format.format(**{
-        'seconds': seconds,
-        'seconds2': str(seconds).zfill(2),
-        'minutes': minutes,
-        'minutes2': str(minutes).zfill(2),
-        'hours': hours,
-        'hours2': str(hours).zfill(2),
-        'days': days,
-        'years': years,
-        'seconds_total': seconds_total,
-        'minutes_total': minutes_total,
-        'hours_total': hours_total,
-        'days_total': days_total,
-        'years_total': years_total,
-    })
+        return time_format.format(**{
+            'seconds': seconds,
+            'seconds2': str(seconds).zfill(2),
+            'minutes': minutes,
+            'minutes2': str(minutes).zfill(2),
+            'hours': hours,
+            'hours2': str(hours).zfill(2),
+            'days': days,
+            'years': years,
+            'seconds_total': seconds_total,
+            'minutes_total': minutes_total,
+            'hours_total': hours_total,
+            'days_total': days_total,
+            'years_total': years_total,
+        })
+    except:
+        pass
 
 app.jinja_env.filters['format_tracktime'] = format_tracktime
 app.jinja_env.filters['format_timedelta'] = format_timedelta
@@ -131,6 +133,27 @@ def deleteRelease(release_id):
     except:
         return jsonify(message="ERROR")
 
+@app.route('/releasetrack/delete/<release_track_id>', methods=['POST'])
+def deleteReleaseTrack(release_track_id):
+    try:
+        for rt in Release.objects(Tracks__id=release_track_id):
+            rt.update_one(pull_Tracks_id=release_track_id)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/track/delete/<track_id>", methods=['POST'])
+def deleteTrack(track_id):
+    for rt in Release.objects(Tracks__Track__id=track_id):
+        rt.update_one(pull_Tracks__Track__id=track_id)
+    track = Track.objects(id=track_id).first()
+    if not track:
+        return jsonify(message="ERROR")
+    try:
+        Track.delete(track)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
 
 @app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
 def setArtistImage(artist_id, image_id):
