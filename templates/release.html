@@ -28,6 +28,123 @@
             </span>
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
         </div>
+        <div class="row bordered">
+            <div class="col-md-6">
+                <h4><span class="label label-primary">Profile</span></h4>
+                <p>{{ release.Profile }}</p>
+            </div>
+            <div class="col-md-6">
+                {% for image in release.Images %}
+                    <div class="col-md-3">
+                        <a href="javascript:void();"
+                           data-title="{{ image.element.filename }}"
+                           data-url="/images/release/{{ release.id}}/{{ image.element.grid_id }}/2048/2048"
+                           target="_blank" class="thumbnail">
+                            <img data-image-id="{{ image.element.grid_id }}" data-toggle="context" data-target="#context-menu-{{ image.element.grid_id }}" src="/images/release/{{ release.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
+                        </a>
+                    </div>
+                    <div id="context-menu-{{ image.element.grid_id }}" data-image-id="{{ image.element.grid_id }}" class="context-menu">
+                        <ul class="dropdown-menu" role="menu">
+                        <li><a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a></li>
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="row details bordered">
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Release Date</span></h4>
+                    <span class="label label-default">{{ release.ReleaseDate }}</span>
+                </div>
+                <div>
+                    <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+                    <span class="label label-default">{{ release.MusicBrainzId }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Track Count</span></h4>
+                    <span class="label label-default">{{ release.TrackCount }}</span>
+                </div>
+                <div>
+                    <h4><span class="label label-primary">Disc Count</span></h4>
+                    <span class="label label-default">{{ release.DiscCount }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Virtual</span></h4>
+                    <span class="label label-default">{{ release.IsVirtual }}</span>
+                </div>
+            </div>
+            <div class="col-md-3">
+               <div>
+                    <h4><span class="label label-primary">Total Track Time</span></h4>
+                    <span class="label label-default">{{ release.Tracks|sum(attribute='Track.Length')|format_timedelta("{hours2}:{minutes2}:{seconds2}")  }}</span>
+                </div>
+               <div>
+                    <h4><span class="label label-primary">Quality</span></h4>
+                    <span class="label label-default">{{ release.Quality.Name }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="row lists bordered">
+            <div class="col-md-3">
+                <h4><span class="label label-primary">Alternate Names</span></h4>
+                <ul>
+                    {% for alternateName in release.AlternateNames %}
+                    <li><span class="label label-default">{{ alternateName }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Genres</span></h4>
+                    <ul>
+                        {% for genre in release.Genre %}
+                        <li><span class="label label-default">{{ genre }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    <h4><span class="label label-primary">Labels</span></h4>
+                    <ul>
+                        {% for label in release.Labels %}
+                        <li><span class="label label-default">{{ label.Name }}</span></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <h4><span class="label label-primary">Tags</span></h4>
+                <ul>
+                    {% for tag in release.Tags %}
+                    <li><span class="label label-default">{{ tag }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <div>
+                    <h4><span class="label label-primary">Library Folders</span></h4>
+                    {% for group in release.Tracks.Track|map('path', 'FilePath') %}
+                    <ul class="folders">
+                        <li>
+                            <span class="length label label-info">{{ group.grouper }}</span>
+                        </li>
+                    </ul>
+                    {% endfor %}
+                </div>
+                <div>
+                    <h4><span class="label label-primary">Urls</span></h4>
+                    <ul>
+                        {% for url in release.Urls %}
+                        <li><a href="{{ url.Url }}" target="_blank"><span class="label label-default">{{ url.Title }}</span></a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
         <div class="row tracks bordered">
             {% for track in release.Tracks|sort(attribute='TrackNumber') %}
                 <div class="row">
@@ -42,16 +159,6 @@
                     </div>
                 </div>
             {% endfor %}
-        </div>
-        <div class="row lists bordered">
-            <div class="col-md-4">
-                <h4><span class="label label-primary">Tags</span></h4>
-                <ul>
-                    {% for tag in release.Tags %}
-                    <li><span class="label label-default">{{ tag }}</span></li>
-                    {% endfor %}
-                </ul>
-            </div>
         </div>
         <div class="meta pull-right">
             <p><span class="label label-info">Last Modified: {{ release.LastUpdated }}</span></p>

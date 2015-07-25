@@ -33,8 +33,6 @@ li.username {
   text-transform: capitalize;
 }
 
-
-
 .release-counts-container {
     font-size: 14px;
     text-align:right;
@@ -98,10 +96,16 @@ div.bordered {
 .release-info-container .release:nth-child(even) {
     background-color: #A4A4A4;
 }
+
 ul.tracks {
     display: inline-block;
     margin:0;
     padding-left: 10px;
+    padding-bottom: 15px;
+}
+
+h5.release-cd {
+    margin-right: 8px;
 }
 
 .release-info-container ul.tracks {

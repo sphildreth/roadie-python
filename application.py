@@ -101,6 +101,11 @@ def artist(artist_id):
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
     counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()), 'tracks': "{0:,}".format(Track.objects(Artist=artist).count()) }
+    totalTime = Track.objects(Artist=artist).aggregate(
+        { "$group":{ "_id":"null", "total" : { "$sum": "$Length" } }},
+    )
+    for t in totalTime:
+        counts['length'] = t['total']
     return render_template('artist.html', artist=artist, releases=releases, counts=counts)
 
 
@@ -168,6 +173,13 @@ def stats():
               'releases': "{0:,}".format(Release.objects().count()),
               'tracks': "{0:,}".format(Track.objects().count())
               }
+
+    totalTime = Track.objects().aggregate(
+        { "$group":{ "_id":"null", "total" : { "$sum": "$Length" } }},
+    )
+    for t in totalTime:
+        counts['length'] = t['total']
+
     top10ArtistsByReleases = Release.objects().aggregate(
         { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
         { "$sort":  { "count": -1}},

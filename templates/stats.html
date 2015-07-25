@@ -6,10 +6,11 @@
     <div class="stats-container">
         <div class="row counts-header">
             <div class="release-counts-container pull-right">
-                <span class="label-count">Labels: <span class="badge">{{ counts.labels }}</span></span>
-                <span class="artist-count">Artists: <span class="badge">{{ counts.artists }}</span></span>
-                <span class="release-count">Releases: <span class="badge">{{ counts.releases }}</span></span>
-                <span class="track-count">Tracks: <span class="badge">{{ counts.tracks }}</span></span>
+                <span class="label-count">Labels: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Labels in Library">{{ counts.labels }}</span></span>
+                <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Artists in Library">{{ counts.artists }}</span></span>
+                <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Library">{{ counts.releases }}</span></span>
+                <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Tracks in Library">{{ counts.tracks }}</span></span>
+                <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Library">{{ counts.length|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
             </div>
             <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
         </div>

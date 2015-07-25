@@ -5,8 +5,9 @@
 {% block body_content %}
     <div class="artist-detail-container" data-artist-id="{{ artist.id }}">
         <div class="release-counts-container pull-right">
-            <span class="release-count">Releases: <span class="badge">{{ counts.releases }}</span></span>
-            <span class="track-count">Tracks: <span class="badge">{{ counts.tracks }}</span></span>
+            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases of Artist">{{ counts.releases }}</span></span>
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Artist">{{ counts.tracks }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
@@ -27,7 +28,9 @@
             {% endif %}
         </div>
         <div class="row title bordered">
-            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+            <div class="thumbnail-container pull-left">
+                <img class="thumb " src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+            </div>
             <h2><span class="label label-default">{{ artist.Name }}</span></h2>
         </div>
         <div class="row bordered">
@@ -52,7 +55,6 @@
                     </div>
                 {% endfor %}
             </div>
-
         </div>
         <div class="row details bordered">
             <div class="col-md-3">
@@ -70,13 +72,20 @@
                     <h4><span class="label label-primary">Artist Type</span></h4>
                     <span class="label label-default">{{ artist.ArtistType.Name }}</span>
                 </div>
+                <div>
+                    <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+                    <span class="label label-default">{{ artist.MusicBrainzId }}</span>
+                </div>
             </div>
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Begin Date</span></h4>
                     <span class="label label-default">{{ artist.BeginDate }}</span>
                 </div>
-
+                <div>
+                    <h4><span class="label label-primary">End Date</span></h4>
+                    <span class="label label-default">{{ artist.EndDate }}</span>
+                </div>
             </div>
             <div class="col-md-3">
                 <div>
@@ -118,17 +127,22 @@
                     <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
                     <a href="/release/{{ release.id }}">
                     <h4><span class="label label-info releasedate">{{ release.ReleaseDate }}</span>
-                        <span class="label label-default releasetitle">{{ release.Title }}</span></h4>
+                        <span class="label {{ 'label-default' if release.TrackCount or 0 >= release.Tracks|default('')|length else 'label-danger' }} releasetitle">{{ release.Title }}</span></h4>
                     </a>
+                    {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
+                    {% if group.grouper > 0 %}
+                    <h5 class="release-cd"><span class="label label-success pull-right">CD {{ group.grouper }}</span></h5>
+                    {% endif %}
                     <ul class="tracks">
-                        {% for track in release.Tracks|sort(attribute='TrackNumber') %}
+                        {% for track in group.list %}
                         <li>
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }} </span>
                             <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
                             <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                         </li>
                         {% endfor %}
                     </ul>
+                    {% endfor %}
                 </div>
             {% endfor %}
             </div>
@@ -170,7 +184,7 @@
                     }
                 });
             });
-                $("a.setArtistImage").on("click", function(e) {
+            $("a.setArtistImage").on("click", function(e) {
                 var $t = $(this);
                 var imageId = $t.parents(".context-menu").data("image-id");
                 $.ajax({
@@ -185,7 +199,6 @@
                     }
                 });
             });
-            $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
 {% endblock %}

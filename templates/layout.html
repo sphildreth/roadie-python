@@ -68,16 +68,17 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
     <script>
         $(function() {
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-          {% for message in messages %}
-            $.bootstrapGrowl("{{ message }}", {
-                type: 'info',
-                stackup_spacing: 20
-            });
-          {% endfor %}
-        {% endif %}
-        {% endwith %}
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+              {% for message in messages %}
+                $.bootstrapGrowl("{{ message }}", {
+                    type: 'info',
+                    stackup_spacing: 20
+                });
+              {% endfor %}
+            {% endif %}
+            {% endwith %}
+            $('[data-toggle="tooltip"]').tooltip();
         });
     </script>
     {% block script_content %}

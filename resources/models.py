@@ -149,6 +149,7 @@ class Track(Document):
     Length = FloatField()
     MusicBrainzId = StringField()
     PlayedCount = IntField()
+    PartTitles = ListField(StringField())
     Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     meta = {
@@ -159,6 +160,24 @@ class Track(Document):
 
     def __unicode__(self):
         return self.Title
+
+
+class UserArtist(Document):
+    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
+    Artist = ReferenceField(Artist, required=True, reverse_delete_rule=CASCADE)
+    IsFavorite = BooleanField()
+    IsDisliked = BooleanField()
+    Rating = IntField()
+    meta = {
+        'indexes': [
+            'User',
+            'Artist'
+        ]
+    }
+
+    def __unicode__(self):
+        return self.User.name + "::" + Artist.Name
+
 
 class UserTrack(Document):
     User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
@@ -182,6 +201,8 @@ class TrackRelease(EmbeddedDocument):
     TrackNumber = IntField(required=True)
     # this is the cd number ie cd x of x
     ReleaseMediaNumber = IntField()
+    # This is any potential subtitle of cd x of x; see 'Star Time' frm James Brown
+    ReleaseSubTitle = StringField()
     meta = {
         'ordering': [
             'ReleaseMediaNumber',
@@ -219,6 +240,7 @@ class Release(Document):
     Tracks = ListField(EmbeddedDocumentField(TrackRelease), default=[])
     TrackCount = IntField()
     DiscCount = IntField()
+    Profile = StringField()
     Quality = ReferenceField(Quality)
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
