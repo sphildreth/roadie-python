@@ -3,7 +3,6 @@ import os
 import json
 import datetime
 from bson import objectid
-from math import floor
 from PIL import Image
 from flask import Flask, jsonify, render_template, send_file, Response, request,\
                   flash, url_for, redirect, abort, session, abort, g
@@ -25,67 +24,25 @@ from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from collections import OrderedDict
 from operator import itemgetter
-
+from resources.nocache import nocache
+from resources.jinjaFilters import format_tracktime, format_timedelta
+from widgets.ckeditor import CKTextAreaField
 
 app = Flask(__name__)
+app.jinja_env.filters['format_tracktime'] = format_tracktime
+app.jinja_env.filters['format_timedelta'] = format_timedelta
+
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
 thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+
 db = MongoEngine(app)
 app.session_interface = MongoEngineSessionInterface(db)
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
 
-def format_tracktime(value):
-    return datetime.timedelta(seconds=value)
-
-def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
-    try:
-        if hasattr(value, 'seconds'):
-            seconds = value.seconds + value.days * 24 * 3600
-        else:
-            seconds = int(value)
-
-        seconds_total = seconds
-
-        minutes = int(floor(seconds / 60))
-        minutes_total = minutes
-        seconds -= minutes * 60
-
-        hours = int(floor(minutes / 60))
-        hours_total = hours
-        minutes -= hours * 60
-
-        days = int(floor(hours / 24))
-        days_total = days
-        hours -= days * 24
-
-        years = int(floor(days / 365))
-        years_total = years
-        days -= years * 365
-
-        return time_format.format(**{
-            'seconds': seconds,
-            'seconds2': str(seconds).zfill(2),
-            'minutes': minutes,
-            'minutes2': str(minutes).zfill(2),
-            'hours': hours,
-            'hours2': str(hours).zfill(2),
-            'days': days,
-            'years': years,
-            'seconds_total': seconds_total,
-            'minutes_total': minutes_total,
-            'hours_total': hours_total,
-            'days_total': days_total,
-            'years_total': years_total,
-        })
-    except:
-        pass
-
-app.jinja_env.filters['format_tracktime'] = format_tracktime
-app.jinja_env.filters['format_timedelta'] = format_timedelta
 
 @app.before_request
 def before_request():
@@ -133,11 +90,18 @@ def deleteRelease(release_id):
     except:
         return jsonify(message="ERROR")
 
-@app.route('/releasetrack/delete/<release_track_id>', methods=['POST'])
-def deleteReleaseTrack(release_track_id):
+@app.route('/releasetrack/delete/<release_id>/<release_track_id>', methods=['POST'])
+def deleteReleaseTrack(release_id, release_track_id):
     try:
-        for rt in Release.objects(Tracks__id=release_track_id):
-            rt.update_one(pull_Tracks_id=release_track_id)
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        rts = []
+        for track in release.Tracks:
+            if track.Track.id != objectid.ObjectId(release_track_id):
+                rts.append(track)
+        release.Tracks = rts
+        Release.save(release)
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
@@ -190,6 +154,7 @@ def release(release_id):
 
 
 @app.route('/stats')
+@nocache
 def stats():
     counts = {'artists': "{0:,}".format(Artist.objects().count()),
               'labels':"{0:,}".format(Label.objects().count()),
@@ -299,16 +264,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-@app.after_request
-def add_header(response):
-    """
-    Add headers to both force latest IE rendering engine or Chrome Frame,
-    and also to cache the rendered page for 10 minutes.
-    """
-    response.headers['X-UA-Compatible'] = 'IE=Edge,chrome=1'
-    response.headers['Cache-Control'] = 'public, max-age=0'
-    return response
-
 @login_manager.user_loader
 def load_user(id):
     return User.objects(id=id).first()
@@ -359,6 +314,12 @@ def logout():
 
 
 class RoadieModelView(ModelView):
+
+    form_overrides = {
+        'body': CKTextAreaField
+    }
+    create_template = 'ckeditor.html'
+    edit_template = 'ckeditor.html'
 
     def is_accessible(self):
         if not current_user.is_active() or not current_user.is_authenticated():

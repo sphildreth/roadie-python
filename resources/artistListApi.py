@@ -36,7 +36,9 @@ class ArtistListApi(Resource):
                 for release in releases:
                     trackInfo = []
                     for track in release.Tracks:
-                        trackLength = datetime.timedelta(seconds=track.Track.Length);
+                        trackLength = 0
+                        if track:
+                            trackLength = datetime.timedelta(seconds=track.Track.Length);
                         trackInfo.append({
                             "TrackId": str(track.Track.id),
                             "TrackNumber": track.TrackNumber,

@@ -59,7 +59,11 @@
                 </div>
                 <div>
                     <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    <span class="label label-default">{{ release.MusicBrainzId }}</span>
+                    {% if release.MusicBrainzId %}
+                    <a href="https://musicbrainz.org/release/{{ release.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ release.MusicBrainzId }}</span></a>
+                    {% else %}
+                    <span class="label label-default">None</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-3">
@@ -161,20 +165,27 @@
                             </ul>
                         {% endif %}
                     </div>
-                    {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
                     <div class="col-xs-1 col-sm-1 col-md-1">
-                        <div class="btn-group">
+                        <div class="dropdown">
                           <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Action <span class="caret"></span>
+                            <i class="fa fa-bars"></i> <span class="caret"></span>
                           </button>
                           <ul class="dropdown-menu">
-                            <li><a href="#" class="edit-track btn btn-warning"><i class="fa fa-edit"></i> Edit</a></li>
-                            <li><a href="#" class="delete-release-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
-                              <li><a href="#" class="delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Track</a></li>
+                            <li><a href="#" class="play-track btn btn-default" type="button"><i class="fa fa-play"></i> Play</a></li>
+                            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                            <li><a href="#" class="edit-track btn btn-warning" type="button"><i class="fa fa-edit"></i> Edit</a></li>
+                            <li class="dropdown-submenu">
+                                <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="delete-release-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
+                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Track</a></li>
+                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete</a></li>
+                                </ul>
+                            </li>
+                            {% endif %}
                           </ul>
                         </div>
                     </div>
-                    {% endif %}
                     <div class="col-xs-2 col-sm-2 col-md-2">
                         <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                     </div>
