@@ -124,7 +124,7 @@
                 <div class="release pull-left" data-release-id="{{ release.id }}">
                     <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
                     <a href="/release/{{ release.id }}">
-                    <h4><span class="label label-info releasedate">{{ release.ReleaseDate }}</span>
+                    <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
                         <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-default' if release.TrackCount or 0 >= release.Tracks|default('')|length else 'label-danger' }} releasetitle">{{ release.Title }}</span></h4>
                     </a>
                     {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}

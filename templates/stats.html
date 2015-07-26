@@ -15,7 +15,28 @@
             <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
         </div>
         <div class="row bordered">
-            <div class="col-md-6">
+            <div class="col-md-4 recent-releases">
+                <h4><span class="label label-primary">Most Recent Releases</span></h4>
+                {% for release in mostRecentReleases %}
+                    <div class="recent-releases-container">
+                        <div class="thumbnail-container pull-left">
+                            <img class="thumb" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+                        </div>
+                        <span class="artist-info">
+                            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
+                            <h4><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-default">{{ release.Artist.Name }}</span></a></h4>
+                        </span>
+                        <span class="release-info">
+                            <a href="/release/{{ release.id }}">
+                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Release Date: {{ release.ReleaseDate }}"></i>
+                                    <span class="label label-primary title">{{ release.Title }}</span>
+                                </h3>
+                            </a>
+                        </span>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
                 <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
                 {% for artist,count in top10Artists %}
                 <div class="col-md-9">
@@ -25,11 +46,11 @@
                     <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
                 </div>
                 <div class="col-md-3">
-                    <h4><span class="label label-default">{{ count }}</span></h4>
+                    <h4><span class="label label-primary">{{ count }}</span></h4>
                 </div>
                 {% endfor %}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <h4><span class="label label-primary">Top 10 Artists With Most Tracks</span></h4>
                 {% for artist,count in top10ArtistsByTracks %}
                 <div class="col-md-9">
@@ -39,7 +60,7 @@
                     <a href="/artist/{{ artist.id }}"><h4><span class="label label-default">{{ artist.Name }}</span></h4></a>
                 </div>
                 <div class="col-md-3">
-                    <h4><span class="label label-default">{{ count }}</span></h4>
+                    <h4><span class="label label-primary">{{ count }}</span></h4>
                 </div>
                 {% endfor %}
             </div>

@@ -1,9 +1,7 @@
 body.roadie {
   margin: 15px;
   padding: 0;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  color: #444;
- background-color: #BDBDBD;
+  font-size: 16px;
 }
 
 body.roadie .navbar-default {
@@ -32,7 +30,7 @@ ul.dropdown-menu a {
 
 li.username {
   color: white;
-  margin-top: 6px;
+  margin: 10px 15px;
   display: inline-block;
   text-transform: capitalize;
 }
@@ -98,7 +96,7 @@ div.bordered {
 }
 
 .release-info-container .release:nth-child(even) {
-    background-color: #A4A4A4;
+    background-color: #161C23;
 }
 
 ul.tracks {
@@ -116,7 +114,7 @@ h5.release-cd {
     list-style: none;
 }
 .release-info-container ul.tracks span.trackNumber {
-  width: 28px;
+  width: 29px;
   display: inline-block;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -124,14 +122,14 @@ h5.release-cd {
 }
 
 .release-info-container ul.tracks span.title {
-  width: 317px;
+  width: 307px;
   display: inline-block;
   text-overflow: ellipsis;
   overflow: hidden;
   text-align: left;
 }
 .release-info-container ul.tracks span.length {
-  width: 58px;
+  width: 67px;
   display: inline-block;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -182,6 +180,32 @@ h5.release-cd {
 }
 .release-detail-container .artist-info img {
     width: 18px;
+}
+
+.recent-releases-container {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+}
+
+.recent-releases-container .release-info span.title {
+    max-width: 480px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.recent-releases .artist-info img {
+    width: 25px;
+}
+
+.recent-releases a {
+
+}
+
+.recent-releases h3 {
+    margin-top: 0;
 }
 
 .release-detail-container .tracks .trackNumber {

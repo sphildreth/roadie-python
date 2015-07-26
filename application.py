@@ -5,29 +5,29 @@ import json
 import datetime
 from bson import objectid
 from PIL import Image
-from flask import Flask, jsonify, render_template, send_file, Response, request,\
-                  flash, url_for, redirect, abort, session, abort, g
+from flask import Flask, jsonify, render_template, send_file, Response, request, \
+    flash, url_for, redirect, abort, session, abort, g
 import flask_admin as admin
-from flask_admin.contrib.mongoengine import ModelView
 from flask_restful import Api
 from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
-from resources.models import Artist, ArtistType, Genre, Label,\
-                             Quality, Release, Track, User, UserRole, UserTrack
+from resources.models import Artist, ArtistType, Genre, Label, \
+    Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
 from flask.ext.mongoengine import MongoEngineSessionInterface
-from flask.ext.login import LoginManager, login_user, logout_user,\
-                            current_user, login_required
+from flask.ext.login import LoginManager, login_user, logout_user, \
+    current_user, login_required
 from flask.ext.bcrypt import Bcrypt
 from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
-from collections import OrderedDict
 from operator import itemgetter
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta
-from widgets.ckeditor import CKTextAreaField
+from viewModels.RoadieModelView import RoadieModelView
+from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
+from viewModels.RoadieTrackModelView import RoadieTrackModelView
 
 app = Flask(__name__)
 app.jinja_env.filters['format_tracktime'] = format_tracktime
@@ -36,8 +36,8 @@ app.jinja_env.filters['format_timedelta'] = format_timedelta
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
-thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
-avatarSize = 30,30
+thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+avatarSize = 30, 30
 
 db = MongoEngine(app)
 app.session_interface = MongoEngineSessionInterface(db)
@@ -55,15 +55,17 @@ def before_request():
 def index():
     return render_template('home.html')
 
+
 @app.route('/artist/<artist_id>')
 def artist(artist_id):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
-    counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()), 'tracks': "{0:,}".format(Track.objects(Artist=artist).count()) }
+    counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()),
+              'tracks': "{0:,}".format(Track.objects(Artist=artist).count())}
     totalTime = Track.objects(Artist=artist).aggregate(
-        { "$group":{ "_id":"null", "total" : { "$sum": "$Length" } }},
+        {"$group": {"_id": "null", "total": {"$sum": "$Length"}}},
     )
     for t in totalTime:
         counts['length'] = t['total']
@@ -81,6 +83,7 @@ def deleteArtist(artist_id):
     except:
         return jsonify(message="ERROR")
 
+
 @app.route('/release/delete/<release_id>', methods=['POST'])
 def deleteRelease(release_id):
     release = Release.objects(id=release_id).first()
@@ -91,6 +94,7 @@ def deleteRelease(release_id):
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
+
 
 @app.route('/releasetrack/delete/<release_id>/<release_track_id>/flag', methods=['POST'])
 def deleteReleaseTrack(release_id, release_track_id, flag):
@@ -163,21 +167,21 @@ def release(release_id):
 @nocache
 def stats():
     counts = {'artists': "{0:,}".format(Artist.objects().count()),
-              'labels':"{0:,}".format(Label.objects().count()),
+              'labels': "{0:,}".format(Label.objects().count()),
               'releases': "{0:,}".format(Release.objects().count()),
               'tracks': "{0:,}".format(Track.objects().count())
               }
 
     totalTime = Track.objects().aggregate(
-        { "$group":{ "_id":"null", "total" : { "$sum": "$Length" } }},
+        {"$group": {"_id": "null", "total": {"$sum": "$Length"}}},
     )
     for t in totalTime:
         counts['length'] = t['total']
 
     top10ArtistsByReleases = Release.objects().aggregate(
-        { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
-        { "$sort":  { "count": -1}},
-        { "$limit": 10 }
+        {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
     )
     top10Artists = {}
     for a in top10ArtistsByReleases:
@@ -185,21 +189,25 @@ def stats():
         top10Artists[artist] = str(a['count']).zfill(3)
 
     top10ArtistsByTracks = Track.objects().aggregate(
-        { "$group":{ "_id":"$Artist", "count" : { "$sum": 1} }},
-        { "$sort":  { "count": -1}},
-        { "$limit": 10 }
+        {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10}
     )
     top10ArtistsTracks = {}
     for a in top10ArtistsByTracks:
         artist = Artist.objects(id=a['_id']).first()
         top10ArtistsTracks[artist] = str(a['count']).zfill(4)
 
-    return render_template('stats.html',top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
-                                       ,top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
-                                       ,counts=counts)
+    mostRecentReleases = Release.objects().order_by('-ReleaseDate', 'Title', 'Artist.SortName')[:10]
+
+    return render_template('stats.html', top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
+                           , top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
+                           , mostRecentReleases=mostRecentReleases
+                           , counts=counts)
+
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
-def getArtistImage(artist_id,grid_id,height,width):
+def getArtistImage(artist_id, grid_id, height, width):
     artist = Artist.objects(id=artist_id).first()
     artistImage = None
 
@@ -215,16 +223,17 @@ def getArtistImage(artist_id,grid_id,height,width):
             h = int(height)
             w = int(width)
             img = Image.open(io.BytesIO(image)).convert('RGB')
-            size = h,w
+            size = h, w
             img.thumbnail(size)
             b = io.BytesIO()
             img.save(b, "JPEG")
             ba = b.getvalue()
             return send_file(io.BytesIO(ba),
-                     attachment_filename=artistImage.element.filename,
-                     mimetype='image/jpg')
+                             attachment_filename=artistImage.element.filename,
+                             mimetype='image/jpg')
     except:
         return send_file("static/img/artist.gif")
+
 
 @app.route("/images/user/avatar/<user_id>")
 def getUserAvatarThumbnailImage(user_id):
@@ -239,9 +248,9 @@ def getUserAvatarThumbnailImage(user_id):
             ba = b.getvalue()
             etag = hashlib.sha1(str(user.LastUpdated).encode('utf-8')).hexdigest()
             rv = send_file(io.BytesIO(ba),
-                     attachment_filename='avatar.png',
-                     conditional=True,
-                     mimetype='image/png')
+                           attachment_filename='avatar.png',
+                           conditional=True,
+                           mimetype='image/png')
             rv.last_modified = user.LastUpdated
             rv.make_conditional(request)
             rv.set_etag(etag)
@@ -262,8 +271,8 @@ def getArtistThumbnailImage(artist_id):
             if not bytes or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
             return send_file(bytes,
-                         attachment_filename='thumbnail.jpg',
-                         mimetype='image/jpg')
+                             attachment_filename='thumbnail.jpg',
+                             mimetype='image/jpg')
     except:
         return send_file("static/img/artist.gif",
                          attachment_filename='thumbnail.jpg',
@@ -280,8 +289,8 @@ def getReleaseThumbnailImage(release_id):
             if not bytes or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
             return send_file(bytes,
-                         attachment_filename='thumbnail.jpg',
-                         mimetype='image/jpg')
+                             attachment_filename='thumbnail.jpg',
+                             mimetype='image/jpg')
     except:
         return send_file("static/img/release.gif",
                          attachment_filename='thumbnail.jpg',
@@ -294,6 +303,7 @@ api.add_resource(ArtistListApi, '/api/v1.0/artists')
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
 
 @login_manager.user_loader
 def load_user(id):
@@ -343,86 +353,8 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-class RoadieTrackModelView(ModelView):
-
-    form_overrides = {
-        'body': CKTextAreaField
-    }
-    create_template = 'ckeditor.html'
-    edit_template = 'ckeditor.html'
-
-    form_ajax_refs = {
-        'Artist': {
-            'fields': ['Name'],
-            'page_size': 10
-        }
-    }
-
-    def on_model_change(self, form, model, is_created):
-        if 'LastUpdated' in model:
-            model.LastUpdated = datetime.datetime.now()
-
-    def is_accessible(self):
-        if not current_user.is_active() or not current_user.is_authenticated():
-            return False
-
-        if current_user.has_role('Admin'):
-            return True
-
-        return False
-
-class RoadieReleaseModelView(ModelView):
-
-    form_overrides = {
-        'body': CKTextAreaField
-    }
-    create_template = 'ckeditor.html'
-    edit_template = 'ckeditor.html'
-
-    form_ajax_refs = {
-        'Artist': {
-            'fields': ['Name'],
-            'page_size': 10
-        }
-    }
-
-    def on_model_change(self, form, model, is_created):
-        if 'LastUpdated' in model:
-            model.LastUpdated = datetime.datetime.now()
-
-    def is_accessible(self):
-        if not current_user.is_active() or not current_user.is_authenticated():
-            return False
-
-        if current_user.has_role('Admin'):
-            return True
-
-        return False
-
-class RoadieModelView(ModelView):
-
-    form_overrides = {
-        'body': CKTextAreaField
-    }
-    create_template = 'ckeditor.html'
-    edit_template = 'ckeditor.html'
-
-    def on_model_change(self, form, model, is_created):
-        if 'LastUpdated' in model:
-            model.LastUpdated = datetime.datetime.now()
-
-    def is_accessible(self):
-        if not current_user.is_active() or not current_user.is_authenticated():
-            return False
-
-        if current_user.has_role('Admin'):
-            return True
-
-        return False
-
 
 class ScannerSocket(WebSocketHandler):
-
     def open(self):
         print("Socket opened.")
 
@@ -441,6 +373,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
     admin.add_view(RoadieModelView(User))
+    admin.add_view(RoadieModelView(UserArtist))
     admin.add_view(RoadieModelView(UserTrack))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))
     admin.add_view(RoadieModelView(Genre, category='Reference Fields'))
@@ -453,4 +386,3 @@ if __name__ == '__main__':
     ])
     server.listen(5000)
     IOLoop.instance().start()
-
