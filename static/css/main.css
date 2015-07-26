@@ -3,7 +3,7 @@ body.roadie {
   padding: 0;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   color: #444;
-  background-color: #BDBDBD;
+ background-color: #BDBDBD;
 }
 
 body.roadie .navbar-default {
@@ -32,7 +32,7 @@ ul.dropdown-menu a {
 
 li.username {
   color: white;
-  margin-top: 12px;
+  margin-top: 6px;
   display: inline-block;
   text-transform: capitalize;
 }

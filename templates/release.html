@@ -200,50 +200,48 @@
 {% block script_content %}
     <script type="text/javascript">
     var releaseId = '{{ release.id }}';
+
+    var doTrackDelete = function(trackId, flag) {
+        $.ajax({
+            type: 'POST',
+            url: '/releasetrack/delete/' + releaseId + "/" + trackid + "/" + flag,
+            contentType: "application/javascript",
+            success: function(data) {
+                if(data.message == "OK") {
+                    location.reload();
+                }
+            },
+            error:function(jq, st, error){
+                alert(error);
+            }
+        });
+    };
+
     $(function() {
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
             window.location.href = "/admin/track/edit/?id=" + trackid + "&url=/release/" + releaseId;
         });
         $("div.tracks a.delete-release-track").on("click", function(e) {
-            var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track?", function(result) {
                 if(result) {
-                    var $t = $(this);
-                    $.ajax({
-                        type: 'POST',
-                        url: '/releasetrack/delete/' + releaseId + "/" + trackid,
-                        contentType: "application/javascript",
-                        success: function(data) {
-                            if(data.message == "OK") {
-                                location.reload();
-                            }
-                        },
-                        error:function(jq, st, error){
-                            alert(error);
-                        }
-                    });
+                    doTrackDelete($(this).closest("div.row").data("track-id"), 'rt');
                 }
             })
         });
         $("div.tracks a.delete-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            bootbox.confirm("Continue To Delete Track?", function(result) {
+            bootbox.confirm("Continue To Delete Release Track and Track?", function(result) {
                 if(result) {
-                    var $t = $(this);
-                    $.ajax({
-                        type: 'POST',
-                        url: '/track/delete/' + trackid,
-                        contentType: "application/javascript",
-                        success: function(data) {
-                            if(data.message == "OK") {
-                                location.reload();
-                            }
-                        },
-                        error:function(jq, st, error){
-                            alert(error);
-                        }
-                    });
+                    doTrackDelete($(this).closest("div.row").data("track-id"), 't');
+                }
+            })
+        });
+        $("div.tracks a.delete-track-and-file").on("click", function(e) {
+            var trackid = $(this).closest("div.row").data("track-id");
+            bootbox.confirm("Continue To Delete Release Track, Track and File?", function(result) {
+                if(result) {
+                    doTrackDelete($(this).closest("div.row").data("track-id"), 'f');
                 }
             })
         });

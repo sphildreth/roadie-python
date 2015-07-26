@@ -13,6 +13,7 @@ class ArtistListApi(Resource):
         self.reqparse.add_argument('limit', type=int)
         self.reqparse.add_argument('skip', type=int)
         self.reqparse.add_argument('filter', type=str)
+        self.reqparse.add_argument('inc', type=str)
         super(ArtistListApi, self).__init__()
 
     def post(self):
@@ -20,6 +21,7 @@ class ArtistListApi(Resource):
         get_current = args.current or 1
         get_limit = args.limit or 10
         get_skip = args.skip or 0
+        includes = args.inc or 'releases,tracks'
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
         connect()
@@ -32,33 +34,34 @@ class ArtistListApi(Resource):
         if artists:
             for artist in artists:
                 releaseInfo = []
-                releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
-                for release in releases:
-                    trackInfo = []
-                    for track in release.Tracks:
-                        trackLength = 0
-                        if track:
-                            trackLength = datetime.timedelta(seconds=track.Track.Length);
-                        trackInfo.append({
-                            "TrackId": str(track.Track.id),
-                            "TrackNumber": track.TrackNumber,
-                            "ReleaseMediaNumber": track.ReleaseMediaNumber,
-                            "Length": ":".join(str(trackLength).split(":")[1:3]),
-                            "Title": track.Track.Title
+                if 'releases' in includes:
+                    releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
+                    for release in releases:
+                        trackInfo = []
+                        if 'tracks' in includes:
+                            for track in release.Tracks:
+                                trackLength = 0
+                                if track:
+                                    trackLength = datetime.timedelta(seconds=track.Track.Length);
+                                trackInfo.append({
+                                    "TrackId": str(track.Track.id),
+                                    "TrackNumber": track.TrackNumber,
+                                    "ReleaseMediaNumber": track.ReleaseMediaNumber,
+                                    "Length": ":".join(str(trackLength).split(":")[1:3]),
+                                    "Title": track.Track.Title
+                                })
+                        releaseInfo.append({
+                            "ReleaseId": str(release.id),
+                            "Year": release.ReleaseDate,
+                            "Title": release.Title,
+                            "Tracks": trackInfo,
+                            "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                         })
-                    releaseInfo.append({
-                        "ReleaseId": str(release.id),
-                        "Year": release.ReleaseDate,
-                        "Title": release.Title,
-                        "Tracks": trackInfo,
-                        "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
-                    })
                 rows.append({
                     "Artist": artist.Name,
                     "ArtistId": str(artist.id),
                     "Releases": releaseInfo,
                     "ThumbnailUrl": "/images/artist/thumbnail/" + str(artist.id)
                 })
-
 
         return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=artists.count(), message="OK")

@@ -1,5 +1,6 @@
 import io
 import os
+import hashlib
 import json
 import datetime
 from bson import objectid
@@ -36,6 +37,7 @@ with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
 thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+avatarSize = 30,30
 
 db = MongoEngine(app)
 app.session_interface = MongoEngineSessionInterface(db)
@@ -90,8 +92,8 @@ def deleteRelease(release_id):
     except:
         return jsonify(message="ERROR")
 
-@app.route('/releasetrack/delete/<release_id>/<release_track_id>', methods=['POST'])
-def deleteReleaseTrack(release_id, release_track_id):
+@app.route('/releasetrack/delete/<release_id>/<release_track_id>/flag', methods=['POST'])
+def deleteReleaseTrack(release_id, release_track_id, flag):
     try:
         release = Release.objects(id=release_id).first()
         if not release:
@@ -102,22 +104,26 @@ def deleteReleaseTrack(release_id, release_track_id):
                 rts.append(track)
         release.Tracks = rts
         Release.save(release)
+
+        trackFilename = None
+        if flag == 't' or flag == "f":
+            # Delete the track
+            track = Track.objects(id=release_track_id).first()
+            if track:
+                trackFilename = os.path.join(track.FilePath, track.FileName)
+                Track.delete(track)
+
+        if flag == "f":
+            # Delete the file
+            try:
+                os.remove(trackFilename)
+            except OSError:
+                pass
+
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
 
-@app.route("/track/delete/<track_id>", methods=['POST'])
-def deleteTrack(track_id):
-    for rt in Release.objects(Tracks__Track__id=track_id):
-        rt.update_one(pull_Tracks__Track__id=track_id)
-    track = Track.objects(id=track_id).first()
-    if not track:
-        return jsonify(message="ERROR")
-    try:
-        Track.delete(track)
-        return jsonify(message="OK")
-    except:
-        return jsonify(message="ERROR")
 
 @app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
 def setArtistImage(artist_id, image_id):
@@ -220,6 +226,31 @@ def getArtistImage(artist_id,grid_id,height,width):
     except:
         return send_file("static/img/artist.gif")
 
+@app.route("/images/user/avatar/<user_id>")
+def getUserAvatarThumbnailImage(user_id):
+    user = User.objects(id=user_id).first()
+    try:
+        if user:
+            image = user.Avatar.element.read()
+            img = Image.open(io.BytesIO(image))
+            img.thumbnail(avatarSize)
+            b = io.BytesIO()
+            img.save(b, "PNG")
+            ba = b.getvalue()
+            etag = hashlib.sha1(str(user.LastUpdated).encode('utf-8')).hexdigest()
+            rv = send_file(io.BytesIO(ba),
+                     attachment_filename='avatar.png',
+                     conditional=True,
+                     mimetype='image/png')
+            rv.last_modified = user.LastUpdated
+            rv.make_conditional(request)
+            rv.set_etag(etag)
+            return rv
+    except:
+        return send_file("static/img/user.png",
+                         attachment_filename='avatar.png',
+                         mimetype='image/png')
+
 
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):
@@ -312,6 +343,61 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
+class RoadieTrackModelView(ModelView):
+
+    form_overrides = {
+        'body': CKTextAreaField
+    }
+    create_template = 'ckeditor.html'
+    edit_template = 'ckeditor.html'
+
+    form_ajax_refs = {
+        'Artist': {
+            'fields': ['Name'],
+            'page_size': 10
+        }
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if 'LastUpdated' in model:
+            model.LastUpdated = datetime.datetime.now()
+
+    def is_accessible(self):
+        if not current_user.is_active() or not current_user.is_authenticated():
+            return False
+
+        if current_user.has_role('Admin'):
+            return True
+
+        return False
+
+class RoadieReleaseModelView(ModelView):
+
+    form_overrides = {
+        'body': CKTextAreaField
+    }
+    create_template = 'ckeditor.html'
+    edit_template = 'ckeditor.html'
+
+    form_ajax_refs = {
+        'Artist': {
+            'fields': ['Name'],
+            'page_size': 10
+        }
+    }
+
+    def on_model_change(self, form, model, is_created):
+        if 'LastUpdated' in model:
+            model.LastUpdated = datetime.datetime.now()
+
+    def is_accessible(self):
+        if not current_user.is_active() or not current_user.is_authenticated():
+            return False
+
+        if current_user.has_role('Admin'):
+            return True
+
+        return False
 
 class RoadieModelView(ModelView):
 
@@ -320,6 +406,10 @@ class RoadieModelView(ModelView):
     }
     create_template = 'ckeditor.html'
     edit_template = 'ckeditor.html'
+
+    def on_model_change(self, form, model, is_created):
+        if 'LastUpdated' in model:
+            model.LastUpdated = datetime.datetime.now()
 
     def is_accessible(self):
         if not current_user.is_active() or not current_user.is_authenticated():
@@ -348,8 +438,8 @@ if __name__ == '__main__':
     admin = admin.Admin(app, 'Roadie: Admin', template_mode='bootstrap3')
     admin.add_view(RoadieModelView(Artist))
     admin.add_view(RoadieModelView(Label))
-    admin.add_view(RoadieModelView(Release))
-    admin.add_view(RoadieModelView(Track))
+    admin.add_view(RoadieReleaseModelView(Release))
+    admin.add_view(RoadieTrackModelView(Track))
     admin.add_view(RoadieModelView(User))
     admin.add_view(RoadieModelView(UserTrack))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))

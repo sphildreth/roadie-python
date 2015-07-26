@@ -32,10 +32,6 @@ class Image(EmbeddedDocument):
     element = ImageField()
 
 
-class ThumbnailImage(EmbeddedDocument):
-    element = ImageField(size=(512, 512, True))
-
-
 class UserRole(Document):
     Name = StringField(max_length=80, required=True, unique=True)
     Description = StringField(max_length=200)
@@ -59,8 +55,9 @@ class User(Document):
     Email = EmailField(required=True, unique=True)
     RegisteredOn = DateTimeField()
     LastLogin = DateTimeField()
+    LastUpdated = DateTimeField(default=datetime.datetime.now)
     Active = BooleanField(default=True)
-    Avatar = EmbeddedDocumentField(ThumbnailImage)
+    Avatar = EmbeddedDocumentField(Image)
     Roles = ListField(ReferenceField(UserRole), default=[])
     meta = {
         'indexes': [

@@ -43,7 +43,7 @@
           </ul>
           <ul class="nav navbar-nav navbar-right">
               {% if current_user.is_authenticated() %}
-                <li class="username"><i class="fa fa-user"></i> Hi {{ g.user.Username }}!</li>
+                <li class="username"><img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi {{ g.user.Username }}!</li>
                 <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
               {% endif %}          
               {% if not g.user.is_authenticated()%}

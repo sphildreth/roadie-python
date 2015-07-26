@@ -36,7 +36,7 @@
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Profile</span></h4>
-                <p>{{ artist.Profile }}</p>
+                <p>{{ artist.Profile|safe }}</p>
             </div>
             <div class="col-md-6">
                 {% for image in artist.Images %}
@@ -74,7 +74,11 @@
                 </div>
                 <div>
                     <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    <span class="label label-default">{{ artist.MusicBrainzId }}</span>
+                    {% if artist.MusicBrainzId %}
+                    <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ artist.MusicBrainzId }}</span></a>
+                    {% else %}
+                    <span class="label label-default">None</span>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-3">
