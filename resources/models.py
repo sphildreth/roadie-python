@@ -145,7 +145,8 @@ class Track(Document):
     # Seconds long
     Length = FloatField()
     MusicBrainzId = StringField()
-    PlayedCount = IntField()
+    PlayedCount = IntField(default=0)
+    LastPlayed = DateTimeField()
     PartTitles = ListField(StringField())
     Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)

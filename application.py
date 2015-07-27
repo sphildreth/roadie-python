@@ -1,8 +1,10 @@
 import io
 import os
 import hashlib
+import math
 import json
 import datetime
+from time import time
 from bson import objectid
 from PIL import Image
 from flask import Flask, jsonify, render_template, send_file, Response, request, \
@@ -28,6 +30,8 @@ from resources.jinjaFilters import format_tracktime, format_timedelta
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
+from werkzeug.datastructures import Headers
+from re import findall
 
 app = Flask(__name__)
 app.jinja_env.filters['format_tracktime'] = format_tracktime
@@ -161,6 +165,76 @@ def release(release_id):
     if not release:
         return render_template('404.html'), 404
     return render_template('release.html', release=release)
+
+@app.route("/release/play/<release_id>")
+def playRelease(release_id):
+    release = Release.objects(id=release_id).first()
+    if not release:
+        return render_template('404.html'), 404
+    m3u = io.StringIO()
+    m3u.write("#EXTM3U\n\n")
+    for rt in release.Tracks:
+        m3u.write("#EXTINF:" + str(rt.Track.Length) +"," + rt.Track.Artist.Name + " - " + rt.Track.Title + "\n")
+        m3u.write("http://localhost:5000/stream/track/" + str(rt.Track.id) + "\n")
+    m3u.write("#EXT-X-ENDLIST\n")
+    return send_file(io.BytesIO(str.encode(m3u.getvalue())),
+                     attachment_filename="playlist.m3u")
+
+@app.route("/track/play/<track_id>")
+def playTrack(track_id):
+    track = Track.objects(id=track_id).first()
+    if not track:
+        return render_template('404.html'), 404
+    m3u = io.StringIO()
+    m3u.write("#EXTM3U\n\n")
+    m3u.write("#EXTINF:" + str(math.ceil(track.Length)) +"," + track.Artist.Name + " - " + track.Title + "\n")
+    m3u.write("http://localhost:5000/stream/track/" + str(track.id) + "\n")
+    m3u.write("#EXT-X-ENDLIST\n")
+    return send_file(io.BytesIO(str.encode(m3u.getvalue())),
+                     attachment_filename="playlist.m3u")
+
+
+@app.route("/stream/track/<track_id>")
+def streamTrack(track_id):
+    track = Track.objects(id=track_id).first()
+    if not track:
+        return render_template('404.html'), 404
+    track.PlayedCount += 1
+    track.LastPlayed = datetime.datetime.now()
+    Track.save(track)
+    mp3File = os.path.join(track.FilePath, track.FileName)
+    if not os.path.isfile(mp3File):
+        return render_template('404.html'), 404
+    (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = os.stat(mp3File)
+    headers = Headers()
+    headers.add('Content-Disposition', 'attachment', filename=track.FileName)
+    headers.add('Content-Transfer-Encoding', 'binary')
+    status = 200
+    size = size
+    begin = 0
+    end = size - 1
+    cachetimeout = 86400  # 24 hours
+    if request.headers.has_key("Range"):
+        status = 206
+        headers.add('Accept-Ranges', 'bytes')
+        ranges = findall(r"\d+", request.headers["Range"])
+        begin = int(ranges[0])
+        if len(ranges) > 1:
+            end = int(ranges[1])
+        headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str(end - begin)))
+    headers.add('Content-Length', str((end - begin) + 1))
+    data = None
+    with open(mp3File, 'rb') as f:
+        f.seek(begin)
+        data = f.read((end - begin) + 1)
+    response = Response(data, status=status, mimetype="audio/mpeg", headers=headers, direct_passthrough=True)
+    response.cache_control.public = True
+    response.cache_control.max_age = cachetimeout
+    response.last_modified = int(ctime)
+    response.expires = int(time()) + cachetimeout
+    response.set_etag('%s%s' % (track.id, ctime))
+    response.make_conditional(request)
+    return response
 
 
 @app.route('/stats')

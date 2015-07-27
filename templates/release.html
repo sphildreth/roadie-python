@@ -10,7 +10,7 @@
                 <i class="fa fa-play"></i> Play <span class="caret"></span>
               </button>
               <ul class="dropdown-menu">
-                <li><a href="#">Play All</a></li>
+                <li><a id="playAll" href="#">Play All</a></li>
               </ul>
             </div>
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
@@ -218,6 +218,13 @@
     };
 
     $(function() {
+        $("#playAll").on("click", function(e) {
+            window.open("/release/play/" + releaseId, "Playlist");
+        });
+        $("div.tracks a.play-track").on("click", function(e) {
+            var trackid = $(this).closest("div.row").data("track-id");
+            window.open("/track/play/" + trackid, "Playlist");
+        });
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
             window.location.href = "/admin/track/edit/?id=" + trackid + "&url=/release/" + releaseId;
