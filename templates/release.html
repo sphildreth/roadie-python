@@ -172,6 +172,7 @@
                           </button>
                           <ul class="dropdown-menu">
                             <li><a href="#" class="play-track btn btn-default" type="button"><i class="fa fa-play"></i> Play</a></li>
+                            <li><a href="#" class="que-track btn btn-default" type="button"><i class="fa fa-plus"></i> Que</a></li>
                             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
                             <li><a href="#" class="edit-track btn btn-warning" type="button"><i class="fa fa-edit"></i> Edit</a></li>
                             <li class="dropdown-submenu">
@@ -220,6 +221,10 @@
     $(function() {
         $("#playAll").on("click", function(e) {
             window.open("/release/play/" + releaseId, "Playlist");
+        });
+        $("div.tracks a.que-track").on("click", function(e) {
+            var trackid = $(this).closest("div.row").data("track-id");
+            queManager.addToQue("track", trackid);
         });
         $("div.tracks a.play-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

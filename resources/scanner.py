@@ -107,8 +107,8 @@ class Scanner(object):
                             except:
                                 pass
                         track.Length = id3.length
-                        object_id = Track.save(track)
-                        self.printDebug("+ Added Track: Title [" + release.Title + "], Id [" + str(object_id) + "]")
+                        Track.save(track)
+                        self.printDebug("+ Added Track: Title [" + track.Title + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
                         try:

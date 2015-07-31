@@ -3,100 +3,16 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="row">
-        <div class="col-sm-7 col-md-9">
-            <div class="input-group collection-filter-container">
-                <span class="input-group-addon" id="basic-filter"><i class="fa fa-search"></i></span>
-                <input id="filter" class="form-control" placeholder="Search" type="text" aria-describedby="basic-filter" />
-            </div>
-        </div>
-    </div>
-    <div class="collection-container">
-        <div data-bind='attr: { "data-filter-count": count'></div>
-        <div data-bind="foreach: rows">
-           <div class="artist row" data-bind='attr: { "data-artist-id": ArtistId }'>
-                <div class="col-md-1">
-                    <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
-                </div>
-                <div class="col-md-3">
-                    <a data-bind='attr: { "href": "/artist/" + ArtistId() }'><h4><span data-bind="text: Artist" class="label label-default"></span></h4></a>
-                </div>                
-                <div class="col-md-7">
-                    <div class="releases-container" data-bind="foreach: Releases">
-                        <div class="release" data-bind='attr: { "data-release-id": ReleaseId }'>
-                            <img class="pull-left thumb" data-bind='attr: { "src": ThumbnailUrl }' />
-                            <h5><span class="year label label-info" data-bind="text: Year"></span></h5>
-                            <h5><span class="title label label-default" data-bind="text: Title"></span></h5>
-                            <ul class="tracks" data-bind='foreach: Tracks'>
-                                <li data-bind='attr: { "data-track-id": TrackId'>
-                                    <span class="trackNumber label label-info" data-bind="text: lpad(TrackNumber(),2)"></span>
-                                    <span class="title label label-default" data-bind="text: Title"></span>
-                                    <span class="length label label-info" data-bind="text: Length"></span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-           </div>
+    <div class="home-container">
+        <div class="row">
+            Put Something Here
         </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
-
-    var lpad = function(n, width, z) {
-        z = z || '0';
-        n = n + '';
-        if(n == 'null') {
-            n = '';
-        }
-        return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-    };
-
-    var viewModel =  ko.mapping.fromJS({ rows: [], count: 0 });
-
-    var getListParams = function() {
-        return "filter=" + getFilter() + "&skip=" + getSkip() + "&limit=" + getLimit();
-    };
-    var getFilter = function() {
-        return $("#filter").val().trim();
-    };
-    var getSkip = function() {
-        return 0;
-    }
-    var getLimit = function() {
-        return 5;
-    };
-    var updateList = function() {
-        var ajaxStart = new Date();
-        $.ajax({
-            type: 'POST',
-            url: '/api/v1.0/artists?' + getListParams(),
-            contentType: "application/javascript",
-            success: function(data) {
-                var foo = new Date();
-                ko.mapping.fromJS(data, viewModel);
-                var bar = new Date();
-                var baz = new Date();
-                baz.setTime(bar.getTime() - foo.getTime());
-                var ajaxElapsed = new Date();
-                ajaxElapsed.setTime(ajaxElapsed.getTime() - ajaxStart.getTime());
-                console.log('Update Data: Ajax Fetch: ' + ajaxElapsed.getMilliseconds() + ', Mapping:' + baz.getMilliseconds())
-            },
-            error:function(jq, st, error){
-                alert(error);
-            }
-        });
-    };
-
     $(function() {
-        updateList();
 
-        ko.applyBindings(viewModel);
-
-        $("#filter").on('keyup', _.debounce(function(e) {
-            updateList();
-        }, 300));
 
     });
     </script>

@@ -61,7 +61,7 @@ class User(Document):
     Roles = ListField(ReferenceField(UserRole), default=[])
     meta = {
         'indexes': [
-            {'fields': ['Username'] }
+            {'fields': ['Username']}
         ]
     }
 
@@ -98,7 +98,7 @@ class Label(Document):
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
-            {'fields': ['Name'] }
+            {'fields': ['Name']}
         ]
     }
 
@@ -126,7 +126,7 @@ class Artist(Document):
             'Name'
         ],
         'ordering': [
-            'SortName', 
+            'SortName',
             'Name'
         ]
     }
@@ -177,6 +177,23 @@ class UserArtist(Document):
         return self.User.name + "::" + Artist.Name
 
 
+class Playlist(Document):
+    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
+    Tracks = ListField(ReferenceField(Track, required=True, reverse_delete_rule=CASCADE))
+    Name = StringField()
+    IsPublic = BooleanField()
+    Description = StringField()
+    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    meta = {
+        'indexes': [
+            'User'
+        ]
+    }
+
+    def __unicode__(self):
+        return self.User.name + "::" + self.Name
+
+
 class UserTrack(Document):
     User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
     Track = ReferenceField(Track, required=True, reverse_delete_rule=CASCADE)
@@ -191,7 +208,7 @@ class UserTrack(Document):
     }
 
     def __unicode__(self):
-        return self.User.name + "::" + Track.Title
+        return self.User.name + "::" + self.Track.Title
 
 
 class TrackRelease(EmbeddedDocument):

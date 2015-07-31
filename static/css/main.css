@@ -197,7 +197,7 @@ h5.release-cd {
 }
 
 .recent-releases .artist-info img {
-    width: 25px;
+    height: 30px;
 }
 
 .recent-releases a {
@@ -255,11 +255,9 @@ h5.release-cd {
 }
 
 /* Nested Dropdown Menu Related */
-
 .dropdown-submenu {
     position: relative;
 }
-
 .dropdown-submenu>.dropdown-menu {
     top: 0;
     left: 100%;
@@ -269,11 +267,9 @@ h5.release-cd {
     -moz-border-radius: 0 6px 6px;
     border-radius: 0 6px 6px 6px;
 }
-
 .dropdown-submenu:hover>.dropdown-menu {
     display: block;
 }
-
 .dropdown-submenu>a:after {
     display: block;
     content: " ";
@@ -287,19 +283,31 @@ h5.release-cd {
     margin-top: 5px;
     margin-right: -10px;
 }
-
 .dropdown-submenu:hover>a:after {
     border-left-color: #fff;
 }
-
 .dropdown-submenu.pull-left {
     float: none;
 }
-
 .dropdown-submenu.pull-left>.dropdown-menu {
     left: -100%;
     margin-left: 10px;
     -webkit-border-radius: 6px 0 6px 6px;
     -moz-border-radius: 6px 0 6px 6px;
     border-radius: 6px 0 6px 6px;
+}
+
+/* Search related */
+.typeahead {
+  margin: 9px 11px;
+  width: 396px;
+  height: 30px;
+  padding: 8px 12px;
+  font-size: 24px;
+  line-height: 30px;
+  border: 2px solid #ccc;
+  -webkit-border-radius: 8px;
+     -moz-border-radius: 8px;
+          border-radius: 8px;
+  outline: none;
 }

@@ -15,7 +15,8 @@ from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.models import Artist, ArtistType, Genre, Label, \
-    Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
+    Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
+from resources.m3u import M3U
 from flask.ext.mongoengine import MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
@@ -171,13 +172,10 @@ def playRelease(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
         return render_template('404.html'), 404
-    m3u = io.StringIO()
-    m3u.write("#EXTM3U\n\n")
-    for rt in release.Tracks:
-        m3u.write("#EXTINF:" + str(rt.Track.Length) +"," + rt.Track.Artist.Name + " - " + rt.Track.Title + "\n")
-        m3u.write("http://localhost:5000/stream/track/" + str(rt.Track.id) + "\n")
-    m3u.write("#EXT-X-ENDLIST\n")
-    return send_file(io.BytesIO(str.encode(m3u.getvalue())),
+    tracks = []
+    for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
+        tracks.append(track.Track)
+    return send_file(M3U.generate(tracks),
                      attachment_filename="playlist.m3u")
 
 @app.route("/track/play/<track_id>")
@@ -185,13 +183,51 @@ def playTrack(track_id):
     track = Track.objects(id=track_id).first()
     if not track:
         return render_template('404.html'), 404
+    tracks = []
+    tracks.append(track)
+    return send_file(M3U.generate(tracks),
+                 attachment_filename="playlist.m3u")
+
+@app.route("/que/play", methods=['POST'])
+def playQue():
     m3u = io.StringIO()
     m3u.write("#EXTM3U\n\n")
-    m3u.write("#EXTINF:" + str(math.ceil(track.Length)) +"," + track.Artist.Name + " - " + track.Title + "\n")
-    m3u.write("http://localhost:5000/stream/track/" + str(track.id) + "\n")
-    m3u.write("#EXT-X-ENDLIST\n")
-    return send_file(io.BytesIO(str.encode(m3u.getvalue())),
+    tracks = []
+    for t in request.json:
+        if(t["type"] == "track"):
+            track = Track.objects(id=t["id"]).first()
+            if track:
+                tracks.append(track)
+    return send_file(M3U.generate(tracks),
                      attachment_filename="playlist.m3u")
+
+
+@app.route("/que/save/<que_name>", methods=['POST'])
+def saveQue(que_name):
+    if not que_name or not current_user:
+        return jsonify(message="ERROR")
+    tracks = []
+    for t in request.json:
+        if(t["type"] == "track"):
+            track = Track.objects(id=t["id"]).first()
+            if track:
+                tracks.append(track)
+    user = User.objects(id=current_user.id).first()
+    pl = Playlist.objects(User=user, Name=que_name).first()
+    if not pl:
+        # adding a new playlist
+        pl = Playlist(User=user, Name=que_name, Tracks=tracks)
+        Playlist.save(pl)
+    else:
+        # adding tracks to an existing playlist
+        if pl.Tracks:
+            for plt in pl.Tracks:
+                if plt not in tracks:
+                    tracks.append(plt)
+        else:
+            pl.Tracks = tracks
+        Playlist.update(pl)
+    return jsonify(message="OK")
 
 
 @app.route("/stream/track/<track_id>")
@@ -280,6 +316,16 @@ def stats():
                            , counts=counts)
 
 
+def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/jpg'):
+    rv = send_file(io.BytesIO(imageBytes),
+               attachment_filename=imageName,
+               conditional=True,
+               mimetype=mimetype)
+    rv.last_modified = lastUpdated
+    rv.make_conditional(request)
+    rv.set_etag(etag)
+    return rv
+
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id, grid_id, height, width):
     artist = Artist.objects(id=artist_id).first()
@@ -302,9 +348,8 @@ def getArtistImage(artist_id, grid_id, height, width):
             b = io.BytesIO()
             img.save(b, "JPEG")
             ba = b.getvalue()
-            return send_file(io.BytesIO(ba),
-                             attachment_filename=artistImage.element.filename,
-                             mimetype='image/jpg')
+            etag = hashlib.sha1(('%s%s' % (artist.id, artist.LastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(ba, artist.LastUpdated, artistImage.element.filename, etag)
     except:
         return send_file("static/img/artist.gif")
 
@@ -321,14 +366,7 @@ def getUserAvatarThumbnailImage(user_id):
             img.save(b, "PNG")
             ba = b.getvalue()
             etag = hashlib.sha1(str(user.LastUpdated).encode('utf-8')).hexdigest()
-            rv = send_file(io.BytesIO(ba),
-                           attachment_filename='avatar.png',
-                           conditional=True,
-                           mimetype='image/png')
-            rv.last_modified = user.LastUpdated
-            rv.make_conditional(request)
-            rv.set_etag(etag)
-            return rv
+            return makeImageResponse(ba, user.LastUpdated, 'avatar.png', etag, "image/png")
     except:
         return send_file("static/img/user.png",
                          attachment_filename='avatar.png',
@@ -341,16 +379,15 @@ def getArtistThumbnailImage(artist_id):
     try:
         if artist:
             image = artist.Thumbnail.read()
-            bytes = io.BytesIO(image)
-            if not bytes or len(image) == 0:
+            if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
-            return send_file(bytes,
-                             attachment_filename='thumbnail.jpg',
-                             mimetype='image/jpg')
+            etag = hashlib.sha1(('%s%s' % (artist.id, artist.LastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(image, artist.LastUpdated, "a_tn_" + str(artist.id) +".jpg", etag)
+
     except:
         return send_file("static/img/artist.gif",
-                         attachment_filename='thumbnail.jpg',
-                         mimetype='image/jpg')
+                         attachment_filename='artist.gif',
+                         mimetype='image/gif')
 
 
 @app.route("/images/release/thumbnail/<release_id>")
@@ -359,12 +396,10 @@ def getReleaseThumbnailImage(release_id):
     try:
         if release:
             image = release.Thumbnail.read()
-            bytes = io.BytesIO(image)
-            if not bytes or len(image) == 0:
+            if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
-            return send_file(bytes,
-                             attachment_filename='thumbnail.jpg',
-                             mimetype='image/jpg')
+            etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(image, release.LastUpdated, "r_tn_" + str(release.id) +".jpg", etag)
     except:
         return send_file("static/img/release.gif",
                          attachment_filename='thumbnail.jpg',
@@ -420,6 +455,13 @@ def login():
 @app.route('/scanStorage')
 def scanStorage():
     return render_template('scanStorage.html')
+
+@app.route('/playlists')
+def playlists():
+    user = User.objects(id=current_user.id).first()
+    userPlaylists = Playlist.objects(User=user).order_by("Name").all()
+  #  sharedPlaylists =  Playlist.objects(User__ne = user).all() #.order_by('User__Name', 'Name').all()
+    return render_template('playlist.html', userPlaylists=userPlaylists) #, sharedPlaylists=sharedPlaylists)
 
 
 @app.route('/logout')
