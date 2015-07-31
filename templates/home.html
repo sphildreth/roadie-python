@@ -5,8 +5,11 @@
 {% block body_content %}
     <div class="home-container">
         <div class="row">
-            Put Something Here
+        {% for lastPlayedTrack in lastPlayedTracks %}
+            <h4><span class="label label-default">{{ lastPlayedTrack.Title }}</span></h4>
+        {% endfor %}
         </div>
+        <h1>WIP</h1>
     </div>
 {% endblock %}
 {% block script_content %}

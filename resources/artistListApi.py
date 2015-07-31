@@ -16,7 +16,7 @@ class ArtistListApi(Resource):
         self.reqparse.add_argument('inc', type=str)
         super(ArtistListApi, self).__init__()
 
-    def post(self):
+    def get(self):
         args = self.reqparse.parse_args()
         get_current = args.current or 1
         get_limit = args.limit or 10

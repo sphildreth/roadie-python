@@ -81,6 +81,49 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/roadieLibrary.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
     <script>
+
+        var artistSearchEngine = new Bloodhound({
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: '/api/v1.0/artists?inc=None&filter=%QUERY',
+                wildcard: '%QUERY',
+                filter: function(x) {
+                    result = [];
+                    $.each(x.rows, function(i,d) {
+                        result.push({
+                            id: d.ArtistId,
+                            type: 'artist',
+                            tn:d.ThumbnailUrl,
+                            value: d.Artist
+                        });
+                    });
+                    return result;
+                }
+            }
+        });
+
+        var releaseSearchEngine = new Bloodhound({
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: '/api/v1.0/releases?inc=None&filter=%QUERY',
+                wildcard: '%QUERY',
+                filter: function(x) {
+                    result = [];
+                    $.each(x.rows, function(i,d) {
+                        result.push({
+                            id: d.ReleaseId,
+                            type: 'release',
+                            tn:d.ThumbnailUrl,
+                            value: d.Title + " (" + d.Year + ")"
+                        });
+                    });
+                    return result;
+                }
+            }
+        });
+
         $(function() {
             {% with messages = get_flashed_messages() %}
             {% if messages %}
@@ -94,6 +137,43 @@
             {% endwith %}
             $('[data-toggle="tooltip"]').tooltip();
             queManager.init();
+
+            artistSearchEngine.initialize();
+            releaseSearchEngine.initialize();
+
+            $('#search').typeahead(null, {
+              limit: 25,
+              hint: false,
+              source: artistSearchEngine,
+              display: function(data) {
+                return data.value;
+              },
+              templates: {
+                  suggestion: function(data) {
+                    return '<div><img src="' + data.tn + '" alt="' + data.value + '" /><span class="search-title">' + data.value + '</span></div>';
+                  }
+              }
+            },{
+              limit: 25,
+              hint: false,
+              source: releaseSearchEngine,
+              display: function(data) {
+                return data.value;
+              },
+              templates: {
+                  suggestion: function(data) {
+                    return '<div><img src="' + data.tn + '" alt="' + data.value + '" /><span class="search-title">' + data.value + '</span></div>';
+                  }
+              }
+            }).bind('typeahead:select', function(ev,data) {
+                if(data.type === "artist") {
+                    window.location.href = "/artist/" + data.id;
+                } else if(data.type === "release") {
+                    window.location.href = "/release/" + data.id;
+                }
+            });
+
+
         });
     </script>
     {% block script_content %}

@@ -14,6 +14,7 @@ from flask_restful import Api
 from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
+from resources.releaseListApi import ReleaseListApi
 from resources.models import Artist, ArtistType, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
 from resources.m3u import M3U
@@ -58,7 +59,8 @@ def before_request():
 
 @app.route('/')
 def index():
-    return render_template('home.html')
+    lastPlayedTracks = Track.objects(LastPlayed__ne = None).order_by('-LastPlayed')[:25]
+    return render_template('home.html', lastPlayedTracks = lastPlayedTracks)
 
 
 @app.route('/artist/<artist_id>')
@@ -408,6 +410,7 @@ def getReleaseThumbnailImage(release_id):
 
 api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
 api.add_resource(ArtistListApi, '/api/v1.0/artists')
+api.add_resource(ReleaseListApi, '/api/v1.0/releases')
 
 login_manager = LoginManager()
 login_manager.init_app(app)
