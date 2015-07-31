@@ -224,11 +224,11 @@
         });
         $("div.tracks a.que-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            queManager.addToQue("track", trackid);
+            queManager.addToQue("track", releaseId, trackid);
         });
         $("div.tracks a.play-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            window.open("/track/play/" + trackid, "Playlist");
+            window.open("/track/play/" + releaseId + "/" + trackid, "Playlist");
         });
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

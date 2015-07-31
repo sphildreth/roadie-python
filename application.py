@@ -59,8 +59,25 @@ def before_request():
 
 @app.route('/')
 def index():
-    lastPlayedTracks = Track.objects(LastPlayed__ne = None).order_by('-LastPlayed')[:25]
-    return render_template('home.html', lastPlayedTracks = lastPlayedTracks)
+    lastPlayedInfos = []
+    for ut in UserTrack.objects().order_by('-LastPlayed')[:25]:
+        info = {
+            'TrackId' : str(ut.Track.id),
+            'TrackTitle' : ut.Track.Title,
+            'ReleaseId' : str(ut.Release.id),
+            'ReleaseTitle' : ut.Release.Title,
+            'ReleaseThumbnail' : "/images/release/thumbnail/" + str(ut.Release.id),
+            'ArtistId' : str(ut.Track.Artist.id),
+            'ArtistName' : ut.Track.Artist.Name,
+            'ArtistThumbnail' : "/images/artist/thumbnail/" + str(ut.Track.Artist.id),
+            'UserId' : str(ut.User.id),
+            'Username' : ut.User.Username,
+            'UserThumbnail' : "/images/user/avatar/" + str(ut.User.id),
+            'LastPlayed' : ut.LastPlayed.strftime("%Y-%m-%d %H:%M")
+        }
+        lastPlayedInfos.append(info)
+
+    return render_template('home.html', lastPlayedInfos = lastPlayedInfos)
 
 
 @app.route('/artist/<artist_id>')
@@ -175,31 +192,34 @@ def playRelease(release_id):
     if not release:
         return render_template('404.html'), 404
     tracks = []
+    user = User.objects(id=current_user.id).first()
     for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
-        tracks.append(track.Track)
+        tracks.append(M3U.makeTrackInfo(user,release, track))
     return send_file(M3U.generate(tracks),
                      attachment_filename="playlist.m3u")
 
-@app.route("/track/play/<track_id>")
-def playTrack(track_id):
+@app.route("/track/play/<release_id>/<track_id>")
+def playTrack(release_id, track_id):
+    release = Release.objects(id=release_id).first()
     track = Track.objects(id=track_id).first()
-    if not track:
+    if not release or not track:
         return render_template('404.html'), 404
     tracks = []
-    tracks.append(track)
+    user = User.objects(id=current_user.id).first()
+    tracks.append(M3U.makeTrackInfo(user, release, track))
     return send_file(M3U.generate(tracks),
                  attachment_filename="playlist.m3u")
 
 @app.route("/que/play", methods=['POST'])
 def playQue():
-    m3u = io.StringIO()
-    m3u.write("#EXTM3U\n\n")
+    user = User.objects(id=current_user.id).first()
     tracks = []
     for t in request.json:
         if(t["type"] == "track"):
-            track = Track.objects(id=t["id"]).first()
-            if track:
-                tracks.append(track)
+            release = Release.objects(id=t["releaseId"]).firts()
+            track = Track.objects(id=t["trackId"]).first()
+            if release and track:
+                tracks.append(M3U.makeTrackInfo(user,release, track))
     return send_file(M3U.generate(tracks),
                      attachment_filename="playlist.m3u")
 
@@ -232,14 +252,26 @@ def saveQue(que_name):
     return jsonify(message="OK")
 
 
-@app.route("/stream/track/<track_id>")
-def streamTrack(track_id):
+@app.route("/stream/track/<user_id>/<release_id>/<track_id>")
+def streamTrack(user_id, release_id, track_id):
     track = Track.objects(id=track_id).first()
     if not track:
         return render_template('404.html'), 404
     track.PlayedCount += 1
-    track.LastPlayed = datetime.datetime.now()
+    now =  datetime.datetime.now()
+    track.LastPlayed = now
     Track.save(track)
+    if current_user:
+        user = User.objects(id=user_id).first()
+        if user:
+            release = Release.objects(id=release_id).first()
+            if release:
+                userTrack = UserTrack.objects(User=user, Track=track, Release=release).first()
+                if not userTrack:
+                    userTrack = UserTrack(User=user, Track=track, Release=release)
+                userTrack.PlayedCount += 1
+                userTrack.LastPlayed = now
+                UserTrack.save(userTrack)
     mp3File = os.path.join(track.FilePath, track.FileName)
     if not os.path.isfile(mp3File):
         return render_template('404.html'), 404

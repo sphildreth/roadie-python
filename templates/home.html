@@ -5,11 +5,53 @@
 {% block body_content %}
     <div class="home-container">
         <div class="row">
-        {% for lastPlayedTrack in lastPlayedTracks %}
-            <h4><span class="label label-default">{{ lastPlayedTrack.Title }}</span></h4>
-        {% endfor %}
+        <h3><span class="label label-primary">Recently Played</span></h3>
+        <table class="table table-striped table-condensed table-responsive">
+            <thead>
+                <tr>
+                    <td>Track</td>
+                    <td>Release</td>
+                    <td>Artist</td>
+                    <td>User</td>
+                    <td>Played</td>
+                </tr>
+            </thead>
+            <tbody>
+            {% for lastPlayedInfo in lastPlayedInfos %}
+                <tr>
+                    <td data-track-id="{{ lastPlayedInfo.TrackId }}">
+                        <h3><span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span></h3>
+                    </td>
+                    <td data-release-id="{{ lastPlayedInfo.ReleaseId }}">
+                        <a href="/release/{{ lastPlayedInfo.ReleaseId }}">
+                            <div class="thumbnail-container pull-left">
+                            <img class="release-thumb" src="{{ lastPlayedInfo.ReleaseThumbnail }}" alt="{{ lastPlayedInfo.ReleaseTitle }}" />
+                            </div>
+                            <h3><span class="label label-default">{{ lastPlayedInfo.ReleaseTitle }}</span></h3>
+                        </a>
+                    </td>
+                    <td data-artist-id="{{ lastPlayedInfo.ArtistId }}">
+                        <a href="/artist/{{ lastPlayedInfo.ArtistId }}">
+                            <div class="thumbnail-container pull-left">
+                                <img class="artist-thumb" src="{{ lastPlayedInfo.ArtistThumbnail }}" alt="{{ lastPlayedInfo.ArtistTitle }}" />
+                            </div>
+                            <h3><span class="label label-default">{{ lastPlayedInfo.ArtistName }}</span></h3>
+                        </a>
+                    </td>
+                    <td data-user-id="{{ lastPlayedInfo.UserId }}">
+                        <div class="thumbnail-container pull-left">
+                        <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}" alt="{{ lastPlayedInfo.Username }}" />
+                        </div>
+                        <h3><span class="label label-default">{{ lastPlayedInfo.Username }}</span></h3>
+                    </td>
+                    <td>
+                        <h3><span class="label label-default">{{ lastPlayedInfo.LastPlayed }}</span></h3>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
         </div>
-        <h1>WIP</h1>
     </div>
 {% endblock %}
 {% block script_content %}

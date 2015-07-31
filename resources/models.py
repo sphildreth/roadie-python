@@ -194,23 +194,6 @@ class Playlist(Document):
         return self.User.name + "::" + self.Name
 
 
-class UserTrack(Document):
-    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
-    Track = ReferenceField(Track, required=True, reverse_delete_rule=CASCADE)
-    PlayedCount = IntField()
-    Rating = IntField()
-    IsFavorite = BooleanField()
-    meta = {
-        'indexes': [
-            'User',
-            'Track'
-        ]
-    }
-
-    def __unicode__(self):
-        return self.User.name + "::" + self.Track.Title
-
-
 class TrackRelease(EmbeddedDocument):
     Track = ReferenceField(Track, required=True)
     TrackNumber = IntField(required=True)
@@ -270,3 +253,23 @@ class Release(Document):
 
     def __unicode__(self):
         return self.Title
+
+
+class UserTrack(Document):
+    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
+    Release = ReferenceField(Release, required=True, reverse_delete_rule=CASCADE)
+    Track = ReferenceField(Track, required=True, reverse_delete_rule=CASCADE)
+    PlayedCount = IntField(default=0)
+    LastPlayed = DateTimeField()
+    Rating = IntField()
+    IsFavorite = BooleanField()
+    meta = {
+        'indexes': [
+            'User',
+            'Track'
+        ]
+    }
+
+    def __unicode__(self):
+        return self.User.name + "::" + self.Track.Title
+

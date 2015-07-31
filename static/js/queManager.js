@@ -14,8 +14,8 @@ var queManager = ( function( window, undefined ) {
             _toggleMenuItem(false);
         }
     };
-    function addToQue(type, id) {
-        queItems.push({ type: type, id: id});
+    function addToQue(type, releaseId, trackId) {
+        queItems.push({ type: type, releaseId: releaseId, trackId: trackId});
         _saveQue();
         _toggleMenuItem(true);
     };
