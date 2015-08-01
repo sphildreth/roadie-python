@@ -4,6 +4,10 @@
 {% endblock %}
 {% block body_content %}
     <div class="release-detail-container" data-release-id="{{ release.id }}">
+        <div class="release-counts-container pull-right">
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release.Tracks|sum(attribute='Track.Length')|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
+        </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
               <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -31,7 +35,7 @@
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Profile</span></h4>
-                <p>{{ release.Profile }}</p>
+                <p>{{ release.Profile|safe }}</p>
             </div>
             <div class="col-md-6">
                 {% for image in release.Images %}
@@ -84,30 +88,44 @@
             </div>
             <div class="col-md-3">
                <div>
-                    <h4><span class="label label-primary">Total Track Time</span></h4>
-
-                </div>
-               <div>
+                    {% if release.Quality %}
                     <h4><span class="label label-primary">Quality</span></h4>
                     <span class="label label-default">{{ release.Quality.Name }}</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
         <div class="row lists bordered">
             <div class="col-md-3">
-                <h4><span class="label label-primary">Alternate Names</span></h4>
-                <ul>
-                    {% for alternateName in release.AlternateNames %}
-                    <li><span class="label label-default">{{ alternateName }}</span></li>
-                    {% endfor %}
-                </ul>
+                <div>
+                    <h4><span class="label label-primary">Collections</span></h4>
+                    <ul class="no-list-style">
+                        {% for collectionRelease in collectionReleases|sort(attribute='ListNumber') %}
+                        <li>
+                            <a href="/collection/{{ collectionRelease.CollectionId }}">
+                                <span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span> <span class="label label-default">{{ collectionRelease.CollectionName }}</span>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div>
+                    {% if release.AlternateNames %}
+                    <h4><span class="label label-primary">Alternate Names</span></h4>
+                    <ul>
+                        {% for alternateName in release.AlternateNames %}
+                        <li><span class="label label-default">{{ alternateName }}</span></li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
             </div>
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Genres</span></h4>
                     <ul>
-                        {% for genre in release.Genre %}
-                        <li><span class="label label-default">{{ genre }}</span></li>
+                        {% for genre in release.Genres %}
+                        <li><span class="label label-default">{{ genre.Name }}</span></li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -115,7 +133,7 @@
                     <h4><span class="label label-primary">Labels</span></h4>
                     <ul>
                         {% for label in release.Labels %}
-                        <li><span class="label label-default">{{ label.Name }}</span></li>
+                        <li><span class="label label-default">{{ label.Label.Name }}</span></li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -130,14 +148,16 @@
             </div>
             <div class="col-md-3">
                 <div>
+                    {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
                     <h4><span class="label label-primary">Library Folders</span></h4>
-                    {% for group in release.Tracks.Track|map('path', 'FilePath') %}
+                    {% for group in release.Tracks|groupby('Track.FilePath') %}
                     <ul class="folders">
                         <li>
                             <span class="length label label-info">{{ group.grouper }}</span>
                         </li>
                     </ul>
                     {% endfor %}
+                    {% endif %}
                 </div>
                 <div>
                     <h4><span class="label label-primary">Urls</span></h4>
@@ -219,6 +239,14 @@
     };
 
     $(function() {
+        $(".release-detail-container a.thumbnail").on("click", function(e) {
+            var $t = $(this);
+            bootbox.dialog({
+                title: $t.data("title"),
+                size: 'large',
+                message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
+            });
+        });
         $("#playAll").on("click", function(e) {
             window.open("/release/play/" + releaseId, "Playlist");
         });

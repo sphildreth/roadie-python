@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block title %}Collections{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="collections-container">
+        <h4><span class="label label-primary">Collections</span></h4>
+        {% for collection in collections %}
+        <div class="row collection">
+            <a href="/collection/{{ collection.id }}">
+                <div class="thumbnail-container pull-left">
+                    <img class="thumb" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Name }}" />
+                </div>
+                <h4><span class="label label-default">{{ collection.Name }}</span></h4>
+            </a>
+        </div>
+        {% endfor %}
+        <h1>WIP</h1>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+
+    });
+    </script>
+{% endblock %}

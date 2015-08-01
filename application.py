@@ -1,9 +1,8 @@
+import arrow
 import io
 import os
 import hashlib
-import math
 import json
-import datetime
 from time import time
 from bson import objectid
 from PIL import Image
@@ -15,7 +14,7 @@ from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
-from resources.models import Artist, ArtistType, Genre, Label, \
+from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
 from resources.m3u import M3U
 from flask.ext.mongoengine import MongoEngineSessionInterface
@@ -32,6 +31,7 @@ from resources.jinjaFilters import format_tracktime, format_timedelta
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
+from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
 from werkzeug.datastructures import Headers
 from re import findall
 
@@ -73,7 +73,7 @@ def index():
             'UserId' : str(ut.User.id),
             'Username' : ut.User.Username,
             'UserThumbnail' : "/images/user/avatar/" + str(ut.User.id),
-            'LastPlayed' : ut.LastPlayed.strftime("%Y-%m-%d %H:%M")
+            'LastPlayed' : arrow.get(ut.LastPlayed).humanize()
         }
         lastPlayedInfos.append(info)
 
@@ -184,7 +184,17 @@ def release(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
         return render_template('404.html'), 404
-    return render_template('release.html', release=release)
+    collections = Collection.objects(Releases__Release=release).all()
+    collectionReleases = []
+    if collections:
+        for collection in collections:
+            for crt in collection.Releases:
+                if crt.Release.id == release.id:
+                    crt.CollectionId = collection.id
+                    crt.CollectionName = collection.Name
+                    collectionReleases.append(crt)
+
+    return render_template('release.html', release=release, collectionReleases= collectionReleases)
 
 @app.route("/release/play/<release_id>")
 def playRelease(release_id):
@@ -194,7 +204,7 @@ def playRelease(release_id):
     tracks = []
     user = User.objects(id=current_user.id).first()
     for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
-        tracks.append(M3U.makeTrackInfo(user,release, track))
+        tracks.append(M3U.makeTrackInfo(user,release, track.Track))
     return send_file(M3U.generate(tracks),
                      attachment_filename="playlist.m3u")
 
@@ -258,7 +268,7 @@ def streamTrack(user_id, release_id, track_id):
     if not track:
         return render_template('404.html'), 404
     track.PlayedCount += 1
-    now =  datetime.datetime.now()
+    now = arrow.utcnow().datetime
     track.LastPlayed = now
     Track.save(track)
     if current_user:
@@ -360,6 +370,33 @@ def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/
     rv.set_etag(etag)
     return rv
 
+@app.route("/images/release/<release_id>/<grid_id>/<height>/<width>")
+def getReleaseImage(release_id, grid_id, height, width):
+    try:
+        release = Release.objects(id=release_id).first()
+        releaseImage = None
+
+        if release:
+            for ri in release.Images:
+                if ri.element.grid_id == objectid.ObjectId(grid_id):
+                    releaseImage = ri
+                    break
+
+        if releaseImage:
+            image = releaseImage.element.read()
+            h = int(height)
+            w = int(width)
+            img = Image.open(io.BytesIO(image)).convert('RGB')
+            size = h, w
+            img.thumbnail(size)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            ba = b.getvalue()
+            etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(ba, release.LastUpdated, releaseImage.element.filename, etag)
+    except:
+        return send_file("static/img/release.gif")
+
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id, grid_id, height, width):
     artist = Artist.objects(id=artist_id).first()
@@ -388,6 +425,8 @@ def getArtistImage(artist_id, grid_id, height, width):
         return send_file("static/img/artist.gif")
 
 
+
+
 @app.route("/images/user/avatar/<user_id>")
 def getUserAvatarThumbnailImage(user_id):
     user = User.objects(id=user_id).first()
@@ -406,6 +445,24 @@ def getUserAvatarThumbnailImage(user_id):
                          attachment_filename='avatar.png',
                          mimetype='image/png')
 
+@app.route("/images/collection/thumbnail/<collection_id>")
+def getCollectionThumbnailImage(collection_id):
+    collection = Collection.objects(id=collection_id).first()
+    try:
+        if collection:
+            image = collection.Thumbnail.read()
+            img = Image.open(io.BytesIO(image))
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "PNG")
+            ba = b.getvalue()
+            etag = hashlib.sha1(('%s%s' % (collection.id, collection.LastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(ba, collection.LastUpdated, "a_tn_" + str(collection.id) +".jpg", etag)
+
+    except:
+        return send_file("static/img/collection.gif",
+                         attachment_filename='collection.gif',
+                         mimetype='image/gif')
 
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):
@@ -462,7 +519,7 @@ def register():
     user = User(Username=request.form['username'],
                 Password=pwd,
                 Email=request.form['email'],
-                RegisteredOn=datetime.datetime.now())
+                RegisteredOn=arrow.utcnow().datetime)
     user.save()
     flash('User successfully registered')
     return redirect(url_for('login'))
@@ -499,6 +556,18 @@ def playlists():
     return render_template('playlist.html', userPlaylists=userPlaylists) #, sharedPlaylists=sharedPlaylists)
 
 
+@app.route("/collections")
+def collections():
+    collections = Collection.objects().order_by("Name").all()
+    return render_template('collections.html', collections=collections)
+
+@app.route('/collection/<collection_id>')
+def collection(collection_id):
+    collection = Collection.objects(id=collection_id).first()
+    if not collection:
+        return render_template('404.html'), 404
+    return render_template('collection.html', collection=collection)
+
 @app.route('/logout')
 def logout():
     logout_user()
@@ -520,6 +589,7 @@ class ScannerSocket(WebSocketHandler):
 if __name__ == '__main__':
     admin = admin.Admin(app, 'Roadie: Admin', template_mode='bootstrap3')
     admin.add_view(RoadieModelView(Artist))
+    admin.add_view(RoadieCollectionModelView(Collection))
     admin.add_view(RoadieModelView(Label))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))

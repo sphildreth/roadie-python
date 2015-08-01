@@ -131,7 +131,7 @@
                     {% if group.grouper > 0 %}
                     <h5 class="release-cd"><span class="label label-success pull-right">CD {{ group.grouper }}</span></h5>
                     {% endif %}
-                    <ul class="tracks">
+                    <ul class="tracks no-list-style">
                         {% for track in group.list %}
                         <li>
                             <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }} </span>

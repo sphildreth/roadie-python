@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block title %}Collections{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="collection-container">
+        <div class="row">
+        <h4><span class="label label-default">{{ collection.Name }}</span></h4>
+        <ul class="collection no-list-style" data-playlist-id="{{ collection.id }}">
+            {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
+            <li data-release-id="{{ collectionRelease.Release.id }}">
+               <a href="/release/{{ collectionRelease.Release.id }}">
+                    <div class="thumbnail-container pull-left">
+                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
+                    </div>
+                    <h4><span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
+                    <h3><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        </div>
+        <h1>WIP</h1>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+
+    });
+    </script>
+{% endblock %}

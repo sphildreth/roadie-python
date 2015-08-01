@@ -273,3 +273,24 @@ class UserTrack(Document):
     def __unicode__(self):
         return self.User.name + "::" + self.Track.Title
 
+
+class CollectionRelease(EmbeddedDocument):
+    Release = ReferenceField(Release, required=True)
+    ListNumber = IntField(required=True)
+
+    def __unicode__(self):
+        return self.Release.Title
+
+
+class Collection(Document):
+    Name = StringField()
+    Edition = StringField()
+    Description = StringField()
+    Thumbnail = FileField()
+    Maintainer = ReferenceField(User, required=True)
+    Urls = ListField(EmbeddedDocumentField(Url))
+    Releases = ListField(EmbeddedDocumentField(CollectionRelease), default=[])
+    LastUpdated = DateTimeField(default=datetime.datetime.now)
+
+    def __unicode__(self):
+        return self.Name

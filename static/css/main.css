@@ -95,7 +95,9 @@ div.bordered {
     margin-right: 5px;
 }
 
-.release-info-container .release:nth-child(even) {
+.release-info-container .release:nth-child(even),
+.collections-container .collection:nth-child(odd),
+.collection-container ul.collection li:nth-child(even) {
     background-color: #161C23;
 }
 
@@ -110,7 +112,7 @@ h5.release-cd {
     margin-right: 8px;
 }
 
-.release-info-container ul.tracks {
+ul.no-list-style {
     list-style: none;
 }
 .release-info-container ul.tracks span.trackNumber {
