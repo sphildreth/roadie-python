@@ -272,17 +272,6 @@ def streamTrack(user_id, release_id, track_id):
     now = arrow.utcnow().datetime
     track.LastPlayed = now
     Track.save(track)
-    if current_user:
-        user = User.objects(id=user_id).first()
-        if user:
-            release = Release.objects(id=release_id).first()
-            if release:
-                userTrack = UserTrack.objects(User=user, Track=track, Release=release).first()
-                if not userTrack:
-                    userTrack = UserTrack(User=user, Track=track, Release=release)
-                userTrack.PlayedCount += 1
-                userTrack.LastPlayed = now
-                UserTrack.save(userTrack)
     mp3File = os.path.join(track.FilePath, track.FileName)
     if not os.path.isfile(mp3File):
         return render_template('404.html'), 404
@@ -304,6 +293,19 @@ def streamTrack(user_id, release_id, track_id):
             end = int(ranges[1])
         headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str(end - begin)))
     headers.add('Content-Length', str((end - begin) + 1))
+    isFullRequest = begin == 0 and (end == (size - 1))
+    isEndRangeRequest = begin > 0 and (end != (size -1))
+    if isFullRequest or isEndRangeRequest and current_user:
+        user = User.objects(id=user_id).first()
+        if user:
+            release = Release.objects(id=release_id).first()
+            if release:
+                userTrack = UserTrack.objects(User=user, Track=track, Release=release).first()
+                if not userTrack:
+                    userTrack = UserTrack(User=user, Track=track, Release=release)
+                userTrack.PlayedCount += 1
+                userTrack.LastPlayed = now
+                UserTrack.save(userTrack)
     data = None
     with open(mp3File, 'rb') as f:
         f.seek(begin)

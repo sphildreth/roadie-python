@@ -255,6 +255,18 @@ class Release(Document):
         return self.Title
 
 
+class UserRelease(Document):
+    User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
+    Release = ReferenceField(Release, required=True, reverse_delete_rule=CASCADE)
+    Rating = IntField()
+    IsFavorite = BooleanField()
+    meta = {
+        'indexes': [
+            'User',
+            'Release'
+        ]
+    }
+
 class UserTrack(Document):
     User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
     Release = ReferenceField(Release, required=True, reverse_delete_rule=CASCADE)
