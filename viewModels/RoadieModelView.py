@@ -3,7 +3,7 @@ from flask_admin.contrib.mongoengine import ModelView
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from widgets.ckeditor import CKTextAreaField
-
+from flask import redirect, url_for, request
 
 class RoadieModelView(ModelView):
     form_overrides = {
@@ -24,3 +24,8 @@ class RoadieModelView(ModelView):
             return True
 
         return False
+
+    def _handle_view(self, name, **kwargs):
+        # redirect to login page if user doesn't have access
+        if not self.is_accessible():
+            return redirect(url_for('login', next=request.url))

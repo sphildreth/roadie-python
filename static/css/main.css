@@ -29,10 +29,11 @@ ul.dropdown-menu a {
 }
 
 li.username {
-  color: white;
-  margin: 10px 15px;
-  display: inline-block;
   text-transform: capitalize;
+}
+
+.navbar li.username img {
+    height: 19px;
 }
 
 .release-counts-container {

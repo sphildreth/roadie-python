@@ -32,6 +32,7 @@ from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
+from viewModels.RoadieUserModelView import RoadieUserModelView
 from werkzeug.datastructures import Headers
 from re import findall
 
@@ -593,7 +594,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Label))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieModelView(User))
+    admin.add_view(RoadieUserModelView(User))
     admin.add_view(RoadieModelView(UserArtist))
     admin.add_view(RoadieModelView(UserTrack))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))

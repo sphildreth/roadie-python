@@ -55,7 +55,11 @@
                   </ul>
               </li>
               {% if current_user.is_authenticated() %}
-                <li class="username"><img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi {{ g.user.Username }}!</li>
+                <li class="username">
+                    <a href="/admin/user/edit?url=/&id={{ g.user.id }}" title="Edit Profile">
+                        <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi {{ g.user.Username }}!
+                    </a>
+                </li>
                 <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
               {% endif %}          
               {% if not g.user.is_authenticated()%}

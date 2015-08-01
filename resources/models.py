@@ -58,7 +58,7 @@ class User(Document):
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     Active = BooleanField(default=True)
     Avatar = EmbeddedDocumentField(Image)
-    Roles = ListField(ReferenceField(UserRole), default=[])
+    Roles = ListField(ReferenceField(UserRole), required=False, default=[])
     meta = {
         'indexes': [
             {'fields': ['Username']}
