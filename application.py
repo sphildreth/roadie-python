@@ -3,6 +3,7 @@ import io
 import os
 import hashlib
 import json
+import random
 from time import time
 from bson import objectid
 from PIL import Image
@@ -200,6 +201,22 @@ def release(release_id):
 
     return render_template('release.html', release=release, collectionReleases= collectionReleases)
 
+@app.route("/artist/play/<artist_id>/<doShuffle>")
+def playArtist(artist_id,doShuffle):
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
+        return render_template('404.html'), 404
+    tracks = []
+    user = User.objects(id=current_user.id).first()
+    for release in Release.objects(Artist=artist):
+        for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
+            tracks.append(M3U.makeTrackInfo(user,release, track.Track))
+    if doShuffle == "1":
+        random.shuffle(tracks)
+    return send_file(M3U.generate(tracks),
+                     as_attachment=True,
+                     attachment_filename= "playlist.m3u")
+
 @app.route("/release/play/<release_id>")
 def playRelease(release_id):
     release = Release.objects(id=release_id).first()
@@ -210,6 +227,7 @@ def playRelease(release_id):
     for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
         tracks.append(M3U.makeTrackInfo(user,release, track.Track))
     return send_file(M3U.generate(tracks),
+                     as_attachment=True,
                      attachment_filename="playlist.m3u")
 
 @app.route("/track/play/<release_id>/<track_id>")
@@ -222,6 +240,7 @@ def playTrack(release_id, track_id):
     user = User.objects(id=current_user.id).first()
     tracks.append(M3U.makeTrackInfo(user, release, track))
     return send_file(M3U.generate(tracks),
+                 as_attachment=True,
                  attachment_filename="playlist.m3u")
 
 @app.route("/que/play", methods=['POST'])
@@ -235,6 +254,7 @@ def playQue():
             if release and track:
                 tracks.append(M3U.makeTrackInfo(user,release, track))
     return send_file(M3U.generate(tracks),
+                     as_attachment=True,
                      attachment_filename="playlist.m3u")
 
 

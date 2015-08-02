@@ -227,7 +227,7 @@ class Release(Document):
     AlternateNames = SortedListField(StringField())
     Artist = ReferenceField(Artist, required=True, reverse_delete_rule=CASCADE)
     Images = ListField(EmbeddedDocumentField(Image))
-    Genres = ListField(ReferenceField(Genre))
+    Genres = ListField(ReferenceField(Genre), default=[])
     Labels = ListField(EmbeddedDocumentField(ReleaseLabel), default=[])
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     MusicBrainzId = StringField()

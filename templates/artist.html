@@ -15,9 +15,10 @@
                 <i class="fa fa-play"></i> Play <span class="caret"></span>
               </button>
               <ul class="dropdown-menu">
-                <li><a href="#">Play All</a></li>
-                <li><a href="#">Play Top Rated</a></li>
-                <li><a href="#">Play Most Popular</a></li>
+                <li><a id="playAll" href="#">Play All</a></li>
+                  <li><a id="playAllShuffle" href="#">Play All (Shuffle)</a></li>
+                <li><a id="playTopRated" href="#">Play Top Rated</a></li>
+                <li><a id="playMostPopular" href="#">Play Most Popular</a></li>
               </ul>
             </div>
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
@@ -154,6 +155,12 @@
     <script type="text/javascript">
         var artistId = '{{ artist.id }}';
         $(function() {
+            $("#playAll").on("click", function(e) {
+                window.open("/artist/play/" + artistId + "/0", "Playlist");
+            });
+            $("#playAllShuffle").on("click", function(e) {
+                window.open("/artist/play/" + artistId + "/1", "Playlist");
+            });
             $(".artist-detail-container a.thumbnail").on("click", function(e) {
                 var $t = $(this);
                 bootbox.dialog({

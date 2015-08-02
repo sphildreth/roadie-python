@@ -20,14 +20,14 @@
             {% for lastPlayedInfo in lastPlayedInfos %}
                 <tr>
                     <td data-track-id="{{ lastPlayedInfo.TrackId }}">
-                        <h3><span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span></h3>
+                        <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
                     </td>
                     <td data-release-id="{{ lastPlayedInfo.ReleaseId }}">
                         <a href="/release/{{ lastPlayedInfo.ReleaseId }}">
                             <div class="thumbnail-container pull-left">
                             <img class="release-thumb" src="{{ lastPlayedInfo.ReleaseThumbnail }}" alt="{{ lastPlayedInfo.ReleaseTitle }}" />
                             </div>
-                            <h3><span class="label label-default">{{ lastPlayedInfo.ReleaseTitle }}</span></h3>
+                            <span class="label label-default">{{ lastPlayedInfo.ReleaseTitle }}</span>
                         </a>
                     </td>
                     <td data-artist-id="{{ lastPlayedInfo.ArtistId }}">
@@ -35,17 +35,17 @@
                             <div class="thumbnail-container pull-left">
                                 <img class="artist-thumb" src="{{ lastPlayedInfo.ArtistThumbnail }}" alt="{{ lastPlayedInfo.ArtistTitle }}" />
                             </div>
-                            <h3><span class="label label-default">{{ lastPlayedInfo.ArtistName }}</span></h3>
+                            <span class="label label-default">{{ lastPlayedInfo.ArtistName }}</span>
                         </a>
                     </td>
                     <td data-user-id="{{ lastPlayedInfo.UserId }}">
                         <div class="thumbnail-container pull-left">
                         <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}" alt="{{ lastPlayedInfo.Username }}" />
                         </div>
-                        <h3><span class="label label-default">{{ lastPlayedInfo.Username }}</span></h3>
+                        <span class="label label-default">{{ lastPlayedInfo.Username }}</span>
                     </td>
                     <td>
-                        <h3><span class="label label-default">{{ lastPlayedInfo.LastPlayed }}</span></h3>
+                        <span class="label label-default">{{ lastPlayedInfo.LastPlayed }}</span>
                     </td>
                 </tr>
             {% endfor %}
