@@ -44,6 +44,9 @@ with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+trackPathReplace = None
+if 'ROADIE_TRACK_PATH_REPLACE' in config:
+    trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
 avatarSize = 30, 30
 
 db = MongoEngine(app)
@@ -272,8 +275,12 @@ def streamTrack(user_id, release_id, track_id):
     now = arrow.utcnow().datetime
     track.LastPlayed = now
     Track.save(track)
-    mp3File = os.path.join(track.FilePath, track.FileName)
+    path = track.FilePath
+    if trackPathReplace:
+        path = path.replace(path, trackPathReplace)
+    mp3File = os.path.join(path, track.FileName)
     if not os.path.isfile(mp3File):
+        print("! Unable To Find Track File [" + mp3File + "]")
         return render_template('404.html'), 404
     (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = os.stat(mp3File)
     headers = Headers()
