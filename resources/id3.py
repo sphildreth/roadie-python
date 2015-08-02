@@ -3,12 +3,19 @@ import os
 import sys
 import mutagen
 from mutagen.mp3 import MP3
-from utility import Utility
-
+from mutagen.id3 import ID3 as mutagenID3
+from mutagen.id3 import ID3NoHeaderError
+from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, COMM, USLT, TCOM, TCON, TDRC, TRCK
+from resources.utility import Utility
+from resources.models import Release, Track, TrackRelease
 
 class ID3:
+    filename = None
+    config = None
 
     def __init__(self,path,config=None):
+        self.filename = path
+        self.config = config
         self._load(path,config)
 
     def isValid(self):
@@ -27,6 +34,27 @@ class ID3:
 
     def __str__(self):
         return self.artist + "." + str(self.year) + "." + self.album  + "." + str(self.track) + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
+
+
+    def updateFromRelease(self, Release, TrackRelease):
+        try:
+            tags = mutagenID3(self.filename)
+        except ID3NoHeaderError:
+            tags = mutagenID3()
+        tags["TIT2"] = TIT2(encoding=3, text= TrackRelease.Track.Title)
+        tags["TALB"] = TALB(encoding=3, text=Release.Title)
+        tags["TPE2"] = TPE2(encoding=3, text=Release.Artist.Name)
+        tags["TPE1"] = TPE1(encoding=3, text=Release.Artist.Name)
+        tags["TRCK"] = TRCK(encoding=3, text=str(TrackRelease.TrackNumber))
+        if Release.ReleaseDate:
+            year = Release.ReleaseDate[:4]
+            if year:
+                tags["TDRC"] = TDRC(encoding=3, text=year)
+        if self.config:
+            if 'DoClearComments' in self.config:
+                if self.config['DoClearComments'].lower() == "true":
+                    tags.delall(u"COMM::'en'")
+        tags.save(self.filename)
 
     def _load(self, filename, config):
         try:
@@ -71,6 +99,10 @@ class ID3:
                             self.title = self.title.replace(key, val)
                 self.title = " ".join(self.title.strip().title().split())
             self.comment = comments[0].title()
+            if self.comment and config:
+                if 'DoClearComments' in config:
+                    if config['DoClearComments'].lower() == "true":
+                        self.comment = None
             self.genre = ''
             genres = short_tags.get('genre', [''])
             if len(genres) > 0:

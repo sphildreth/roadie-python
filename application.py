@@ -184,6 +184,32 @@ def setArtistImage(artist_id, image_id):
     return jsonify(message="ERROR")
 
 
+@app.route('/release/setimage/<release_id>/<image_id>', methods=['POST'])
+def setReleaseImage(release_id, image_id):
+    release = Release.objects(id=release_id).first()
+    if not release:
+        return jsonify(message="ERROR")
+
+    releaseImage = None
+    for ri in release.Images:
+        if ri.element.grid_id == objectid.ObjectId(image_id):
+            releaseImage = ri
+            break
+    if releaseImage:
+        image = releaseImage.element.read()
+        img = Image.open(io.BytesIO(image)).convert('RGB')
+        img.thumbnail(thumbnailSize)
+        b = io.BytesIO()
+        img.save(b, "JPEG")
+        bBytes = b.getvalue()
+        release.Thumbnail.new_file()
+        release.Thumbnail.write(bBytes)
+        release.Thumbnail.close()
+        Release.save(release)
+        return jsonify(message="OK")
+    return jsonify(message="ERROR")
+
+
 @app.route('/release/<release_id>')
 def release(release_id):
     release = Release.objects(id=release_id).first()

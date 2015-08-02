@@ -93,32 +93,40 @@
                 </div>
             </div>
         </div>
+        {% if artist.AlternateNames or artist.Tags or artist.Urls %}
         <div class="row lists bordered">
             <div class="col-md-4">
+                {% if artist.AlternateNames %}
                 <h4><span class="label label-primary">Alternate Names</span></h4>
                 <ul>
                     {% for alternateName in artist.AlternateNames %}
                     <li><span class="label label-default">{{ alternateName }}</span></li>
                     {% endfor %}
                 </ul>
+                {% endif %}
             </div>
             <div class="col-md-4">
+                {% if artist.Tags %}
                 <h4><span class="label label-primary">Tags</span></h4>
                 <ul>
                     {% for tag in artist.Tags %}
                     <li><span class="label label-default">{{ tag }}</span></li>
                     {% endfor %}
                 </ul>
+                {% endif %}
             </div>
             <div class="col-md-4">
+                {% if artist.Urls %}
                 <h4><span class="label label-primary">Urls</span></h4>
                 <ul>
                     {% for url in artist.Urls %}
                     <li><a href="{{ url.Url }}" target="_blank"><span class="label label-default">{{ url.Title }}</span></a></li>
                     {% endfor %}
                 </ul>
+                {% endif %}
             </div>
         </div>
+        {% endif %}
         <div class="release-info-container">
             <div class="row bordered">
             {% for release in releases|sort(attribute='ReleaseDate') %}

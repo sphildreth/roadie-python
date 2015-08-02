@@ -5,7 +5,7 @@
 {% block body_content %}
     <div class="release-detail-container" data-release-id="{{ release.id }}">
         <div class="release-counts-container pull-right">
-            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
+            <span data-track-count="{{ release.Tracks|length }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
             <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release.Tracks|sum(attribute='Track.Length')|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
@@ -25,7 +25,7 @@
             {% endif %}
         </div>
         <div class="row title bordered">
-            <img class="thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
             <span class="artist-info">
                 <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
                 <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
@@ -73,7 +73,7 @@
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Track Count</span></h4>
-                    <span class="label label-default">{{ release.TrackCount }}</span>
+                    <span id="releaseTrackCount" class="label label-default">{{ release.TrackCount }}</span>
                 </div>
                 <div>
                     <h4><span class="label label-primary">Disc Count</span></h4>
@@ -82,8 +82,12 @@
             </div>
             <div class="col-md-3">
                 <div>
-                    <h4><span class="label label-primary">Virtual</span></h4>
-                    <span class="label label-default">{{ release.IsVirtual }}</span>
+                    <h4><span class="label label-primary">Labels</span></h4>
+                    <ul>
+                        {% for label in release.Labels %}
+                        <li><span class="label label-default">{{ label.Label.Name }}</span></li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
             <div class="col-md-3">
@@ -126,14 +130,6 @@
                     <ul>
                         {% for genre in release.Genres %}
                         <li><span class="label label-default">{{ genre.Name }}</span></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div>
-                    <h4><span class="label label-primary">Labels</span></h4>
-                    <ul>
-                        {% for label in release.Labels %}
-                        <li><span class="label label-default">{{ label.Label.Name }}</span></li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -238,7 +234,22 @@
         });
     };
 
+    var checkIfTrackCountsMatch = function() {
+        var releaseTrackCount = parseInt($("#releaseTrackCount").text());
+        var foundTracks = parseInt($("span.track-count").data("track-count"));
+        var $c = $("div.release-counts-container");
+        $c.find(".track-count-valid").remove();
+        if(releaseTrackCount === foundTracks) {
+            $c.append("<span class='track-count-valid label label-success' title='Track Counts Match!'><i class='fa fa-battery-full'></i></span>");
+        } else {
+            $c.append("<span class='track-count-valid label label-danger' title='Track Counts Do Not Match!'><i class='fa fa-battery-empty'></i></span>");
+        }
+    }
+
     $(function() {
+
+        checkIfTrackCountsMatch();
+
         $(".release-detail-container a.thumbnail").on("click", function(e) {
             var $t = $(this);
             bootbox.dialog({
@@ -302,6 +313,21 @@
                             alert(error);
                         }
                     });
+                }
+            });
+        });
+        $("a.setReleaseImage").on("click", function(e) {
+            var $t = $(this);
+            var imageId = $t.parents(".context-menu").data("image-id");
+            $.ajax({
+                type: 'POST',
+                url: '/release/setimage/' + releaseId + '/' + imageId,
+                contentType: "application/javascript",
+                success: function(data) {
+                    $(".release-detail-container .title img.thumb.release-thumb").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                },
+                error:function(jq, st, error){
+                    alert(error);
                 }
             });
         });

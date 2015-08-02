@@ -12,7 +12,8 @@
     },
     "ROADIE_PROCESSING": {
         "DoAudioCleanup": "True",
-        "ClearComments": "True",
+        "DoSaveEditsToTags": "True",
+        "DoClearComments": "True",
         "TitleReplacements": [
             { "^": "'"},
             { "_": " "},
