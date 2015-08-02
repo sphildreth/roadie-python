@@ -277,7 +277,9 @@ def streamTrack(user_id, release_id, track_id):
     Track.save(track)
     path = track.FilePath
     if trackPathReplace:
-        path = path.replace(path, trackPathReplace)
+        for rpl in trackPathReplace:
+            for key,val in rpl.items():
+                path = path.replace(key, val)
     mp3File = os.path.join(path, track.FileName)
     if not os.path.isfile(mp3File):
         print("! Unable To Find Track File [" + mp3File + "]")
