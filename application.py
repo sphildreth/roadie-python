@@ -15,6 +15,7 @@ from flask_mongoengine import MongoEngine
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
+from resources.trackListApi import TrackListApi
 from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
 from resources.m3u import M3U
@@ -28,7 +29,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from operator import itemgetter
 from resources.nocache import nocache
-from resources.jinjaFilters import format_tracktime, format_timedelta
+from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, group_release_tracks_filepaths, format_age_from_date
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
@@ -40,6 +41,9 @@ from re import findall
 app = Flask(__name__)
 app.jinja_env.filters['format_tracktime'] = format_tracktime
 app.jinja_env.filters['format_timedelta'] = format_timedelta
+app.jinja_env.filters['calculate_release_tracks_Length'] = calculate_release_tracks_Length
+app.jinja_env.filters['group_release_tracks_filepaths'] = group_release_tracks_filepaths
+app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
@@ -125,7 +129,7 @@ def deleteRelease(release_id):
         return jsonify(message="ERROR")
 
 
-@app.route('/releasetrack/delete/<release_id>/<release_track_id>/flag', methods=['POST'])
+@app.route('/releasetrack/delete/<release_id>/<release_track_id>/<flag>', methods=['POST'])
 def deleteReleaseTrack(release_id, release_track_id, flag):
     try:
         release = Release.objects(id=release_id).first()
@@ -558,6 +562,7 @@ def getReleaseThumbnailImage(release_id):
 api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
 api.add_resource(ArtistListApi, '/api/v1.0/artists')
 api.add_resource(ReleaseListApi, '/api/v1.0/releases')
+api.add_resource(TrackListApi, '/api/v1.0/tracks')
 
 login_manager = LoginManager()
 login_manager.init_app(app)

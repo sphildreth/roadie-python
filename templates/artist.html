@@ -41,7 +41,7 @@
             </div>
             <div class="col-md-6">
                 {% for image in artist.Images %}
-                    <div class="col-md-3">
+                    <div class="col-xs-4 col-sm-3 col-md-3">
                         <a href="javascript:void();"
                            data-title="{{ image.element.filename }}"
                            data-url="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/2048/2048"
@@ -59,14 +59,18 @@
         </div>
         <div class="row details bordered">
             <div class="col-md-3">
+                {% if artist.SortName %}
                 <div>
                     <h4><span class="label label-primary">Sort Name</span></h4>
                     <span class="label label-default">{{ artist.SortName }}</span>
                 </div>
+                {% endif %}
+                {% if artist.RealName %}
                 <div>
                     <h4><span class="label label-primary">Real Name</span></h4>
                     <span class="label label-default">{{ artist.RealName }}</span>
                 </div>
+                {% endif %}
             </div>
             <div class="col-md-3">
                 <div>
@@ -83,14 +87,24 @@
                 </div>
             </div>
             <div class="col-md-3">
+                {% if artist.BirthDate %}
+                <div>
+                    <h4><span class="label label-primary">BirthDate</span></h4>
+                    <span class="label label-default">{{ artist.BirthDate|format_age_from_date }}</span>
+                </div>
+                {% endif %}
+                {% if artist.BeginDate %}
                 <div>
                     <h4><span class="label label-primary">Begin Date</span></h4>
-                    <span class="label label-default">{{ artist.BeginDate }}</span>
+                    <span class="label label-default">{{ artist.BeginDate|format_age_from_date }}</span>
                 </div>
+                {% endif %}
+                {% if artist.EndDate %}
                 <div>
                     <h4><span class="label label-primary">End Date</span></h4>
                     <span class="label label-default">{{ artist.EndDate }}</span>
                 </div>
+                {% endif %}
             </div>
         </div>
         {% if artist.AlternateNames or artist.Tags or artist.Urls %}
@@ -131,11 +145,13 @@
             <div class="row bordered">
             {% for release in releases|sort(attribute='ReleaseDate') %}
                 <div class="release pull-left" data-release-id="{{ release.id }}">
-                    <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
-                    <a href="/release/{{ release.id }}">
-                    <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
-                        <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-default' if release.TrackCount or 0 >= release.Tracks|default('')|length else 'label-danger' }} releasetitle">{{ release.Title }}</span></h4>
-                    </a>
+                    <div>
+                        <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
+                        <a href="/release/{{ release.id }}">
+                        <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-default' if release.TrackCount or 0 >= release.Tracks|default('')|length else 'label-danger' }} releasetitle">{{ release.Title }}</span></h4>
+                        </a>
+                    </div>
                     {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
                     {% if group.grouper > 0 %}
                     <h5 class="release-cd"><span class="label label-success pull-right">CD {{ group.grouper }}</span></h5>

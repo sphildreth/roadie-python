@@ -1,5 +1,34 @@
 import datetime
+import dateutil
 from math import floor
+
+
+def format_age_from_date(value):
+    now = datetime.datetime.utcnow()
+    now = now.date()
+    age = dateutil.relativedelta.relativedelta(now, value)
+    return value.strftime("%Y-%m-%d") + " (" + str(age.years) + ")"
+
+def group_release_tracks_filepaths(value):
+    try:
+        groups = []
+        for track in value.Tracks:
+            if 'FilePath' in track.Track and track.Track.FilePath not in groups:
+                groups.append(track.Track.FilePath)
+        return groups
+    except:
+        return groups
+        pass
+
+def calculate_release_tracks_Length(value):
+    try:
+        result = 0
+        for track in value.Tracks:
+            if 'Length' in track.Track:
+                result += track.Track.Length
+        return result
+    except:
+        pass
 
 def format_tracktime(value):
     return datetime.timedelta(seconds=value)

@@ -17,7 +17,7 @@
     <noscript>
         <div id="noscript-warning" class="alert alert-danger alert-dismissable">Warning: JavaScript is required for this page to display correctly.</div>
     </noscript>
-    <nav class="navbar navbar-default">
+    <div class="navbar navbar-default">
       <div class="container-fluid">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
@@ -29,7 +29,7 @@
           <a class="navbar-brand" href="/">Roadie</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav">
+          <ul class="nav navbar-nav navbar-right">
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
@@ -39,41 +39,49 @@
               </ul>
             </li>
             {% endif %}
+            {% if current_user.is_authenticated() %}
+            <li class="username">
+                <a href="/admin/user/edit?url=/&id={{ g.user.id }}" title="Edit Profile">
+                    <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi, {{ g.user.Username }}!
+                </a>
+            </li>
+            <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
+            {% endif %}
+            {% if not g.user.is_authenticated()%}
+              <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
+              <li><a href="{{ url_for('register') }}">Register</a></li>
+            {% endif %}
+          </ul>
+          <ul class="nav navbar-nav ">
             <li><a href="/collections"><i class="fa fa-list-ol"></i> Collections</a></li>
             <li><a href="/playlists"><i class="fa fa-list-ul"></i> Playlists</a></li>
             <li><a href="/stats"><i class="fa fa-pie-chart"></i> Stats</a></li>
-            <li><input id="search" class="typeahead" type="text" placeholder="Search" /></li>
-          </ul>
-          <ul class="nav navbar-nav navbar-right">
-              <li id="queMenuItem" class="que hidden">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Que <span class="caret"></span></a>
-                  <ul class="dropdown-menu">
-                    <li><a href="#" class="clear-que"><i class="fa fa-trash-o"></i> Clear</a></li>
-                    <li><a href="#" class="play-que"><i class="fa fa-pencil"></i> Edit</a></li>
-                    <li><a href="#" class="play-que"><i class="fa fa-play"></i> Play</a></li>
-                    <li><a href="#" class="save-que"><i class="fa fa-floppy-o"></i> Save</a></li>
-                  </ul>
-              </li>
-              {% if current_user.is_authenticated() %}
-                <li class="username">
-                    <a href="/admin/user/edit?url=/&id={{ g.user.id }}" title="Edit Profile">
-                        <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi, {{ g.user.Username }}!
-                    </a>
-                </li>
-                <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
-              {% endif %}          
-              {% if not g.user.is_authenticated()%}
-                  <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
-                  <li><a href="{{ url_for('register') }}">Register</a></li>
-              {% endif %}     
-          </ul>
+            <li id="queMenuItem" class="que hidden">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Que <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="#" class="clear-que"><i class="fa fa-trash-o"></i> Clear</a></li>
+                <li><a href="#" class="play-que"><i class="fa fa-pencil"></i> Edit</a></li>
+                <li><a href="#" class="play-que"><i class="fa fa-play"></i> Play</a></li>
+                <li><a href="#" class="save-que"><i class="fa fa-floppy-o"></i> Save</a></li>
+              </ul>
+            </li>
+        </ul>
+         <form class="navbar-form">
+            <div class="form-group" style="display:inline;">
+              <div class="input-group" style="display:table;">
+                <span class="input-group-addon" style="width:1%;"><span class="glyphicon glyphicon-search"></span></span>
+                <input class="form-control typeahead" id="search" name="search" placeholder="Search" autocomplete="off" autofocus="autofocus" type="text">
+            </div>
+            </div>
+        </form>
         </div><!--/.nav-collapse -->
       </div><!--/.container-fluid -->
-    </nav>
+    </div>
     <div class="container-fluid">
         {% block body_content %}
         {% endblock %}
     </div> <!-- /container -->
+    <div id="searchResults" style="display:none;"></div>
     <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
     <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
@@ -87,6 +95,8 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
     <script>
 
+        var trackThumbnailUrl = "{{ url_for('static', filename='img/track.png') }}";
+
         var artistSearchEngine = new Bloodhound({
             datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
             queryTokenizer: Bloodhound.tokenizers.whitespace,
@@ -99,7 +109,7 @@
                         result.push({
                             id: d.ArtistId,
                             type: 'artist',
-                            tn:d.ThumbnailUrl,
+                            tn: d.ThumbnailUrl,
                             value: d.Artist
                         });
                     });
@@ -120,7 +130,7 @@
                         result.push({
                             id: d.ReleaseId,
                             type: 'release',
-                            tn:d.ThumbnailUrl,
+                            tn: d.ThumbnailUrl,
                             value: d.Title + " (" + d.Year + ")"
                         });
                     });
@@ -128,6 +138,49 @@
                 }
             }
         });
+
+        var trackSearchEngine = new Bloodhound({
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            remote: {
+                url: '/api/v1.0/tracks?inc=None&filter=%QUERY',
+                wildcard: '%QUERY',
+                filter: function(x) {
+                    result = [];
+                    $.each(x.rows, function(i,d) {
+                        result.push({
+                            id: d.ReleaseId,
+                            type: 'track',
+                            tn: trackThumbnailUrl,
+                            value: d.Title
+                        });
+                    });
+                    return result;
+                }
+            }
+        });
+
+        var clearSearchResults = function() {
+            $("#searchResults").html('');
+        }
+
+        var showSearchResults = function(datums, type, title, linkType) {
+            var $s =  $("#search");
+            var $sr = $("#searchResults");
+            var searchLocation = $s.parent().position();
+            var searchWidth = $s.width();
+            var searchHeight = $s.height();
+            var html = "<div class='" + type + " search-suggestion'><h5>" + title + "</h5>";
+            $.each(datums, function(i,d) {
+                html += "<div data-" + type + "-id='" + d.id + "'><a href='/" + linkType + "/" + d.id + "'>";
+                html += "<img src='" + d.tn + "' class='thumb' alt='" + d.value + "' />";
+                html += "<span class='name label label-default'>" + d.value + "</span></a></div>";
+            });
+            html += "</div>";
+            $sr.find("." + type).remove();
+            $sr.append(html).css({'left': searchLocation.left + $("#search").position().left + 25,
+                                  'width': searchWidth}).show();
+        };
 
         $(function() {
             {% with messages = get_flashed_messages() %}
@@ -140,43 +193,36 @@
               {% endfor %}
             {% endif %}
             {% endwith %}
+
             $('[data-toggle="tooltip"]').tooltip();
+
             queManager.init();
 
             artistSearchEngine.initialize();
             releaseSearchEngine.initialize();
+            trackSearchEngine.initialize();
 
-            $('#search').typeahead(null, {
-              limit: 25,
-              hint: false,
-              source: artistSearchEngine,
-              display: function(data) {
-                return data.value;
-              },
-              templates: {
-                  suggestion: function(data) {
-                    return '<div><img src="' + data.tn + '" alt="' + data.value + '" /><span class="search-title">' + data.value + '</span></div>';
-                  }
-              }
-            },{
-              limit: 25,
-              hint: false,
-              source: releaseSearchEngine,
-              display: function(data) {
-                return data.value;
-              },
-              templates: {
-                  suggestion: function(data) {
-                    return '<div><img src="' + data.tn + '" alt="' + data.value + '" /><span class="search-title">' + data.value + '</span></div>';
-                  }
-              }
-            }).bind('typeahead:select', function(ev,data) {
-                if(data.type === "artist") {
-                    window.location.href = "/artist/" + data.id;
-                } else if(data.type === "release") {
-                    window.location.href = "/release/" + data.id;
-                }
-            });
+            $("#search").on("keyup", _.debounce(function(e) {
+                var qry = $("#search").val();
+                clearSearchResults();
+                artistSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        showSearchResults(datums, 'artist', "Artists:", 'artist');
+                    }
+                });
+                releaseSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        showSearchResults(datums, 'release', "Releases:", 'release');
+                    }
+                });
+                trackSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        showSearchResults(datums, 'track', "Tracks:", 'release');
+                    }
+                });
+
+            }, 500));
+
 
 
         });

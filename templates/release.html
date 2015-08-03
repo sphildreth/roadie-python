@@ -6,7 +6,7 @@
     <div class="release-detail-container" data-release-id="{{ release.id }}">
         <div class="release-counts-container pull-right">
             <span data-track-count="{{ release.Tracks|length }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release.Tracks|sum(attribute='Track.Length')|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release|calculate_release_tracks_Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
@@ -101,37 +101,41 @@
         </div>
         <div class="row lists bordered">
             <div class="col-md-3">
+                {% if collectionReleases %}
                 <div>
                     <h4><span class="label label-primary">Collections</span></h4>
                     <ul class="no-list-style">
                         {% for collectionRelease in collectionReleases|sort(attribute='ListNumber') %}
                         <li>
                             <a href="/collection/{{ collectionRelease.CollectionId }}">
-                                <span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span> <span class="label label-default">{{ collectionRelease.CollectionName }}</span>
+                                <span class="label label-{{ 'success' if collectionRelease.ListNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.ListNumber  }}</span> <span class="label label-default">{{ collectionRelease.CollectionName }}</span>
                             </a>
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
+                {% endif %}
+                {% if release.AlternateNames %}
                 <div>
-                    {% if release.AlternateNames %}
                     <h4><span class="label label-primary">Alternate Names</span></h4>
                     <ul>
                         {% for alternateName in release.AlternateNames %}
                         <li><span class="label label-default">{{ alternateName }}</span></li>
                         {% endfor %}
                     </ul>
-                    {% endif %}
                 </div>
+                {% endif %}
             </div>
             <div class="col-md-3">
                 <div>
+                    {% if release.Genres %}
                     <h4><span class="label label-primary">Genres</span></h4>
                     <ul>
                         {% for genre in release.Genres %}
                         <li><span class="label label-default">{{ genre.Name }}</span></li>
                         {% endfor %}
                     </ul>
+                    {% endif %}
                 </div>
             </div>
             <div class="col-md-3">
@@ -146,13 +150,13 @@
                 <div>
                     {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
                     <h4><span class="label label-primary">Library Folders</span></h4>
-                    {% for group in release.Tracks|groupby('Track.FilePath') %}
                     <ul class="folders">
+                    {% for group in release|group_release_tracks_filepaths %}
                         <li>
-                            <span class="length label label-info">{{ group.grouper }}</span>
+                            <span class="length label label-info">{{ group }}</span>
                         </li>
-                    </ul>
                     {% endfor %}
+                    </ul>
                     {% endif %}
                 </div>
                 <div>
@@ -204,7 +208,7 @@
                         </div>
                     </div>
                     <div class="col-xs-2 col-sm-2 col-md-2">
-                        <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
+                        <span data-track-length="{{ track.Track.Length }}" class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                     </div>
                 </div>
             {% endfor %}
@@ -221,7 +225,7 @@
     var doTrackDelete = function(trackId, flag) {
         $.ajax({
             type: 'POST',
-            url: '/releasetrack/delete/' + releaseId + "/" + trackid + "/" + flag,
+            url: '/releasetrack/delete/' + releaseId + "/" + trackId + "/" + flag,
             contentType: "application/javascript",
             success: function(data) {
                 if(data.message == "OK") {
@@ -234,21 +238,39 @@
         });
     };
 
-    var checkIfTrackCountsMatch = function() {
+    var doReleaseSanityChecks = function() {
+        var $c = $("div.release-counts-container");
+        $c.find(".track-count-indicator").remove();
+        var isSane = doTrackCountsMatch() && areNoTracksOfZeroLength();
+        if(isSane) {
+            $c.append("<span class='track-count-indicator track-count-valid label label-success' title='Release Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+        } else {
+            $c.append("<span class='track-count-indicator track-count-valid label label-danger' title='Release Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+        }
+    };
+
+    var areNoTracksOfZeroLength = function() {
+        var result = true;
+        $.each($("div.tracks span.length"), function(i,d) {
+            var $t = $(d);
+            trackLength = parseInt($t.data("track-length"));
+            if(trackLength < 1) {
+                result = false;
+                return false;
+            }
+        });
+        return result;
+    };
+
+    var doTrackCountsMatch = function() {
         var releaseTrackCount = parseInt($("#releaseTrackCount").text());
         var foundTracks = parseInt($("span.track-count").data("track-count"));
-        var $c = $("div.release-counts-container");
-        $c.find(".track-count-valid").remove();
-        if(releaseTrackCount === foundTracks) {
-            $c.append("<span class='track-count-valid label label-success' title='Track Counts Match!'><i class='fa fa-battery-full'></i></span>");
-        } else {
-            $c.append("<span class='track-count-valid label label-danger' title='Track Counts Do Not Match!'><i class='fa fa-battery-empty'></i></span>");
-        }
+        return releaseTrackCount === foundTracks;
     }
 
     $(function() {
 
-        checkIfTrackCountsMatch();
+        doReleaseSanityChecks();
 
         $(".release-detail-container a.thumbnail").on("click", function(e) {
             var $t = $(this);
@@ -274,9 +296,10 @@
             window.location.href = "/admin/track/edit/?id=" + trackid + "&url=/release/" + releaseId;
         });
         $("div.tracks a.delete-release-track").on("click", function(e) {
+            var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track?", function(result) {
                 if(result) {
-                    doTrackDelete($(this).closest("div.row").data("track-id"), 'rt');
+                    doTrackDelete(trackid, 'rt');
                 }
             })
         });
@@ -284,7 +307,7 @@
             var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track and Track?", function(result) {
                 if(result) {
-                    doTrackDelete($(this).closest("div.row").data("track-id"), 't');
+                    doTrackDelete(trackid, 't');
                 }
             })
         });
@@ -292,7 +315,7 @@
             var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track, Track and File?", function(result) {
                 if(result) {
-                    doTrackDelete($(this).closest("div.row").data("track-id"), 'f');
+                    doTrackDelete(trackid, 'f');
                 }
             })
         });

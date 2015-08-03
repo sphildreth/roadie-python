@@ -15,7 +15,7 @@ body.roadie .navbar-default {
     margin: 2px 5px;
 }
 
-.thumbnail-container img {
+.thumbnail-container img.thumb {
     display: block;
     margin: auto;
 }
@@ -80,10 +80,18 @@ img.thumb {
   margin-right: 8px;
 }
 
-.release {
+.release-detail-container span.track-count-indicator {
+    height: 25px;
+    display: inline-block;
+}
+
+.release-info-container .release {
   display: inline-block;
-  min-height: 400px;
-  min-width: 430px;
+  height: 425px;
+  width: 430px;
+  overflow-y: overlay;
+  border: 1px solid #000;
+  padding: 2px;
 }
 
 div.bordered {
@@ -129,7 +137,7 @@ ul.no-list-style {
 }
 
 .release-info-container ul.tracks span.title {
-  width: 307px;
+  width: 290px;
   display: inline-block;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -178,6 +186,13 @@ ul.no-list-style {
 
 .release-detail-container .tracks {
     font-size: 18px;
+}
+
+.release-detail-container .lists span.label {
+    max-width:350px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .release-detail-container .artist-info {
@@ -304,38 +319,10 @@ ul.no-list-style {
     border-radius: 6px 0 6px 6px;
 }
 
-/* Search related */
-.typeahead,
-.tt-query,
-.tt-hint {
-  margin: 9px 11px;
-  width: 396px;
-  height: 30px;
-  padding: 8px 12px;
-  font-size: 24px;
-  line-height: 30px;
-  border: 2px solid #ccc;
-  -webkit-border-radius: 8px;
-     -moz-border-radius: 8px;
-          border-radius: 8px;
-  outline: none;
-}
-.typeahead {
-  background-color: #fff;
-}
-.typeahead:focus {
-  border: 2px solid #0097cf;
-}
-.tt-query {
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-}
-.tt-hint {
-  color: #999
-}
-.tt-menu {
-  width: 422px;
+#searchResults {
+  width: 522px;
+  top: 48px;
+  position: absolute;
   margin: 12px 0;
   padding: 8px 0;
   background-color: #fff;
@@ -348,27 +335,36 @@ ul.no-list-style {
      -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
           box-shadow: 0 5px 10px rgba(0,0,0,.2);
 }
-.tt-suggestion {
+#searchResults h5 {
+    margin: 0;
+    padding: 0;
+}
+#searchResults .search-suggestion {
   padding: 3px 20px;
   font-size: 18px;
   line-height: 24px;
+  color: #999;
+  border-bottom: 1px solid #F2F2F2;
 }
-.tt-suggestion:hover {
-  cursor: pointer;
-  color: #fff;
-  background-color: #0097cf;
+#searchResults .search-suggestion a {
+  text-decoration: none;
 }
-.tt-suggestion.tt-cursor {
+#searchResults .search-suggestion span.name:hover {
+  color: yellow;
+
+}
+#searchResults .search-suggestion.search-cursor {
   color: #fff;
   background-color: #0097cf;
 
 }
-.tt-suggestion img {
+#searchResults .search-suggestion img {
     height: auto;
     width: 25px;
     margin-right: 6px;
 }
-.search-title {
+
+#searchResults .search-title {
     text-shadow:none;
     color: #000000;
     font-size: 16px;

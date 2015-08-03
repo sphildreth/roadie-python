@@ -4,6 +4,11 @@
 {% endblock %}
 {% block body_content %}
     <div class="collections-container">
+        {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+        <div>
+            <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-add"></i> Add</a>
+        </div>
+        {% endif %}
         <h4><span class="label label-primary">Collections</span></h4>
         {% for collection in collections %}
         <div class="row collection">

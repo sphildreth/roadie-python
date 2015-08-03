@@ -109,6 +109,7 @@ class Label(Document):
 class Artist(Document):
     AlternateNames = SortedListField(StringField(), default=[])
     ArtistType = ReferenceField(ArtistType)
+    BirthDate = DateTimeField()
     BeginDate = DateTimeField()
     EndDate = DateTimeField()
     Images = ListField(EmbeddedDocumentField(Image))
