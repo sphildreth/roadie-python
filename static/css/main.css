@@ -363,9 +363,12 @@ ul.no-list-style {
     width: 25px;
     margin-right: 6px;
 }
-
 #searchResults .search-title {
     text-shadow:none;
     color: #000000;
     font-size: 16px;
+}
+#searchResults div.elapsed-time {
+    font-size: 12px;
+    font-style: italic;
 }

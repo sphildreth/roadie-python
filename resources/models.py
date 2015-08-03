@@ -244,7 +244,8 @@ class Release(Document):
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
-            'Title'
+            'Title',
+            'Tracks.Track'
         ],
         'ordering': [
             'ReleaseDate',

@@ -93,139 +93,30 @@
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/roadieLibrary.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>
     <script>
+    $(function() {
 
-        var trackThumbnailUrl = "{{ url_for('static', filename='img/track.png') }}";
-
-        var artistSearchEngine = new Bloodhound({
-            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-            queryTokenizer: Bloodhound.tokenizers.whitespace,
-            remote: {
-                url: '/api/v1.0/artists?inc=None&filter=%QUERY',
-                wildcard: '%QUERY',
-                filter: function(x) {
-                    result = [];
-                    $.each(x.rows, function(i,d) {
-                        result.push({
-                            id: d.ArtistId,
-                            type: 'artist',
-                            tn: d.ThumbnailUrl,
-                            value: d.Artist
-                        });
-                    });
-                    return result;
-                }
-            }
-        });
-
-        var releaseSearchEngine = new Bloodhound({
-            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-            queryTokenizer: Bloodhound.tokenizers.whitespace,
-            remote: {
-                url: '/api/v1.0/releases?inc=None&filter=%QUERY',
-                wildcard: '%QUERY',
-                filter: function(x) {
-                    result = [];
-                    $.each(x.rows, function(i,d) {
-                        result.push({
-                            id: d.ReleaseId,
-                            type: 'release',
-                            tn: d.ThumbnailUrl,
-                            value: d.Title + " (" + d.Year + ")"
-                        });
-                    });
-                    return result;
-                }
-            }
-        });
-
-        var trackSearchEngine = new Bloodhound({
-            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('value'),
-            queryTokenizer: Bloodhound.tokenizers.whitespace,
-            remote: {
-                url: '/api/v1.0/tracks?inc=None&filter=%QUERY',
-                wildcard: '%QUERY',
-                filter: function(x) {
-                    result = [];
-                    $.each(x.rows, function(i,d) {
-                        result.push({
-                            id: d.ReleaseId,
-                            type: 'track',
-                            tn: trackThumbnailUrl,
-                            value: d.Title
-                        });
-                    });
-                    return result;
-                }
-            }
-        });
-
-        var clearSearchResults = function() {
-            $("#searchResults").html('');
-        }
-
-        var showSearchResults = function(datums, type, title, linkType) {
-            var $s =  $("#search");
-            var $sr = $("#searchResults");
-            var searchLocation = $s.parent().position();
-            var searchWidth = $s.width();
-            var searchHeight = $s.height();
-            var html = "<div class='" + type + " search-suggestion'><h5>" + title + "</h5>";
-            $.each(datums, function(i,d) {
-                html += "<div data-" + type + "-id='" + d.id + "'><a href='/" + linkType + "/" + d.id + "'>";
-                html += "<img src='" + d.tn + "' class='thumb' alt='" + d.value + "' />";
-                html += "<span class='name label label-default'>" + d.value + "</span></a></div>";
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            $.bootstrapGrowl("{{ message }}", {
+                type: 'info',
+                stackup_spacing: 20
             });
-            html += "</div>";
-            $sr.find("." + type).remove();
-            $sr.append(html).css({'left': searchLocation.left + $("#search").position().left + 25,
-                                  'width': searchWidth}).show();
-        };
+          {% endfor %}
+        {% endif %}
+        {% endwith %}
 
-        $(function() {
-            {% with messages = get_flashed_messages() %}
-            {% if messages %}
-              {% for message in messages %}
-                $.bootstrapGrowl("{{ message }}", {
-                    type: 'info',
-                    stackup_spacing: 20
-                });
-              {% endfor %}
-            {% endif %}
-            {% endwith %}
+        $('[data-toggle="tooltip"]').tooltip();
 
-            $('[data-toggle="tooltip"]').tooltip();
+        queManager.init();
 
-            queManager.init();
-
-            artistSearchEngine.initialize();
-            releaseSearchEngine.initialize();
-            trackSearchEngine.initialize();
-
-            $("#search").on("keyup", _.debounce(function(e) {
-                var qry = $("#search").val();
-                clearSearchResults();
-                artistSearchEngine.search(qry, function(){}, function(datums) {
-                    if(datums.length > 0) {
-                        showSearchResults(datums, 'artist', "Artists:", 'artist');
-                    }
-                });
-                releaseSearchEngine.search(qry, function(){}, function(datums) {
-                    if(datums.length > 0) {
-                        showSearchResults(datums, 'release', "Releases:", 'release');
-                    }
-                });
-                trackSearchEngine.search(qry, function(){}, function(datums) {
-                    if(datums.length > 0) {
-                        showSearchResults(datums, 'track', "Tracks:", 'release');
-                    }
-                });
-
-            }, 500));
-
-
-
+        searchEngine.init({
+            searchTrackThumbNailUrl: "{{ url_for('static', filename='img/track.png') }}"
         });
+
+    });
     </script>
     {% block script_content %}
     {% endblock %}

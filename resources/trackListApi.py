@@ -43,5 +43,6 @@ class TrackListApi(Resource):
                                 "Title": release.Artist.Name + " - " + release.Title + " - " + track.Title,
                                 "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                             })
+                            break
 
         return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=tracks.count(), message="OK")
