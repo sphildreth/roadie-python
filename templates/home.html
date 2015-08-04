@@ -6,7 +6,7 @@
     <div class="home-container">
         <div class="row recently-played-container">
         <h4><span class="label label-primary">Recently Played</span></h4>
-        <table class="table table-striped table-condensed table-responsive">
+        <table id="lastPlayedTracks" class="table table-striped table-condensed table-responsive">
             <thead>
                 <tr>
                     <td>Track</td>
@@ -55,10 +55,26 @@
     </div>
 {% endblock %}
 {% block script_content %}
+    {% raw %}
+    <script id="template" type="x-tmpl-mustache">
+        <tr><td data-track-id='{{ lastPlayedInfo.TrackId }}'><span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span></td><td data-release-id='{{ lastPlayedInfo.ReleaseId }}'><a href='/release/{{ lastPlayedInfo.ReleaseId }}'><div class='thumbnail-container pull-left'><img class='release-thumb' src='{{ lastPlayedInfo.ReleaseThumbnail }}' alt='{{ lastPlayedInfo.ReleaseTitle }}' /></div><span class='label label-default'>{{ lastPlayedInfo.ReleaseTitle }}</span></a></td><td data-artist-id='{{ lastPlayedInfo.ArtistId }}'><a href='/artist/{{ lastPlayedInfo.ArtistId }}'><div class='thumbnail-container pull-left'><img class='artist-thumb' src='{{ lastPlayedInfo.ArtistThumbnail }}' alt='{{ lastPlayedInfo.ArtistTitle }}' /></div>    <span class='label label-default'>{{ lastPlayedInfo.ArtistName }}</span></a></td><td data-user-id='{{ lastPlayedInfo.UserId }}'><div class='thumbnail-container pull-left'><img class='user-thumb' src='{{ lastPlayedInfo.UserThumbnail }}' alt='{{ lastPlayedInfo.Username }}' /></div><span class='label label-default'>{{ lastPlayedInfo.Username }}</span></td><td><span class='label label-default'>{{ lastPlayedInfo.LastPlayed }}</span></td></tr>
+    </script>
+    {% endraw %}
     <script type="text/javascript">
+    var ws;
     $(function() {
+        var template = $("#template").html();
+        Mustache.parse(template);
 
+        ws = new WebSocket("{{ wsRoot }}websocket/");
+        ws.onmessage = function(e) {
+          var data = JSON.parse(e.data);
+          var html = Mustache.render(template, data)
+          $("#lastPlayedTracks > tbody > tr:first").before(html);
+        };
+        ws.onclose = function(e) {
 
+        };
     });
     </script>
 {% endblock %}

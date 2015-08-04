@@ -41,6 +41,8 @@ from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
 from werkzeug.datastructures import Headers
 from re import findall
 
+clients = []
+
 app = Flask(__name__)
 app.jinja_env.filters['format_tracktime'] = format_tracktime
 app.jinja_env.filters['format_timedelta'] = format_timedelta
@@ -88,8 +90,8 @@ def index():
             'LastPlayed' : arrow.get(ut.LastPlayed).humanize()
         }
         lastPlayedInfos.append(info)
-
-    return render_template('home.html', lastPlayedInfos = lastPlayedInfos)
+    wsRoot = request.url_root.replace("http://", "ws://")
+    return render_template('home.html', lastPlayedInfos = lastPlayedInfos, wsRoot=wsRoot)
 
 
 @app.route('/artist/<artist_id>')
@@ -494,6 +496,7 @@ def streamTrack(user_id, release_id, track_id):
     headers.add('Content-Length', str((end - begin) + 1))
     isFullRequest = begin == 0 and (end == (size - 1))
     isEndRangeRequest = begin > 0 and (end != (size -1))
+    user = None;
     if isFullRequest or isEndRangeRequest and current_user:
         user = User.objects(id=user_id).first()
         if user:
@@ -505,6 +508,27 @@ def streamTrack(user_id, release_id, track_id):
                 userTrack.PlayedCount += 1
                 userTrack.LastPlayed = now
                 UserTrack.save(userTrack)
+            try:
+                if clients:
+                    data = json.dumps({'message' : "OK",
+                            'lastPlayedInfo' : {
+                                'TrackId' : str(track.id),
+                                'TrackTitle' : track.Title,
+                                'ReleaseId' : str(release.id),
+                                'ReleaseTitle' : release.Title,
+                                'ReleaseThumbnail' : "/images/release/thumbnail/" + str(release.id),
+                                'ArtistId' : str(track.Artist.id),
+                                'ArtistName' : track.Artist.Name,
+                                'ArtistThumbnail' : "/images/artist/thumbnail/" + str(track.Artist.id),
+                                'UserId' : str(user.id),
+                                'Username' : user.Username,
+                                'UserThumbnail' : "/images/user/avatar/" + str(user.id),
+                                'LastPlayed' : arrow.get(now).humanize()
+                            }})
+                    for client in clients:
+                        client.write_message(data)
+            except:
+                pass
     data = None
     with open(mp3File, 'rb') as f:
         f.seek(begin)
@@ -777,16 +801,12 @@ def logout():
     return redirect(url_for('index'))
 
 
-class ScannerSocket(WebSocketHandler):
-    def open(self):
-        print("Socket opened.")
-
-    def on_message(self, message):
-        self.write_message("Received: " + message)
-        print("Received message: " + message)
+class WebSocket(WebSocketHandler):
+    def open(self, *args):
+        clients.append(self)
 
     def on_close(self):
-        print("Socket closed.")
+        clients.remove(self)
 
 
 if __name__ == '__main__':
@@ -806,7 +826,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(UserRole, category='Reference Fields'))
     container = WSGIContainer(app)
     server = Application([
-        (r'/scanner/', ScannerSocket),
+        (r'/websocket/', WebSocket),
         (r'.*', FallbackHandler, dict(fallback=container))
     ])
     server.listen(5000)
