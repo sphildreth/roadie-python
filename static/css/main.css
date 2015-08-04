@@ -72,6 +72,10 @@ div.collection-container ul.tracks {
 }
 
 
+.release-detail-container .artist-info img.thumb {
+    margin: 2px 4px;
+}
+
 img.thumb {
     margin: 5px 5px 4px 2px;
 }
@@ -176,7 +180,7 @@ ul.no-list-style {
 }
 
 .release-detail-container h2 {
-    margin-top:7px;
+    margin-top: 1px;
 }
 
 .release-detail-container h5 {
@@ -196,7 +200,6 @@ ul.no-list-style {
 }
 
 .release-detail-container .artist-info {
-    padding-left: 8px;
     display: inline-block;
     width: 90%;
 }
@@ -220,6 +223,10 @@ ul.no-list-style {
 
 .recent-releases .artist-info img {
     height: 30px;
+}
+
+.artist-detail-container .title h2 {
+    margin-top: 0;
 }
 
 .recent-releases a {
@@ -371,4 +378,29 @@ ul.no-list-style {
 #searchResults div.elapsed-time {
     font-size: 12px;
     font-style: italic;
+}
+
+/* Rating Related */
+.symbol {
+  display: inline-block;
+  border-radius: 50%;
+  border: 5px double white;
+  width: 30px;
+  height: 30px;
+}
+.symbol-empty {
+  background-color: #ccc;
+}
+.symbol-filled {
+  background-color: black;
+}
+.rating-container {
+    height: 20px;
+    display: inline-block;
+}
+.rating-container > span {
+    margin-left: 5px;
+}
+.user-rating-container {
+    margin-left: 72px;
 }

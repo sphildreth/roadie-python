@@ -17,7 +17,7 @@ from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
-    Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRole, UserTrack
+    Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
 from flask.ext.mongoengine import MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
@@ -35,6 +35,9 @@ from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
 from viewModels.RoadieUserModelView import RoadieUserModelView
+from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
+from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
+from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
 from werkzeug.datastructures import Headers
 from re import findall
 
@@ -100,10 +103,145 @@ def artist(artist_id):
     totalTime = Track.objects(Artist=artist).aggregate(
         {"$group": {"_id": "null", "total": {"$sum": "$Length"}}},
     )
+    user = User.objects(id=current_user.id).first()
+    userArtist = UserArtist.objects(User=user, Artist=artist).first()
     for t in totalTime:
         counts['length'] = t['total']
-    return render_template('artist.html', artist=artist, releases=releases, counts=counts)
+    return render_template('artist.html', artist=artist, releases=releases, counts=counts, userArtist=userArtist)
 
+
+@app.route("/user/artist/setrating/<artist_id>/<rating>", methods=['POST'])
+def setUserArtistRating(artist_id, rating):
+    try:
+        artist = Artist.objects(id=artist_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not artist or not user:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+        userArtist = UserArtist.objects(User=user, Artist=artist).first()
+        if not UserArtist:
+            userArtist = UserArtist(User=user, Artist=artist)
+        userArtist.Rating = rating
+        userArtist.LastUpdated = now
+        UserArtist.save(userArtist)
+        # Update artist average rating
+        artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
+        artist.Rating = artistAverage
+        artist.LastUpdated = now
+        Artist.save(artist)
+        return jsonify(message="OK", average=artistAverage)
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/user/artist/toggledislike/<artist_id>/<toggle>", methods=['POST'])
+def toggleUserArtistDislike(artist_id, toggle):
+    try:
+        artist = Artist.objects(id=artist_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not artist or not user:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+        userArtist = UserArtist.objects(User=user, Artist=artist).first()
+        if not userArtist:
+            userArtist = UserArtist(User=user, Artist=artist)
+        userArtist.IsDisliked = toggle.lower() == "true"
+        userArtist.LastUpdated = now
+        if userArtist.IsDisliked:
+            userArtist.Rating = 0
+        UserArtist.save(userArtist)
+        artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
+        if userArtist.IsDisliked:
+            # Update artist average rating
+            artist.Rating = artistAverage
+            artist.LastUpdated = now
+            Artist.save(artist)
+        return jsonify(message="OK", average=artistAverage)
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/user/artist/togglefavorite/<artist_id>/<toggle>", methods=['POST'])
+def toggleUserArtistFavorite(artist_id, toggle):
+    try:
+        artist = Artist.objects(id=artist_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not artist or not user:
+            return jsonify(message="ERROR")
+        userArtist = UserArtist.objects(User=user, Artist=artist).first()
+        if not userArtist:
+            userArtist = UserArtist(User=user, Artist=artist)
+        userArtist.IsFavorite = toggle.lower() == "true"
+        userArtist.LastUpdated = arrow.utcnow().datetime
+        UserArtist.save(userArtist)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+
+@app.route("/user/release/setrating/<release_id>/<rating>", methods=['POST'])
+def setUserReleaseRating(release_id, rating):
+    try:
+        release = Release.objects(id=release_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not release or not user:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+        userRelease = UserRelease.objects(User=user, Release=release).first()
+        if not userRelease:
+            userRelease = UserRelease(User=user, Release=release)
+        userRelease.Rating = rating
+        userRelease.LastUpdated = now
+        UserRelease.save(userRelease)
+        # Update artist average rating
+        releaseAverage = UserRelease.objects(Release=release).aggregate_average('Rating')
+        release.Rating = releaseAverage
+        release.LastUpdated = now
+        Release.save(release)
+        return jsonify(message="OK", average=releaseAverage)
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/user/release/toggledislike/<release_id>/<toggle>", methods=['POST'])
+def toggleUserReleaseDislike(release_id, toggle):
+    try:
+        release = Release.objects(id=release_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not release or not user:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+        userRelease = UserRelease.objects(User=user, Release=release).first()
+        if not userRelease:
+            userRelease = UserRelease(User=user, Release=release)
+        userRelease.IsDisliked = toggle.lower() == "true"
+        userRelease.LastUpdated = now
+        if userRelease.IsDisliked:
+            userRelease.Rating = 0
+        UserRelease.save(userRelease)
+        releaseAverage = UserRelease.objects(Release=release).aggregate_average('Rating')
+        if userRelease.IsDisliked:
+            # Update release average rating
+            release.Rating = releaseAverage
+            release.LastUpdated = now
+            Release.save(release)
+        return jsonify(message="OK", average=releaseAverage)
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/user/release/togglefavorite/<release_id>/<toggle>", methods=['POST'])
+def toggleUserReleaseFavorite(release_id, toggle):
+    try:
+        release = Release.objects(id=release_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not release or not user:
+            return jsonify(message="ERROR")
+        userRelease = UserRelease.objects(User=user, Release=release).first()
+        if not userRelease:
+            userRelease = UserArtist(User=user, Release=release)
+        userRelease.IsFavorite = toggle.lower() == "true"
+        userRelease.LastUpdated = arrow.utcnow().datetime
+        UserRelease.save(userRelease)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
 def deleteArtist(artist_id):
@@ -219,6 +357,8 @@ def release(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
         return render_template('404.html'), 404
+    user = User.objects(id=current_user.id).first()
+    userRelease = UserRelease.objects(User=user, Release=release).first()
     collections = Collection.objects(Releases__Release=release).all()
     collectionReleases = []
     if collections:
@@ -229,7 +369,7 @@ def release(release_id):
                     crt.CollectionName = collection.Name
                     collectionReleases.append(crt)
 
-    return render_template('release.html', release=release, collectionReleases= collectionReleases)
+    return render_template('release.html', release=release, collectionReleases= collectionReleases, userRelease=userRelease)
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
 def playArtist(artist_id,doShuffle):
@@ -656,9 +796,10 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Label))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieUserModelView(User))
-    admin.add_view(RoadieModelView(UserArtist))
-    admin.add_view(RoadieModelView(UserTrack))
+    admin.add_view(RoadieUserModelView(User, category='User'))
+    admin.add_view(RoadieUserArtistModelView(UserArtist, category='User'))
+    admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User'))
+    admin.add_view(RoadieUserTrackModelView(UserTrack, category='User'))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))
     admin.add_view(RoadieModelView(Genre, category='Reference Fields'))
     admin.add_view(RoadieModelView(Quality, category='Reference Fields'))

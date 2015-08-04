@@ -26,11 +26,19 @@
         </div>
         <div class="row title bordered">
             <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+            <div class="rating-container">
+                <input type="hidden" class="rating" data-readonly value="{{ release.Rating }}" />
+            </div>
             <span class="artist-info">
                 <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
                 <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
             </span>
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
+            <div class="user-rating-container">
+                <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <input type="hidden" class="user-rating rating" value="{{ userRelease.Rating }}" />
+                <a href="#" class="favorite" title="Toggle Favorite Release"><i class="fa {{'fa-heart' if userRelease.IsFavorite else 'fa-heart-o'}}"></i></a>
+            </div>
         </div>
         <div class="row bordered">
             <div class="col-md-6">
@@ -271,6 +279,69 @@
     $(function() {
 
         doReleaseSanityChecks();
+
+            $(".user-rating-container a.dislike").on("click", function(e) {
+                var $i =  $(this).find("i:first");
+                var toggle = !$i.hasClass("fa-thumbs-down");
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/release/toggledislike/' + releaseId + '/' + toggle,
+                    contentType: "application/javascript",
+                    success: function(data) {
+                        if(data.message == "OK") {
+                            roadieLibrary.showSuccessMessage("Successfully Toggled Dislike");
+                            if(toggle) {
+                                $i.removeClass("fa-thumbs-o-down").addClass("fa-thumbs-down");
+                                $(".user-rating-container input.rating").rating('rate',0);
+                                $(".rating-container input.rating").rating('rate', data.average);
+                            } else {
+                                $i.removeClass("fa-thumbs-down").addClass("fa-thumbs-o-down");
+                            }
+                        }
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            });
+            $(".user-rating-container a.favorite").on("click", function(e) {
+                var $i =  $(this).find("i:first");
+                var toggle = !$i.hasClass("fa-heart");
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/release/togglefavorite/' + releaseId + '/' + toggle,
+                    contentType: "application/javascript",
+                    success: function(data) {
+                        if(data.message == "OK") {
+                            roadieLibrary.showSuccessMessage("Successfully Toggled Favorite");
+                            if(toggle) {
+                                $i.removeClass("fa-heart-o").addClass("fa-heart");
+                            } else {
+                                $i.removeClass("fa-heart").addClass("fa-heart-o");
+                            }
+                        }
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            });
+            $(".user-rating-container input.rating").on("change", function(e) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/release/setrating/' + releaseId + '/' + $(this).rating('rate'),
+                    contentType: "application/javascript",
+                    success: function(data) {
+                        if(data.message == "OK") {
+                            $(".rating-container input.rating").rating('rate', data.average);
+                            roadieLibrary.showSuccessMessage("Successfully Set Rating");
+                        }
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            });
 
         $(".release-detail-container a.thumbnail").on("click", function(e) {
             var $t = $(this);

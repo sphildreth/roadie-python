@@ -120,6 +120,8 @@ class Artist(Document):
     RealName = StringField()
     SortName = StringField()
     Thumbnail = FileField()
+    # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
+    Rating = IntField()
     Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
@@ -167,6 +169,7 @@ class UserArtist(Document):
     IsFavorite = BooleanField()
     IsDisliked = BooleanField()
     Rating = IntField()
+    LastUpdated = DateTimeField(default=datetime.datetime.now)
     meta = {
         'indexes': [
             'User',
@@ -238,6 +241,8 @@ class Release(Document):
     Title = StringField(required=True)
     Tracks = ListField(EmbeddedDocumentField(TrackRelease), default=[])
     TrackCount = IntField()
+    # This is calculated when a user rates an release based on average User Ratings and stored here for performance
+    Rating = IntField()
     DiscCount = IntField()
     Profile = StringField()
     Quality = ReferenceField(Quality)
@@ -262,6 +267,8 @@ class UserRelease(Document):
     Release = ReferenceField(Release, required=True, reverse_delete_rule=CASCADE)
     Rating = IntField()
     IsFavorite = BooleanField()
+    IsDisliked = BooleanField()
+    LastUpdated = DateTimeField(default=datetime.datetime.now)
     meta = {
         'indexes': [
             'User',

@@ -9,8 +9,15 @@ var roadieLibrary = ( function( window, undefined ) {
         return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
     };
 
+    function showSuccessMessage(message) {
+        $.bootstrapGrowl(message, {
+            type: 'success'
+        });
+    }
+
     return {
-        lpad : lpad
+        lpad : lpad,
+        showSuccessMessage: showSuccessMessage
     };
 
 } )( window );
