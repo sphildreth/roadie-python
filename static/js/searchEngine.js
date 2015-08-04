@@ -95,13 +95,24 @@ var searchEngine = ( function( window, undefined ) {
         searchEngine.releaseSearchEngine.initialize();
         searchEngine.trackSearchEngine.initialize();
 
-        $("#search").on("keyup", _.debounce(function(e) {
+        $("#search").on("keydown", function(e) {
+            if(event.keyCode == 13) {
+              event.preventDefault();
+              return false;
+            }
+        }).on("keyup", _.debounce(function(e) {
+            e.preventDefault()
+            e.stopPropagation();
             if (e.keyCode == 27) {
                 $("#searchResults").hide();
                 return false;
             }
             var startTime = new Date()
             var qry = $("#search").val();
+            if(qry.length < 1) {
+                roadieLibrary.showErrorMessage("Please enter a valid search phrase");
+                return false;
+            }
             searchEngine.clearSearchResults();
             searchEngine.artistSearchEngine.search(qry, function(){}, function(datums) {
                 if(datums.length > 0) {

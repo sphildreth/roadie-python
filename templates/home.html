@@ -72,9 +72,6 @@
           var html = Mustache.render(template, data)
           $("#lastPlayedTracks > tbody > tr:first").before(html);
         };
-        ws.onclose = function(e) {
-
-        };
     });
     </script>
 {% endblock %}
