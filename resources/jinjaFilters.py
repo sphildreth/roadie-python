@@ -20,6 +20,16 @@ def group_release_tracks_filepaths(value):
         return groups
         pass
 
+def calculate_release_discs(value):
+    try:
+        discs = []
+        for track in value.Tracks:
+            if track.ReleaseMediaNumber not in discs:
+                discs.append(track.ReleaseMediaNumber)
+        return len(discs)
+    except:
+        pass
+
 def calculate_release_tracks_Length(value):
     try:
         result = 0

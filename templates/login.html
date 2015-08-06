@@ -6,6 +6,7 @@
     <input type="string" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
     <label for="password" class="sr-only">Password</label>
     <input type="password" id="password" name="password" class="form-control" placeholder="Password" required>
+    <input type=hidden value="{{ next or '' }}" name="next">
     <div class="checkbox">
       <label>
         <input type="checkbox" value="remember-me" id="remember_me" name="remember_me"> Remember me

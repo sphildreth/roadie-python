@@ -4,7 +4,7 @@
 {% endblock %}
 {% block body_content %}
     <div class="release-detail-container" data-release-id="{{ release.id }}">
-        <div class="release-counts-container pull-right">
+        <div class="release-counts-container pull-right" data-disc-count="{{ release|calculate_release_discs }}">
             <span data-track-count="{{ release.Tracks|length }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
             <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release|calculate_release_tracks_Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
@@ -85,7 +85,7 @@
                 </div>
                 <div>
                     <h4><span class="label label-primary">Disc Count</span></h4>
-                    <span class="label label-default">{{ release.DiscCount }}</span>
+                    <span id="releaseDiscCount" class="label label-default">{{ release.DiscCount }}</span>
                 </div>
             </div>
             <div class="col-md-3">
@@ -249,7 +249,7 @@
     var doReleaseSanityChecks = function() {
         var $c = $("div.release-counts-container");
         $c.find(".track-count-indicator").remove();
-        var isSane = doTrackCountsMatch() && areNoTracksOfZeroLength();
+        var isSane = doTrackCountsMatch() && areNoTracksOfZeroLength() && doReleaseDiscCountsMatch();
         if(isSane) {
             $c.append("<span class='track-count-indicator track-count-valid label label-success' title='Release Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
         } else {
@@ -273,8 +273,22 @@
     var doTrackCountsMatch = function() {
         var releaseTrackCount = parseInt($("#releaseTrackCount").text());
         var foundTracks = parseInt($("span.track-count").data("track-count"));
-        return releaseTrackCount === foundTracks;
-    }
+        var sane = releaseTrackCount === foundTracks;
+                if (!sane) {
+            $("#releaseTrackCount").removeClass("label-default").addClass("label-danger");
+        }
+        return sane
+    };
+
+    var doReleaseDiscCountsMatch = function() {
+        var discCount = parseInt($(".release-counts-container").data("disc-count"));
+        var foundDiscs = parseInt($("#releaseDiscCount").text());
+        var sane = discCount === foundDiscs;
+        if (!sane) {
+            $("#releaseDiscCount").removeClass("label-default").addClass("label-danger");
+        }
+        return sane;
+    };
 
     $(function() {
 

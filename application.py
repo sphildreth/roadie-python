@@ -19,7 +19,8 @@ from resources.trackListApi import TrackListApi
 from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
-from flask.ext.mongoengine import MongoEngineSessionInterface
+
+from flask.ext.mongoengine import MongoEngine, MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from flask.ext.bcrypt import Bcrypt
@@ -29,7 +30,8 @@ from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from operator import itemgetter
 from resources.nocache import nocache
-from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, group_release_tracks_filepaths, format_age_from_date
+from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length,\
+                                   group_release_tracks_filepaths, format_age_from_date, calculate_release_discs
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
@@ -38,8 +40,10 @@ from viewModels.RoadieUserModelView import RoadieUserModelView
 from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
 from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
 from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
+from viewModels.RoadieArtistModelView import RoadieArtistModelView
 from werkzeug.datastructures import Headers
 from re import findall
+from urllib.parse import urlparse, urljoin
 
 clients = []
 
@@ -49,6 +53,7 @@ app.jinja_env.filters['format_timedelta'] = format_timedelta
 app.jinja_env.filters['calculate_release_tracks_Length'] = calculate_release_tracks_Length
 app.jinja_env.filters['group_release_tracks_filepaths'] = group_release_tracks_filepaths
 app.jinja_env.filters['format_age_from_date'] = format_age_from_date
+app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
@@ -72,6 +77,7 @@ def before_request():
 
 
 @app.route('/')
+@login_required
 def index():
     lastPlayedInfos = []
     for ut in UserTrack.objects().order_by('-LastPlayed')[:25]:
@@ -93,8 +99,8 @@ def index():
     wsRoot = request.url_root.replace("http://", "ws://")
     return render_template('home.html', lastPlayedInfos = lastPlayedInfos, wsRoot=wsRoot)
 
-
 @app.route('/artist/<artist_id>')
+@login_required
 def artist(artist_id):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
@@ -113,6 +119,7 @@ def artist(artist_id):
 
 
 @app.route("/user/artist/setrating/<artist_id>/<rating>", methods=['POST'])
+@login_required
 def setUserArtistRating(artist_id, rating):
     try:
         artist = Artist.objects(id=artist_id).first()
@@ -121,7 +128,7 @@ def setUserArtistRating(artist_id, rating):
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
         userArtist = UserArtist.objects(User=user, Artist=artist).first()
-        if not UserArtist:
+        if not userArtist:
             userArtist = UserArtist(User=user, Artist=artist)
         userArtist.Rating = rating
         userArtist.LastUpdated = now
@@ -136,6 +143,7 @@ def setUserArtistRating(artist_id, rating):
         return jsonify(message="ERROR")
 
 @app.route("/user/artist/toggledislike/<artist_id>/<toggle>", methods=['POST'])
+@login_required
 def toggleUserArtistDislike(artist_id, toggle):
     try:
         artist = Artist.objects(id=artist_id).first()
@@ -162,6 +170,7 @@ def toggleUserArtistDislike(artist_id, toggle):
         return jsonify(message="ERROR")
 
 @app.route("/user/artist/togglefavorite/<artist_id>/<toggle>", methods=['POST'])
+@login_required
 def toggleUserArtistFavorite(artist_id, toggle):
     try:
         artist = Artist.objects(id=artist_id).first()
@@ -180,6 +189,7 @@ def toggleUserArtistFavorite(artist_id, toggle):
 
 
 @app.route("/user/release/setrating/<release_id>/<rating>", methods=['POST'])
+@login_required
 def setUserReleaseRating(release_id, rating):
     try:
         release = Release.objects(id=release_id).first()
@@ -203,6 +213,7 @@ def setUserReleaseRating(release_id, rating):
         return jsonify(message="ERROR")
 
 @app.route("/user/release/toggledislike/<release_id>/<toggle>", methods=['POST'])
+@login_required
 def toggleUserReleaseDislike(release_id, toggle):
     try:
         release = Release.objects(id=release_id).first()
@@ -229,6 +240,7 @@ def toggleUserReleaseDislike(release_id, toggle):
         return jsonify(message="ERROR")
 
 @app.route("/user/release/togglefavorite/<release_id>/<toggle>", methods=['POST'])
+@login_required
 def toggleUserReleaseFavorite(release_id, toggle):
     try:
         release = Release.objects(id=release_id).first()
@@ -246,6 +258,7 @@ def toggleUserReleaseFavorite(release_id, toggle):
         return jsonify(message="ERROR")
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
+@login_required
 def deleteArtist(artist_id):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
@@ -258,6 +271,7 @@ def deleteArtist(artist_id):
 
 
 @app.route('/release/delete/<release_id>', methods=['POST'])
+@login_required
 def deleteRelease(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
@@ -270,6 +284,7 @@ def deleteRelease(release_id):
 
 
 @app.route('/releasetrack/delete/<release_id>/<release_track_id>/<flag>', methods=['POST'])
+@login_required
 def deleteReleaseTrack(release_id, release_track_id, flag):
     try:
         release = Release.objects(id=release_id).first()
@@ -303,6 +318,7 @@ def deleteReleaseTrack(release_id, release_track_id, flag):
 
 
 @app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
+@login_required
 def setArtistImage(artist_id, image_id):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
@@ -329,6 +345,7 @@ def setArtistImage(artist_id, image_id):
 
 
 @app.route('/release/setimage/<release_id>/<image_id>', methods=['POST'])
+@login_required
 def setReleaseImage(release_id, image_id):
     release = Release.objects(id=release_id).first()
     if not release:
@@ -353,8 +370,8 @@ def setReleaseImage(release_id, image_id):
         return jsonify(message="OK")
     return jsonify(message="ERROR")
 
-
 @app.route('/release/<release_id>')
+@login_required
 def release(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
@@ -374,6 +391,7 @@ def release(release_id):
     return render_template('release.html', release=release, collectionReleases= collectionReleases, userRelease=userRelease)
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
+@login_required
 def playArtist(artist_id,doShuffle):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
@@ -390,6 +408,7 @@ def playArtist(artist_id,doShuffle):
                      attachment_filename= "playlist.m3u")
 
 @app.route("/release/play/<release_id>")
+@login_required
 def playRelease(release_id):
     release = Release.objects(id=release_id).first()
     if not release:
@@ -403,6 +422,7 @@ def playRelease(release_id):
                      attachment_filename="playlist.m3u")
 
 @app.route("/track/play/<release_id>/<track_id>")
+@login_required
 def playTrack(release_id, track_id):
     release = Release.objects(id=release_id).first()
     track = Track.objects(id=track_id).first()
@@ -416,6 +436,7 @@ def playTrack(release_id, track_id):
                  attachment_filename="playlist.m3u")
 
 @app.route("/que/play", methods=['POST'])
+@login_required
 def playQue():
     user = User.objects(id=current_user.id).first()
     tracks = []
@@ -431,6 +452,7 @@ def playQue():
 
 
 @app.route("/que/save/<que_name>", methods=['POST'])
+@login_required
 def saveQue(que_name):
     if not que_name or not current_user:
         return jsonify(message="ERROR")
@@ -456,7 +478,6 @@ def saveQue(que_name):
             pl.Tracks = tracks
         Playlist.update(pl)
     return jsonify(message="OK")
-
 
 @app.route("/stream/track/<user_id>/<release_id>/<track_id>")
 def streamTrack(user_id, release_id, track_id):
@@ -542,8 +563,8 @@ def streamTrack(user_id, release_id, track_id):
     response.make_conditional(request)
     return response
 
-
 @app.route('/stats')
+@login_required
 @nocache
 def stats():
     counts = {'artists': "{0:,}".format(Artist.objects().count()),
@@ -751,11 +772,11 @@ def register():
     flash('User successfully registered')
     return redirect(url_for('login'))
 
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    next = get_redirect_target()
     if request.method == 'GET':
-        return render_template('login.html')
+        return render_template('login.html', next=next)
     username = request.form['username']
     password = request.form['password']
     remember_me = False
@@ -765,10 +786,14 @@ def login():
     if registered_user and bcrypt.check_password_hash(registered_user.Password, password):
         login_user(registered_user, remember=remember_me)
         flash('Logged in successfully')
-        return redirect(request.args.get('next') or url_for('index'))
+        return redirect_back('index')
     else:
         flash('Username or Password is invalid', 'error')
         return redirect(url_for('login'))
+
+def public_endpoint(function):
+    function.is_public = True
+    return function
 
 
 @app.route('/scanStorage')
@@ -776,19 +801,40 @@ def scanStorage():
     return render_template('scanStorage.html')
 
 @app.route('/playlists')
+@login_required
 def playlists():
     user = User.objects(id=current_user.id).first()
     userPlaylists = Playlist.objects(User=user).order_by("Name").all()
   #  sharedPlaylists =  Playlist.objects(User__ne = user).all() #.order_by('User__Name', 'Name').all()
     return render_template('playlist.html', userPlaylists=userPlaylists) #, sharedPlaylists=sharedPlaylists)
 
+def is_safe_url(target):
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ('http', 'https') and \
+           ref_url.netloc == test_url.netloc
+
+def get_redirect_target():
+    for target in request.values.get('next'), request.referrer:
+        if not target:
+            continue
+        if is_safe_url(target):
+            return target
+
+def redirect_back(endpoint, **values):
+    target = request.form['next']
+    if not target or not is_safe_url(target):
+        target = url_for(endpoint, **values)
+    return redirect(target)
 
 @app.route("/collections")
+@login_required
 def collections():
     collections = Collection.objects().order_by("Name").all()
     return render_template('collections.html', collections=collections)
 
 @app.route('/collection/<collection_id>')
+@login_required
 def collection(collection_id):
     collection = Collection.objects(id=collection_id).first()
     if not collection:
@@ -798,7 +844,7 @@ def collection(collection_id):
 @app.route('/logout')
 def logout():
     logout_user()
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 class WebSocket(WebSocketHandler):
@@ -811,7 +857,7 @@ class WebSocket(WebSocketHandler):
 
 if __name__ == '__main__':
     admin = admin.Admin(app, 'Roadie: Admin', template_mode='bootstrap3')
-    admin.add_view(RoadieModelView(Artist))
+    admin.add_view(RoadieArtistModelView(Artist))
     admin.add_view(RoadieCollectionModelView(Collection))
     admin.add_view(RoadieModelView(Label))
     admin.add_view(RoadieReleaseModelView(Release))

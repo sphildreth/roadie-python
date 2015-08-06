@@ -4,7 +4,7 @@ from flask.ext.login import current_user
 
 class RoadieUserModelView(RoadieModelView):
 
-    form_create_rules = ('Username', 'Email', 'RegisteredOn', 'LastLogin', 'LastUpdated', 'Active', 'Avatar', 'Roles')
+    form_excluded_columns = ('Password')
 
     @property
     def can_create(self):
