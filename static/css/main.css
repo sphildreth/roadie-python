@@ -28,7 +28,7 @@ ul.dropdown-menu a {
     text-align:left;
 }
 
-li.username {
+li.username, td.username {
   text-transform: capitalize;
 }
 

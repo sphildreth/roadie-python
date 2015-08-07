@@ -56,7 +56,7 @@
                             <span class="label label-default">{{ lastPlayedInfo.ArtistName }}</span>
                         </a>
                     </td>
-                    <td data-user-id="{{ lastPlayedInfo.UserId }}">
+                    <td class="username" data-user-id="{{ lastPlayedInfo.UserId }}">
                         <div class="thumbnail-container pull-left">
                         <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}" alt="{{ lastPlayedInfo.Username }}" />
                         </div>
@@ -78,13 +78,13 @@
         <tr><td data-track-id='{{ lastPlayedInfo.TrackId }}'><span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span></td><td data-release-id='{{ lastPlayedInfo.ReleaseId }}'><a href='/release/{{ lastPlayedInfo.ReleaseId }}'><div class='thumbnail-container pull-left'><img class='release-thumb' src='{{ lastPlayedInfo.ReleaseThumbnail }}' alt='{{ lastPlayedInfo.ReleaseTitle }}' /></div><span class='label label-default'>{{ lastPlayedInfo.ReleaseTitle }}</span></a></td><td data-artist-id='{{ lastPlayedInfo.ArtistId }}'><a href='/artist/{{ lastPlayedInfo.ArtistId }}'><div class='thumbnail-container pull-left'><img class='artist-thumb' src='{{ lastPlayedInfo.ArtistThumbnail }}' alt='{{ lastPlayedInfo.ArtistTitle }}' /></div>    <span class='label label-default'>{{ lastPlayedInfo.ArtistName }}</span></a></td><td data-user-id='{{ lastPlayedInfo.UserId }}'><div class='thumbnail-container pull-left'><img class='user-thumb' src='{{ lastPlayedInfo.UserThumbnail }}' alt='{{ lastPlayedInfo.Username }}' /></div><span class='label label-default'>{{ lastPlayedInfo.Username }}</span></td><td><span class='label label-default'>{{ lastPlayedInfo.LastPlayed }}</span></td></tr>
     </script>
     <script id="randomReleaseTemplate" type="x-tmpl-mustache">
-        <div class="release pull-left" data-release-id="{{ release.id }}">
-            <a href="/release/{{ release.id }}">
+        <div class="release pull-left" data-release-id="{{ id }}">
+            <a href="/release/{{ id }}">
                 <div class="thumbnail-container">
-                    <img class="" src="/images/release/thumbnail/{{ release.id }}" data-toggle="tooltip" data-placement="bottom"  title="{{ release.ArtistName }}<br />{{ release.Title }}" alt="{{ release.Title }}" />
+                    <img class="" src="/images/release/thumbnail/{{ id }}" data-toggle="tooltip" data-placement="bottom"  title="{{ ArtistName }}<br />{{ Title }}" alt="{{ Title }}" />
                 </div>
             </a>
-            <input type="hidden" class="user-rating rating" value="{{ release.UserRating }}" />
+            <input type="hidden" class="user-rating rating" value="{{ UserRating }}" />
             <div>
                 <button class="play btn btn-default btn-xs" title="Play"><span class="glyphicon glyphicon-play"></span></button>
             </div>
@@ -122,7 +122,7 @@
                     if(data.message == "OK") {
                         var html = '';
                         $.each(data.releases, function(i,d) {
-                          html += Mustache.render(randomReleaseTemplate, { "release": d });
+                          html += Mustache.render(randomReleaseTemplate, d );
                         });
                         $hc.html(html);
                         $hc.find("input.rating").rating();
