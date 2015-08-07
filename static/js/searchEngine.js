@@ -110,7 +110,6 @@ var searchEngine = ( function( window, undefined ) {
             var startTime = new Date()
             var qry = $("#search").val();
             if(qry.length < 1) {
-                roadieLibrary.showErrorMessage("Please enter a valid search phrase");
                 return false;
             }
             searchEngine.clearSearchResults();

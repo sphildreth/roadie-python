@@ -366,7 +366,7 @@
             });
         });
         $("#playAll").on("click", function(e) {
-            window.open("/release/play/" + releaseId, "Playlist");
+           roadieLibrary.playLoader("/release/play/" + releaseId);
         });
         $("div.tracks a.que-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
@@ -374,7 +374,7 @@
         });
         $("div.tracks a.play-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            window.open("/track/play/" + releaseId + "/" + trackid, "Playlist");
+            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid, "Playlist");
         });
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

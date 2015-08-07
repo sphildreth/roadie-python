@@ -19,7 +19,7 @@ from resources.trackListApi import TrackListApi
 from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
-
+from mongoengine import Q
 from flask.ext.mongoengine import MongoEngine, MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
@@ -80,7 +80,7 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    for ut in UserTrack.objects().order_by('-LastPlayed')[:25]:
+    for ut in UserTrack.objects().order_by('-LastPlayed')[:35]:
         info = {
             'TrackId' : str(ut.Track.id),
             'TrackTitle' : ut.Track.Title,
@@ -97,7 +97,37 @@ def index():
         }
         lastPlayedInfos.append(info)
     wsRoot = request.url_root.replace("http://", "ws://")
-    return render_template('home.html', lastPlayedInfos = lastPlayedInfos, wsRoot=wsRoot)
+    randomSeed1 = random.randint(1, 1000000)
+    randomSeed2 = random.randint(randomSeed1, 1000000)
+    releases = []
+    for release in Release.objects(Q(Random__gte = randomSeed1) & Q(Random__lte = randomSeed2)).order_by('Random')[:12]:
+        releases.append({
+            'id': release.id,
+            'ArtistName': release.Artist.Name,
+            'Title': release.Title,
+            'UserRating': 0
+        })
+    return render_template('home.html', lastPlayedInfos = lastPlayedInfos, wsRoot=wsRoot, releases=releases)
+
+
+@app.route("/release/random/<count>", methods=['POST'])
+def randomRelease(count):
+    #try:
+    randomSeed1 = random.randint(1, 1000000)
+    randomSeed2 = random.randint(randomSeed1, 1000000)
+    releases = []
+    for release in Release.objects(Q(Random__gte = randomSeed1) & Q(Random__lte = randomSeed2)).order_by('Random')[:int(count)]:
+        releaseInfo = {
+            'id': str(release.id),
+            'ArtistName': release.Artist.Name,
+            'Title': release.Title,
+            'UserRating': 0
+        }
+        releases.append(releaseInfo)
+    return jsonify(message="OK", releases=releases)
+    # except:
+    #     return jsonify(message="ERROR")
+
 
 @app.route('/artist/<artist_id>')
 @login_required

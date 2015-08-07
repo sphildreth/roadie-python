@@ -6,6 +6,7 @@ import io
 import os
 import json
 import hashlib
+import random
 import argparse
 from datetime import  date, time, datetime
 from mongoengine import connect
@@ -121,6 +122,7 @@ class Scanner(object):
                             pass
                     if not releaseTrack:
                         releaseTrack = TrackRelease(Track=track, TrackNumber=id3.track, ReleaseMediaNumber=id3.disc)
+                        releaseTrack.Random = random.randint(1, 1000000)
                         release.Tracks.append(releaseTrack)
                         object_id = Release.save(release)
                         self.printDebug("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Id [" + str(object_id) + "]")

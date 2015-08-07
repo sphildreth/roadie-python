@@ -21,8 +21,20 @@ var roadieLibrary = ( function( window, undefined ) {
         });
     };
 
+    function playLoader(url) {
+        var frameName = "playlistloader";
+        var element = document.getElementById(frameName);
+        if(!element) {
+            element = document.createElement("iframe");
+            element.setAttribute('id', frameName);
+            document.body.appendChild(element);
+        }
+        element.setAttribute('src', url);
+    };
+
     return {
         lpad : lpad,
+        playLoader: playLoader,
         showSuccessMessage: showSuccessMessage,
         showErrorMessage: showErrorMessage
     };

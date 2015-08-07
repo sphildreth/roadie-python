@@ -7,6 +7,7 @@
 import linecache
 import io
 import os
+import random
 import sys
 import shutil
 import json
@@ -270,6 +271,7 @@ class Processor(object):
                         if not release:
                             # Release not found create
                             release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
+                            release.Random = random.randint(1, 1000000)
                             mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
                             if mbRelease:
                                 # Populate with some MusicBrainz details

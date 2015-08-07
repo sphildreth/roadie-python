@@ -251,10 +251,12 @@
             });
 
             $("#playAll").on("click", function(e) {
-                window.open("/artist/play/" + artistId + "/0", "Playlist");
+                roadieLibrary.playLoader("/artist/play/" + artistId + "/0");
+
             });
             $("#playAllShuffle").on("click", function(e) {
-                window.open("/artist/play/" + artistId + "/1", "Playlist");
+                roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
+
             });
             $(".artist-detail-container a.thumbnail").on("click", function(e) {
                 var $t = $(this);

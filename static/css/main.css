@@ -229,10 +229,6 @@ ul.no-list-style {
     margin-top: 0;
 }
 
-.recent-releases a {
-
-}
-
 .recent-releases h3 {
     margin-top: 0;
 }
@@ -245,6 +241,32 @@ ul.no-list-style {
     width: 100%;
     text-align: left;
     display:inline-block;
+}
+
+
+/* Random Release Related */
+.random-releases-container {
+    margin-bottom: 10px;
+}
+.random-releases-container h4 {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.random-releases-container .release {
+    margin: 0 8px 8px 8px;
+}
+.random-releases-container button {
+    width: 100%;
+}
+.random-releases-container .release .thumbnail-container {
+    display: inherit;
+}
+.random-releases-container img {
+    display:block;
+    padding-bottom: 5px;
+    padding-left: 9px;
+    min-height: 65px;
+    max-width: 69px;
 }
 
 /* Login/Logout Related */

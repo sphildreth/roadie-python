@@ -47,11 +47,12 @@
             </li>
             <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
             {% endif %}
-            {% if not g.user.is_authenticated()%}
+            {% if not g.user.is_authenticated() %}
               <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
               <li><a href="{{ url_for('register') }}">Register</a></li>
             {% endif %}
           </ul>
+          {% if current_user.is_authenticated() %}
           <ul class="nav navbar-nav ">
             <li><a href="/collections"><i class="fa fa-list-ol"></i> Collections</a></li>
             <li><a href="/playlists"><i class="fa fa-list-ul"></i> Playlists</a></li>
@@ -65,15 +66,16 @@
                 <li><a href="#" class="save-que"><i class="fa fa-floppy-o"></i> Save</a></li>
               </ul>
             </li>
-        </ul>
-         <form class="navbar-form">
+          </ul>
+          <form class="navbar-form">
             <div class="form-group" style="display:inline;">
               <div class="input-group" style="display:table;">
                 <span class="input-group-addon" style="width:1%;"><span class="glyphicon glyphicon-search"></span></span>
                 <input class="form-control typeahead" id="search" name="search" placeholder="Search" autocomplete="off" autofocus="autofocus" type="text">
             </div>
             </div>
-        </form>
+          </form>
+          {% endif %}
         </div><!--/.nav-collapse -->
       </div><!--/.container-fluid -->
     </div>
@@ -110,7 +112,7 @@
         {% endif %}
         {% endwith %}
 
-        $('[data-toggle="tooltip"]').tooltip();
+        $('[data-toggle="tooltip"]').tooltip({html: true});
 
         queManager.init();
 

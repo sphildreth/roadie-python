@@ -205,6 +205,8 @@ class TrackRelease(EmbeddedDocument):
     ReleaseMediaNumber = IntField()
     # This is any potential subtitle of cd x of x; see 'Star Time' frm James Brown
     ReleaseSubTitle = StringField()
+    # This is a random number generated at generation and then used to select random releases
+    Random = IntField()
     meta = {
         'ordering': [
             'ReleaseMediaNumber',
@@ -243,14 +245,18 @@ class Release(Document):
     TrackCount = IntField()
     # This is calculated when a user rates an release based on average User Ratings and stored here for performance
     Rating = IntField()
+    # This is a random number generated at generation and then used to select random releases
+    Random = IntField()
     DiscCount = IntField()
     Profile = StringField()
     Quality = ReferenceField(Quality)
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
+            'Random',
             'Title',
-            'Tracks.Track'
+            'Tracks.Track',
+            'Tracks.Random'
         ],
         'ordering': [
             'ReleaseDate',
