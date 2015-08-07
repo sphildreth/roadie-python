@@ -107,6 +107,7 @@ class Label(Document):
 
 
 class Artist(Document):
+    AssociatedArtists = ListField(ReferenceField('self'), default=[])
     AlternateNames = SortedListField(StringField(), default=[])
     ArtistType = ReferenceField(ArtistType)
     BirthDate = DateTimeField()

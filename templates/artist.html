@@ -114,6 +114,23 @@
                 </div>
                 {% endif %}
             </div>
+            <div class="col-md-3 associated-artists">
+                {% if artist.AssociatedArtists %}
+                <h4><span class="label label-primary">Associated Artists</span></h4>
+                <ul>
+                    {% for artist in artist.AssociatedArtists %}
+                    <li>
+                        <a href="/artist/{{ artist.id }}">
+                        <div class="thumbnail-container pull-left">
+                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                        </div>
+                        <h3><span class="label label-default">{{ artist.Name }}</span></h3>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
         </div>
         {% if artist.AlternateNames or artist.Tags or artist.Urls %}
         <div class="row lists bordered">
