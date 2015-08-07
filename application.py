@@ -93,6 +93,7 @@ def index():
             'UserId' : str(ut.User.id),
             'Username' : ut.User.Username,
             'UserThumbnail' : "/images/user/avatar/" + str(ut.User.id),
+            'UserRating' : ut.Rating,
             'LastPlayed' : arrow.get(ut.LastPlayed).humanize()
         }
         lastPlayedInfos.append(info)
@@ -313,6 +314,32 @@ def deleteRelease(release_id):
         return jsonify(message="ERROR")
 
 
+@app.route("/user/track/setrating/<release_id>/<track_id>/<rating>", methods=['POST'])
+@login_required
+def setUserTrackRating(release_id, track_id, rating):
+   # try:
+    track = Track.objects(id=track_id).first()
+    release = Release.objects(id=release_id).first()
+    user = User.objects(id=current_user.id).first()
+    if not track or not user:
+        return jsonify(message="ERROR")
+    now = arrow.utcnow().datetime
+    userTrack = UserTrack.objects(User=user, Release=release, Track=track).first()
+    if not userTrack:
+        userTrack = UserTrack(User=user, Release=release, Track=track)
+    userTrack.Rating = rating
+    userTrack.LastUpdated = now
+    UserTrack.save(userTrack)
+    # Update track average rating
+    trackAverage = UserTrack.objects(Track=track).aggregate_average('Rating')
+    track.Rating = trackAverage
+    track.LastUpdated = now
+    Track.save(track)
+    return jsonify(message="OK", average=trackAverage)
+  #  except:
+  #      return jsonify(message="ERROR")
+
+
 @app.route('/releasetrack/delete/<release_id>/<release_track_id>/<flag>', methods=['POST'])
 @login_required
 def deleteReleaseTrack(release_id, release_track_id, flag):
@@ -417,7 +444,10 @@ def release(release_id):
                     crt.CollectionId = collection.id
                     crt.CollectionName = collection.Name
                     collectionReleases.append(crt)
-
+    for track in release.Tracks:
+        userTrack = UserTrack.objects(User=user, Track=track.Track).first()
+        if userTrack:
+            track.UserRating = userTrack.Rating
     return render_template('release.html', release=release, collectionReleases= collectionReleases, userRelease=userRelease)
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
@@ -552,12 +582,14 @@ def streamTrack(user_id, release_id, track_id):
         user = User.objects(id=user_id).first()
         if user:
             release = Release.objects(id=release_id).first()
+            userRating = 0
             if release:
                 userTrack = UserTrack.objects(User=user, Track=track, Release=release).first()
                 if not userTrack:
                     userTrack = UserTrack(User=user, Track=track, Release=release)
                 userTrack.PlayedCount += 1
                 userTrack.LastPlayed = now
+                userRating = userTrack.Rating
                 UserTrack.save(userTrack)
             try:
                 if clients:
@@ -574,6 +606,7 @@ def streamTrack(user_id, release_id, track_id):
                                 'UserId' : str(user.id),
                                 'Username' : user.Username,
                                 'UserThumbnail' : "/images/user/avatar/" + str(user.id),
+                                'UserRating' : userRating,
                                 'LastPlayed' : arrow.get(now).humanize()
                             }})
                     for client in clients:
@@ -629,10 +662,16 @@ def stats():
         artist = Artist.objects(id=a['_id']).first()
         top10ArtistsTracks[artist] = str(a['count']).zfill(4)
 
+    topRatedReleases = Release.objects().order_by('-Rating')[:10]
+
+    topRatedTracks = Track.objects(Rating__gte=0).order_by('-Rating')[:25]
+
     mostRecentReleases = Release.objects().order_by('-ReleaseDate', 'Title', 'Artist.SortName')[:10]
 
     return render_template('stats.html', top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
                            , top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
+                           , topRatedReleases=topRatedReleases
+                           , topRatedTracks=topRatedTracks
                            , mostRecentReleases=mostRecentReleases
                            , counts=counts)
 
@@ -709,7 +748,7 @@ def getUserAvatarThumbnailImage(user_id):
     user = User.objects(id=user_id).first()
     try:
         if user:
-            image = user.Avatar.element.read()
+            image = user.Avatar.read()
             img = Image.open(io.BytesIO(image))
             img.thumbnail(avatarSize)
             b = io.BytesIO()
@@ -802,6 +841,40 @@ def register():
     flash('User successfully registered')
     return redirect(url_for('login'))
 
+@app.route("/profile/edit", methods=['GET', 'POST'])
+def editProfile():
+    user = User.objects(id=current_user.id).first()
+    if not user:
+        return render_template('404.html'), 404
+    if request.method == 'GET':
+        return render_template('profileEdit.html', user=user)
+    encryptedPassword = None
+    password = request.form['password']
+    if password:
+        encryptedPassword = bcrypt.generate_password_hash(password)
+    email = request.form['email']
+    userWithDuplicateEmail = User.objects(Email=email, id__ne=user.id).first()
+    if userWithDuplicateEmail:
+        flash('Email Address Already Exists!', 'error')
+        return redirect(url_for('profile/edit'))
+    file = request.files['avatar'];
+    if file:
+        content = io.BytesIO(file.stream.read())
+        img = Image.open(content)
+        img.thumbnail(thumbnailSize)
+        b = io.BytesIO()
+        img.save(b, "PNG")
+        user.Avatar.new_file()
+        user.Avatar.write(b.getvalue())
+        user.Avatar.close()
+    if encryptedPassword:
+        user.Password = encryptedPassword
+    user.Email = email
+    user.LastUpdated = arrow.utcnow().datetime
+    User.save(user)
+    flash('Profile Edited successfully')
+    return redirect(url_for("index"))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     next = get_redirect_target()
@@ -814,6 +887,8 @@ def login():
         remember_me = True
     registered_user = User.objects(Username=username).first()
     if registered_user and bcrypt.check_password_hash(registered_user.Password, password):
+        registered_user.LastLogin = arrow.utcnow().datetime
+        User.save(registered_user)
         login_user(registered_user, remember=remember_me)
         flash('Logged in successfully')
         return redirect_back('index')

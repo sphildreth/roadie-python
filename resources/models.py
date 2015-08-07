@@ -57,7 +57,7 @@ class User(Document):
     LastLogin = DateTimeField()
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     Active = BooleanField(default=True)
-    Avatar = EmbeddedDocumentField(Image)
+    Avatar = FileField()
     Roles = ListField(ReferenceField(UserRole), required=False, default=[])
     meta = {
         'indexes': [
@@ -152,6 +152,8 @@ class Track(Document):
     PlayedCount = IntField(default=0)
     LastPlayed = DateTimeField()
     PartTitles = ListField(StringField())
+    # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
+    Rating = IntField()
     Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     meta = {

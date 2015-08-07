@@ -41,7 +41,7 @@
             {% endif %}
             {% if current_user.is_authenticated() %}
             <li class="username">
-                <a href="/admin/user/edit?url=/&id={{ g.user.id }}" title="Edit Profile">
+                <a href="/profile/edit" title="Edit Profile">
                     <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi, {{ g.user.Username }}!
                 </a>
             </li>
@@ -95,6 +95,7 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/2.1.3/mustache.min.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-rating.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-filedrop.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/roadieLibrary.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>

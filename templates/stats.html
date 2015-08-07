@@ -14,6 +14,71 @@
             </div>
             <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
         </div>
+
+        <div class="row bordered">
+            <div class="col-md-6 recent-releases">
+                <h4><span class="label label-primary">Top 25 Rated Songs</span></h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-condensed table-responsive">
+                        <thead>
+                            <tr>
+                                <td>Title</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for track in topRatedTracks %}
+                            <tr>
+                                 <td data-release-id="{{ track.id }}">
+                                    <span class="label label-default">{{ track.Title }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-6 recent-releases">
+                <h4><span class="label label-primary">Top 10 Rated Albums</span></h4>
+                <div class="table-responsive">
+                    <table class="table table-striped table-condensed table-responsive">
+                        <thead>
+                            <tr>
+                                <td>Release</td>
+                                <td>Artist</td>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for release in topRatedReleases %}
+                            <tr>
+                                 <td data-release-id="{{ release.id }}">
+                                    <a href="/release/{{ release.id }}">
+                                        <div class="thumbnail-container pull-left">
+                                        <img class="release-thumb" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+                                        </div>
+                                        <span class="label label-default">{{ release.Title }}</span>
+                                    </a>
+                                    <span class="user-rating-container">
+                                        <input type="hidden" class="release-rating rating" data-readonly value="{{ release.Rating }}" />
+                                    </span>
+                                </td>
+                                <td data-artist-id="{{ release.Artist.id }}">
+                                    <a href="/artist/{{ release.Artist.id }}">
+                                        <div class="thumbnail-container pull-left">
+                                            <img class="artist-thumb" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
+                                        </div>
+                                        <span class="label label-default">{{ release.Artist.Name }}</span>
+                                    </a>
+                                    <span class="user-rating-container">
+                                        <input type="hidden" class="release-rating rating" data-readonly value="{{ release.Artist.Rating }}" />
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         <div class="row bordered">
             <div class="col-md-4 recent-releases">
                 <h4><span class="label label-primary">Most Recent Releases</span></h4>

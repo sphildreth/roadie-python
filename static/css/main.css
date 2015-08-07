@@ -76,6 +76,12 @@ div.collection-container ul.tracks {
     margin: 2px 4px;
 }
 
+.release-detail-container .row.tracks .release-cd-container {
+    display: block;
+    height: 15px;
+}
+
+
 img.thumb {
     margin: 5px 5px 4px 2px;
 }
@@ -114,8 +120,13 @@ div.bordered {
 
 .release-info-container .release:nth-child(even),
 .collections-container .collection:nth-child(odd),
-.collection-container ul.collection li:nth-child(even) {
+.collection-container ul.collection li:nth-child(even),
+.release-detail-container .row.tracks .track:hover {
     background-color: #161C23;
+}
+
+.release-detail-container .row.tracks {
+    cursor: pointer;
 }
 
 ul.tracks {
@@ -428,6 +439,18 @@ ul.no-list-style {
 .rating-container > span {
     margin-left: 5px;
 }
-.user-rating-container {
+.release-detail-container .row.title .user-rating-container {
     margin-left: 72px;
+}
+
+.stats-container .user-rating-container {
+    margin-left: 72px;
+    margin-top: 5px;
+    display: block;
+
+}
+
+.home-container .recently-played-container .user-rating-container {
+    margin-left: 5px;
+    display: block;
 }

@@ -26,7 +26,7 @@
         </div>
         <div class="row title bordered">
             <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
-            <div class="rating-container">
+            <div class="release-rating-container">
                 <input type="hidden" class="rating" data-readonly value="{{ release.Rating }}" />
             </div>
             <span class="artist-info">
@@ -36,6 +36,7 @@
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
                 <input type="hidden" class="user-rating rating" value="{{ userRelease.Rating }}" />
                 <a href="#" class="favorite" title="Toggle Favorite Release"><i class="fa {{'fa-heart' if userRelease.IsFavorite else 'fa-heart-o'}}"></i></a>
             </div>
@@ -178,47 +179,58 @@
             </div>
         </div>
         <div class="row tracks bordered">
-            {% for track in release.Tracks|sort(attribute='TrackNumber') %}
-                <div class="row track" data-track-id="{{ track.Track.id }}">
-                    <div class="col-xs-1 col-sm-1 col-md-1">
-                        <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
-                    </div>
-                    <div class="col-xs-8 col-sm-8 col-md-8">
-                        <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
-                        {% if track.Track.PartTitles|count > 0 %}
-                            <ul class="part-titles">
-                            {% for parttitle in track.Track.PartTitles %}
-                                <li><span class="label label-default part-title">{{ parttitle }}</span></li>
-                            {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
-                    <div class="col-xs-1 col-sm-1 col-md-1">
-                        <div class="dropdown">
-                          <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-bars"></i> <span class="caret"></span>
-                          </button>
-                          <ul class="dropdown-menu">
-                            <li><a href="#" class="play-track btn btn-default" type="button"><i class="fa fa-play"></i> Play</a></li>
-                            <li><a href="#" class="que-track btn btn-default" type="button"><i class="fa fa-plus"></i> Que</a></li>
-                            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
-                            <li><a href="#" class="edit-track btn btn-warning" type="button"><i class="fa fa-edit"></i> Edit</a></li>
-                            <li class="dropdown-submenu">
-                                <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
-                                <ul class="dropdown-menu">
-                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="delete-release-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
-                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Track</a></li>
-                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete</a></li>
+            {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
+                {% if group.grouper > 0 %}
+                <div class="release-cd-container">
+                    <h5 class="release-cd pull-right"><span class="label label-success">CD {{ group.grouper }}</span></h5>
+                </div>
+                {% endif %}
+                {% for track in group.list %}
+                    <div class="row track" data-track-id="{{ track.Track.id }}">
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                        </div>
+                        <div class="col-xs-7 col-sm-7 col-md-7">
+                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
+                            {% if track.Track.PartTitles|count > 0 %}
+                                <ul class="part-titles">
+                                {% for parttitle in track.Track.PartTitles %}
+                                    <li><span class="label label-default part-title">{{ parttitle }}</span></li>
+                                {% endfor %}
                                 </ul>
-                            </li>
                             {% endif %}
-                          </ul>
+                        </div>
+                        <div class="col-xs-1 col-sm-1 col-md-1">
+                            <div class="dropdown">
+                              <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-bars"></i> <span class="caret"></span>
+                              </button>
+                              <ul class="dropdown-menu">
+                                <li><a href="#" class="play-track btn btn-default" type="button"><i class="fa fa-play"></i> Play</a></li>
+                                <li><a href="#" class="que-track btn btn-default" type="button"><i class="fa fa-plus"></i> Que</a></li>
+                                {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                                <li><a href="#" class="edit-track btn btn-warning" type="button"><i class="fa fa-edit"></i> Edit</a></li>
+                                <li class="dropdown-submenu">
+                                    <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+                                    <ul class="dropdown-menu">
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="delete-release-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Track</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete</a></li>
+                                    </ul>
+                                </li>
+                                {% endif %}
+                              </ul>
+                            </div>
+                        </div>
+                        <div class="col-xs-3 col-sm-3 col-md-3">
+                            <span data-track-length="{{ track.Track.Length }}" class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
+                            <span class="user-rating-container">
+                                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
+                                <input type="hidden" class="track-rating user-rating rating" value="{{ track.UserRating }}" />
+                            </span>
                         </div>
                     </div>
-                    <div class="col-xs-2 col-sm-2 col-md-2">
-                        <span data-track-length="{{ track.Track.Length }}" class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
-                    </div>
-                </div>
+                {% endfor %}
             {% endfor %}
         </div>
         <div class="meta pull-right">
@@ -294,7 +306,7 @@
 
         doReleaseSanityChecks();
 
-            $(".user-rating-container a.dislike").on("click", function(e) {
+            $(".release-detail-container .title .user-rating-container a.dislike").on("click", function(e) {
                 var $i =  $(this).find("i:first");
                 var toggle = !$i.hasClass("fa-thumbs-down");
                 $.ajax({
@@ -318,7 +330,7 @@
                     }
                 });
             });
-            $(".user-rating-container a.favorite").on("click", function(e) {
+            $(".release-detail-container .title .user-rating-container a.favorite").on("click", function(e) {
                 var $i =  $(this).find("i:first");
                 var toggle = !$i.hasClass("fa-heart");
                 $.ajax({
@@ -340,14 +352,14 @@
                     }
                 });
             });
-            $(".user-rating-container input.rating").on("change", function(e) {
+            $(".title .user-rating-container input.user-rating").on("change", function(e) {
                 $.ajax({
                     type: 'POST',
                     url: '/user/release/setrating/' + releaseId + '/' + $(this).rating('rate'),
                     contentType: "application/javascript",
                     success: function(data) {
                         if(data.message == "OK") {
-                            $(".rating-container input.rating").rating('rate', data.average);
+                            $(".release-rating-container input.rating").rating('rate', data.average);
                             roadieLibrary.showSuccessMessage("Successfully Set Rating");
                         }
                     },
@@ -356,6 +368,60 @@
                     }
                 });
             });
+
+        $(".title .user-rating-container span.reset-rating").on("click", function(e) {
+            var $r = $(this).siblings("input.user-rating");
+            $.ajax({
+                type: 'POST',
+                url: '/user/release/setrating/' + releaseId + '/0',
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $r.rating('rate', 0);
+                         $(".release-rating-container input.rating").rating('rate', data.average);
+                        roadieLibrary.showSuccessMessage("Successfully Removed Rating");
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
+            });
+        });
+
+        $(".release-detail-container .tracks input.track-rating").on("change", function(e) {
+            debugger;
+            $.ajax({
+                type: 'POST',
+                url: '/user/track/setrating/' + releaseId + '/' + $(this).closest("div.track").data("track-id") + '/' + $(this).rating('rate'),
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        roadieLibrary.showSuccessMessage("Successfully Set Rating");
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
+            });
+        });
+
+        $(".release-detail-container .tracks span.reset-rating").on("click", function(e) {
+            var $r = $(this).siblings("input.track-rating");
+            $.ajax({
+                type: 'POST',
+                url: '/user/track/setrating/' + releaseId + '/' + $(this).closest("div.track").data("track-id") + '/0',
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $r.rating('rate', 0);
+                        roadieLibrary.showSuccessMessage("Successfully Removed Rating");
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
+            });
+        });
 
         $(".release-detail-container a.thumbnail").on("click", function(e) {
             var $t = $(this);
