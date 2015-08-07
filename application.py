@@ -317,27 +317,27 @@ def deleteRelease(release_id):
 @app.route("/user/track/setrating/<release_id>/<track_id>/<rating>", methods=['POST'])
 @login_required
 def setUserTrackRating(release_id, track_id, rating):
-   # try:
-    track = Track.objects(id=track_id).first()
-    release = Release.objects(id=release_id).first()
-    user = User.objects(id=current_user.id).first()
-    if not track or not user:
+    try:
+        track = Track.objects(id=track_id).first()
+        release = Release.objects(id=release_id).first()
+        user = User.objects(id=current_user.id).first()
+        if not track or not user:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+        userTrack = UserTrack.objects(User=user, Release=release, Track=track).first()
+        if not userTrack:
+            userTrack = UserTrack(User=user, Release=release, Track=track)
+        userTrack.Rating = rating
+        userTrack.LastUpdated = now
+        UserTrack.save(userTrack)
+        # Update track average rating
+        trackAverage = UserTrack.objects(Track=track).aggregate_average('Rating')
+        track.Rating = trackAverage
+        track.LastUpdated = now
+        Track.save(track)
+        return jsonify(message="OK", average=trackAverage)
+    except:
         return jsonify(message="ERROR")
-    now = arrow.utcnow().datetime
-    userTrack = UserTrack.objects(User=user, Release=release, Track=track).first()
-    if not userTrack:
-        userTrack = UserTrack(User=user, Release=release, Track=track)
-    userTrack.Rating = rating
-    userTrack.LastUpdated = now
-    UserTrack.save(userTrack)
-    # Update track average rating
-    trackAverage = UserTrack.objects(Track=track).aggregate_average('Rating')
-    track.Rating = trackAverage
-    track.LastUpdated = now
-    Track.save(track)
-    return jsonify(message="OK", average=trackAverage)
-  #  except:
-  #      return jsonify(message="ERROR")
 
 
 @app.route('/releasetrack/delete/<release_id>/<release_track_id>/<flag>', methods=['POST'])
