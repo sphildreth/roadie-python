@@ -443,7 +443,7 @@ ul.no-list-style {
     margin-left: 72px;
 }
 
-.stats-container .user-rating-container {
+.artist-detail-container .user-rating-container, .stats-container .user-rating-container {
     margin-left: 72px;
     margin-top: 5px;
     display: block;

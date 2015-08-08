@@ -38,6 +38,7 @@
             <h2><span class="label label-default">{{ artist.Name }}</span></h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
                 <input type="hidden" class="user-rating rating" value="{{ userArtist.Rating }}" />
                 <a href="#" class="favorite" title="Toggle Favorite Artist"><i class="fa {{'fa-heart' if userArtist.IsFavorite else 'fa-heart-o'}}"></i></a>
             </div>
@@ -259,6 +260,25 @@
                         if(data.message == "OK") {
                             $(".rating-container input.rating").rating('rate', data.average);
                             roadieLibrary.showSuccessMessage("Successfully Set Rating");
+                        }
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            });
+
+            $(".user-rating-container span.reset-rating").on("click", function(e) {
+                var $rc = $(this).siblings("input.rating");
+                $.ajax({
+                    type: 'POST',
+                    url: '/user/artist/setrating/' + artistId + '/0',
+                    contentType: "application/javascript",
+                    success: function(data) {
+                        if(data.message == "OK") {
+                            $rc.rating('rate', 0);
+                            $(".rating-container input.rating").rating('rate', data.average);
+                            roadieLibrary.showSuccessMessage("Successfully Removed Rating");
                         }
                     },
                     error:function(jq, st, error){
