@@ -4,110 +4,77 @@
 # --- Determine if File Should Be Moved if so move
 # --- Each folder call scanner
 # --- If folder is empty delete
+import arrow
 import linecache
 import io
 import os
 import random
-import sys
 import shutil
 import json
 import hashlib
-import argparse
 from PIL import Image
-from datetime import  date, time, datetime
 from dateutil.parser import *
-from goldfinch import validFileName as vfn
 from shutil import move
 from mongoengine import connect
-from models import Artist, ArtistType, Label, Release, ReleaseLabel, ThumbnailImage, Track, TrackRelease
+from models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
 from musicBrainz import MusicBrainz
 from id3 import ID3
-from utility import Utility
 from scanner import Scanner
+from convertor import Convertor
+from logger import Logger
+from processingBase import ProcessorBase
 
-class Processor(object):
+class Processor(ProcessorBase):
 
-    def __init__(self,debug,showTagsOnly,dontDeleteInboundFolders):
-        with open("../settings.json", "r") as rf:
+    def __init__(self, readOnly, dontDeleteInboundFolders):
+        d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
+        path = os.path.join(os.sep.join(d[:-1]), "settings.json")
+        with open(path, "r") as rf:
             config = json.load(rf)
         self.InboundFolder = config['ROADIE_INBOUND_FOLDER']
         self.LibraryFolder = config['ROADIE_LIBRARY_FOLDER']
-        self.IsProcessingLibrary = self.InboundFolder == self.LibraryFolder
         # TODO if set then process music files; like clear comments
         self.processingOptions = config['ROADIE_PROCESSING']
-        self.isProcessingLibrary = self.LibraryFolder.startswith(self.InboundFolder)
         self.dbName = config['MONGODB_SETTINGS']['DB']
         self.host = config['MONGODB_SETTINGS']['host']
-        self.thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
-        self.debug = debug or False
-        self.showTagsOnly = showTagsOnly or False
+        self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+        self.readOnly = readOnly or False
         self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
+        self.logger = Logger()
 
     def releaseCoverImages(self, folder):
         try:
-            image_filter = ['.jpg', '.jpeg', '.bmp','.png','.gif']
+            image_filter = ['.jpg', '.jpeg', '.bmp', '.png', '.gif']
             cover_filter = ['cover', 'front']
-            for r,d,f in os.walk(folder):
+            for r, d, f in os.walk(folder):
                 for file in f:
                     root, file = os.path.split(file)
                     root, ext = os.path.splitext(file)
                     if ext.lower() in image_filter and root.lower() in cover_filter:
                         yield os.path.join(r, file)
         except:
-            Utility.PrintException()
-            pass
+            self.logger.exception()
 
-    def inboundFolders(self):
-        for root, dirs, files in os.walk(self.InboundFolder):
-            if not dirs:
-                yield root
-            for dir in dirs:
-                yield os.path.join(root, dir)
-
-    def folderMp3Files(self, folder):
-        for root, dirs, files in os.walk(folder):
-            for filename in files:
-               if os.path.splitext(filename)[1] == ".mp3":
-                    yield root, os.path.join(root, filename)
-
-
-    def makeFileFriendly(self,string):
-        return vfn(string, space="keep").decode('utf-8')
-
-    def printDebug(self, message):
-        if self.debug:
-            print(message.encode('utf-8'))
-
-    def artistFolder(self, artist):
-        artistFolder = artist.SortName or artist.Name
-        return os.path.join(self.LibraryFolder, self.makeFileFriendly(artistFolder))
-
-    def albumFolder(self, artist, id3):
-        return os.path.join(self.artistFolder(artist), "[" + id3.year.zfill(4)[:4] + "] " + self.makeFileFriendly(id3.album))
-
-    def trackName(self, id3):
-        return str(id3.track).zfill(2) + " " + self.makeFileFriendly(id3.title) + ".mp3"
 
     def shouldDeleteFolder(self, mp3Folder, newMp3Filename):
         if self.dontDeleteInboundFolders:
+            return False
+
+        if self.readOnly:
             return False
 
         # Is folder to delete empty?
         if not os.listdir(mp3Folder):
             return True
 
-        # If the folder to delete is the same as the new folder then false
-        if os.path.samefile(mp3Folder, newMp3Filename):
-            return False
-        else:
-            return True
+        return False
 
     # Determine if the found file should be moved into the library; check for existing and see if better
     def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
         try:
-            fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3))
+            fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album))
             os.makedirs(fileFolderLibPath, exist_ok=True)
-            fullFileLibPath = os.path.join(fileFolderLibPath, self.makeFileFriendly(self.trackName(id3)))
+            fullFileLibPath = os.path.join(fileFolderLibPath, self.makeFileFriendly(self.trackName(id3.track, id3.title)))
             if not os.path.isfile(fullFileLibPath):
                 # Does not exist copy it over
                 return True
@@ -126,7 +93,7 @@ class Processor(object):
                     return False
             return True
         except:
-            Utility.PrintException()
+            self.logger.exception()
             return False
 
     def readImageThumbnailBytesFromFile(self, path):
@@ -142,35 +109,40 @@ class Processor(object):
     # If should be moved then move over and return new filename
     def moveToLibrary(self, artist, id3, mp3):
         try:
-            newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3), self.trackName(id3))
+            newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album), self.trackName(id3.track, id3.title))
             isMp3File = os.path.isfile(mp3)
-            isNewFilenameFile =os.path.isfile(newFilename)
+            isNewFilenameFile = os.path.isfile(newFilename)
             # If it already exists delete it as the shouldMove function determines if the file should be overwritten or not
             if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
                 try:
                     os.remove(newFilename)
-                    self.printDebug("x Deleting Existing [" + newFilename + "]")
+                    self.logger.warn("x Deleting Existing [" + newFilename + "]")
                 except OSError:
                     pass
 
             if isMp3File and (mp3 != newFilename):
                 try:
                     move(mp3, newFilename)
-                    self.printDebug("= Moving [" + mp3 + "] => [" + newFilename + "]")
+                    self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
                 except OSError:
                     pass
 
             return newFilename
         except:
-            Utility.PrintException()
+            self.logger.exception()
             return None
 
-    def process(self):
-        print(("Processing Inbound Folder [" + self.InboundFolder + "]").encode('utf-8'))
+    def process(self, **kwargs):
+        """
+        Process inbound folder using the passed folder
+
+        """
+        inboundFolder = kwargs.pop('folder', self.InboundFolder)
+        self.logger.info("Processing Inbound Folder [" + inboundFolder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
-        scanner = Scanner(self.debug, self.showTagsOnly)
-        startTime = datetime.now()
+        scanner = Scanner(self.readOnly)
+        startTime = arrow.utcnow().datetime
         newMp3Folder = None
         lastID3Artist = None
         lastID3Album = None
@@ -178,31 +150,33 @@ class Processor(object):
         release = None
 
         # Get all the folder in the InboundFolder
-        for mp3Folder in self.inboundFolders():
+        for mp3Folder in self.allDirectoriesInDirectory(inboundFolder):
             foundMp3Files = 0
+
+            # Do any conversions
+            if not self.readOnly:
+                Convertor(mp3Folder)
 
             # Delete any empty folder if enabled
             if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
                 try:
-                    self.printDebug("X Deleted Empty Folder [" + mp3Folder + "]")
-                    os.rmdir(mp3Folder)
+                    self.logger.warn("X Deleted Empty Folder [" + mp3Folder + "]")
+                    if not self.readOnly:
+                        os.rmdir(mp3Folder)
                 except OSError:
-                    print("Error Deleting [" + mp3Folder + "]")
+                    self.logger.error("Error Deleting [" + mp3Folder + "]")
                 continue
 
-            mp3RootFolder = None
             # Get all the MP3 files in the Folder and process
             for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
-                mp3RootFolder = rootFolder
-                self.printDebug("Processing MP3 File [" + mp3 + "]...")
+                self.logger.debug("Processing MP3 File [" + mp3 + "]...")
                 id3 = ID3(mp3, self.processingOptions)
                 if id3 != None:
+                    self.logger.debug("ID3 Info [" + id3.info() + "]");
                     if not id3.isValid():
-                        print("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
+                        self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                     else:
                         foundMp3Files += 1
-                        if self.showTagsOnly:
-                            continue
                         # Get Artist
                         if lastID3Artist != id3.artist:
                             artist = None
@@ -225,7 +199,7 @@ class Processor(object):
                                     if 'begin' in mbArtist['life-span']:
                                         begin = parse(mbArtist['life-span']['begin'])
                                 artist.BeginDate = begin
-                                ended =mbArtist['life-span']['ended']
+                                ended = mbArtist['life-span']['ended']
                                 if ended != "false":
                                     ended = None
                                     if 'life-span' in mbArtist:
@@ -234,7 +208,10 @@ class Processor(object):
                                     artist.EndDate = ended
                                 artistType = None
                                 if 'type' in mbArtist:
-                                    artistType = ArtistType.objects(Name=mbArtist['type']).first()
+                                    mbArtistType = mbArtist['type']
+                                    artistType = ArtistType.objects(Name=mbArtistType).first()
+                                    if not artistType:
+                                        self.logger.warn("Unable To Find Artist Type [" + mbArtistType + "]")
                                 if artistType:
                                     artist.ArtistType = artistType
                                 artist.SortName = mbArtist['sort-name']
@@ -253,15 +230,19 @@ class Processor(object):
                             ba = None
                             # See if a file exists to use for the Artist thumbnail
                             artistFile = os.path.join(mp3Folder, "artist.jpg")
-                            if os.path.isfile(artistFile):
+                            if os.path.exists(artistFile):
                                 ba = self.readImageThumbnailBytesFromFile(artistFile)
                             if ba:
                                 artist.Thumbnail.new_file()
                                 artist.Thumbnail.write(ba)
                                 artist.Thumbnail.close()
                             # Save The Artist
-                            Artist.save(artist)
-                            self.printDebug("+ Added Artist Name [" + artist.Name + "]")
+                            if not self.readOnly:
+                                Artist.save(artist)
+                            self.logger.info("+ Added Artist Name [" + artist.Name + "]")
+                        # Cannot continue past here if read only as object refer to DB objects must be saved
+                        if self.readOnly:
+                            continue
                         # Get the Release
                         if lastID3Album != id3.album:
                             release = None
@@ -270,7 +251,7 @@ class Processor(object):
                             release = Release.objects(Title=id3.album, Artist=artist).first()
                         if not release:
                             # Release not found create
-                            release = Release(Title=id3.album, Artist=artist, ReleaseDate = "---")
+                            release = Release(Title=id3.album, Artist=artist, ReleaseDate="---")
                             release.Random = random.randint(1, 1000000)
                             mbRelease = mb.searchForRelease(artist.MusicBrainzId, id3.album)
                             if mbRelease:
@@ -299,8 +280,9 @@ class Processor(object):
                                                 if not label:
                                                     label = Label(Name=mbLabelName)
                                                     label.MusicBrainzId = mbLabel['label']['id']
-                                                    object_id = Label.save(label)
-                                                    self.printDebug("+ Added Label Name [" + label.Name + "], Id [" + str(object_id) + "]")
+                                                    if not self.readOnly:
+                                                        Label.save(label)
+                                                    self.logger.info("+ Added Label Name [" + label.Name + "]")
                                         if label:
                                             catalogNumber = None
                                             if 'catalog-number' in mbLabel:
@@ -355,44 +337,35 @@ class Processor(object):
                                 release.Thumbnail.new_file()
                                 release.Thumbnail.write(ba)
                                 release.Thumbnail.close()
-                            Release.save(release)
-                            self.printDebug("+ Added Release: Title [" + release.Title + "]")
+                            if not self.readOnly:
+                                Release.save(release)
+                            self.logger.info("+ Added Release: Title [" + release.Title + "]")
                         if self.shouldMoveToLibrary(artist, artist.id, id3, mp3):
                             newMp3 = self.moveToLibrary(artist, id3, mp3)
                             head, tail = os.path.split(newMp3)
                             newMp3Folder = head
 
-            if mp3RootFolder:
+            if artist and release:
                 if newMp3Folder:
-                    for coverImage in self.releaseCoverImages(mp3RootFolder):
+                    for coverImage in self.releaseCoverImages(mp3Folder):
                         im = Image.open(coverImage).convert('RGB')
                         newPath = os.path.join(newMp3Folder, "cover.jpg")
-                        self.printDebug("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
-                        if not self.showTagsOnly:
+                        if not self.readOnly:
                             im.save(newPath)
+                        self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
                     scanner.scan(newMp3Folder, artist, release)
                 else:
-                    scanner.scan(mp3RootFolder, artist, release)
+                    scanner.scan(mp3Folder, artist, release)
 
-                if not self.showTagsOnly and artist and release and id3:
-                    if self.shouldDeleteFolder(mp3RootFolder, newMp3Folder):
-                        try:
-                         #   shutil.rmtree(mp3RootFolder)
-                            self.printDebug("x Deleted Processed Folder [" + mp3RootFolder + "]")
-                        except OSError:
-                            pass
+            if not self.readOnly and artist and release and id3:
+                if self.shouldDeleteFolder(mp3Folder, newMp3Folder):
+                    try:
+                        shutil.rmtree(mp3Folder)
+                        self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
+                    except OSError:
+                        pass
 
-            self.printDebug("Processed Folder [" + mp3Folder + "] Processed [" + str(foundMp3Files) + "] MP3 Files")
+            self.logger.debug("Processed Folder [" + mp3Folder + "] Processed [" + str(foundMp3Files) + "] MP3 Files")
 
-        elapsedTime = datetime.now() - startTime
-        print("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
-
-
-p = argparse.ArgumentParser(description='Process Inbound and Library Folders For Updates.')
-p.add_argument('--verbose', '-v', action='store_true', help='Enable Verbose Print Statements')
-p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true', help='Dont Delete Any Processed Inbound Folders')
-p.add_argument('--showTagsOnly', '-st', action='store_true', help='Only Show Tags for Found Files')
-args = p.parse_args()
-
-pp = Processor(args.verbose, args.showTagsOnly, args.dontDeleteInboundFolders)
-pp.process()
+        elapsedTime = arrow.utcnow().datetime - startTime
+        self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")

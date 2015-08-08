@@ -25,6 +25,7 @@
               <div class="btn-group">
                 <a href="/admin/artist/edit/?id={{ artist.id }}&url=/artist/{{ artist.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <button id="delete-artist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
              </div>
             {% endif %}
         </div>
@@ -175,7 +176,7 @@
                         <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
                         <a href="/release/{{ release.id }}">
                         <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-default' if release.TrackCount or 0 >= release.Tracks|default('')|length else 'label-danger' }} releasetitle">{{ release.Title }}</span></h4>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-danger' if (release.TrackCount == 0) or (release.TrackCount != release.Tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.Title }}</span></h4>
                         </a>
                     </div>
                     {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
@@ -289,11 +290,9 @@
 
             $("#playAll").on("click", function(e) {
                 roadieLibrary.playLoader("/artist/play/" + artistId + "/0");
-
             });
             $("#playAllShuffle").on("click", function(e) {
                 roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
-
             });
             $(".artist-detail-container a.thumbnail").on("click", function(e) {
                 var $t = $(this);
@@ -303,6 +302,29 @@
                     message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
                 });
             });
+
+            $("#scan-artist").on("click", function(e) {
+                bootbox.confirm("Continue To Re-Scan Artist Release Folder(s)?", function(result) {
+                    if(result) {
+                        $(".loader").fadeIn("slow", function() {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/artist/rescan/' + artistId,
+                                contentType: "application/javascript",
+                                success: function(data) {
+                                    if(data.message == "OK") {
+                                        location.reload(true);
+                                    }
+                                },
+                                error:function(jq, st, error){
+                                    alert(error);
+                                }
+                            });
+                        });
+                    }
+                });
+            });
+
             $("#delete-artist").on("click", function(e) {
                 bootbox.confirm("Continue To Delete Artist?", function(result) {
                     if(result) {

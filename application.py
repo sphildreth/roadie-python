@@ -16,6 +16,8 @@ from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
+from resources.processor import Processor
+from resources.validator import Validator
 from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
     Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
@@ -288,6 +290,24 @@ def toggleUserReleaseFavorite(release_id, toggle):
     except:
         return jsonify(message="ERROR")
 
+@app.route("/artist/rescan/<artist_id>", methods=['POST'])
+@login_required
+def rescanArtist(artist_id):
+    try:
+        artist = Artist.objects(id=artist_id).first()
+        if not artist:
+            return jsonify(message="ERROR")
+        # Update Database with folders found in Library
+        processor = Processor(False, True,)
+        artistFolder = processor.artistFolder(artist)
+        processor.process(folder=artistFolder)
+     #   validator = Validator(False)
+     #   validator.validate(artist)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
 @login_required
 def deleteArtist(artist_id):
@@ -354,18 +374,25 @@ def deleteReleaseTrack(release_id, release_track_id, flag):
         release.Tracks = rts
         Release.save(release)
 
+        trackPath = None
         trackFilename = None
         if flag == 't' or flag == "f":
             # Delete the track
             track = Track.objects(id=release_track_id).first()
             if track:
+                trackPath = track.FilePath
                 trackFilename = os.path.join(track.FilePath, track.FileName)
                 Track.delete(track)
 
         if flag == "f":
             # Delete the file
             try:
-                os.remove(trackFilename)
+                if trackFilename:
+                    os.remove(trackFilename)
+                # if the folder is empty then delete the folder as well
+                if trackPath:
+                    if not os.listdir(trackPath):
+                        os.rmdir(trackPath)
             except OSError:
                 pass
 
@@ -664,9 +691,9 @@ def stats():
 
     topRatedReleases = Release.objects().order_by('-Rating')[:10]
 
-    topRatedTracks = Track.objects(Rating__gte=0).order_by('-Rating')[:25]
+    topRatedTracks = Track.objects(Rating__gt=0).order_by('-Rating')[:25]
 
-    mostRecentReleases = Release.objects().order_by('-ReleaseDate', 'Title', 'Artist.SortName')[:10]
+    mostRecentReleases = Release.objects().order_by('-CreatedDate', 'Title', 'Artist.SortName')[:25]
 
     return render_template('stats.html', top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
                            , top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
@@ -944,7 +971,32 @@ def collection(collection_id):
     collection = Collection.objects(id=collection_id).first()
     if not collection:
         return render_template('404.html'), 404
-    return render_template('collection.html', collection=collection)
+    tracks = 0
+    sumTime = 0
+    for release in collection.Releases:
+        tracks += len(release.Release.Tracks)
+        for track in release.Release.Tracks:
+            sumTime += track.Track.Length
+    counts = {'releases': "{0:,}".format(len(collection.Releases)),
+              'tracks': "{0:,}".format(tracks),
+              'length': sumTime}
+    return render_template('collection.html', collection=collection, counts=counts)
+
+@app.route("/collection/play/<collection_id>")
+@login_required
+def playCollection(collection_id):
+    collection = Collection.objects(id=collection_id).first()
+    if not collection:
+        return render_template('404.html'), 404
+    user = User.objects(id=current_user.id).first()
+    tracks = []
+    for release in collection.Releases:
+        for track in sorted(release.Release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
+            tracks.append(M3U.makeTrackInfo(user,release.Release, track.Track))
+    return send_file(M3U.generate(tracks),
+                     as_attachment=True,
+                     attachment_filename= collection.Name + ".m3u")
+
 
 @app.route('/logout')
 def logout():

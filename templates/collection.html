@@ -3,30 +3,54 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="collection-container">
-        <div class="row">
-        <h4><span class="label label-default">{{ collection.Name }}</span></h4>
-        <ul class="collection no-list-style" data-playlist-id="{{ collection.id }}">
-            {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
-            <li data-release-id="{{ collectionRelease.Release.id }}">
-               <a href="/release/{{ collectionRelease.Release.id }}">
-                    <div class="thumbnail-container pull-left">
-                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
-                    </div>
-                    <h4><span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
-                    <h3><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
-                </a>
-            </li>
-            {% endfor %}
-        </ul>
+    <div class="collection-container" data-collection-id="{{ collection.id }}">
+        <div class="release-counts-container pull-right">
+            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Collection">{{ counts.releases }}</span></span>
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Collection">{{ counts.tracks }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
-        <h1>WIP</h1>
+        <div class="btn-toolbar edit-toolbar" role="toolbar">
+            <div class="btn-group">
+              <button id="playAll" type="button" class="btn btn-default" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-play"></i> Play All
+              </button>
+            </div>
+            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+              <div class="btn-group">
+                <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <button id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+             </div>
+            {% endif %}
+        </div>
+        <div class="row title bordered">
+            <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Title }}" />
+            <a class="external-link pull-left" target="_blank" href="{{ collection.Urls[0].Url }}"><span class="fa fa-external-link fa-2x"></span></a>
+            <h2><span class="label label-default">{{ collection.Name }}</span></h2>
+        </div>
+        <div class="row">
+            <ul class="collection no-list-style" data-playlist-id="{{ collection.id }}">
+                {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
+                <li data-release-id="{{ collectionRelease.Release.id }}">
+                   <a href="/release/{{ collectionRelease.Release.id }}">
+                        <div class="thumbnail-container pull-left">
+                        <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
+                        </div>
+                        <h4><span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
+                        <h3><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
+    var collectionId = '{{ collection.id }}';
     $(function() {
-
+        $("#playAll").on("click", function(e) {
+            roadieLibrary.playLoader("/collection/play/" + collectionId);
+        });
     });
     </script>
 {% endblock %}

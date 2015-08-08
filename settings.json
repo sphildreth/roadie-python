@@ -4,7 +4,7 @@
         "DB": "roadie",
         "host": "192.168.2.254"
     },
-    "ROADIE_INBOUND_FOLDER": "Z:/library/",
+    "ROADIE_INBOUND_FOLDER": "D:/incoming/complete/audio/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
         "Height": 60,

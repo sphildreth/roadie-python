@@ -2,8 +2,6 @@ from viewModels.RoadieModelView import RoadieModelView
 import os
 import json
 from resources.id3 import ID3
-from resources.utility import Utility
-
 
 class RoadieReleaseModelView(RoadieModelView):
     form_subdocuments = {
@@ -56,7 +54,6 @@ class RoadieReleaseModelView(RoadieModelView):
                         id3 = ID3(trackPath, config)
                         id3.updateFromRelease(model, track)
         except:
-            Utility.PrintException()
             pass
         # Call the base class to update any necessary timestamps and such
         super(RoadieReleaseModelView, self).on_model_change(form,model,is_created)

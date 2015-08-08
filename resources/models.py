@@ -135,6 +135,9 @@ class Artist(Document):
         ]
     }
 
+    def __str__(self):
+        return self.Name
+
     def __unicode__(self):
         return self.Name
 
@@ -238,6 +241,7 @@ class Release(Document):
     Images = ListField(EmbeddedDocumentField(Image))
     Genres = ListField(ReferenceField(Genre), default=[])
     Labels = ListField(EmbeddedDocumentField(ReleaseLabel), default=[])
+    CreatedDate = DateTimeField(default=datetime.datetime.now)
     LastUpdated = DateTimeField(default=datetime.datetime.now)
     MusicBrainzId = StringField()
     ReleaseDate = StringField(required=True)

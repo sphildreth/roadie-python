@@ -81,7 +81,7 @@
         </div>
         <div class="row bordered">
             <div class="col-md-4 recent-releases">
-                <h4><span class="label label-primary">Most Recent Releases</span></h4>
+                <h4><span class="label label-primary">Most Recent Added Releases</span></h4>
                 {% for release in mostRecentReleases %}
                     <div class="recent-releases-container">
                         <div class="thumbnail-container pull-left">
@@ -93,7 +93,7 @@
                         </span>
                         <span class="release-info">
                             <a href="/release/{{ release.id }}">
-                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Release Date: {{ release.ReleaseDate }}"></i>
+                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Release Date: {{ release.ReleaseDate }}<br />Added Date: {{ release.CreatedDate }}"></i>
                                     <span class="label label-primary title">{{ release.Title }}</span>
                                 </h3>
                             </a>

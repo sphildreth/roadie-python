@@ -6,14 +6,17 @@ from mutagen.mp3 import MP3
 from mutagen.id3 import ID3 as mutagenID3
 from mutagen.id3 import ID3NoHeaderError
 from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, COMM, USLT, TCOM, TCON, TDRC, TRCK
-from resources.utility import Utility
-from resources.models import Release, Track, TrackRelease
+from logger import Logger
+from models import Release, Track, TrackRelease
+from hsaudiotag import mpeg
+
 
 class ID3:
     filename = None
     config = None
 
     def __init__(self,path,config=None):
+        self.logger = Logger()
         self.filename = path
         self.config = config
         self._load(path,config)
@@ -28,8 +31,8 @@ class ID3:
             return False
 
     def info(self):
-        return "--- IsValid: [" + str(self.isValid()) + "] " +  self.artist + " : (" + str(self.year) + ") "\
-               + self.album + " : " + str(self.disc) + "::" + str(self.track).zfill(2) + " " + self.title + " ("\
+        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist + "], Year [" + str(self.year) + "], Album: ["\
+               + self.album + "], Disc: [" + str(self.disc) + "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], ("\
                + str(self.bitrate) + "bps::" + str(self.length) + ")"
 
     def __str__(self):
@@ -91,6 +94,10 @@ class ID3:
             except:
                 pass
             self.year = short_tags.get('date', [''])[0]
+            if not self.year:
+                myfile = mpeg.Mpeg(filename)
+                if myfile:
+                    self.year = myfile.tag.year[:4]
             self.title = short_tags.get('title', [''])[0].strip().title()
             if self.title and config:
                 if 'TitleReplacements' in config:
@@ -112,5 +119,5 @@ class ID3:
             if full_tags.tags and 'APIC:' in  full_tags.tags:
                 self.imageBytes = full_tags.tags._DictProxy__dict['APIC:'].data
         except:
-            Utility.PrintException()
+            self.logger.exception()
             return None

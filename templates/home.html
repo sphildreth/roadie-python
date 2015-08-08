@@ -38,13 +38,13 @@
                 <tbody>
                 {% for lastPlayedInfo in lastPlayedInfos %}
                     <tr>
-                        <td data-track-id="{{ lastPlayedInfo.TrackId }}">
+                        <td class="track" data-track-id="{{ lastPlayedInfo.TrackId }}">
                             <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
                             <span class="user-rating-container">
                                 <input type="hidden" class="track-rating user-rating rating" value="{{ lastPlayedInfo.UserRating }}" />
                             </span>
                         </td>
-                        <td data-release-id="{{ lastPlayedInfo.ReleaseId }}">
+                        <td class="release" data-release-id="{{ lastPlayedInfo.ReleaseId }}">
                             <a href="/release/{{ lastPlayedInfo.ReleaseId }}">
                                 <div class="thumbnail-container pull-left">
                                 <img class="release-thumb" src="{{ lastPlayedInfo.ReleaseThumbnail }}" alt="{{ lastPlayedInfo.ReleaseTitle }}" />
@@ -52,7 +52,7 @@
                                 <span class="label label-default">{{ lastPlayedInfo.ReleaseTitle }}</span>
                             </a>
                         </td>
-                        <td data-artist-id="{{ lastPlayedInfo.ArtistId }}">
+                        <td class="artist" data-artist-id="{{ lastPlayedInfo.ArtistId }}">
                             <a href="/artist/{{ lastPlayedInfo.ArtistId }}">
                                 <div class="thumbnail-container pull-left">
                                     <img class="artist-thumb" src="{{ lastPlayedInfo.ArtistThumbnail }}" alt="{{ lastPlayedInfo.ArtistTitle }}" />
@@ -80,7 +80,38 @@
 {% block script_content %}
     {% raw %}
     <script id="template" type="x-tmpl-mustache">
-        <tr><td data-track-id='{{ lastPlayedInfo.TrackId }}'><span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span><span class='user-rating-container'><input type="hidden" class="track-rating user-rating rating" value="{{ UserRating }}" /></span></td><td data-release-id='{{ lastPlayedInfo.ReleaseId }}'><a href='/release/{{ lastPlayedInfo.ReleaseId }}'><div class='thumbnail-container pull-left'><img class='release-thumb' src='{{ lastPlayedInfo.ReleaseThumbnail }}' alt='{{ lastPlayedInfo.ReleaseTitle }}' /></div><span class='label label-default'>{{ lastPlayedInfo.ReleaseTitle }}</span></a></td><td data-artist-id='{{ lastPlayedInfo.ArtistId }}'><a href='/artist/{{ lastPlayedInfo.ArtistId }}'><div class='thumbnail-container pull-left'><img class='artist-thumb' src='{{ lastPlayedInfo.ArtistThumbnail }}' alt='{{ lastPlayedInfo.ArtistTitle }}' /></div>    <span class='label label-default'>{{ lastPlayedInfo.ArtistName }}</span></a></td><td data-user-id='{{ lastPlayedInfo.UserId }}'><div class='thumbnail-container pull-left'><img class='user-thumb' src='{{ lastPlayedInfo.UserThumbnail }}' alt='{{ lastPlayedInfo.Username }}' /></div><span class='label label-default'>{{ lastPlayedInfo.Username }}</span></td><td><span class='label label-default'>{{ lastPlayedInfo.LastPlayed }}</span></td></tr>
+        <tr>
+            <td class="track" data-track-id="{{ lastPlayedInfo.TrackId }}">
+                <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
+                <span class="user-rating-container"><input type="hidden" class="track-rating user-rating rating" value="{{ UserRating }}" />
+                </span>
+            </td>
+            <td class="release" data-release-id="{{ lastPlayedInfo.ReleaseId }}">
+                <a href="/release/{{ lastPlayedInfo.ReleaseId }}">
+                    <div class="thumbnail-container pull-left">
+                        <img class="release-thumb" src="{{ lastPlayedInfo.ReleaseThumbnail }}" alt="{{ lastPlayedInfo.ReleaseTitle }}" />
+                    </div>
+                    <span class="label label-default">{{ lastPlayedInfo.ReleaseTitle }}</span>
+                </a>
+            </td>
+            <td class="artist" data-artist-id="{{ lastPlayedInfo.ArtistId }}">
+                <a href="/artist/{{ lastPlayedInfo.ArtistId }}">
+                    <div class="thumbnail-container pull-left">
+                        <img class="artist-thumb" src="{{ lastPlayedInfo.ArtistThumbnail }}" alt="{{ lastPlayedInfo.ArtistTitle }}" />
+                    </div>
+                    <span class="label label-default">{{ lastPlayedInfo.ArtistName }}</span>
+                </a>
+            </td>
+            <td class="username" data-user-id="{{ lastPlayedInfo.UserId }}">
+                <div class="thumbnail-container pull-left">
+                    <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}" alt="{{ lastPlayedInfo.Username }}" />
+                </div>
+                <span class="label label-default">{{ lastPlayedInfo.Username }}</span>
+            </td>
+            <td>
+                <span class="label label-default">{{ lastPlayedInfo.LastPlayed }}</span>
+            </td>
+        </tr>
     </script>
     <script id="randomReleaseTemplate" type="x-tmpl-mustache">
         <div class="release pull-left" data-release-id="{{ id }}">
@@ -107,10 +138,10 @@
 
         ws = new WebSocket("{{ wsRoot }}websocket/");
         ws.onmessage = function(e) {
-          var data = JSON.parse(e.data);
-          var html = Mustache.render(template, data)
-          $("#lastPlayedTracks > tbody > tr:first").before(html);
-          $("#lastPlayedTracks").find("input.rating").rating();
+            var data = JSON.parse(e.data);
+            var html = Mustache.render(template, data)
+            $("#lastPlayedTracks > tbody > tr:first").before(html);
+            $("#lastPlayedTracks").find("input.rating").rating();
         };
 
         $(".home-container").on("click", ".release button", function(e) {
@@ -158,9 +189,10 @@
         });
 
         $(".home-container .recently-played-container").on("change", "input.track-rating", function(e) {
+            var releaseId = $(this).closest("td").siblings("td.release").data("release-id");
             $.ajax({
                 type: 'POST',
-                url: '/user/track/setrating/' + $(this).closest("td").data("track-id") + '/' + $(this).rating('rate'),
+                url: '/user/track/setrating/' + releaseId + "/" + $(this).closest("td").data("track-id") + '/' + $(this).rating('rate'),
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {

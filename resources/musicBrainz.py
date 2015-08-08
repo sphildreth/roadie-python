@@ -1,6 +1,7 @@
 # MusicBrainz interface for Roadie
 
 import musicbrainzngs
+from logger import Logger
 
 class MusicBrainz:
 
@@ -9,6 +10,7 @@ class MusicBrainz:
         self.artists = {}
         self.searchReleases = {}
         self.releases = {}
+        self.logger = Logger()
 
     def lookupArtist(self, name):
         cacheKey = name.replace(" ", "")
@@ -16,7 +18,7 @@ class MusicBrainz:
             return self.artists[cacheKey]
 
         try:
-            print("Getting Artist [" + name + "] From MusicBrainz")
+            self.logger.debug("Getting Artist [" + name + "] From MusicBrainz")
             result = musicbrainzngs.search_artists(artist=name, type="group")
         except:
             result = None
@@ -36,7 +38,7 @@ class MusicBrainz:
             return self.searchReleases[cacheKey]
 
         try:
-            print("Search For Release [" + title + "] From MusicBrainz")
+            self.logger.debug("Search For Release [" + title + "] From MusicBrainz")
             result = musicbrainzngs.search_releases(limit=1, arid=artistId, release=title)
         except:
             result = None
@@ -51,7 +53,7 @@ class MusicBrainz:
             return self.releases[releaseId]
 
         try:
-            print("Getting Release [" + releaseId + "] From MusicBrainz")
+            self.logger.debug("Getting Release [" + releaseId + "] From MusicBrainz")
             result = musicbrainzngs.get_release_by_id(releaseId, includes=['recordings'])
         except:
             result = None
