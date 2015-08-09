@@ -1,7 +1,7 @@
 # MusicBrainz interface for Roadie
 
 import musicbrainzngs
-from logger import Logger
+from resources.logger import Logger
 
 class MusicBrainz:
 

@@ -20,9 +20,9 @@ from musicBrainz import MusicBrainz
 from id3 import ID3
 from scanner import Scanner
 from convertor import Convertor
-from logger import Logger
+from resources.logger import Logger
 from processor import Processor
-from processingBase import ProcessorBase
+from resources.processingBase import ProcessorBase
 
 class Validator(ProcessorBase):
 

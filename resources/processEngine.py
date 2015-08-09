@@ -1,5 +1,5 @@
 import argparse
-from processor import Processor
+from resources.processor import Processor
 
 p = argparse.ArgumentParser(description='Process Inbound and Library Folders For Updates.')
 p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
