@@ -24,9 +24,14 @@
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/artist/edit/?id={{ artist.id }}&url=/artist/{{ artist.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                {% if artist.IsLocked == False %}
                 <button id="delete-artist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
                 <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
+                {% endif %}
              </div>
+            {% endif %}
+            {% if artist.IsLocked %}
+                <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
             {% endif %}
         </div>
         <div class="row title bordered">

@@ -141,6 +141,12 @@ div.bordered {
     margin-right: 5px;
 }
 
+.btn-toolbar .edit-locked {
+    display: inline-block;
+    height: 28px;
+    margin: 5px 6px;
+}
+
 .release-info-container .release:nth-child(even),
 .collections-container .collection:nth-child(odd),
 .collection-container ul.collection li:nth-child(even),

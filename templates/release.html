@@ -17,11 +17,15 @@
                 <li><a id="playAll" href="#">Play All</a></li>
               </ul>
             </div>
-            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+            {% if current_user.is_authenticated() and current_user.has_role("Admin") and release.Artist.IsLocked == False %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <button id="delete-release" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                <button id="scan-release" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
              </div>
+            {% endif %}
+            {% if release.Artist.IsLocked %}
+                <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
             {% endif %}
         </div>
         <div class="row title bordered">
@@ -501,6 +505,28 @@
                 },
                 error:function(jq, st, error){
                     alert(error);
+                }
+            });
+        });
+
+        $("#scan-release").on("click", function(e) {
+            bootbox.confirm("Continue To Re-Scan Release Folder(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/release/rescan/' + releaseId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    });
                 }
             });
         });

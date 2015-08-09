@@ -112,6 +112,7 @@ class Artist(Document):
     ArtistType = ReferenceField(ArtistType)
     BirthDate = DateTimeField()
     BeginDate = DateTimeField()
+    IsLocked = BooleanField(default=False)
     EndDate = DateTimeField()
     Images = ListField(EmbeddedDocumentField(Image))
     LastUpdated = DateTimeField(default=datetime.datetime.now)
