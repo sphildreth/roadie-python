@@ -389,7 +389,6 @@
         });
 
         $(".release-detail-container .tracks input.track-rating").on("change", function(e) {
-            debugger;
             $.ajax({
                 type: 'POST',
                 url: '/user/track/setrating/' + releaseId + '/' + $(this).closest("div.track").data("track-id") + '/' + $(this).rating('rate'),
