@@ -176,7 +176,7 @@
                         <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
                         <a href="/release/{{ release.id }}">
                         <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="label {{ 'label-danger' if (release.TrackCount == 0) or (release.TrackCount != release.Tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.Title }}</span></h4>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="release-title label {{ 'label-danger' if (release.TrackCount == 0) or (release.TrackCount != release.Tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.Title }}</span></h4>
                         </a>
                     </div>
                     {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
@@ -205,7 +205,26 @@
 {% block script_content %}
     <script type="text/javascript">
         var artistId = '{{ artist.id }}';
+
+        var doArtistSanityChecks = function() {
+            var $c = $("div.release-counts-container");
+            $c.find(".release-sane-indicator").remove();
+            var isSane = areNoInvalidReleasesFound();
+            if(isSane) {
+                $c.append("<span class='release-sane-indicator release-sane label label-success' title='Artist Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+            } else {
+                $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Artist Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+            }
+        };
+
+        var areNoInvalidReleasesFound = function() {
+            return $("span.release-title.label-danger").length === 0;
+        };
+
         $(function() {
+
+            doArtistSanityChecks();
+
             $(".user-rating-container a.dislike").on("click", function(e) {
                 var $i =  $(this).find("i:first");
                 var toggle = !$i.hasClass("fa-thumbs-down");

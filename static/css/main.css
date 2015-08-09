@@ -112,7 +112,8 @@ img.thumb {
   margin-right: 8px;
 }
 
-.release-detail-container span.track-count-indicator {
+.release-detail-container span.track-count-indicator,
+.artist-detail-container span.release-sane-indicator {
     height: 25px;
     display: inline-block;
 }

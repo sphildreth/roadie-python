@@ -1,39 +1,45 @@
-import arrow
 import io
 import os
 import hashlib
 import json
 import random
 from time import time
+from operator import itemgetter
+from re import findall
+from urllib.parse import urlparse, urljoin
+
+import arrow
 from bson import objectid
 from PIL import Image
 from flask import Flask, jsonify, render_template, send_file, Response, request, \
-    flash, url_for, redirect, abort, session, abort, g
+    flash, url_for, redirect, g
 import flask_admin as admin
 from flask_restful import Api
 from flask_mongoengine import MongoEngine
+from mongoengine import Q
+from tornado.wsgi import WSGIContainer
+from tornado.web import Application, FallbackHandler
+from tornado.websocket import WebSocketHandler
+from tornado.ioloop import IOLoop
+
+from werkzeug.datastructures import Headers
+
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
-from resources.validator import Validator
-from resources.models import Artist, ArtistType, Collection, CollectionRelease, Genre, Label, \
-    Playlist, Quality, Release, ReleaseLabel, Track, TrackRelease, User, UserArtist, UserRelease, UserRole, UserTrack
+from resources.models import Artist, ArtistType, Collection, Genre, Label, \
+    Playlist, Quality, Release, Track, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
-from mongoengine import Q
 from flask.ext.mongoengine import MongoEngine, MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from flask.ext.bcrypt import Bcrypt
-from tornado.wsgi import WSGIContainer
-from tornado.web import Application, FallbackHandler
-from tornado.websocket import WebSocketHandler
-from tornado.ioloop import IOLoop
-from operator import itemgetter
 from resources.nocache import nocache
-from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length,\
-                                   group_release_tracks_filepaths, format_age_from_date, calculate_release_discs
+from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
+    group_release_tracks_filepaths, format_age_from_date, calculate_release_discs
+from validator import Validator
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
@@ -43,9 +49,6 @@ from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
 from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
 from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
 from viewModels.RoadieArtistModelView import RoadieArtistModelView
-from werkzeug.datastructures import Headers
-from re import findall
-from urllib.parse import urlparse, urljoin
 
 clients = []
 
@@ -84,52 +87,53 @@ def index():
     lastPlayedInfos = []
     for ut in UserTrack.objects().order_by('-LastPlayed')[:35]:
         info = {
-            'TrackId' : str(ut.Track.id),
-            'TrackTitle' : ut.Track.Title,
-            'ReleaseId' : str(ut.Release.id),
-            'ReleaseTitle' : ut.Release.Title,
-            'ReleaseThumbnail' : "/images/release/thumbnail/" + str(ut.Release.id),
-            'ArtistId' : str(ut.Track.Artist.id),
-            'ArtistName' : ut.Track.Artist.Name,
-            'ArtistThumbnail' : "/images/artist/thumbnail/" + str(ut.Track.Artist.id),
-            'UserId' : str(ut.User.id),
-            'Username' : ut.User.Username,
-            'UserThumbnail' : "/images/user/avatar/" + str(ut.User.id),
-            'UserRating' : ut.Rating,
-            'LastPlayed' : arrow.get(ut.LastPlayed).humanize()
+            'TrackId': str(ut.Track.id),
+            'TrackTitle': ut.Track.Title,
+            'ReleaseId': str(ut.Release.id),
+            'ReleaseTitle': ut.Release.Title,
+            'ReleaseThumbnail': "/images/release/thumbnail/" + str(ut.Release.id),
+            'ArtistId': str(ut.Track.Artist.id),
+            'ArtistName': ut.Track.Artist.Name,
+            'ArtistThumbnail': "/images/artist/thumbnail/" + str(ut.Track.Artist.id),
+            'UserId': str(ut.User.id),
+            'Username': ut.User.Username,
+            'UserThumbnail': "/images/user/avatar/" + str(ut.User.id),
+            'UserRating': ut.Rating,
+            'LastPlayed': arrow.get(ut.LastPlayed).humanize()
         }
         lastPlayedInfos.append(info)
     wsRoot = request.url_root.replace("http://", "ws://")
     randomSeed1 = random.randint(1, 1000000)
     randomSeed2 = random.randint(randomSeed1, 1000000)
     releases = []
-    for release in Release.objects(Q(Random__gte = randomSeed1) & Q(Random__lte = randomSeed2)).order_by('Random')[:12]:
+    for release in Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:12]:
         releases.append({
             'id': release.id,
             'ArtistName': release.Artist.Name,
             'Title': release.Title,
             'UserRating': 0
         })
-    return render_template('home.html', lastPlayedInfos = lastPlayedInfos, wsRoot=wsRoot, releases=releases)
+    return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
 
 
 @app.route("/release/random/<count>", methods=['POST'])
 def randomRelease(count):
-    #try:
-    randomSeed1 = random.randint(1, 1000000)
-    randomSeed2 = random.randint(randomSeed1, 1000000)
-    releases = []
-    for release in Release.objects(Q(Random__gte = randomSeed1) & Q(Random__lte = randomSeed2)).order_by('Random')[:int(count)]:
-        releaseInfo = {
-            'id': str(release.id),
-            'ArtistName': release.Artist.Name,
-            'Title': release.Title,
-            'UserRating': 0
-        }
-        releases.append(releaseInfo)
-    return jsonify(message="OK", releases=releases)
-    # except:
-    #     return jsonify(message="ERROR")
+    try:
+        randomSeed1 = random.randint(1, 1000000)
+        randomSeed2 = random.randint(randomSeed1, 1000000)
+        releases = []
+        for release in Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[
+                       :int(count)]:
+            releaseInfo = {
+                'id': str(release.id),
+                'ArtistName': release.Artist.Name,
+                'Title': release.Title,
+                'UserRating': 0
+            }
+            releases.append(releaseInfo)
+        return jsonify(message="OK", releases=releases)
+    except:
+        return jsonify(message="ERROR")
 
 
 @app.route('/artist/<artist_id>')
@@ -175,6 +179,7 @@ def setUserArtistRating(artist_id, rating):
     except:
         return jsonify(message="ERROR")
 
+
 @app.route("/user/artist/toggledislike/<artist_id>/<toggle>", methods=['POST'])
 @login_required
 def toggleUserArtistDislike(artist_id, toggle):
@@ -201,6 +206,7 @@ def toggleUserArtistDislike(artist_id, toggle):
         return jsonify(message="OK", average=artistAverage)
     except:
         return jsonify(message="ERROR")
+
 
 @app.route("/user/artist/togglefavorite/<artist_id>/<toggle>", methods=['POST'])
 @login_required
@@ -245,6 +251,7 @@ def setUserReleaseRating(release_id, rating):
     except:
         return jsonify(message="ERROR")
 
+
 @app.route("/user/release/toggledislike/<release_id>/<toggle>", methods=['POST'])
 @login_required
 def toggleUserReleaseDislike(release_id, toggle):
@@ -272,6 +279,7 @@ def toggleUserReleaseDislike(release_id, toggle):
     except:
         return jsonify(message="ERROR")
 
+
 @app.route("/user/release/togglefavorite/<release_id>/<toggle>", methods=['POST'])
 @login_required
 def toggleUserReleaseFavorite(release_id, toggle):
@@ -290,6 +298,7 @@ def toggleUserReleaseFavorite(release_id, toggle):
     except:
         return jsonify(message="ERROR")
 
+
 @app.route("/artist/rescan/<artist_id>", methods=['POST'])
 @login_required
 def rescanArtist(artist_id):
@@ -298,11 +307,11 @@ def rescanArtist(artist_id):
         if not artist:
             return jsonify(message="ERROR")
         # Update Database with folders found in Library
-        processor = Processor(False, True,)
+        processor = Processor(False, True, )
         artistFolder = processor.artistFolder(artist)
         processor.process(folder=artistFolder)
-     #   validator = Validator(False)
-     #   validator.validate(artist)
+        validator = Validator(False)
+        validator.validate(artist)
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
@@ -454,6 +463,7 @@ def setReleaseImage(release_id, image_id):
         return jsonify(message="OK")
     return jsonify(message="ERROR")
 
+
 @app.route('/release/<release_id>')
 @login_required
 def release(release_id):
@@ -475,24 +485,27 @@ def release(release_id):
         userTrack = UserTrack.objects(User=user, Track=track.Track).first()
         if userTrack:
             track.UserRating = userTrack.Rating
-    return render_template('release.html', release=release, collectionReleases= collectionReleases, userRelease=userRelease)
+    return render_template('release.html', release=release, collectionReleases=collectionReleases,
+                           userRelease=userRelease)
+
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
 @login_required
-def playArtist(artist_id,doShuffle):
+def playArtist(artist_id, doShuffle):
     artist = Artist.objects(id=artist_id).first()
     if not artist:
         return render_template('404.html'), 404
     tracks = []
     user = User.objects(id=current_user.id).first()
     for release in Release.objects(Artist=artist):
-        for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
-            tracks.append(M3U.makeTrackInfo(user,release, track.Track))
+        for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
+            tracks.append(M3U.makeTrackInfo(user, release, track.Track))
     if doShuffle == "1":
         random.shuffle(tracks)
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
-                     attachment_filename= "playlist.m3u")
+                     attachment_filename="playlist.m3u")
+
 
 @app.route("/release/play/<release_id>")
 @login_required
@@ -502,11 +515,12 @@ def playRelease(release_id):
         return render_template('404.html'), 404
     tracks = []
     user = User.objects(id=current_user.id).first()
-    for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
-        tracks.append(M3U.makeTrackInfo(user,release, track.Track))
+    for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
+        tracks.append(M3U.makeTrackInfo(user, release, track.Track))
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
+
 
 @app.route("/track/play/<release_id>/<track_id>")
 @login_required
@@ -519,8 +533,9 @@ def playTrack(release_id, track_id):
     user = User.objects(id=current_user.id).first()
     tracks.append(M3U.makeTrackInfo(user, release, track))
     return send_file(M3U.generate(tracks),
-                 as_attachment=True,
-                 attachment_filename="playlist.m3u")
+                     as_attachment=True,
+                     attachment_filename="playlist.m3u")
+
 
 @app.route("/que/play", methods=['POST'])
 @login_required
@@ -528,11 +543,11 @@ def playQue():
     user = User.objects(id=current_user.id).first()
     tracks = []
     for t in request.json:
-        if(t["type"] == "track"):
+        if (t["type"] == "track"):
             release = Release.objects(id=t["releaseId"]).firts()
             track = Track.objects(id=t["trackId"]).first()
             if release and track:
-                tracks.append(M3U.makeTrackInfo(user,release, track))
+                tracks.append(M3U.makeTrackInfo(user, release, track))
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
@@ -545,7 +560,7 @@ def saveQue(que_name):
         return jsonify(message="ERROR")
     tracks = []
     for t in request.json:
-        if(t["type"] == "track"):
+        if (t["type"] == "track"):
             track = Track.objects(id=t["id"]).first()
             if track:
                 tracks.append(track)
@@ -566,6 +581,7 @@ def saveQue(que_name):
         Playlist.update(pl)
     return jsonify(message="OK")
 
+
 @app.route("/stream/track/<user_id>/<release_id>/<track_id>")
 def streamTrack(user_id, release_id, track_id):
     track = Track.objects(id=track_id).first()
@@ -578,7 +594,7 @@ def streamTrack(user_id, release_id, track_id):
     path = track.FilePath
     if trackPathReplace:
         for rpl in trackPathReplace:
-            for key,val in rpl.items():
+            for key, val in rpl.items():
                 path = path.replace(key, val)
     mp3File = os.path.join(path, track.FileName)
     if not os.path.isfile(mp3File):
@@ -603,7 +619,7 @@ def streamTrack(user_id, release_id, track_id):
         headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str(end - begin)))
     headers.add('Content-Length', str((end - begin) + 1))
     isFullRequest = begin == 0 and (end == (size - 1))
-    isEndRangeRequest = begin > 0 and (end != (size -1))
+    isEndRangeRequest = begin > 0 and (end != (size - 1))
     user = None;
     if isFullRequest or isEndRangeRequest and current_user:
         user = User.objects(id=user_id).first()
@@ -620,22 +636,22 @@ def streamTrack(user_id, release_id, track_id):
                 UserTrack.save(userTrack)
             try:
                 if clients:
-                    data = json.dumps({'message' : "OK",
-                            'lastPlayedInfo' : {
-                                'TrackId' : str(track.id),
-                                'TrackTitle' : track.Title,
-                                'ReleaseId' : str(release.id),
-                                'ReleaseTitle' : release.Title,
-                                'ReleaseThumbnail' : "/images/release/thumbnail/" + str(release.id),
-                                'ArtistId' : str(track.Artist.id),
-                                'ArtistName' : track.Artist.Name,
-                                'ArtistThumbnail' : "/images/artist/thumbnail/" + str(track.Artist.id),
-                                'UserId' : str(user.id),
-                                'Username' : user.Username,
-                                'UserThumbnail' : "/images/user/avatar/" + str(user.id),
-                                'UserRating' : userRating,
-                                'LastPlayed' : arrow.get(now).humanize()
-                            }})
+                    data = json.dumps({'message': "OK",
+                                       'lastPlayedInfo': {
+                                           'TrackId': str(track.id),
+                                           'TrackTitle': track.Title,
+                                           'ReleaseId': str(release.id),
+                                           'ReleaseTitle': release.Title,
+                                           'ReleaseThumbnail': "/images/release/thumbnail/" + str(release.id),
+                                           'ArtistId': str(track.Artist.id),
+                                           'ArtistName': track.Artist.Name,
+                                           'ArtistThumbnail': "/images/artist/thumbnail/" + str(track.Artist.id),
+                                           'UserId': str(user.id),
+                                           'Username': user.Username,
+                                           'UserThumbnail': "/images/user/avatar/" + str(user.id),
+                                           'UserRating': userRating,
+                                           'LastPlayed': arrow.get(now).humanize()
+                                       }})
                     for client in clients:
                         client.write_message(data)
             except:
@@ -652,6 +668,7 @@ def streamTrack(user_id, release_id, track_id):
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
     return response
+
 
 @app.route('/stats')
 @login_required
@@ -705,13 +722,14 @@ def stats():
 
 def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/jpg'):
     rv = send_file(io.BytesIO(imageBytes),
-               attachment_filename=imageName,
-               conditional=True,
-               mimetype=mimetype)
+                   attachment_filename=imageName,
+                   conditional=True,
+                   mimetype=mimetype)
     rv.last_modified = lastUpdated
     rv.make_conditional(request)
     rv.set_etag(etag)
     return rv
+
 
 @app.route("/images/release/<release_id>/<grid_id>/<height>/<width>")
 def getReleaseImage(release_id, grid_id, height, width):
@@ -739,6 +757,7 @@ def getReleaseImage(release_id, grid_id, height, width):
             return makeImageResponse(ba, release.LastUpdated, releaseImage.element.filename, etag)
     except:
         return send_file("static/img/release.gif")
+
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
 def getArtistImage(artist_id, grid_id, height, width):
@@ -768,8 +787,6 @@ def getArtistImage(artist_id, grid_id, height, width):
         return send_file("static/img/artist.gif")
 
 
-
-
 @app.route("/images/user/avatar/<user_id>")
 def getUserAvatarThumbnailImage(user_id):
     user = User.objects(id=user_id).first()
@@ -788,6 +805,7 @@ def getUserAvatarThumbnailImage(user_id):
                          attachment_filename='avatar.png',
                          mimetype='image/png')
 
+
 @app.route("/images/collection/thumbnail/<collection_id>")
 def getCollectionThumbnailImage(collection_id):
     collection = Collection.objects(id=collection_id).first()
@@ -800,12 +818,13 @@ def getCollectionThumbnailImage(collection_id):
             img.save(b, "PNG")
             ba = b.getvalue()
             etag = hashlib.sha1(('%s%s' % (collection.id, collection.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(ba, collection.LastUpdated, "a_tn_" + str(collection.id) +".jpg", etag)
+            return makeImageResponse(ba, collection.LastUpdated, "a_tn_" + str(collection.id) + ".jpg", etag)
 
     except:
         return send_file("static/img/collection.gif",
                          attachment_filename='collection.gif',
                          mimetype='image/gif')
+
 
 @app.route("/images/artist/thumbnail/<artist_id>")
 def getArtistThumbnailImage(artist_id):
@@ -816,7 +835,7 @@ def getArtistThumbnailImage(artist_id):
             if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
             etag = hashlib.sha1(('%s%s' % (artist.id, artist.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(image, artist.LastUpdated, "a_tn_" + str(artist.id) +".jpg", etag)
+            return makeImageResponse(image, artist.LastUpdated, "a_tn_" + str(artist.id) + ".jpg", etag)
 
     except:
         return send_file("static/img/artist.gif",
@@ -833,7 +852,7 @@ def getReleaseThumbnailImage(release_id):
             if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
             etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(image, release.LastUpdated, "r_tn_" + str(release.id) +".jpg", etag)
+            return makeImageResponse(image, release.LastUpdated, "r_tn_" + str(release.id) + ".jpg", etag)
     except:
         return send_file("static/img/release.gif",
                          attachment_filename='thumbnail.jpg',
@@ -867,6 +886,7 @@ def register():
     user.save()
     flash('User successfully registered')
     return redirect(url_for('login'))
+
 
 @app.route("/profile/edit", methods=['GET', 'POST'])
 def editProfile():
@@ -902,6 +922,7 @@ def editProfile():
     flash('Profile Edited successfully')
     return redirect(url_for("index"))
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     next = get_redirect_target()
@@ -923,6 +944,7 @@ def login():
         flash('Username or Password is invalid', 'error')
         return redirect(url_for('login'))
 
+
 def public_endpoint(function):
     function.is_public = True
     return function
@@ -932,19 +954,22 @@ def public_endpoint(function):
 def scanStorage():
     return render_template('scanStorage.html')
 
+
 @app.route('/playlists')
 @login_required
 def playlists():
     user = User.objects(id=current_user.id).first()
     userPlaylists = Playlist.objects(User=user).order_by("Name").all()
-  #  sharedPlaylists =  Playlist.objects(User__ne = user).all() #.order_by('User__Name', 'Name').all()
-    return render_template('playlist.html', userPlaylists=userPlaylists) #, sharedPlaylists=sharedPlaylists)
+    #  sharedPlaylists =  Playlist.objects(User__ne = user).all() #.order_by('User__Name', 'Name').all()
+    return render_template('playlist.html', userPlaylists=userPlaylists)  # , sharedPlaylists=sharedPlaylists)
+
 
 def is_safe_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(urljoin(request.host_url, target))
     return test_url.scheme in ('http', 'https') and \
            ref_url.netloc == test_url.netloc
+
 
 def get_redirect_target():
     for target in request.values.get('next'), request.referrer:
@@ -953,17 +978,20 @@ def get_redirect_target():
         if is_safe_url(target):
             return target
 
+
 def redirect_back(endpoint, **values):
     target = request.form['next']
     if not target or not is_safe_url(target):
         target = url_for(endpoint, **values)
     return redirect(target)
 
+
 @app.route("/collections")
 @login_required
 def collections():
     collections = Collection.objects().order_by("Name").all()
     return render_template('collections.html', collections=collections)
+
 
 @app.route('/collection/<collection_id>')
 @login_required
@@ -982,6 +1010,7 @@ def collection(collection_id):
               'length': sumTime}
     return render_template('collection.html', collection=collection, counts=counts)
 
+
 @app.route("/collection/play/<collection_id>")
 @login_required
 def playCollection(collection_id):
@@ -991,11 +1020,11 @@ def playCollection(collection_id):
     user = User.objects(id=current_user.id).first()
     tracks = []
     for release in collection.Releases:
-        for track in sorted(release.Release.Tracks, key=lambda track: (track.ReleaseMediaNumber,  track.TrackNumber)):
-            tracks.append(M3U.makeTrackInfo(user,release.Release, track.Track))
+        for track in sorted(release.Release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
+            tracks.append(M3U.makeTrackInfo(user, release.Release, track.Track))
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
-                     attachment_filename= collection.Name + ".m3u")
+                     attachment_filename=collection.Name + ".m3u")
 
 
 @app.route('/logout')
