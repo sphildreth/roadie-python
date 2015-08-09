@@ -13,11 +13,11 @@ from dateutil.parser import *
 from goldfinch import validFileName as vfn
 from shutil import move
 from mongoengine import connect
-from models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
-from musicBrainz import MusicBrainz
-from id3 import ID3
-from scanner import Scanner
-from convertor import Convertor
+from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
+from resources.musicBrainz import MusicBrainz
+from resources.id3 import ID3
+from resources.scanner import Scanner
+from resources.convertor import Convertor
 from resources.logger import Logger
 
 
