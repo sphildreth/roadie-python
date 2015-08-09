@@ -11,7 +11,7 @@ from PIL import Image
 from dateutil.parser import *
 from shutil import move
 from mongoengine import connect
-from resources.models import Artist, ArtistType, Collection, Label, Release, ReleaseLabel, Track, TrackRelease
+from resources.models import Artist, ArtistType, Collection, CollectionRelease, Label, Release, ReleaseLabel, Track, TrackRelease
 from resources.musicBrainz import MusicBrainz
 from resources.id3 import ID3
 from resources.scanner import Scanner
@@ -36,6 +36,9 @@ class CollectionImporter(ProcessorBase):
 
 
     def _findColumns(self):
+        self.position = -1
+        self.release = -1
+        self.artist = -1
         for i, position in enumerate(self.positions):
             if position.lower() == "position":
                 self.position = i
@@ -43,8 +46,8 @@ class CollectionImporter(ProcessorBase):
                 self.release = i
             elif position.lower() == "artist":
                 self.artist = i
-        if not self.position or not self.release or not self.artist:
-            self.logger.critical("Unable TTo Find Required Positions")
+        if self.position < 0 or self.release < 0 or self.artist < 0:
+            self.logger.critical("Unable To Find Required Positions")
             return False
         return True
 
@@ -60,9 +63,9 @@ class CollectionImporter(ProcessorBase):
             return False
         self.logger.debug("Importing [" + self.filename + "] => Collection [" + str(col) +"]")
         reader = csv.reader(open(self.filename))
-        self.logger.debug(reader)
+        col.Releases = []
         for row in reader:
-            csvPosition = row[self.position].strip()
+            csvPosition = int(row[self.position].strip())
             csvArtist = row[self.artist].strip()
             csvRelease = row[self.release].strip()
             artist = Artist.objects(Name__iexact=csvArtist).first()
@@ -70,10 +73,16 @@ class CollectionImporter(ProcessorBase):
                 artist = Artist.objects(AlternateNames__iexact=csvArtist).first()
                 if not artist:
                     self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
-            release = Release.objects(Title__iexact=csvRelease).first()
+                    continue
+            release = Release.objects(Title__iexact=csvRelease, Artist=artist).first()
             if not release:
                 release = Release.objects(AlternateNames__iexact=csvRelease).first()
                 if not release:
                     self.logger.warn(("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode('utf-8'))
-
+                    continue
+            colRelease = CollectionRelease(Release=release, ListNumber=csvPosition)
+            col.Releases.append(colRelease)
+            self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release)+ "] To Collection")
+        col.LastUpdated = arrow.utcnow().datetime
+        Collection.save(col)
 

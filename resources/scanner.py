@@ -100,6 +100,7 @@ class Scanner(object):
                         if not mp3File or not os.path.isfile(mp3File):
                             try:
                                 if not self.readOnly:
+                                    Release.objects(Artist = track.Artist).update_one(pull__Tracks__Track = track)
                                     Track.delete(track)
                                     track = None
                                 self.logger.warn("X Deleted Non Existent Track, Filename [" + mp3File or '' + "]")
