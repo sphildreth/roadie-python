@@ -2,13 +2,13 @@
 # -- Adds new MP3 files not in database to database
 # -- Updates MP3 files found in database but different tag data
 # -- Deletes MP3 files found in database but no longer found in folder
+import arrow
 import io
 import os
 import json
 import hashlib
 import random
 import argparse
-from datetime import  date, time, datetime
 from mongoengine import connect
 from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
 from resources.musicBrainz import MusicBrainz
@@ -44,6 +44,7 @@ class Scanner(object):
             raise RuntimeError("Invalid Artist")
         if not release:
             raise RuntimeError("Invalid Release")
+        release.Tracks = release.Tracks or []
         if not folder:
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
@@ -51,11 +52,11 @@ class Scanner(object):
         createdReleaseTracks = 0
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
-        startTime = datetime.now()
+        startTime = arrow.utcnow().datetime
         self.logger.info("Scanning Folder [" + folder + "]")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
-            for track in Track.objects(FilePath=folder):
+            for track in Track.objects(FilePath__iexact=folder):
                 filename = os.path.join(track.FilePath, track.FileName)
                 # File no longer exists for track
                 if not os.path.isfile(filename):
@@ -83,6 +84,7 @@ class Scanner(object):
                             self.logger.warn("x Deleting Track [" + track.Title + "]: Hash Mismatch")
         # For each file found in folder get ID3 info and insert record into Track DB
         scannedMp3Files = 0
+        releaseLastUpdated = release.LastUpdated
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 != None:
@@ -90,28 +92,45 @@ class Scanner(object):
                     self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     foundGoodMp3s = True
-                    track = Track.objects(Title=id3.title, Artist=artist).first()
-                    if not track:
-                        track = Track(Title=id3.title, Artist=artist)
-                        head, tail = os.path.split(mp3)
-                        track.FileName = tail
-                        track.FilePath = head
-                        track.Hash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
-                        mbTracks = mb.tracksForRelease(release.MusicBrainzId)
-                        if mbTracks:
+                    track = Track.objects(Title__iexact=id3.title, Artist=artist).first()
+                    if track:
+                        mp3File = None
+                        if track.FilePath and track.FileName:
+                            mp3File = os.path.join(track.FilePath, track.FileName)
+                        if not mp3File or not os.path.isfile(mp3File):
                             try:
-                                for mbTrackPosition in mbTracks:
-                                    for mbt in mbTrackPosition['track-list']:
-                                        mbtPosition = int(mbt['position'])
-                                        if mbtPosition == id3.track:
-                                            track.MusicBrainzId = mbt['recording']['id']
-                                            break
+                                if not self.readOnly:
+                                    Track.delete(track)
+                                    track = None
+                                self.logger.warn("X Deleted Non Existent Track, Filename [" + mp3File or '' + "]")
+                            except:
+                                self.logger.exception("Unable To Delete Track File [" + mp3File or '' + "]")
+                    if not track:
+                        head, tail = os.path.split(mp3)
+                        track = Track.objects(FilePath = head, FileName = tail)
+                        if not track:
+                            track = Track(Title=id3.title, Artist=artist)
+                            track.FileName = tail
+                            track.FilePath = head
+                            track.Hash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                            try:
+                                mbTracks = mb.tracksForRelease(release.MusicBrainzId)
+                                if mbTracks:
+                                    try:
+                                        for mbTrackPosition in mbTracks:
+                                            for mbt in mbTrackPosition['track-list']:
+                                                mbtPosition = int(mbt['position'])
+                                                if mbtPosition == id3.track:
+                                                    track.MusicBrainzId = mbt['recording']['id']
+                                                    break
+                                    except:
+                                        pass
                             except:
                                 pass
-                        track.Length = id3.length
-                        if not self.readOnly:
-                            Track.save(track)
-                        self.logger.info("+ Added Track: Title [" + track.Title + "]")
+                            track.Length = id3.length
+                            if not self.readOnly:
+                                Track.save(track)
+                            self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
                         try:
@@ -125,16 +144,22 @@ class Scanner(object):
                     if not releaseTrack:
                         releaseTrack = TrackRelease(Track=track, TrackNumber=id3.track, ReleaseMediaNumber=id3.disc)
                         releaseTrack.Random = random.randint(1, 1000000)
-                        release.Tracks.append(releaseTrack)
-                        self.logger.info("+ Added Release Track: Track [" + releaseTrack.Track.Title + "]")
-                        if not self.readOnly:
-                            Release.save(release)                        
+                        try:
+                            release.Tracks.append(releaseTrack)
+                            release.LastUpdated = arrow.utcnow().datetime
+                            self.logger.info("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
+                        except:
+                            self.logger.exception("Error Adding ReleaseTracks")
+                            pass
                         createdReleaseTracks += 1
                     else:
                         foundReleaseTracks += 1
                     scannedMp3Files += 1
 
-        elapsedTime = datetime.now() - startTime
+        if not self.readOnly and releaseLastUpdated != release.LastUpdated:
+            Release.save(release)
+
+        elapsedTime = arrow.utcnow().datetime - startTime
         matches = scannedMp3Files == (createdReleaseTracks + foundReleaseTracks)
         self.logger.info(("Scanning Folder [" + folder + "] Complete, Scanned [" +
                ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +

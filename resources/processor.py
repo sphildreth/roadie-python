@@ -183,10 +183,10 @@ class Processor(ProcessorBase):
                         if not artist:
                             lastID3Artist = id3.artist
                             # get artist by ID3 Tag Name
-                            artist = Artist.objects(Name=id3.artist).first()
+                            artist = Artist.objects(Name__iexact=id3.artist).first()
                             # If not found get by artists by alternate names
                             if not artist:
-                                artist = Artist.objects(AlternateNames=id3.artist).first()
+                                artist = Artist.objects(AlternateNames__iexact=id3.artist).first()
                         if not artist:
                             # Artist not found create
                             artist = Artist(Name=id3.artist)
@@ -209,7 +209,7 @@ class Processor(ProcessorBase):
                                 artistType = None
                                 if 'type' in mbArtist:
                                     mbArtistType = mbArtist['type']
-                                    artistType = ArtistType.objects(Name=mbArtistType).first()
+                                    artistType = ArtistType.objects(Name__iexact=mbArtistType).first()
                                     if not artistType:
                                         self.logger.warn("Unable To Find Artist Type [" + mbArtistType + "]")
                                 if artistType:
@@ -248,7 +248,9 @@ class Processor(ProcessorBase):
                             release = None
                         if not release:
                             lastID3Album = id3.album
-                            release = Release.objects(Title=id3.album, Artist=artist).first()
+                            release = Release.objects(Title__iexact=id3.album, Artist=artist).first()
+                        if not release:
+                            release = Release.objects(AlternateNames__iexact=id3.album, Artist=artist).first()
                         if not release:
                             # Release not found create
                             release = Release(Title=id3.album, Artist=artist, ReleaseDate="---")

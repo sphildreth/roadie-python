@@ -325,7 +325,7 @@ def rescanRelease(release_id):
         if not release:
             return jsonify(message="ERROR")
         # Update Database with folders found in Library
-        processor = Processor(False, True, )
+        processor = Processor(False, True)
         releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
         processor.process(folder=releaseFolder)
         validator = Validator(False)
