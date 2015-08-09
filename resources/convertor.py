@@ -1,6 +1,6 @@
 import os
 import json
-from logger import Logger
+from resources.logger import Logger
 
 class Convertor(object):
 
