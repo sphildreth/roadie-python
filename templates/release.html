@@ -29,10 +29,10 @@
             <div class="release-rating-container">
                 <input type="hidden" class="rating" data-readonly value="{{ release.Rating }}" />
             </div>
-            <span class="artist-info">
+            <div class="artist-info">
                 <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
                 <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
-            </span>
+            </div>
             <h2><span class="label label-default">{{ release.Title }}</span></h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>

@@ -87,10 +87,10 @@
                         <div class="thumbnail-container pull-left">
                             <img class="thumb" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
                         </div>
-                        <span class="artist-info">
+                        <div class="artist-info">
                             <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
                             <h4><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-default">{{ release.Artist.Name }}</span></a></h4>
-                        </span>
+                        </div>
                         <span class="release-info">
                             <a href="/release/{{ release.id }}">
                                 <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Release Date: {{ release.ReleaseDate }}<br />Added Date: {{ release.CreatedDate }}"></i>
