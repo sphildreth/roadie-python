@@ -39,7 +39,7 @@ from flask.ext.bcrypt import Bcrypt
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs
-from validator import Validator
+from resources.validator import Validator
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
