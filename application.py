@@ -49,6 +49,7 @@ from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
 from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
 from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
 from viewModels.RoadieArtistModelView import RoadieArtistModelView
+from viewModels.RoadiePlaylistModelView import RoadiePlaylistModelView
 
 clients = []
 
@@ -1046,6 +1047,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieArtistModelView(Artist))
     admin.add_view(RoadieCollectionModelView(Collection))
     admin.add_view(RoadieModelView(Label))
+    admin.add_view(RoadiePlaylistModelView(Playlist))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
     admin.add_view(RoadieUserModelView(User, category='User'))
