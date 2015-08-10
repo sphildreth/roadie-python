@@ -1029,12 +1029,15 @@ def collection(collection_id):
     tracks = 0
     sumTime = 0
     for release in collection.Releases:
-        tracks += len(release.Release.Tracks)
-        for track in release.Release.Tracks:
-            sumTime += track.Track.Length
-    counts = {'releases': "{0:,}".format(len(collection.Releases)),
-              'tracks': "{0:,}".format(tracks),
-              'length': sumTime}
+        try:
+            tracks += len(release.Release.Tracks)
+            for track in release.Release.Tracks:
+                sumTime += track.Track.Length
+            counts = {'releases': "{0:,}".format(len(collection.Releases)),
+                      'tracks': "{0:,}".format(tracks),
+                      'length': sumTime}
+        except:
+            pass
     return render_template('collection.html', collection=collection, counts=counts)
 
 
