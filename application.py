@@ -29,6 +29,7 @@ from resources.artistListApi import ArtistListApi
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
+from resources.logger import Logger
 from resources.models import Artist, ArtistType, Collection, Genre, Label, \
     Playlist, Quality, Release, Track, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
@@ -75,6 +76,8 @@ app.session_interface = MongoEngineSessionInterface(db)
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
+
+logger = Logger()
 
 
 @app.before_request
@@ -462,24 +465,27 @@ def setReleaseImage(release_id, image_id):
     if not release:
         return jsonify(message="ERROR")
 
-    releaseImage = None
-    for ri in release.Images:
-        if ri.element.grid_id == objectid.ObjectId(image_id):
-            releaseImage = ri
-            break
-    if releaseImage:
-        image = releaseImage.element.read()
-        img = Image.open(io.BytesIO(image)).convert('RGB')
-        img.thumbnail(thumbnailSize)
-        b = io.BytesIO()
-        img.save(b, "JPEG")
-        bBytes = b.getvalue()
-        release.Thumbnail.new_file()
-        release.Thumbnail.write(bBytes)
-        release.Thumbnail.close()
-        Release.save(release)
-        return jsonify(message="OK")
-    return jsonify(message="ERROR")
+    try:
+        releaseImage = None
+        for ri in release.Images:
+            if ri.element.grid_id == objectid.ObjectId(image_id):
+                releaseImage = ri
+                break
+        if releaseImage:
+            image = releaseImage.element.read()
+            img = Image.open(io.BytesIO(image)).convert('RGB')
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            bBytes = b.getvalue()
+            release.Thumbnail.new_file()
+            release.Thumbnail.write(bBytes)
+            release.Thumbnail.close()
+            Release.save(release)
+            return jsonify(message="OK")
+    except:
+        logger.exception("Error Setting Release Image")
+        return jsonify(message="ERROR")
 
 
 @app.route('/release/<release_id>')
