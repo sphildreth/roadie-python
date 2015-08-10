@@ -1,35 +1,14 @@
 {% extends "layout.html" %}
+{% block title %}Register{% endblock %}
 {% block body_content %}
-  <form action="" method=post class="form-horizontal">
-    <h2>Sign up for Roadie</h2>
-    <div class="control-group">
-        <div class="controls">
-          <input type="text" id="username" name="username" class="input-xlarge"
-            placeholder="Enter Username" value="{{ request.form.username }}"
-            required>
-        </div>
-    </div>
- 
-    <div class="control-group">
-        <div class="controls">
-          <input type="password" id="password" name="password" class="input-xlarge"
-            placeholder="Enter Password" value="{{ request.form.password }}"
-            required>
-        </div>
-    </div>
- 
-    <div class="control-group">
-        <div class="controls">
-          <input type="email" id="email" name="email" class="input-xlarge"
-            placeholder="Enter Email" value="{{ request.form.email }}"
-            required>
-        </div>
-    </div>
- 
-    <div class="control-group">
-        <div class="controls">
-          <button type="submit" class="btn btn-success">Signup</button>
-        </div>
-    </div>
+  <form action="" method=post class="form-horizontal form-signin">
+    <h2 class="form-signin-heading">Sign up for {{ g.siteName }}</h2>
+    <label for="username" class="sr-only">Username</label>
+    <input type="text" id="username" name="username" class="form-control" placeholder="Enter Username" value="{{ request.form.username }}" required>
+    <label for="password" class="sr-only">Password</label>
+    <input type="password" id="password" name="password" class="form-control" placeholder="Enter Password" value="{{ request.form.password }}" required>
+    <label for="email" class="sr-only">Email</label>
+    <input type="email" id="email" name="email" class="form-control" placeholder="Enter Email" value="{{ request.form.email }}" required>
+    <button type="submit" class="btn btn-lg btn-success btn-block">Signup</button>
   </form>
 {% endblock %}

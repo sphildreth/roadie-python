@@ -66,6 +66,7 @@ with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+siteName = config['ROADIE_SITE_NAME']
 trackPathReplace = None
 if 'ROADIE_TRACK_PATH_REPLACE' in config:
     trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
@@ -82,6 +83,7 @@ logger = Logger()
 
 @app.before_request
 def before_request():
+    g.siteName = siteName
     g.user = current_user
 
 
@@ -319,6 +321,7 @@ def rescanArtist(artist_id):
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
+
 
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required

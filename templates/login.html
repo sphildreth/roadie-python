@@ -1,7 +1,8 @@
 {% extends "layout.html" %}
+{% block title %}Login{% endblock %}
 {% block body_content %}
   <form action="/login" method=post class="form-horizontal form-signin">
-    <h2 class="form-signin-heading">Signin to Roadie</h2>
+    <h2 class="form-signin-heading">Sign in to {{ g.siteName }}</h2>
     <label for="username" class="sr-only">Username</label>
     <input type="text" id="username" name="username" class="form-control" placeholder="Username" required autofocus>
     <label for="password" class="sr-only">Password</label>

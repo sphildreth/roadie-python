@@ -329,3 +329,4 @@ class Collection(Document):
 
     def __unicode__(self):
         return self.Name
+
