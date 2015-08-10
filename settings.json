@@ -4,7 +4,7 @@
         "DB": "roadie",
         "host": "192.168.2.254"
     },
-    "ROADIE_SITE_NAME": "Jamz",
+    "ROADIE_SITE_NAME": "Roadie",
     "ROADIE_INBOUND_FOLDER": "D:/incoming/complete/audio/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
