@@ -1,5 +1,6 @@
 # Represents ID3 Tag loaded from an MP3 File
 import os
+import string
 import sys
 import mutagen
 from mutagen.mp3 import MP3
@@ -71,8 +72,8 @@ class ID3:
                             comments.append(short_tags[key].text[0])
                 short_tags = mutagen.mp3.MP3(filename, ID3 = mutagen.easyid3.EasyID3)
             comments.append('')
-            self.album = short_tags.get('album', [''])[0].strip().title()
-            self.artist = short_tags.get('artist', [''])[0].strip().title()
+            self.album = string.capwords(short_tags.get('album', [''])[0])
+            self.artist = string.capwords(short_tags.get('artist', [''])[0])
             self.duration = "%u:%.2d" % (full_tags.info.length / 60, full_tags.info.length % 60)
             trackNumber = short_tags.get('tracknumber', [''])[0]
             self.track = 0
@@ -99,19 +100,19 @@ class ID3:
                 myfile = mpeg.Mpeg(filename)
                 if myfile:
                     self.year = myfile.tag.year[:4]
-            self.title = short_tags.get('title', [''])[0].strip().title()
+            self.title = string.capwords(short_tags.get('title', [''])[0])
             if self.title and config:
                 if 'TitleReplacements' in config:
                     for rpl in config['TitleReplacements']:
                         for key,val in rpl.items():
                             self.title = self.title.replace(key, val)
                     self.dirty = True
-                self.title = " ".join(self.title.strip().title().split())
+                self.title = string.capwords(self.title)
             if self.title and self.track:
                 if self.title.startswith('%02d ' % self.track):
                     self.title = self.title[3:]
                     self.dirty = True
-            self.comment = comments[0].title()
+            self.comment = string.capwords(comments[0])
             if self.comment and config:
                 if 'DoClearComments' in config:
                     if config['DoClearComments'].lower() == "true":

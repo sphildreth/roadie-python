@@ -10,6 +10,7 @@ import io
 import os
 import random
 import shutil
+import string
 import json
 import hashlib
 from PIL import Image
@@ -219,13 +220,13 @@ class Processor(ProcessorBase):
                                 if 'tag-list' in mbArtist:
                                     for tag in mbArtist['tag-list']:
                                         if tag:
-                                            tags.append(tag['name'].strip().title())
+                                            tags.append(string.capwords(tag['name']))
                                 artist.Tags = tags
                                 alias = []
                                 if 'alias-list' in mbArtist:
                                     for a in mbArtist['alias-list']:
                                         if a and 'alias' in a:
-                                            alias.append(a['alias'].strip().title())
+                                            alias.append(string.capwords(a['alias']))
                                 artist.AlternateNames = alias
                             ba = None
                             # See if a file exists to use for the Artist thumbnail
@@ -277,7 +278,7 @@ class Processor(ProcessorBase):
                                         if 'name' in mbLabel['label']:
                                             mbLabelName = mbLabel['label']['name']
                                             if mbLabelName:
-                                                mbLabelName = mbLabelName.strip().title()
+                                                mbLabelName = string.capwords(mbLabelName)
                                                 label = Label.objects(Name=mbLabelName).first()
                                                 if not label:
                                                     label = Label(Name=mbLabelName)
@@ -288,13 +289,13 @@ class Processor(ProcessorBase):
                                         if label:
                                             catalogNumber = None
                                             if 'catalog-number' in mbLabel:
-                                                catalogNumber = mbLabel['catalog-number'].strip().title()
+                                                catalogNumber = string.capwords(mbLabel['catalog-number'])
                                             releaseLabel = ReleaseLabel(Label=label, CatalogNumber=catalogNumber)
                                             release.Labels.append(releaseLabel)
                                 tags = []
                                 if 'release-group' in mbRelease:
                                     if 'type' in mbRelease['release-group']:
-                                        tags.append(mbRelease['release-group']['type'].strip().title())
+                                        tags.append(string.capwords(mbRelease['release-group']['type']))
                                 format = None
                                 if 'format' in mbMedium:
                                     format = mbMedium['format']

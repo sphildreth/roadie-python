@@ -3,6 +3,7 @@ import linecache
 import io
 import os
 import random
+import string
 import sys
 import shutil
 import json
@@ -42,8 +43,8 @@ class ProcessorBase(object):
                 if os.path.splitext(filename)[1].lower() == ".mp3":
                     yield root, os.path.join(root, filename)
 
-    def makeFileFriendly(self, string):
-        return vfn(string.title(), space="keep").decode('utf-8')
+    def makeFileFriendly(self, input):
+        return vfn(string.capwords(input), space="keep").decode('utf-8')
 
     def artistFolder(self, artist):
         artistFolder = artist.SortName or artist.Name

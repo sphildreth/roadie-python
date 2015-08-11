@@ -357,19 +357,19 @@ def setDiscCount(release_id):
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required
 def rescanRelease(release_id):
-    try:
-        release = Release.objects(id=release_id).first()
-        if not release:
-            return jsonify(message="ERROR")
-        # Update Database with folders found in Library
-        processor = Processor(False, True)
-        releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
-        processor.process(folder=releaseFolder)
-        validator = Validator(False)
-        validator.validate(release.Artist)
-        return jsonify(message="OK")
-    except:
+  #  try:
+    release = Release.objects(id=release_id).first()
+    if not release:
         return jsonify(message="ERROR")
+    # Update Database with folders found in Library
+    processor = Processor(False, True)
+    releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
+    processor.process(folder=releaseFolder)
+    validator = Validator(False)
+    validator.validate(release.Artist)
+    return jsonify(message="OK")
+ #   except:
+  #      return jsonify(message="ERROR")
 
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
