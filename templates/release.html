@@ -20,7 +20,8 @@
             {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <button id="deleteRelease" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                <button id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</button>
+                <button id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</button>
                 <button id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
              </div>
             {% endif %}
@@ -586,6 +587,22 @@
                 }
             });
         });
+        $("#findCoverArt").on("click", function(e) {
+            $.ajax({
+                type: 'POST',
+                url: '/images/find/r/' + releaseId,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        debugger;
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
+            });
+        });
+
     });
     </script>
 {% endblock %}

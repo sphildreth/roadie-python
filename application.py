@@ -27,6 +27,7 @@ from werkzeug.datastructures import Headers
 
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
+from resources.musicBrainz import MusicBrainz
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
@@ -917,6 +918,27 @@ def getReleaseThumbnailImage(release_id):
                          mimetype='image/jpg')
 
 
+@app.route("/images/find/<type>/<type_id>", methods=['POST'])
+def findImageForType(type,type_id):
+    if type == 'r': # release
+        release = Release.objects(id=type_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        data = []
+        if release.MusicBrainzId:
+            mb = MusicBrainz()
+            mbFront = mb.lookupCoverArt(release.MusicBrainzId)
+            if mbFront:
+                data.append({
+                    'url': mbFront
+                })
+            return jsonify(message="OK", data=data)
+
+    elif type == 'a': # artist
+        return jsonify(message="ERROR")
+    else:
+        return jsonify(message="ERROR")
+
 api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
 api.add_resource(ArtistListApi, '/api/v1.0/artists')
 api.add_resource(ReleaseListApi, '/api/v1.0/releases')
@@ -1110,7 +1132,7 @@ if __name__ == '__main__':
     admin.add_view(RoadiePlaylistModelView(Playlist))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieUserModelView(User))
+    admin.add_view(RoadieUserModelView(User, category='User'))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User'))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User'))
     admin.add_view(RoadieUserTrackModelView(UserTrack, category='User'))
