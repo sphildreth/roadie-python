@@ -17,11 +17,11 @@
                 <li><a id="playAll" href="#">Play All</a></li>
               </ul>
             </div>
-            {% if current_user.is_authenticated() and current_user.has_role("Admin") and release.Artist.IsLocked == False %}
+            {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <button id="delete-release" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
-                <button id="scan-release" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
+                <button id="deleteRelease" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                <button id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
              </div>
             {% endif %}
             {% if release.Artist.IsLocked %}
@@ -183,6 +183,14 @@
             </div>
         </div>
         <div class="row tracks bordered">
+            {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
+            <div class="row insane-quick-edit">
+            <div class="btn-group">
+                <button id="setTrackCountToActual" class="btn btn-warning">Set Track Count To Tracks</button>
+                <button id="setDiscCountToActual" class="btn btn-warning">Set Disc Count To Discs</button>
+            </div>
+            </div>
+            {% endif %}
             {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
                 {% if group.grouper > 0 %}
                 <div class="release-cd-container">
@@ -217,7 +225,7 @@
                                 <li class="dropdown-submenu">
                                     <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="delete-release-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="deleteRelease-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
                                         <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Track</a></li>
                                         <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete</a></li>
                                     </ul>
@@ -264,13 +272,19 @@
 
     var doReleaseSanityChecks = function() {
         var $c = $("div.release-counts-container");
+        var $qe = $(".tracks .insane-quick-edit");
         $c.find(".track-count-indicator").remove();
-        var isSane = doTrackCountsMatch() && areNoTracksOfZeroLength() && doReleaseDiscCountsMatch();
-        if(isSane) {
+        if(isReleaseSane()) {
             $c.append("<span class='track-count-indicator track-count-valid label label-success' title='Release Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+            $qe.hide();
         } else {
             $c.append("<span class='track-count-indicator track-count-valid label label-danger' title='Release Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+            $qe.fadeIn();
         }
+    };
+
+    var isReleaseSane = function() {
+        return doTrackCountsMatch() && areNoTracksOfZeroLength() && doReleaseDiscCountsMatch();
     };
 
     var areNoTracksOfZeroLength = function() {
@@ -449,7 +463,7 @@
             var trackid = $(this).closest("div.row").data("track-id");
             window.location.href = "/admin/track/edit/?id=" + trackid + "&url=/release/" + releaseId;
         });
-        $("div.tracks a.delete-release-track").on("click", function(e) {
+        $("div.tracks a.deleteRelease-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track?", function(result) {
                 if(result) {
@@ -473,7 +487,7 @@
                 }
             })
         });
-        $("#delete-release").on("click", function(e) {
+        $("#deleteRelease").on("click", function(e) {
             bootbox.confirm("Continue To Delete Release?", function(result) {
                 if(result) {
                     var $t = $(this);
@@ -509,13 +523,55 @@
             });
         });
 
-        $("#scan-release").on("click", function(e) {
+        $("#scanRelease").on("click", function(e) {
             bootbox.confirm("Continue To Re-Scan Release Folder(s)?", function(result) {
                 if(result) {
                     $(".loader").fadeIn("slow", function() {
                         $.ajax({
                             type: 'POST',
                             url: '/release/rescan/' + releaseId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    });
+                }
+            });
+        });
+        $("#setTrackCountToActual").on("click", function(e) {
+            bootbox.confirm("Continue To Set Track Count To Track(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/release/setTrackCount/' + releaseId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    });
+                }
+            });
+        });
+        $("#setDiscCountToActual").on("click", function(e) {
+            bootbox.confirm("Continue To Set Disc Count To Disc(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/release/setDiscCount/' + releaseId,
                             contentType: "application/javascript",
                             success: function(data) {
                                 if(data.message == "OK") {

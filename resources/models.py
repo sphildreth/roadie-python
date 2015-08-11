@@ -1,5 +1,7 @@
-from mongoengine import *
+from flask.ext.login import UserMixin
 import datetime
+
+from mongoengine import *
 
 
 class ArtistType(Document):
@@ -49,7 +51,7 @@ class UserRole(Document):
         return self.Name
 
 
-class User(Document):
+class User(Document, UserMixin):
     Username = StringField(max_length=20, required=True, unique=True)
     Password = StringField(max_length=100, required=True)
     Email = EmailField(required=True, unique=True)
@@ -65,17 +67,17 @@ class User(Document):
         ]
     }
 
+    def get_id(self):
+        return self.id
+
     def is_authenticated(self):
         return True
 
     def is_active(self):
-        return True
+        return self.Active
 
     def is_anonymous(self):
         return False
-
-    def get_id(self):
-        return self.id
 
     def has_role(self, role):
         return UserRole(Name=role) in self.Roles
@@ -290,6 +292,7 @@ class UserRelease(Document):
         ]
     }
 
+
 class UserTrack(Document):
     User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
     Release = ReferenceField(Release, required=True, reverse_delete_rule=CASCADE)
@@ -329,4 +332,3 @@ class Collection(Document):
 
     def __unicode__(self):
         return self.Name
-

@@ -60,6 +60,7 @@ class ID3:
         tags.save(self.filename)
 
     def _load(self, filename, config):
+        self.dirty = False
         try:
             short_tags = full_tags = mutagen.File(filename)
             comments = []
@@ -104,7 +105,12 @@ class ID3:
                     for rpl in config['TitleReplacements']:
                         for key,val in rpl.items():
                             self.title = self.title.replace(key, val)
+                    self.dirty = True
                 self.title = " ".join(self.title.strip().title().split())
+            if self.title and self.track:
+                if self.title.startswith('%02d ' % self.track):
+                    self.title = self.title[3:]
+                    self.dirty = True
             self.comment = comments[0].title()
             if self.comment and config:
                 if 'DoClearComments' in config:

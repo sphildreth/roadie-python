@@ -3,6 +3,7 @@ import os
 import hashlib
 import json
 import random
+from itertools import groupby
 from time import time
 from operator import itemgetter
 from re import findall
@@ -322,6 +323,36 @@ def rescanArtist(artist_id):
     except:
         return jsonify(message="ERROR")
 
+
+@app.route("/release/setTrackCount/<release_id>", methods=['POST'])
+@login_required
+def setTrackCount(release_id):
+    try:
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        release.TrackCount = len(release.Tracks)
+        Release.save(release)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
+@app.route("/release/setDiscCount/<release_id>", methods=['POST'])
+@login_required
+def setDiscCount(release_id):
+    try:
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        discs = []
+        for track in release.Tracks:
+            if not track.ReleaseMediaNumber in discs:
+                discs.append(track.ReleaseMediaNumber)
+        release.DiscCount = len(discs)
+        Release.save(release)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
 
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required
@@ -1079,7 +1110,7 @@ if __name__ == '__main__':
     admin.add_view(RoadiePlaylistModelView(Playlist))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieUserModelView(User, category='User'))
+    admin.add_view(RoadieUserModelView(User))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User'))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User'))
     admin.add_view(RoadieUserTrackModelView(UserTrack, category='User'))
