@@ -488,6 +488,7 @@ def setArtistImage(artist_id, image_id):
         artist.Thumbnail.new_file()
         artist.Thumbnail.write(bBytes)
         artist.Thumbnail.close()
+        artist.LastUpdated = arrow.utcnow().datetime
         Artist.save(artist)
         return jsonify(message="OK")
     return jsonify(message="ERROR")
@@ -516,6 +517,7 @@ def setReleaseImage(release_id, image_id):
             release.Thumbnail.new_file()
             release.Thumbnail.write(bBytes)
             release.Thumbnail.close()
+            release.LastUpdated = arrow.utcnow().datetime
             Release.save(release)
             return jsonify(message="OK")
     except:
@@ -963,6 +965,7 @@ def setCoverViaUrl(release_id):
             release.Thumbnail.new_file()
             release.Thumbnail.write(bBytes)
             release.Thumbnail.close()
+            release.LastUpdated = arrow.utcnow().datetime
             Release.save(release)
         return jsonify(message="OK")
     except:

@@ -27,8 +27,14 @@ class ImageSearcher(object):
         result = []
         with request.urlopen(rq) as f:
             o = json.load(StringIO((f.read().decode('utf-8'))))
-            for r in o['responseData']['results']:
-                result.append(ImageSearchResult(r['height'], r['width'], r['unescapedUrl']))
+            try:
+                for r in o['responseData']['results']:
+                    h = int(r['height'])
+                    w = int(r['width'])
+                    if h and w:
+                        result.append(ImageSearchResult(r['height'], r['width'], r['unescapedUrl']))
+            except:
+                pass
         return result
 
     def musicbrainzSearchImages(self, musicBrainzId):
@@ -36,7 +42,9 @@ class ImageSearcher(object):
             return None
         mb = MusicBrainz()
         r = mb.lookupCoverArt(musicBrainzId)
-        return ImageSearchResult(0,0,r)
+        if r:
+            return ImageSearchResult(0,0,str(r))
+        return None
 
     def getImageBytesForUrl(self, url):
         s = parse.unquote(url)
