@@ -68,6 +68,34 @@ li.username, td.username {
     border-radius: 5px;
 }
 
+div.collection-container .collection-release {
+    width: 25%;
+    display: block;
+    min-width: 400px;
+    height: 91px;
+    padding: 2px;
+}
+
+div.collection-container .collection-release h4 {
+    padding:0;
+    margin-bottom: 5px;
+}
+
+div.collection-container .collection-release h3.album-title {
+    width: 80%;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+div.collection-container .collection-release img.release-thumb {
+    margin-top: 11px;
+}
+
+div.collection-container .collection-release .artist-info img.thumb {
+    margin: 0 5px;
+}
+
 div.collection-container .artist {
   border-bottom: 1px solid #F2F2F2;
   padding-top: 6px;
@@ -150,7 +178,8 @@ div.bordered {
 .release-info-container .release:nth-child(even),
 .collections-container .collection:nth-child(odd),
 .collection-container ul.collection li:nth-child(even),
-.release-detail-container .row.tracks .track:hover {
+.release-detail-container .row.tracks .track:hover
+{
     background-color: #161C23;
 }
 
@@ -243,7 +272,8 @@ ul.no-list-style {
     display: inline-block;
     width: 90%;
 }
-.release-detail-container .artist-info img {
+.release-detail-container .artist-info img,
+.collection-release .artist-info img {
     width: 18px;
 }
 

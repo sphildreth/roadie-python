@@ -27,21 +27,24 @@
             <a class="external-link pull-left" target="_blank" href="{{ collection.Urls[0].Url }}"><span class="fa fa-external-link fa-2x"></span></a>
             <h2><span class="label label-default">{{ collection.Name }}</span></h2>
         </div>
-        <div class="row">
-            <ul class="collection no-list-style" data-playlist-id="{{ collection.id }}">
-                {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
-                <li data-release-id="{{ collectionRelease.Release.id }}">
-                   <a href="/release/{{ collectionRelease.Release.id }}">
-                        <div class="thumbnail-container pull-left">
-                        <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
-                        </div>
-                        <h4><span class="label label-primary">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
-                        <h3><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
+        {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
+        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.Release.id }}">
+           <a href="/release/{{ collectionRelease.Release.id }}">
+                <div class="thumbnail-container pull-left">
+                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
+                </div>
+                <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
+                <div class="artist-info">
+                    <img class="thumb pull-left" src="/images/artist/thumbnail/{{ collectionRelease.Release.Artist.id }}" alt="{{ collectionRelease.Release.Artist.Name }}" />
+                    <h5><a title="View Artist" href="/artist/{{ collectionRelease.Release.Artist.id }}"><span class="label label-info">{{ collectionRelease.Release.Artist.Name }}</span></a></h5>
+                </div>
+                <div class="release-rating-container">
+                    <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.Release.Rating }}" />
+                </div>
+                <h3 class="album-title"><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
+            </a>
         </div>
+        {% endfor %}
     </div>
 {% endblock %}
 {% block script_content %}
