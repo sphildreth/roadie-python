@@ -323,6 +323,7 @@ class CollectionRelease(EmbeddedDocument):
 class Collection(Document):
     Name = StringField()
     Edition = StringField()
+    ListInCSV = StringField()
     Description = StringField()
     Thumbnail = FileField()
     Maintainer = ReferenceField(User, required=True)

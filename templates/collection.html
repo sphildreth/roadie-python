@@ -28,6 +28,7 @@
             <h2><span class="label label-default">{{ collection.Name }}</span></h2>
         </div>
         {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
+        {% if collectionRelease.Release and collectionRelease.Release.Artist %}
         <div class="collection-release pull-left" data-release-id="{{ collectionRelease.Release.id }}">
            <a href="/release/{{ collectionRelease.Release.id }}">
                 <div class="thumbnail-container pull-left">
@@ -44,6 +45,7 @@
                 <h3 class="album-title"><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
             </a>
         </div>
+        {% endif %}
         {% endfor %}
     </div>
 {% endblock %}
