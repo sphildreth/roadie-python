@@ -254,6 +254,7 @@
 {% block script_content %}
     <script type="text/javascript">
     var releaseId = '{{ release.id }}';
+    var selectedCoverUrl = null;
 
     var doTrackDelete = function(trackId, flag) {
         $.ajax({
@@ -587,6 +588,7 @@
                 }
             });
         });
+
         $("#findCoverArt").on("click", function(e) {
             $.ajax({
                 type: 'POST',
@@ -594,7 +596,43 @@
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
-                        debugger;
+                        var html = '<div class="image-search-results">';
+                        $.each(data.data, function(i,d) {
+                            html += '<div class="image-search-result pull-left"><a href="#"><img src="' + d.url + '" /><div><span class="label label-default">' + d.width + 'x' + d.height + '</span></div></div>';
+                        });
+                        html += '</div>';
+                        html += '<script>$(".image-search-results").on("click", ".image-search-result a", function(e) { var $t = $(this); selectedCoverUrl = $t.find("img").attr("src"); $(".image-search-result").removeClass("selected"); $t.closest("div").addClass("selected"); });<\/script>';
+                        bootbox.dialog({
+                            buttons: {
+                                cancel: {
+                                    label: "Cancel",
+                                    className: "btn-default"
+                                },
+                                save: {
+                                    label: "Save",
+                                    className: "btn-success",
+                                    callback: function() {
+                                        if(selectedCoverUrl) {
+                                            $.ajax({
+                                                type: 'POST',
+                                                url: '/release/setCoverViaUrl/' + releaseId,
+                                                data: { "url": encodeURIComponent(selectedCoverUrl) },
+                                                success: function(data) {
+                                                    if(data.message == "OK") {
+                                                        $(".release-detail-container .title img.thumb.release-thumb").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                                                    }
+                                                },
+                                                error:function(jq, st, error){
+                                                    alert(error);
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            },
+                            title: "Image Search Results",
+                            message: html
+                        });
                     }
                 },
                 error:function(jq, st, error){
@@ -602,6 +640,7 @@
                 }
             });
         });
+
 
     });
     </script>

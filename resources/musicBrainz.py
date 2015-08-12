@@ -3,7 +3,7 @@
 import musicbrainzngs
 from resources.logger import Logger
 
-class MusicBrainz:
+class MusicBrainz(object):
 
     def __init__(self):
         musicbrainzngs.set_useragent("Roadie", "0.1", "https://github.com/sphildreth/roadie")

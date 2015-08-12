@@ -27,7 +27,7 @@ from werkzeug.datastructures import Headers
 
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
-from resources.musicBrainz import MusicBrainz
+from resources.imageSearcher import ImageSearcher, ImageSearchResult
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
@@ -918,6 +918,12 @@ def getReleaseThumbnailImage(release_id):
                          mimetype='image/jpg')
 
 
+def jdefault(o):
+    if isinstance(o, set):
+        return list(o)
+    return o.__dict__
+
+
 @app.route("/images/find/<type>/<type_id>", methods=['POST'])
 def findImageForType(type,type_id):
     if type == 'r': # release
@@ -925,19 +931,43 @@ def findImageForType(type,type_id):
         if not release:
             return jsonify(message="ERROR")
         data = []
-        if release.MusicBrainzId:
-            mb = MusicBrainz()
-            mbFront = mb.lookupCoverArt(release.MusicBrainzId)
-            if mbFront:
-                data.append({
-                    'url': mbFront
-                })
-            return jsonify(message="OK", data=data)
-
+        searcher = ImageSearcher()
+        gs = searcher.googleSearchImages(request.url_root, request.remote_addr, release.Title)
+        if gs:
+            for g in gs:
+                data.append(g)
+        mb = searcher.musicbrainzSearchImages(release.MusicBrainzId)
+        if mb and mb.url:
+            data.append(mb)
+        return Response(json.dumps({'message': "OK", 'data': data}, default=jdefault), mimetype="application/json")
     elif type == 'a': # artist
         return jsonify(message="ERROR")
     else:
         return jsonify(message="ERROR")
+
+@app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
+def setCoverViaUrl(release_id):
+    try:
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        url = request.form['url']
+        searcher = ImageSearcher()
+        imageBytes = searcher.getImageBytesForUrl(url)
+        if imageBytes:
+            img = Image.open(io.BytesIO(imageBytes)).convert('RGB')
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            bBytes = b.getvalue()
+            release.Thumbnail.new_file()
+            release.Thumbnail.write(bBytes)
+            release.Thumbnail.close()
+            Release.save(release)
+        return jsonify(message="OK")
+    except:
+        return jsonify(message="ERROR")
+
 
 api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
 api.add_resource(ArtistListApi, '/api/v1.0/artists')

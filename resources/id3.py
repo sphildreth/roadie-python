@@ -109,14 +109,20 @@ class ID3:
                     self.dirty = True
                 self.title = string.capwords(self.title)
             if self.title and self.track:
-                if self.title.startswith('%02d ' % self.track):
+                if self.title.startswith('%02d - ' % self.track):
+                    self.title = self.title[5:]
+                elif self.title.startswith('%02d ' % self.track):
                     self.title = self.title[3:]
-                    self.dirty = True
+                elif self.title.startswith('- ' % self.track):
+                    self.title = self.title[2:]
+                self.title = string.capwords(self.title)
+                self.dirty = True
             self.comment = string.capwords(comments[0])
             if self.comment and config:
                 if 'DoClearComments' in config:
                     if config['DoClearComments'].lower() == "true":
                         self.comment = None
+                        self.dirty = True
             self.genre = ''
             genres = short_tags.get('genre', [''])
             if len(genres) > 0:

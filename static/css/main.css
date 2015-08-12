@@ -489,3 +489,24 @@ ul.no-list-style {
     margin: 5px 10px;
     display: none;
 }
+
+.image-search-results {
+    display: inline-block;
+}
+.image-search-results img {
+    width: 90px;
+    margin: auto;
+    display: block;
+}
+
+.image-search-result {
+    width: 110px;
+    padding: 5px;
+}
+.image-search-result.selected {
+    background-color: #000;
+}
+
+.image-search-result .label {
+    margin-left: 10px;
+}
