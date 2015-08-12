@@ -934,14 +934,19 @@ def findImageForType(type,type_id):
             return jsonify(message="ERROR")
         data = []
         searcher = ImageSearcher()
-        gs = searcher.googleSearchImages(request.url_root, request.remote_addr, release.Title)
+        query = release.Title
+        if 'query' in request.form:
+            query = request.form['query']
+        referer = request.url_root
+        gs = searcher.googleSearchImages(referer, request.remote_addr, query)
         if gs:
             for g in gs:
                 data.append(g)
-        mb = searcher.musicbrainzSearchImages(release.MusicBrainzId)
-        if mb and mb.url:
-            data.append(mb)
-        return Response(json.dumps({'message': "OK", 'data': data}, default=jdefault), mimetype="application/json")
+        it = searcher.itunesSearchArtistAlbumImages(referer, release.Artist.Name, release.Title)
+        if it:
+            for i in it:
+                data.append(i)
+        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault), mimetype="application/json")
     elif type == 'a': # artist
         return jsonify(message="ERROR")
     else:

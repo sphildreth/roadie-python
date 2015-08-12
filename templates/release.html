@@ -17,12 +17,14 @@
                 <li><a id="playAll" href="#">Play All</a></li>
               </ul>
             </div>
-            {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
+            {% if current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <button id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</button>
                 <button id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</button>
+                {% if release.Artist.IsLocked == False %}
+                <button id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</button>
                 <button id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
+                {% endif %}
              </div>
             {% endif %}
             {% if release.Artist.IsLocked %}
@@ -322,6 +324,40 @@
         return sane;
     };
 
+    var buildHtmlForImageSearch = function(data) {
+        var html = '<div class="image-search-results">';
+        html += '<div class="image-search-query form-group"><input class="form-control" onKeyDown="doImageSearch(event)" id="query" type="text" value="' + decodeURIComponent(data.query) + '" /></div>';
+        $.each(data.data, function(i,d) {
+            html += '<div class="image-search-result pull-left"><a href="#">';
+            html += '<img src="' + d.url + '" />';
+            html += '<div><span class="label label-default">' + d.width + 'x' + d.height + '</span></div></div>';
+        });
+        html += '</div>';
+        html += '<script>$(".image-search-results").on("click", ".image-search-result a", function(e) { var $t = $(this); selectedCoverUrl = $t.find("img").attr("src"); $(".image-search-result").removeClass("selected"); $t.closest("div").addClass("selected"); });<\/script>';
+        return html;
+    };
+
+    var doImageSearch = function(e) {
+        if(e.keyCode == 13){
+			e.preventDefault();
+			e.stopPropagation();
+            var query = $(e.target).val();
+            $.ajax({
+                type: 'POST',
+                url: '/images/find/r/' + releaseId,
+                data: { "query": encodeURIComponent(query) },
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $(".image-search-results").html(buildHtmlForImageSearch(data));
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
+            });
+        }
+    };
+
     $(function() {
 
         doReleaseSanityChecks();
@@ -596,12 +632,6 @@
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
-                        var html = '<div class="image-search-results">';
-                        $.each(data.data, function(i,d) {
-                            html += '<div class="image-search-result pull-left"><a href="#"><img src="' + d.url + '" /><div><span class="label label-default">' + d.width + 'x' + d.height + '</span></div></div>';
-                        });
-                        html += '</div>';
-                        html += '<script>$(".image-search-results").on("click", ".image-search-result a", function(e) { var $t = $(this); selectedCoverUrl = $t.find("img").attr("src"); $(".image-search-result").removeClass("selected"); $t.closest("div").addClass("selected"); });<\/script>';
                         bootbox.dialog({
                             buttons: {
                                 cancel: {
@@ -631,7 +661,7 @@
                                 }
                             },
                             title: "Image Search Results",
-                            message: html
+                            message: buildHtmlForImageSearch(data)
                         });
                     }
                 },

@@ -73,7 +73,7 @@ class Processor(ProcessorBase):
     # Determine if the found file should be moved into the library; check for existing and see if better
     def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
         try:
-            fileFolderLibPath = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album))
+            fileFolderLibPath = self.albumFolder(artist, id3.year, id3.album)
             os.makedirs(fileFolderLibPath, exist_ok=True)
             fullFileLibPath = os.path.join(fileFolderLibPath, self.makeFileFriendly(self.trackName(id3.track, id3.title)))
             if not os.path.isfile(fullFileLibPath):

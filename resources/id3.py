@@ -24,7 +24,7 @@ class ID3:
 
     def isValid(self):
         try:
-            if self.artist and self.year and self.album and self.track and self.title and self.bitrate and self.length:
+            if self.artist and self.year and self.album and self.track and self.title and self.bitrate and self.length > 0:
                 return True
             else:
                 return False
@@ -32,7 +32,7 @@ class ID3:
             return False
 
     def info(self):
-        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist + "], Year [" + str(self.year) + "], Album: ["\
+        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist  + "], Year [" + str(self.year) + "], Album: ["\
                + self.album + "], Disc: [" + str(self.disc) + "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], ("\
                + str(self.bitrate) + "bps::" + str(self.length) + ")"
 
@@ -62,6 +62,14 @@ class ID3:
 
     def _load(self, filename, config):
         self.dirty = False
+        self.artist = ''
+        self.album = ''
+        self.track = ''
+        self.title = ''
+        self.year = ''
+        self.disc = -1
+        self.bitrate = ''
+        self.length = -1
         try:
             short_tags = full_tags = mutagen.File(filename)
             comments = []
@@ -113,7 +121,7 @@ class ID3:
                     self.title = self.title[5:]
                 elif self.title.startswith('%02d ' % self.track):
                     self.title = self.title[3:]
-                elif self.title.startswith('- ' % self.track):
+                elif self.title.startswith('- '):
                     self.title = self.title[2:]
                 self.title = string.capwords(self.title)
                 self.dirty = True
@@ -133,4 +141,3 @@ class ID3:
                 self.imageBytes = full_tags.tags._DictProxy__dict['APIC:'].data
         except:
             self.logger.exception()
-            return None
