@@ -66,11 +66,10 @@
         myNumbers = $.map($(".collection-release"), function(d) {
             return $(d).data("listnumber");
         });
-        for(var i=1;i<=collectionCountShouldBe;i++)
-        {
-           if(myNumbers[i-1] != i){
-                missing.push(i);
-           }
+        for(var i = 1; i < myNumbers.length; i++) {
+            if(myNumbers[i] - myNumbers[i-1] != 1) {
+                missing.push(i+1);
+            }
         }
         if(missing) {
             var html = '<div><h4>Missing</h4></div>';
