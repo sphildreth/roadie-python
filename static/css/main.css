@@ -121,6 +121,12 @@ div.collection-container ul.tracks {
   overflow: auto;
 }
 
+div.collection-container h3.missing-number {
+    width 100px;
+    margin: 0 3px;
+    float: left;
+}
+
 .release-detail-container .release-rating-container {
     marign-right: 5px;
 }

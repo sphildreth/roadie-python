@@ -75,7 +75,7 @@
         if(missing) {
             var html = '<div><h4>Missing</h4></div>';
             $.each(missing, function(i,d) {
-                html += '<h3><span class="label label-warning">' + d + '</span></h3>';
+                html += '<h3 class="missing-number"><span class="label label-warning">' + d + '</span></h3>';
             });
             $(".missing").html(html);
         }
