@@ -25,6 +25,7 @@ from tornado.ioloop import IOLoop
 
 from werkzeug.datastructures import Headers
 
+from importers.collectionImporter import CollectionImporter
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from resources.imageSearcher import ImageSearcher, ImageSearchResult
@@ -41,7 +42,7 @@ from flask.ext.login import LoginManager, login_user, logout_user, \
 from flask.ext.bcrypt import Bcrypt
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
-    group_release_tracks_filepaths, format_age_from_date, calculate_release_discs
+    group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
 from resources.validator import Validator
 from viewModels.RoadieModelView import RoadieModelView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
@@ -63,6 +64,7 @@ app.jinja_env.filters['calculate_release_tracks_Length'] = calculate_release_tra
 app.jinja_env.filters['group_release_tracks_filepaths'] = group_release_tracks_filepaths
 app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
+app.jinja_env.filters['count_new_lines'] = count_new_lines
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
@@ -384,6 +386,19 @@ def deleteArtist(artist_id):
         return jsonify(message="OK")
     except:
         return jsonify(message="ERROR")
+
+
+@app.route("/artist/deletereleases/<artist_id>", methods=['POST'])
+@login_required
+def deleteArtistReleases(artist_id):
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
+        return jsonify(message="ERROR")
+    try:
+        Release.objects(Artist=artist).delete()
+        return jsonify(message="OK")
+    except:
+       return jsonify(message="ERROR")
 
 
 @app.route('/release/delete/<release_id>', methods=['POST'])
@@ -1146,6 +1161,15 @@ def playCollection(collection_id):
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename=collection.Name + ".m3u")
+
+@app.route("/collection/update/<collection_id>", methods=['POST'])
+def updateCollection(collection_id):
+    collection = Collection.objects(id=collection_id).first()
+    if not collection or not collection.ListInCSVFormat or not collection.ListInCSV:
+        return jsonify(message="ERROR")
+    i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
+    i.importCsvData(io.StringIO(collection.ListInCSV))
+    return jsonify(message="OK")
 
 
 @app.route('/logout')

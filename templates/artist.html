@@ -16,16 +16,22 @@
               </button>
               <ul class="dropdown-menu">
                 <li><a id="playAll" href="#">Play All</a></li>
-                  <li><a id="playAllShuffle" href="#">Play All (Shuffle)</a></li>
+                <li><a id="playAllShuffle" href="#">Play All (Shuffle)</a></li>
                 <li><a id="playTopRated" href="#">Play Top Rated</a></li>
                 <li><a id="playMostPopular" href="#">Play Most Popular</a></li>
               </ul>
             </div>
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
               <div class="btn-group">
-                <a href="/admin/artist/edit/?id={{ artist.id }}&url=/artist/{{ artist.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 {% if artist.IsLocked == False %}
-                <button id="delete-artist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a id="delete-artist"><i class="fa fa-trash-o"></i> Delete Artist</a></li>
+                        <li><a id="deleteArtistReleases"><i class="fa fa-trash-o"></i> Delete All Releases</a></li>
+                    </ul>
                 <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
                 {% endif %}
              </div>
@@ -57,7 +63,7 @@
             <div class="col-md-6">
                 {% for image in artist.Images %}
                     <div class="col-xs-4 col-sm-3 col-md-3">
-                        <a href="javascript:void();"
+                        <a href="javascript:void(0);"
                            data-title="{{ image.element.filename }}"
                            data-url="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/2048/2048"
                            target="_blank" class="thumbnail">
@@ -384,6 +390,27 @@
                     }
                 });
             });
+
+            $("#deleteArtistReleases").on("click", function(e) {
+                bootbox.confirm("Continue To Delete All Artist Releases?", function(result) {
+                    if(result) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/artist/deletereleases/' + artistId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    }
+                });
+            });
+
         });
     </script>
 {% endblock %}

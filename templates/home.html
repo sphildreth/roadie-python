@@ -79,7 +79,7 @@
 {% endblock %}
 {% block script_content %}
     {% raw %}
-    <script id="template" type="x-tmpl-mustache">
+    <script id="template" type="text/x-tmpl-mustache">
         <tr>
             <td class="track" data-track-id="{{ lastPlayedInfo.TrackId }}">
                 <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
@@ -113,7 +113,7 @@
             </td>
         </tr>
     </script>
-    <script id="randomReleaseTemplate" type="x-tmpl-mustache">
+    <script id="randomReleaseTemplate" type="text/x-tmpl-mustache">
         <div class="release pull-left" data-release-id="{{ id }}">
             <a href="/release/{{ id }}">
                 <div class="thumbnail-container">

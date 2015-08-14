@@ -193,6 +193,7 @@ class UserArtist(Document):
 class Playlist(Document):
     User = ReferenceField(User, required=True, reverse_delete_rule=CASCADE)
     Tracks = ListField(ReferenceField(Track, required=True, reverse_delete_rule=CASCADE))
+    Thumbnail = FileField()
     Name = StringField()
     IsPublic = BooleanField()
     Description = StringField()
@@ -323,6 +324,9 @@ class CollectionRelease(EmbeddedDocument):
 class Collection(Document):
     Name = StringField()
     Edition = StringField()
+    # This is the format of the CSV (like number, artist, album)
+    ListInCSVFormat = StringField()
+    # This is the CSV of the list to re-run as albums get added/removed to update list
     ListInCSV = StringField()
     Description = StringField()
     Thumbnail = FileField()

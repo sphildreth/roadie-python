@@ -121,6 +121,9 @@ div.collection-container ul.tracks {
   overflow: auto;
 }
 
+.release-detail-container .release-rating-container {
+    marign-right: 5px;
+}
 
 .release-detail-container .artist-info img.thumb {
     margin: 2px 4px;

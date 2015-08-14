@@ -19,11 +19,11 @@
             </div>
             {% if current_user.has_role("Admin") %}
               <div class="btn-group">
-                <a href="/admin/release/edit/?id={{ release.id }}&url=/release/{{ release.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <button id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</button>
+                <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
                 {% if release.Artist.IsLocked == False %}
-                <button id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</button>
-                <button id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
+                <a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</a>
+                <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
                 {% endif %}
              </div>
             {% endif %}
@@ -33,7 +33,7 @@
         </div>
         <div class="row title bordered">
             <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
-            <div class="release-rating-container">
+            <div class="release-rating-container pull-left">
                 <input type="hidden" class="rating" data-readonly value="{{ release.Rating }}" />
             </div>
             <div class="artist-info">
@@ -51,12 +51,12 @@
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Profile</span></h4>
-                <p>{{ release.Profile|safe }}</p>
+                <div>{{ release.Profile|safe }}</div>
             </div>
             <div class="col-md-6">
                 {% for image in release.Images %}
                     <div class="col-md-3">
-                        <a href="javascript:void();"
+                        <a href="javascript:void(0);"
                            data-title="{{ image.element.filename }}"
                            data-url="/images/release/{{ release.id}}/{{ image.element.grid_id }}/2048/2048"
                            target="_blank" class="thumbnail">
@@ -221,16 +221,16 @@
                                 <i class="fa fa-bars"></i> <span class="caret"></span>
                               </button>
                               <ul class="dropdown-menu">
-                                <li><a href="#" class="play-track btn btn-default" type="button"><i class="fa fa-play"></i> Play</a></li>
-                                <li><a href="#" class="que-track btn btn-default" type="button"><i class="fa fa-plus"></i> Que</a></li>
+                                <li><a href="#" class="play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
+                                <li><a href="#" class="que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
                                 {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
-                                <li><a href="#" class="edit-track btn btn-warning" type="button"><i class="fa fa-edit"></i> Edit</a></li>
+                                <li><a href="#" class="edit-track btn btn-warning"><i class="fa fa-edit"></i> Edit</a></li>
                                 <li class="dropdown-submenu">
                                     <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
                                     <ul class="dropdown-menu">
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="deleteRelease-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete Track</a></li>
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning" type="button"><i class="fa fa-trash-o"></i> Delete</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="deleteRelease-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Track</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a></li>
                                     </ul>
                                 </li>
                                 {% endif %}

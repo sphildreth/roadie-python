@@ -30,9 +30,10 @@ class CollectionImporter(ProcessorBase):
         self.readOnly = readOnly
         self.format = format
         self.positions = self.format.split(',')
-        self.filename = filename
         self._findColumns()
-        self._import()
+        if filename:
+            self.filename = filename
+            self._import()
 
 
     def _findColumns(self):
@@ -55,14 +56,18 @@ class CollectionImporter(ProcessorBase):
     def _import(self):
         if not os.path.exists(self.filename):
             self.logger.critical("Unable to Find CSV File [" + self.filename + "]")
-            return False
+        else:
+            self.logger.debug("Importing [" + self.filename + "]")
+            return self.importCsvData(open(self.filename))
+
+
+    def importCsvData(self, csvData):
         connect(self.dbName, host=self.host)
         col = Collection.objects(id=self.collectionId).first()
         if not col:
             self.logger.critical("Unable to Find Collection Id [" + self.collectionId + "]")
             return False
-        self.logger.debug("Importing [" + self.filename + "] => Collection [" + str(col) +"]")
-        reader = csv.reader(open(self.filename))
+        reader = csv.reader(csvData)
         col.Releases = []
         for row in reader:
             csvPosition = int(row[self.position].strip())
@@ -85,4 +90,4 @@ class CollectionImporter(ProcessorBase):
             self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release)+ "] To Collection")
         col.LastUpdated = arrow.utcnow().datetime
         Collection.save(col)
-
+        return True

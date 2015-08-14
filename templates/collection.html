@@ -18,7 +18,10 @@
             {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <button id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</button>
+                <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+                {% if collection.ListInCSVFormat and collection.ListInCSV %}
+                <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
+                {% endif %}
              </div>
             {% endif %}
         </div>
@@ -29,7 +32,7 @@
         </div>
         {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
         {% if collectionRelease.Release and collectionRelease.Release.Artist %}
-        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.Release.id }}">
+        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.Release.id }}" data-listnumber="{{ collectionRelease.ListNumber }}">
            <a href="/release/{{ collectionRelease.Release.id }}">
                 <div class="thumbnail-container pull-left">
                     <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
@@ -47,14 +50,61 @@
         </div>
         {% endif %}
         {% endfor %}
+        <div class="clearfix"></div>
+        <div class="row missing bordered">
+        </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
     var collectionId = '{{ collection.id }}';
+    var collectionCountShouldBe = {{ collection.ListInCSV|count_new_lines + 1 }};
+    var missing = [];
+
     $(function() {
+
+        myNumbers = $.map($(".collection-release"), function(d) {
+            return $(d).data("listnumber");
+        });
+        for(var i=1;i<=collectionCountShouldBe;i++)
+        {
+           if(myNumbers[i-1] != i){
+                missing.push(i);
+                break;
+           }
+        }
+        if(missing) {
+            var html = '<div><h4>Missing</h4></div>';
+            $.each(missing, function(i,d) {
+                html += '<h3><span class="label label-warning">' + d + '</span></h3>';
+            });
+            $(".missing").html(html);
+        }
+
         $("#playAll").on("click", function(e) {
             roadieLibrary.playLoader("/collection/play/" + collectionId);
+        });
+
+        $("#updateCollection").on("click",function(e) {
+            bootbox.confirm("Continue to Update List With Known Releases(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/collection/update/' + collectionId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    });
+                }
+            });
         });
     });
     </script>

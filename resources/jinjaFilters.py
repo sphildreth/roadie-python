@@ -1,5 +1,6 @@
 import datetime
 import dateutil
+import re
 from math import floor
 
 
@@ -19,6 +20,9 @@ def group_release_tracks_filepaths(value):
     except:
         return groups
         pass
+
+def count_new_lines(value):
+    return len(re.findall("\\r", value))
 
 def calculate_release_discs(value):
     try:
