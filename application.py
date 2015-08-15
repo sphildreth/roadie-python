@@ -407,6 +407,7 @@ def deleteArtistReleases(artist_id):
     if not artist:
         return jsonify(message="ERROR")
     try:
+        Track.objects(Artist=artist).delete()
         Release.objects(Artist=artist).delete()
         return jsonify(message="OK")
     except:
