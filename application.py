@@ -143,6 +143,7 @@ def randomRelease(count):
             releases.append(releaseInfo)
         return jsonify(message="OK", releases=releases)
     except:
+        logger.exception("Error In Release Random")
         return jsonify(message="ERROR")
 
 
@@ -187,6 +188,7 @@ def setUserArtistRating(artist_id, rating):
         Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
+        logger.exception("Error Setting Artist Rating")
         return jsonify(message="ERROR")
 
 
@@ -215,6 +217,7 @@ def toggleUserArtistDislike(artist_id, toggle):
             Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
+        logger.exception("Error Setting Artist Dislike")
         return jsonify(message="ERROR")
 
 
@@ -234,6 +237,7 @@ def toggleUserArtistFavorite(artist_id, toggle):
         UserArtist.save(userArtist)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Toggling Favorite")
         return jsonify(message="ERROR")
 
 
@@ -259,6 +263,7 @@ def setUserReleaseRating(release_id, rating):
         Release.save(release)
         return jsonify(message="OK", average=releaseAverage)
     except:
+        logger.exception("Error Settings Release Reating")
         return jsonify(message="ERROR")
 
 
@@ -287,6 +292,7 @@ def toggleUserReleaseDislike(release_id, toggle):
             Release.save(release)
         return jsonify(message="OK", average=releaseAverage)
     except:
+        logger.exception("Error Toggling Release Dislike")
         return jsonify(message="ERROR")
 
 
@@ -306,6 +312,7 @@ def toggleUserReleaseFavorite(release_id, toggle):
         UserRelease.save(userRelease)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Toggling Release Favorite")
         return jsonify(message="ERROR")
 
 
@@ -324,6 +331,7 @@ def rescanArtist(artist_id):
         validator.validate(artist)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Rescanning Artist")
         return jsonify(message="ERROR")
 
 
@@ -338,6 +346,7 @@ def setTrackCount(release_id):
         Release.save(release)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Setting Track Count")
         return jsonify(message="ERROR")
 
 @app.route("/release/setDiscCount/<release_id>", methods=['POST'])
@@ -355,24 +364,26 @@ def setDiscCount(release_id):
         Release.save(release)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Setting Disc Count")
         return jsonify(message="ERROR")
 
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required
 def rescanRelease(release_id):
-  #  try:
-    release = Release.objects(id=release_id).first()
-    if not release:
+    try:
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        # Update Database with folders found in Library
+        processor = Processor(False, True)
+        releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
+        processor.process(folder=releaseFolder)
+        validator = Validator(False)
+        validator.validate(release.Artist)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Rescanning Release")
         return jsonify(message="ERROR")
-    # Update Database with folders found in Library
-    processor = Processor(False, True)
-    releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
-    processor.process(folder=releaseFolder)
-    validator = Validator(False)
-    validator.validate(release.Artist)
-    return jsonify(message="OK")
- #   except:
-  #      return jsonify(message="ERROR")
 
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
@@ -385,6 +396,7 @@ def deleteArtist(artist_id):
         Artist.delete(artist)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Deleting Artist")
         return jsonify(message="ERROR")
 
 
@@ -398,7 +410,8 @@ def deleteArtistReleases(artist_id):
         Release.objects(Artist=artist).delete()
         return jsonify(message="OK")
     except:
-       return jsonify(message="ERROR")
+        logger.exception("Error Deleting Artist Releases")
+        return jsonify(message="ERROR")
 
 
 @app.route('/release/delete/<release_id>', methods=['POST'])
@@ -411,6 +424,7 @@ def deleteRelease(release_id):
         Release.delete(release)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Deleting Release")
         return jsonify(message="ERROR")
 
 
@@ -437,6 +451,7 @@ def setUserTrackRating(release_id, track_id, rating):
         Track.save(track)
         return jsonify(message="OK", average=trackAverage)
     except:
+        logger.exception("Error Setting Track Rating")
         return jsonify(message="ERROR")
 
 
@@ -478,6 +493,7 @@ def deleteReleaseTrack(release_id, release_track_id, flag):
 
         return jsonify(message="OK")
     except:
+        logger.exception("Error Deleting Releae Track")
         return jsonify(message="ERROR")
 
 
@@ -989,6 +1005,7 @@ def setCoverViaUrl(release_id):
             Release.save(release)
         return jsonify(message="OK")
     except:
+        logger.exception("Error Setting Release Image via Url")
         return jsonify(message="ERROR")
 
 
@@ -1134,6 +1151,9 @@ def collection(collection_id):
         return render_template('404.html'), 404
     tracks = 0
     sumTime = 0
+    counts = {'releases': "0",
+              'tracks': "0",
+              'length': 0}
     for release in collection.Releases:
         try:
             tracks += len(release.Release.Tracks)
@@ -1162,15 +1182,30 @@ def playCollection(collection_id):
                      as_attachment=True,
                      attachment_filename=collection.Name + ".m3u")
 
+
+@app.route("/collections/updateall", methods=['POST'])
+def updateAllCollections():
+  #  try:
+    for collection in Collection.objects(ListInCSVFormat__ne=None,ListInCSV__ne=None):
+        i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
+        i.importCsvData(io.StringIO(collection.ListInCSV))
+    return jsonify(message="OK")
+ #   except:
+  #      logger.exception("Error Updating Collection")
+  #      return jsonify(message="ERROR")
+
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
-    collection = Collection.objects(id=collection_id).first()
-    if not collection or not collection.ListInCSVFormat or not collection.ListInCSV:
+    try:
+        collection = Collection.objects(id=collection_id).first()
+        if not collection or not collection.ListInCSVFormat or not collection.ListInCSV:
+            return jsonify(message="ERROR")
+        i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
+        i.importCsvData(io.StringIO(collection.ListInCSV))
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
-    i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
-    i.importCsvData(io.StringIO(collection.ListInCSV))
-    return jsonify(message="OK")
-
 
 @app.route('/logout')
 def logout():

@@ -6,7 +6,8 @@
     <div class="collections-container">
         {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
         <div>
-            <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-add"></i> Add</a>
+            <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-plus"></i> Add</a>
+            <a id="updateAllCollections" class="btn btn-warning" href="javascript:void(0);"><i class="fa fa-bolt"></i> Update All</a>
         </div>
         {% endif %}
         <h4><span class="label label-primary">Collections</span></h4>
@@ -16,7 +17,10 @@
                 <div class="thumbnail-container pull-left">
                     <img class="thumb" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Name }}" />
                 </div>
-                <h4><span class="label label-default">{{ collection.Name }}</span></h4>
+                <h4>
+                    <span title="Found Releases In Library" class="label label-info">{{ collection.Releases|length }}</span>
+                    <span class="label label-default">{{ collection.Name }}</span>
+                </h4>
             </a>
         </div>
         {% endfor %}
@@ -26,7 +30,27 @@
 {% block script_content %}
     <script type="text/javascript">
     $(function() {
-
+        $("#updateAllCollections").on("click",function(e) {
+            bootbox.confirm("Continue to Update All Collection(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/collections/updateall',
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                alert(error);
+                            }
+                        });
+                    });
+                }
+            });
+        });
     });
     </script>
 {% endblock %}
