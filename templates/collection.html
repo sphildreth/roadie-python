@@ -71,12 +71,14 @@
                 missing.push(i+1);
             }
         }
-        if(missing) {
+        if(missing.length > 0) {
             var html = '<div><h4>Missing</h4></div>';
             $.each(missing, function(i,d) {
                 html += '<h3 class="missing-number"><span class="label label-warning">' + d + '</span></h3>';
             });
             $(".missing").html(html);
+        } else {
+            $(".missing").hide();
         }
 
         $("#playAll").on("click", function(e) {
