@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Collections{% endblock %}
+{% block title %}{{ collection.Name }}{% endblock %}
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
@@ -61,6 +61,16 @@
     var collectionCountShouldBe = {{ collection.ListInCSV|count_new_lines + 1 }};
     var missing = [];
 
+    var showCollectionSane = function(isSane) {
+        var $c = $("div.release-counts-container");
+        $c.find(".release-sane-indicator").remove();
+        if(isSane) {
+            $c.append("<span class='release-sane-indicator release-sane label label-success' title='Collection Is Complete!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+        } else {
+            $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Collection Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+        }
+    };
+
     $(function() {
 
         myNumbers = $.map($(".collection-release"), function(d) {
@@ -80,8 +90,10 @@
                 html += '<h3 class="missing-number"><span class="label label-warning">' + d + '</span></h3>';
             });
             $(".missing").html(html);
+            showCollectionSane(false);
         } else {
             $(".missing").hide();
+            showCollectionSane(true);
         };
         $("#playAll").on("click", function(e) {
             roadieLibrary.playLoader("/collection/play/" + collectionId);

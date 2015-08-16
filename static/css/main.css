@@ -150,7 +150,8 @@ img.thumb {
 }
 
 .release-detail-container span.track-count-indicator,
-.artist-detail-container span.release-sane-indicator {
+.artist-detail-container span.release-sane-indicator,
+.collection-container span.release-sane-indicator{
     height: 25px;
     display: inline-block;
 }
