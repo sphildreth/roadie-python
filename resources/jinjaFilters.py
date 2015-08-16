@@ -22,6 +22,8 @@ def group_release_tracks_filepaths(value):
         pass
 
 def count_new_lines(value):
+    if not value:
+        return 0
     return len(re.findall("\\r", value))
 
 def calculate_release_discs(value):

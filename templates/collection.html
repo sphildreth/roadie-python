@@ -64,13 +64,16 @@
     $(function() {
 
         myNumbers = $.map($(".collection-release"), function(d) {
-            return $(d).data("listnumber");
+            return parseInt($(d).data("listnumber"));
         });
-        for(var i = 1; i < myNumbers.length; i++) {
-            if(myNumbers[i] - myNumbers[i-1] != 1) {
-                missing.push(i+1);
-            }
-        }
+        for(var i = 1; i <= collectionCountShouldBe; i++) {
+            if($.inArray(i, myNumbers) < 0) {
+                missing.push(i);
+           }
+        };
+        console.log(collectionCountShouldBe);
+        console.log(JSON.stringify(myNumbers));
+        console.log(JSON.stringify(missing));
         if(missing.length > 0) {
             var html = '<div><h4>Missing</h4></div>';
             $.each(missing, function(i,d) {
@@ -79,8 +82,7 @@
             $(".missing").html(html);
         } else {
             $(".missing").hide();
-        }
-
+        };
         $("#playAll").on("click", function(e) {
             roadieLibrary.playLoader("/collection/play/" + collectionId);
         });
