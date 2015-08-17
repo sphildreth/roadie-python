@@ -20,7 +20,8 @@ class Convertor(object):
         exitValue = 1
         fileExtension = os.path.splitext(file)[1].lower()
         outputFilename = os.path.splitext(file)[0]+".mp3"
-        if fileExtension == ".flac":
+        if fileExtension == ".flac" or \
+           fileExtension == ".wav":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
             exitValue = os.system("ffmpeg -y -loglevel error -i \"" +  file.replace("/", "\\") + "\" -q:a 0 \"" + outputFilename.replace("/", "\\") + "\"")
 
