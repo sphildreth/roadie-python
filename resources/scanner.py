@@ -148,7 +148,7 @@ class Scanner(object):
                         try:
                             release.Tracks.append(releaseTrack)
                             release.LastUpdated = arrow.utcnow().datetime
-                            self.logger.info("+ Added Release Track: Track [" + releaseTrack.Track.Title + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
+                            self.logger.info("+ Added Release Track: Track [" + releaseTrack.Track.Title.encode('utf-8') + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
                         except:
                             self.logger.exception("Error Adding ReleaseTracks")
                             pass

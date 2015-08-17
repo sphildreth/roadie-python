@@ -351,11 +351,15 @@ class Processor(ProcessorBase):
             if artist and release:
                 if newMp3Folder:
                     for coverImage in self.releaseCoverImages(mp3Folder):
-                        im = Image.open(coverImage).convert('RGB')
-                        newPath = os.path.join(newMp3Folder, "cover.jpg")
-                        if not self.readOnly:
-                            im.save(newPath)
-                        self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                        try:
+                            im = Image.open(coverImage).convert('RGB')
+                            newPath = os.path.join(newMp3Folder, "cover.jpg")
+                            if not self.readOnly:
+                                im.save(newPath)
+                            self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                        except:
+                            self.logger.exception("Error Copying File [" + coverImage + "]")
+                            pass
                     scanner.scan(newMp3Folder, artist, release)
                 else:
                     scanner.scan(mp3Folder, artist, release)
