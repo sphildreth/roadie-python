@@ -1,8 +1,9 @@
 import os
 import json
 from resources.logger import Logger
+from resources.processingBase import ProcessorBase
 
-class Convertor(object):
+class Convertor(ProcessorBase):
 
     config = None
 
@@ -12,7 +13,7 @@ class Convertor(object):
         path = os.path.join(os.sep.join(d[:-1]), "settings.json")
         with open(path, "r") as rf:
             self.config = json.load(rf)
-        for root, dirs, files in os.walk(folder):
+        for root, dirs, files in os.walk(self.fixPath(folder)):
             for filename in files:
                     self._convert(os.path.join(root, filename))
 

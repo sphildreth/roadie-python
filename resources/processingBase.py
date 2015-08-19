@@ -1,24 +1,8 @@
-import arrow
-import linecache
-import io
 import os
-import random
 import string
-import sys
-import shutil
 import json
-import hashlib
-import argparse
-from PIL import Image
-from dateutil.parser import *
+
 from goldfinch import validFileName as vfn
-from shutil import move
-from mongoengine import connect
-from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
-from resources.musicBrainz import MusicBrainz
-from resources.id3 import ID3
-from resources.convertor import Convertor
-from resources.logger import Logger
 
 
 class ProcessorBase(object):

@@ -57,7 +57,7 @@ class Scanner(ProcessorBase):
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             for track in Track.objects(FilePath__iexact=folder):
-                filename = os.path.join(track.FilePath, track.FileName)
+                filename = self.fixPath(os.path.join(track.FilePath, track.FileName))
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     if not self.readOnly:
@@ -96,7 +96,7 @@ class Scanner(ProcessorBase):
                     if track:
                         mp3File = None
                         if track.FilePath and track.FileName:
-                            mp3File = os.path.join(track.FilePath, track.FileName)
+                            mp3File = self.fixPath(os.path.join(track.FilePath, track.FileName))
                         if not mp3File or not os.path.isfile(mp3File):
                             try:
                                 if not self.readOnly:
