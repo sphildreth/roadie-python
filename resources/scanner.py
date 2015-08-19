@@ -110,7 +110,7 @@ class Scanner(ProcessorBase):
                                     self.logger.exception("Unable To Delete Track File [" + mp3File or '' + "]")
                     if not track:
                         head, tail = os.path.split(mp3)
-                        track = Track.objects(FilePath = head, FileName = tail)
+                        track = Track.objects(FilePath = head, FileName = tail).first()
                         if not track:
                             track = Track(Title=id3.title, Artist=artist)
                             track.FileName = tail
@@ -133,7 +133,7 @@ class Scanner(ProcessorBase):
                             track.Length = id3.length
                             if not self.readOnly:
                                 Track.save(track)
-                            self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
+                            self.logger.info("+ Added Track: Title [" + release.Track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
                         try:
