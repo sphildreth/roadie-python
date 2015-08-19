@@ -275,6 +275,24 @@ class Release(Document):
         ]
     }
 
+    def isLiveOrCompilation(self):
+        """
+        Determine if the release is a Live or Compilation album
+
+        """
+        try:
+            if self.Tags:
+                for tag in self.Tags:
+                    if tag and (tag.lower() == "live" or tag.lower() == "compilation"):
+                        return True
+            if self.Genres:
+                for genre in self.Genres:
+                    if genre and (genre.Name.lower() == "live" or genre.Name.lower() == "compilation"):
+                        return True
+        except:
+            pass
+        return False
+
     def __unicode__(self):
         return self.Title
 
