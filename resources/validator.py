@@ -26,9 +26,9 @@ class Validator(ProcessorBase):
     def validate(self, artist):
         if not artist:
             raise RuntimeError("Invalid Artist")
-        self.logger.info("Validating Artist [" + str(artist) + "]")
         connect(self.dbName, host=self.host)
         for release in Release.objects(Artist=artist):
+            self.logger.info("Validating Artist [" + str(artist) + "], Release [" + str(release) + "]")
             releaseFolder = self.albumFolder(artist, release.ReleaseDate[:4], release.Title)
             if not os.path.exists(releaseFolder):
                 if not self.readOnly:
