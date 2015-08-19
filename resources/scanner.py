@@ -14,9 +14,9 @@ from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, T
 from resources.musicBrainz import MusicBrainz
 from resources.id3 import ID3
 from resources.logger import Logger
+from resources.processingBase import ProcessorBase
 
-
-class Scanner(object):
+class Scanner(ProcessorBase):
 
     def __init__(self,readOnly):
         d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
@@ -30,7 +30,7 @@ class Scanner(object):
         self.logger = Logger()
 
     def inboundMp3Files(self, folder):
-        for root, dirs, files in os.walk(folder):
+        for root, dirs, files in os.walk(self.fixPath(folder)):
             for filename in files:
                 if os.path.splitext(filename)[1] == ".mp3":
                     yield os.path.join(root, filename)

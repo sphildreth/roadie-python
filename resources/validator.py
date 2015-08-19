@@ -38,7 +38,7 @@ class Validator(ProcessorBase):
             goodTracks = []
             for track in release.Tracks:
                 try:
-                    trackFilename = os.path.join(track.Track.FilePath, track.Track.FileName)
+                    trackFilename = self.fixPath(os.path.join(track.Track.FilePath, track.Track.FileName))
                     if not os.path.exists(trackFilename):
                         if not self.readOnly:
                             Release.objects(Artist=track.Artist).update_one(pull__Tracks__Track=track)
