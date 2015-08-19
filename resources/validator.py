@@ -44,7 +44,7 @@ class Validator(ProcessorBase):
                             Release.objects(Artist=track.Artist).update_one(pull__Tracks__Track=track)
                             Track.delete(track.Track)
                         self.logger.warn("X Deleting Track [" + str(track.Track) + "] File [" + trackFilename + "] not found")
-                    else:
+                    elif track not in goodTracks:
                         goodTracks.append(track)
                 except:
                     pass
