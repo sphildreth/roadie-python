@@ -45,6 +45,7 @@ class Validator(ProcessorBase):
                             Track.delete(track.Track)
                         self.logger.warn("X Deleting Track [" + str(track.Track) + "] File [" + trackFilename + "] not found")
                     elif track not in goodTracks:
+                        self.logger.info("Adding Track [" + str(track.Track) + '] to Release')
                         goodTracks.append(track)
                 except:
                     pass
