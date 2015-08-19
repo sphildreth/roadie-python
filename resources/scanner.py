@@ -110,13 +110,13 @@ class Scanner(ProcessorBase):
                                     self.logger.exception("Unable To Delete Track File [" + mp3File or '' + "]")
                     if not track:
                         head, tail = os.path.split(mp3)
-                        self.logger.debug("Looking for track head [" + head + "] tail [" + tail + "]")
-                        track = Track.objects(FilePath = head, FileName = tail).first()
+                        trackHash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                        track = Track.objects(Hash = trackHash).first()
                         if not track:
                             track = Track(Title=id3.title, Artist=artist)
                             track.FileName = tail
                             track.FilePath = head
-                            track.Hash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                            track.Hash = trackHash
                             try:
                                 mbTracks = mb.tracksForRelease(release.MusicBrainzId)
                                 if mbTracks:
