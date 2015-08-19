@@ -326,6 +326,10 @@ def rescanArtist(artist_id):
         # Update Database with folders found in Library
         processor = Processor(False, True, )
         artistFolder = processor.artistFolder(artist)
+        if trackPathReplace:
+            for rpl in trackPathReplace:
+                for key, val in rpl.items():
+                    artistFolder = artistFolder.replace(key, val)
         processor.process(folder=artistFolder)
         validator = Validator(False)
         validator.validate(artist)
@@ -377,6 +381,10 @@ def rescanRelease(release_id):
         # Update Database with folders found in Library
         processor = Processor(False, True)
         releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
+        if trackPathReplace:
+            for rpl in trackPathReplace:
+                for key, val in rpl.items():
+                    releaseFolder = releaseFolder.replace(key, val)
         processor.process(folder=releaseFolder)
         validator = Validator(False)
         validator.validate(release.Artist)
@@ -1186,14 +1194,14 @@ def playCollection(collection_id):
 
 @app.route("/collections/updateall", methods=['POST'])
 def updateAllCollections():
-  #  try:
-    for collection in Collection.objects(ListInCSVFormat__ne=None,ListInCSV__ne=None):
-        i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
-        i.importCsvData(io.StringIO(collection.ListInCSV))
-    return jsonify(message="OK")
- #   except:
-  #      logger.exception("Error Updating Collection")
-  #      return jsonify(message="ERROR")
+    try:
+        for collection in Collection.objects(ListInCSVFormat__ne=None,ListInCSV__ne=None):
+            i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
+            i.importCsvData(io.StringIO(collection.ListInCSV))
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Updating Collection")
+        return jsonify(message="ERROR")
 
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
