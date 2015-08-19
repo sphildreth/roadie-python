@@ -150,7 +150,7 @@ class Scanner(ProcessorBase):
                         try:
                             release.Tracks.append(releaseTrack)
                             release.LastUpdated = arrow.utcnow().datetime
-                            self.logger.info("+ Added Release Track: Track [" + str(releaseTrack.Track.Title) + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
+                            self.logger.info("+ Added Release Track: Track [" + str(track.Title) + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
                         except:
                             self.logger.exception("Error Adding ReleaseTracks")
                             pass
