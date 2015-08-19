@@ -110,7 +110,7 @@ class Scanner(ProcessorBase):
                                     self.logger.exception("Unable To Delete Track File [" + mp3File or '' + "]")
                     if not track:
                         head, tail = os.path.split(mp3)
-                        track = Track.objects(FilePath = head, FileName = tail).first()
+                        track = Track.objects(FilePath = self.fixPath(head), FileName = tail).first()
                         if not track:
                             track = Track(Title=id3.title, Artist=artist)
                             track.FileName = tail
