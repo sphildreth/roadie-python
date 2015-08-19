@@ -135,11 +135,11 @@ class Processor(ProcessorBase):
 
     def process(self, **kwargs):
         """
-        Process inbound folder using the passed folder
+        Process folder using the passed folder
 
         """
         inboundFolder = kwargs.pop('folder', self.InboundFolder)
-        self.logger.info("Processing Inbound Folder [" + inboundFolder + "]")
+        self.logger.info("Processing Folder [" + inboundFolder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
         scanner = Scanner(self.readOnly)
