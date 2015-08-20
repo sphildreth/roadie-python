@@ -7,7 +7,7 @@ import arrow
 
 from mongoengine import connect
 
-from resources.models import Release, Track
+from resources.models import Artist, Release, Tracka
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 
@@ -22,6 +22,10 @@ class Validator(ProcessorBase):
         self.host = config['MONGODB_SETTINGS']['host']
         self.readOnly = readOnly or False
         self.logger = Logger()
+
+    def validateArtists(self):
+        for artist in Artist.objects():
+            self.validate(artist)
 
     def validate(self, artist):
         if not artist:

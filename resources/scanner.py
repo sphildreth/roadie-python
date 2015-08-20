@@ -92,49 +92,34 @@ class Scanner(ProcessorBase):
                     self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     foundGoodMp3s = True
-                    track = None
-                    if release.isLiveOrCompilation():
-                        track = Track.objects(Title__iexact=id3.title, Artist=artist).first()
-                        if track:
-                            mp3File = None
-                            if track.FilePath and track.FileName:
-                                mp3File = self.fixPath(os.path.join(track.FilePath, track.FileName))
-                            if not mp3File or not os.path.isfile(mp3File):
-                                try:
-                                    if not self.readOnly:
-                                        Release.objects(Artist = track.Artist).update_one(pull__Tracks__Track = track)
-                                        Track.delete(track)
-                                        track = None
-                                    self.logger.warn("X Deleted Non Existent Track, Filename [" + mp3File or '' + "]")
-                                except:
-                                    self.logger.exception("Unable To Delete Track File [" + mp3File or '' + "]")
+                    head, tail = os.path.split(mp3)
+                    trackHash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                    track = Track.objects(Hash = trackHash).first()
                     if not track:
-                        head, tail = os.path.split(mp3)
-                        trackHash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
-                        track = Track.objects(Hash = trackHash).first()
-                        if not track:
-                            track = Track(Title=id3.title, Artist=artist)
-                            track.FileName = tail
-                            track.FilePath = head
-                            track.Hash = trackHash
-                            try:
-                                mbTracks = mb.tracksForRelease(release.MusicBrainzId)
-                                if mbTracks:
-                                    try:
-                                        for mbTrackPosition in mbTracks:
-                                            for mbt in mbTrackPosition['track-list']:
-                                                mbtPosition = int(mbt['position'])
-                                                if mbtPosition == id3.track:
-                                                    track.MusicBrainzId = mbt['recording']['id']
-                                                    break
-                                    except:
-                                        pass
-                            except:
-                                pass
-                            track.Length = id3.length
-                            if not self.readOnly:
-                                Track.save(track)
-                            self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
+                        track = Track(Title=id3.title, Artist=artist)
+                        track.FileName = tail
+                        track.FilePath = head
+                        track.Hash = trackHash
+                        try:
+                            mbTracks = mb.tracksForRelease(release.MusicBrainzId)
+                            if mbTracks:
+                                try:
+                                    for mbTrackPosition in mbTracks:
+                                        for mbt in mbTrackPosition['track-list']:
+                                            mbtPosition = int(mbt['position'])
+                                            if mbtPosition == id3.track:
+                                                track.MusicBrainzId = mbt['recording']['id']
+                                                break
+                                except:
+                                    pass
+                        except:
+                            pass
+                        track.Length = id3.length
+                        if not self.readOnly:
+                            Track.save(track)
+                        self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
+                    else:
+                        self.logger.info("= Using Existing Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
                         try:
