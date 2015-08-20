@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}Duplicate Finder{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="collections-container">
+        <h4><span class="label label-primary">Potential Duplicate Artists</span></h4>
+        {% for artist in artists %}
+        <div class="row">
+            {{ artist.Name }}
+        </div>
+        {% endfor %}
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+
+    });
+    </script>
+{% endblock %}

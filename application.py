@@ -1214,6 +1214,34 @@ def logout():
     return redirect(url_for('login'))
 
 
+@app.route('/dupfinder')
+@login_required
+def dupFinder():
+    dupArtists = Artist.objects().aggregate(
+        {
+            "$group": {
+                "_id": "$Name",
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$match": {
+                "count": { "$gt": 1}
+            }
+        }
+    )
+    artists = []
+    for dupArtist in dupArtists:
+        for a in Artist.objects(Name=dupArtist['_id']):
+            artists.append(a)
+
+    # for artist in Artist.objects():
+    #     for aa in Artist.objects(SortName=artist.Name, id__ne=artist.id):
+    #         artists.append(aa)
+
+    return render_template('dupfinder.html', artists=artists)
+
+
 class WebSocket(WebSocketHandler):
     def open(self, *args):
         clients.append(self)
