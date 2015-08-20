@@ -7,7 +7,7 @@ import arrow
 
 from mongoengine import connect
 
-from resources.models import Artist, Release, Tracka
+from resources.models import Artist, Release, Track
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 
