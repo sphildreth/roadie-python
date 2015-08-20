@@ -119,7 +119,7 @@ class Scanner(ProcessorBase):
                             Track.save(track)
                         self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
                     else:
-                        self.logger.info("= Using Existing Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
+                        self.logger.info("= Found Existing Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
                     releaseTrack = None
                     for rt in release.Tracks:
                         try:
