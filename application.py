@@ -1217,29 +1217,41 @@ def logout():
 @app.route('/dupfinder')
 @login_required
 def dupFinder():
-    dupArtists = Artist.objects().aggregate(
-        {
-            "$group": {
-                "_id": "$Name",
-                "count": {"$sum": 1}
-            }
-        },
-        {
-            "$match": {
-                "count": { "$gt": 1}
-            }
-        }
-    )
     artists = []
-    for dupArtist in dupArtists:
-        for a in Artist.objects(Name=dupArtist['_id']):
-            artists.append(a)
+    for a in Artist.objects():
+        artists.append({
+            'id' : a.id,
+            'Name': a.Name,
+            'SortName': a.SortName
+        })
 
-    # for artist in Artist.objects():
-    #     for aa in Artist.objects(SortName=artist.Name, id__ne=artist.id):
-    #         artists.append(aa)
+    duplicateArtists = []
+    for artist in artists:
+        doContinue = True
+        for da in duplicateArtists:
+            if artist['id'] == da['a']['id']:
+                doContinue = False
+                continue
+        if doContinue:
+            for a in artists:
+                aName = a['Name'].lower().strip()
+                aSortname = None
+                sn = a['SortName']
+                if sn:
+                    aSortname = sn.lower().strip()
+                artistName = artist['Name'].lower().strip()
+                artistSortName = None
+                sn =  artist['SortName']
+                if sn:
+                    artistSortName =sn.lower().strip()
+                if (artistName == aName or
+                        (aSortname and artistSortName and artistSortName == aSortname) or (artistSortName and artistSortName == aName)) and artist['id'] != a['id']:
+                    duplicateArtists.append({
+                        'artist': artist,
+                        'a': a
+                    });
 
-    return render_template('dupfinder.html', artists=artists)
+    return render_template('dupfinder.html', duplicateArtists=duplicateArtists)
 
 
 class WebSocket(WebSocketHandler):

@@ -188,9 +188,17 @@ div.bordered {
 .release-info-container .release:nth-child(even),
 .collections-container .collection:nth-child(odd),
 .collection-container ul.collection li:nth-child(even),
-.release-detail-container .row.tracks .track:hover
+.release-detail-container .row.tracks .track:hover,
+.duplicates-container .duplicate-artists:nth-child(even)
 {
     background-color: #161C23;
+}
+
+.duplicates-container .duplicate-artists input[type="checkbox"] {
+    height: 35px;
+    margin-right: 11px;
+    float: left;
+    display: inline-block;
 }
 
 .release-detail-container .row.tracks {

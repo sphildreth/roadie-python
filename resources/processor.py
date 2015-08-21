@@ -188,6 +188,9 @@ class Processor(ProcessorBase):
                             # If not found get by artists by alternate names
                             if not artist:
                                 artist = Artist.objects(AlternateNames__iexact=id3.artist).first()
+                            # If not by alternate name look for match on SortName
+                            if not artist:
+                                artist = Artist.objects(SortName__iexact=id3.artist).first()
                         if not artist:
                             # Artist not found create
                             artist = Artist(Name=id3.artist)
