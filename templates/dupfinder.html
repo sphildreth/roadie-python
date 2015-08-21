@@ -39,7 +39,8 @@
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
-
+                        $this.parents(".duplicate-artists").remove();
+                        roadieLibrary.showSuccessMessage("Successfully Merged Artist(s)");
                     }
                 },
                 error:function(jq, st, error){
