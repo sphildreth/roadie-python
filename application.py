@@ -1249,9 +1249,51 @@ def dupFinder():
                     duplicateArtists.append({
                         'artist': artist,
                         'a': a
-                    });
+                    })
 
     return render_template('dupfinder.html', duplicateArtists=duplicateArtists)
+
+@app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
+@login_required
+def mergeArtists(merge_into_id, merge_id):
+#    try:
+    artist = Artist.objects(id=merge_into_id).first()
+    artistToMerge = Artist.objects(id=merge_id).first()
+    if not artist or not artistToMerge:
+        return jsonify(message="ERROR")
+    now = arrow.utcnow().datetime
+    Track._get_collection().update({ "Artist": artistToMerge }, { "$set": { "Artist" : artist, "LastUpdated": now }}, multi=True)
+    Release._get_collection().update({ "Artist": artistToMerge }, { "$set": { "Artist" : artist, "LastUpdate": now }}, multi=True)
+    UserArtist._get_collection().update({ "Artist": artistToMerge }, { "$set": { "Artist" : artist, "LastUpdated": now }}, multi=True)
+    for altName in artistToMerge.AlternateNames:
+        if not altName in artist.AlternateNames:
+            artist.AlternateNames.append(altName)
+    for associated in artistToMerge.AssociatedArtists:
+        if not associated in artist.AssociatedArtists:
+            artist.AssociatedArtists.append(associated)
+    artist.BirthDate = artist.BirthDate or artistToMerge.BirthDate
+    artist.BeginDate = artist.BeginDate or artistToMerge.BeginDate
+    artist.EndDate = artist.EndDate or artistToMerge.EndDate
+    for image in artistToMerge.Images:
+        artist.Images.append(image)
+    artist.Profile = artist.Profile or artistToMerge.Profile
+    artist.MusicBrainzId = artist.MusicBrainzId or artistToMerge.MusicBrainzId
+    artist.RealName = artist.RealName or artistToMerge.RealName
+    artist.Thumbnail = artist.Thumbnail or artistToMerge.Thumbnail
+    artist.Rating = artist.Rating or artistToMerge.Rating
+    for tag in artistToMerge.Tags:
+        if not tag in artist.Tags:
+            artist.Tags.append(tag)
+    for url in artistToMerge.Urls:
+        if not url in artist.Urls:
+            artist.Urls.append(url)
+    Artist.save(artist)
+    Artist.delete(artistToMerge)
+    return jsonify(message="OK")
+
+#    except:
+#        logger.exception("Error Merging Artists")
+#        return jsonify(message="ERROR")
 
 
 class WebSocket(WebSocketHandler):

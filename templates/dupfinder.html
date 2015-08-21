@@ -8,7 +8,6 @@
         {% for duplicateArtist in duplicateArtists %}
         <div class="row duplicate-artists">
             <div class="col-md-5 left" data-artist-id="{{ duplicateArtist['artist'].id }}">
-                <input type="checkbox" value="1" />
                 <div>Name: {{ duplicateArtist['artist'].Name }}</div>
                 <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
             </div>
@@ -17,7 +16,6 @@
                 <button class="merge merge-left btn btn-default" title="Merge Left Into Right">Merge -> </button>
             </div>
             <div class="col-md-5 right" data-artist-id="{{ duplicateArtist['a'].id }}">
-                <input type="checkbox" value="1" />
                 <div>Name: {{ duplicateArtist['a'].Name }}</div>
                 <div>Sortname: {{ duplicateArtist['a'].SortName }}</div>
             </div>
@@ -31,15 +29,23 @@
         $("div.duplicates-container button.merge").on("click", function(e) {
             var $this = $(this);
             var isRightMerge = $this.hasClass("merge-right");
-            var mergeIds = [];
-            var mergeIntoId;
             var findClass = isRightMerge ? ".right" : ".left";
             var idClass = isRightMerge ? ".left" : ".right";
-            $.each($this.parents(".duplicate-artists").find(findClass).find("input[type='checkbox']:checked"), function(i,d) {
-                mergeIds.push($(this).parent().data("artist-id"));
+            var mergeId = $this.parents(".duplicate-artists").find(findClass).data("artist-id");
+            var mergeIntoId = $this.parents(".duplicate-artists").find(idClass).data("artist-id");
+            $.ajax({
+                type: 'POST',
+                url: '/artist/merge/' + mergeIntoId + '/' + mergeId,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+
+                    }
+                },
+                error:function(jq, st, error){
+                    alert(error);
+                }
             });
-            mergeIntoId = $this.parents(".duplicate-artists").find(idClass).data("artist-id");
-            debugger;
         });
     });
     </script>

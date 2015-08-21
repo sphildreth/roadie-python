@@ -194,13 +194,6 @@ div.bordered {
     background-color: #161C23;
 }
 
-.duplicates-container .duplicate-artists input[type="checkbox"] {
-    height: 35px;
-    margin-right: 11px;
-    float: left;
-    display: inline-block;
-}
-
 .release-detail-container .row.tracks {
     cursor: pointer;
 }
