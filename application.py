@@ -760,7 +760,7 @@ def streamTrack(user_id, release_id, track_id):
     response.expires = int(time()) + cachetimeout
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
-    logger.debug("Streaming Mp3 [" + mp3File + "], Size [" + size + "], Begin [" + str(begin) + "] End [" + str(end) + "]")
+    logger.debug("Streaming Mp3 [" + mp3File + "], Size [" + str(size) + "], Begin [" + str(begin) + "] End [" + str(end) + "]")
     return response
 
 
