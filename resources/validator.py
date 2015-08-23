@@ -24,7 +24,7 @@ class Validator(ProcessorBase):
         self.logger = Logger()
 
     def validateArtists(self):
-        for artist in Artist.objects():
+        for artist in Artist.objects(IsLocked=False):
             self.validate(artist)
 
     def validate(self, artist):

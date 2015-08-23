@@ -77,11 +77,14 @@ class Scanner(ProcessorBase):
                             track.delete()
                     else:
                         #See if tags match track details if not matching delete and let scan process find and add it proper
-                        id3Hash = hashlib.md5((str(track.Artist.id) + str(id3)).encode('utf-8')).hexdigest()
-                        if id3Hash != track.Hash:
-                            if not self.readOnly:
-                                track.delete()
-                            self.logger.warn("x Deleting Track [" + track.Title + "]: Hash Mismatch")
+                        try:
+                            id3Hash = hashlib.md5((str(track.Artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                            if id3Hash != track.Hash:
+                                if not self.readOnly:
+                                    track.delete()
+                                self.logger.warn("x Deleting Track [" + track.Title + "]: Hash Mismatch")
+                        except:
+                            pass
         # For each file found in folder get ID3 info and insert record into Track DB
         scannedMp3Files = 0
         releaseLastUpdated = release.LastUpdated

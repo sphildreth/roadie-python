@@ -169,7 +169,9 @@ class Track(Document):
     }
 
     def __eq__(self, other):
-        return self.Hash == other.Hash
+        if isinstance(other, self.__class__):
+            return self.Hash == other.Hash
+        return False
 
     def __unicode__(self):
         return self.Title
