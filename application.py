@@ -370,20 +370,20 @@ def setDiscCount(release_id):
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required
 def rescanRelease(release_id):
-   # try:
-    release = Release.objects(id=release_id).first()
-    if not release:
+    try:
+        release = Release.objects(id=release_id).first()
+        if not release:
+            return jsonify(message="ERROR")
+        # Update Database with folders found in Library
+        processor = Processor(False, True)
+        releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
+        processor.process(folder=releaseFolder)
+        validator = Validator(False)
+        validator.validate(release.Artist)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Rescanning Release")
         return jsonify(message="ERROR")
-    # Update Database with folders found in Library
-    processor = Processor(False, True)
-    releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
-    processor.process(folder=releaseFolder)
-    validator = Validator(False)
-    validator.validate(release.Artist)
-    return jsonify(message="OK")
- #   except:
-   #     logger.exception("Error Rescanning Release")
-  #      return jsonify(message="ERROR")
 
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
@@ -760,6 +760,7 @@ def streamTrack(user_id, release_id, track_id):
     response.expires = int(time()) + cachetimeout
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
+    logger.debug("Streaming Mp3 [" + mp3File + "], Size [" + size + "], Begin [" + str(begin) + "] End [" + str(end) + "]")
     return response
 
 
