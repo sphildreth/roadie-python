@@ -10,13 +10,12 @@
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="fa fa-play"></i> Play <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
-                <li><a id="playAll" href="#">Play All</a></li>
-              </ul>
+                <a id="playAll" class="btn btn-default"><i class="fa fa-play"></i> Play</a>
+                {% if current_user.has_role("Admin") or current_user.has_role("Download") %}
+                <a id="downloadRelease" class="btn btn-default"><i class="fa fa-download"></i> Download</a>
+                {% endif %}
             </div>
+
             {% if current_user.has_role("Admin") %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
@@ -488,6 +487,9 @@
         });
         $("#playAll").on("click", function(e) {
            roadieLibrary.playLoader("/release/play/" + releaseId);
+        });
+        $("#downloadRelease").on("click", function(e) {
+            roadieLibrary.downloadRelease("/release/download/" + releaseId);
         });
         $("div.tracks a.que-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

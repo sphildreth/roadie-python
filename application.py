@@ -3,6 +3,8 @@ import os
 import hashlib
 import json
 import random
+import zipfile
+import zlib
 from itertools import groupby
 from time import time
 from operator import itemgetter
@@ -385,6 +387,26 @@ def rescanRelease(release_id):
         logger.exception("Error Rescanning Release")
         return jsonify(message="ERROR")
 
+
+@app.route("/release/download/<release_id>")
+@login_required
+def downloadRelease(release_id):
+    release = Release.objects(id=release_id).first()
+    if not release:
+        return jsonify(message="ERROR")
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, 'w') as zf:
+        for track in release.Tracks:
+            path = track.Track.FilePath
+            if trackPathReplace:
+                for rpl in trackPathReplace:
+                    for key, val in rpl.items():
+                        path = path.replace(key, val)
+            mp3File = os.path.join(path, track.Track.FileName)
+            zf.write(mp3File, arcname=track.Track.FileName, compress_type=zipfile.ZIP_DEFLATED)
+    memory_file.seek(0)
+    zipAttachmentName = release.Artist.Name + " - " + release.Title + ".zip"
+    return send_file(memory_file, attachment_filename=zipAttachmentName, as_attachment=True)
 
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
 @login_required

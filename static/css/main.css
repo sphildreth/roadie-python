@@ -8,7 +8,7 @@ body.roadie .navbar-default {
     margin-bottom: 9px;
 }
 
-#playlistloader {
+#playlistloader, #downloader {
     display:none;
 
 }
