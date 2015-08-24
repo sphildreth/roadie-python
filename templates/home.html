@@ -39,7 +39,10 @@
                 {% for lastPlayedInfo in lastPlayedInfos %}
                     <tr>
                         <td class="track" data-track-id="{{ lastPlayedInfo.TrackId }}">
-                            <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
+                            <span class="title label label-default pull-left">{{ lastPlayedInfo.TrackTitle }}</span>
+                            <span class="hover-on play-track" title="Play Track"><i class="fa fa-play"></i></span>
+                            <span class="hover-on que-track" title="Que Track"><i class="fa fa-plus"></i></span>
+                            <div class="clearfix"></div>
                             <span class="user-rating-container">
                                 <input type="hidden" class="track-rating user-rating rating" value="{{ lastPlayedInfo.UserRating }}" />
                             </span>
@@ -82,7 +85,10 @@
     <script id="template" type="text/x-tmpl-mustache">
         <tr>
             <td class="track" data-track-id="{{ lastPlayedInfo.TrackId }}">
-                <span class="label label-default">{{ lastPlayedInfo.TrackTitle }}</span>
+                <span class="title label label-default pull-left">{{ lastPlayedInfo.TrackTitle }}</span>
+                <span class="hover-on play-track" title="Play Track"><i class="fa fa-play"></i></span>
+                <span class="hover-on que-track" title="Que Track"><i class="fa fa-plus"></i></span>
+                <div class="clearfix"></div>
                 <span class="user-rating-container"><input type="hidden" class="track-rating user-rating rating" value="{{ UserRating }}" />
                 </span>
             </td>
@@ -203,6 +209,18 @@
                     alert(error);
                 }
             });
+        });
+
+        $(".home-container td.track").on("click", ".play-track", function(e) {
+            var releaseId = $(this).parent().siblings("td.release").data("release-id");
+            var trackid = $(this).parent().data("track-id");
+            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid, "Playlist");
+        });
+
+        $(".home-container td.track").on("click", ".que-track", function(e) {
+            var releaseId = $(this).parent().siblings("td.release").data("release-id");
+            var trackid = $(this).parent().data("track-id");
+            queManager.addToQue("track", releaseId, trackid);
         });
 
     });

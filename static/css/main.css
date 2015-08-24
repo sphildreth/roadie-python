@@ -525,6 +525,21 @@ ul.no-list-style {
     display: block;
 }
 
+.home-container td.track .title {
+    height: 22px;
+}
+
+.home-container .track > .hover-on {
+    display: none;
+    cursor: pointer;
+    padding-left: 3px;
+    padding-right: 3px;
+}
+
+.home-container .track:hover > .hover-on {
+    display: inherit;
+}
+
 
 .row .insane-quick-edit {
     margin: 5px 10px;
