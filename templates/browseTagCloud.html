@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+{% block title %}Browsing : Tag Cloud{% endblock %}
+{% block header_content %}
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud.css">
+{% endblock %}
+{% block body_content %}
+    <div class="browse-tagCloud-container">
+        <div id="tagCloud"></div>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jqcloud/1.0.4/jqcloud-1.0.4.min.js"></script>
+    <script type="text/javascript">
+    $(function() {
+      var artist_tags = [
+          {% for tagInfo in artistTagInfos %}
+          {text: "{{ tagInfo.text }}", weight: {{ tagInfo.weight }}, link: "{{ tagInfo.link }}"},
+          {% endfor %}
+      ];
+
+      $("#tagCloud").jQCloud(artist_tags);
+
+    });
+    </script>
+{% endblock %}

@@ -566,3 +566,8 @@ ul.no-list-style {
 .image-search-result .label {
     margin-left: 10px;
 }
+
+#tagCloud {
+    width: 650px;
+    height: 650px;
+}

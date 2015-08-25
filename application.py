@@ -160,7 +160,23 @@ def browseArtists():
 def browseReleases():
     return render_template('browseReleases.html')
 
+@app.route("/browseTagCloud")
+@login_required
+def browseTagCloud():
+    artistTags = Artist.objects().aggregate(
+        {"$group": {"_id": "$Tags", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 50}
+    )
+    artistTagInfos = []
+    for t in artistTags:
+        artistTagInfos.append({
+            'text': t['_id'],
+            'weight': t['count'],
+            'link': ''
+        })
 
+    return render_template('browseTagCloud.html', artistTagInfos=artistTagInfos)
 
 @app.route('/artist/<artist_id>')
 @login_required
