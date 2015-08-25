@@ -10,6 +10,7 @@ var roadieLibrary = ( function( window, undefined ) {
     };
 
     function showErrorMessage(message) {
+        $(".loader").hide();
         $.bootstrapGrowl(message, {
             type: 'danger'
         });

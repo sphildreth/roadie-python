@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html class="no-js" lang="en" >
-  <head>
+<html class="no-js" lang="en">
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,105 +13,135 @@
     <link rel="stylesheet" href="//bootswatch.com/slate/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table.min.css">
-  </head>
-  <body class="roadie">
-    <noscript>
-        <div id="noscript-warning" class="alert alert-danger alert-dismissable">Warning: JavaScript is required for this page to display correctly.</div>
-    </noscript>
-    <div class="navbar navbar-default">
-      <div class="container-fluid">
+</head>
+<body class="roadie">
+<noscript>
+    <div id="noscript-warning" class="alert alert-danger alert-dismissable">Warning: JavaScript is required for this
+        page to display correctly.
+    </div>
+</noscript>
+<div class="navbar navbar-default">
+    <div class="container-fluid">
         <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">{{ g.siteName }}</a>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">{{ g.siteName }}</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
-            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
-            <li class="dropdown">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                    <li><a href="/admin"><i class="fa fa-cog"></i> Admin</a></li>
-                    <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
-              </ul>
-            </li>
-            {% endif %}
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false">Admin <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/admin"><i class="fa fa-cog"></i> Admin</a></li>
+                        <li><a href="javascript:void(0);" id="reseed"><i class="fa fa-puzzle-piece"></i> ReSeed Random Values</a></li>
+                        <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+                {% if current_user.is_authenticated() %}
+                <li class="username">
+                    <a href="/profile/edit" title="Edit Profile">
+                        <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}"/> Hi, {{
+                        g.user.Username }}!
+                    </a>
+                </li>
+                <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
+                {% endif %}
+                {% if not g.user.is_authenticated() %}
+                <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
+                <li><a href="{{ url_for('register') }}">Register</a></li>
+                {% endif %}
+            </ul>
             {% if current_user.is_authenticated() %}
-            <li class="username">
-                <a href="/profile/edit" title="Edit Profile">
-                    <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}" /> Hi, {{ g.user.Username }}!
-                </a>
-            </li>
-            <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
+            <ul class="nav navbar-nav ">
+                <li>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false"><i class="fa fa-database"></i> Browse <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/browseArtists" class="browse-artists"><i class="fa fa-users"></i> Artists</a></li>
+                        <li><a href="/browseReleases" class="browse-releases"><i class="fa fa-music"></i> Releases</a>
+                        </li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="/stats"><i class="fa fa-pie-chart"></i> Stats</a></li>
+                    </ul>
+                </li>
+                <li><a href="/collections"><i class="fa fa-list-ol"></i> Collections</a></li>
+                <li><a href="/playlists"><i class="fa fa-list-ul"></i> Playlists</a></li>
+                <li>
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false"><i class="fa fa-random"></i> Random <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/randomizer/artist" class="random-artist"><i class="fa fa-user"></i> Artist</a></li>
+                        <li><a href="/randomizer/release" class="random-release"><i class="fa fa-music"></i> Release</a>
+                        </li>
+                        <li><a href="/randomizer/tracks" class="random-playlist"><i class="fa fa-list-ul"></i> Tracks</a></li>
+                    </ul>
+                </li>
+                <li id="queMenuItem" class="que hidden">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false">Que <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" class="clear-que"><i class="fa fa-trash-o"></i> Clear</a></li>
+                        <li><a href="#" class="play-que"><i class="fa fa-pencil"></i> Edit</a></li>
+                        <li><a href="#" class="play-que"><i class="fa fa-play"></i> Play</a></li>
+                        <li><a href="#" class="save-que"><i class="fa fa-floppy-o"></i> Save</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <form class="navbar-form">
+                <div class="form-group" style="display:inline;">
+                    <div class="input-group" style="display:table;">
+                        <span class="input-group-addon" style="width:1%;"><span
+                                class="glyphicon glyphicon-search"></span></span>
+                        <input class="form-control typeahead" id="search" name="search" placeholder="Search"
+                               autocomplete="off" autofocus="autofocus" type="text">
+                    </div>
+                </div>
+            </form>
             {% endif %}
-            {% if not g.user.is_authenticated() %}
-              <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
-              <li><a href="{{ url_for('register') }}">Register</a></li>
-            {% endif %}
-          </ul>
-          {% if current_user.is_authenticated() %}
-          <ul class="nav navbar-nav ">
-            <li>
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-database"></i> Browse <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="/browseArtists"  class="browse-artists"><i class="fa fa-users"></i> Artists</a></li>
-                <li><a href="/browseReleases" class="browse-releases"><i class="fa fa-music"></i> Releases</a></li>
-              </ul>
-            </li>
-            <li><a href="/collections"><i class="fa fa-list-ol"></i> Collections</a></li>
-            <li><a href="/playlists"><i class="fa fa-list-ul"></i> Playlists</a></li>
-            <li><a href="/stats"><i class="fa fa-pie-chart"></i> Stats</a></li>
-            <li id="queMenuItem" class="que hidden">
-              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Que <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="#" class="clear-que"><i class="fa fa-trash-o"></i> Clear</a></li>
-                <li><a href="#" class="play-que"><i class="fa fa-pencil"></i> Edit</a></li>
-                <li><a href="#" class="play-que"><i class="fa fa-play"></i> Play</a></li>
-                <li><a href="#" class="save-que"><i class="fa fa-floppy-o"></i> Save</a></li>
-              </ul>
-            </li>
-          </ul>
-          <form class="navbar-form">
-            <div class="form-group" style="display:inline;">
-              <div class="input-group" style="display:table;">
-                <span class="input-group-addon" style="width:1%;"><span class="glyphicon glyphicon-search"></span></span>
-                <input class="form-control typeahead" id="search" name="search" placeholder="Search" autocomplete="off" autofocus="autofocus" type="text">
-            </div>
-            </div>
-          </form>
-          {% endif %}
-        </div><!--/.nav-collapse -->
-      </div><!--/.container-fluid -->
+        </div>
+        <!--/.nav-collapse -->
     </div>
-    <div class="container-fluid">
-        {% block body_content %}
-        {% endblock %}
-    </div> <!-- /container -->
-    <div id="searchResults" style="display:none;"></div>
-    <div class="loader"></div>
-    <div class="downloader"></div>
-    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout.mapping/2.4.1/knockout.mapping.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-growl/1.0.0/jquery.bootstrap-growl.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/2.1.3/mustache.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table-all.min.js"></script>
-    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/locale/bootstrap-table-en-US.js"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-rating.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-filedrop.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/roadieLibrary.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>
-    <script>
+    <!--/.container-fluid -->
+</div>
+<div class="container-fluid">
+    {% block body_content %}
+    {% endblock %}
+</div>
+<!-- /container -->
+<div id="searchResults" style="display:none;"></div>
+<div class="loader"></div>
+<div class="downloader"></div>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+<script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/knockout/3.3.0/knockout-min.js"></script>
+<script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/knockout.mapping/2.4.1/knockout.mapping.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
+<script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-growl/1.0.0/jquery.bootstrap-growl.min.js"></script>
+<script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/2.1.3/mustache.min.js"></script>
+<script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table-all.min.js"></script>
+<script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/locale/bootstrap-table-en-US.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-rating.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery-filedrop.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/roadieLibrary.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>
+<script>
     $(function() {
 
         {% with messages = get_flashed_messages() %}
@@ -133,9 +163,33 @@
             searchTrackThumbNailUrl: "{{ url_for('static', filename='img/track.png') }}"
         });
 
+        $("#reseed").on("click", function(e) {
+                bootbox.confirm("Continue To ReSeed Random Values?", function(result) {
+                    if(result) {
+                        $(".loader").fadeIn("slow", function() {
+                            $.ajax({
+                                type: 'POST',
+                                url: '/db/reseed',
+                                contentType: "application/javascript",
+                                success: function(data) {
+                                    if(data.message == "OK") {
+                                        location.reload(true);
+                                    } else {
+                                        roadieLibrary.showErrorMessage("An Error Occurred");
+                                    }
+                                },
+                                error:function(jq, st, error){
+                                    roadieLibrary.showErrorMessage(error);
+                                }
+                            });
+                        });
+                    }
+                });
+        });
     });
-    </script>
-    {% block script_content %}
-    {% endblock %}
-    </body>
+
+</script>
+{% block script_content %}
+{% endblock %}
+</body>
 </html>

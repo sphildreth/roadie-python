@@ -256,7 +256,7 @@
                         }
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             });
@@ -278,7 +278,7 @@
                         }
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             });
@@ -294,7 +294,7 @@
                         }
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             });
@@ -313,7 +313,7 @@
                         }
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             });
@@ -344,10 +344,12 @@
                                 success: function(data) {
                                     if(data.message == "OK") {
                                         location.reload(true);
+                                    } else {
+                                        roadieLibrary.showErrorMessage("An Error Occurred");
                                     }
                                 },
                                 error:function(jq, st, error){
-                                    alert(error);
+                                    roadieLibrary.showErrorMessage(error);
                                 }
                             });
                         });
@@ -369,7 +371,7 @@
                                 }
                             },
                             error:function(jq, st, error){
-                                alert(error);
+                                roadieLibrary.showErrorMessage(error);
                             }
                         });
                     }
@@ -386,7 +388,7 @@
                         $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             });
@@ -404,7 +406,7 @@
                                 }
                             },
                             error:function(jq, st, error){
-                                alert(error);
+                                roadieLibrary.showErrorMessage(error);
                             }
                         });
                     }

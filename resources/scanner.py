@@ -100,6 +100,7 @@ class Scanner(ProcessorBase):
                     track = Track.objects(Hash = trackHash).first()
                     if not track:
                         track = Track(Title=id3.title, Artist=artist)
+                        track.Random = random.randint(1, 1000000)
                         track.FileName = tail
                         track.FilePath = head
                         track.Hash = trackHash

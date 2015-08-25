@@ -160,6 +160,66 @@ def browseArtists():
 def browseReleases():
     return render_template('browseReleases.html')
 
+@app.route("/randomizer/<type>")
+@login_required
+def randomizer(type):
+    randomSeed1 = random.randint(1, 1000000)
+    randomSeed2 = random.randint(randomSeed1, 1000000)
+    user = User.objects(id=current_user.id).first()
+    if type == "artist":
+        artist = Artist.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random').first()
+        return playArtist(artist.id, "0")
+    elif type == "release":
+        release = Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random').first()
+        return playRelease(release.id)
+    elif type == "tracks":
+        tracks = []
+        for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:25]:
+            release = Release.objects(Tracks__Track = track).first()
+            tracks.append(M3U.makeTrackInfo(user, release, track))
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
+
+
+@app.route('/db/reseed', methods=['POST'])
+@login_required
+def reseed():
+    try:
+        now = arrow.utcnow().datetime
+        for artist in Artist.objects():
+            try:
+                artist.Random = random.randint(1, 1000000)
+                artist.Last = now
+                Artist.save(artist)
+            except:
+                logger.exception("Error In Reseeding Artist")
+                pass
+        logger.debug("Completed Reseeding Artists")
+        for release in Release.objects():
+            try:
+                release.Random = random.randint(1, 1000000)
+                release.Last = now
+                Release.save(release)
+            except:
+                logger.exception("Error In Reseeding Release")
+                pass
+        logger.debug("Completed Reseeding Releases")
+        for track in Track.objects():
+            try:
+                track.Random = random.randint(1, 1000000)
+                track.Last = now
+                Track.save(track)
+            except:
+                logger.exception("Error In Reseeding Track")
+                pass
+        logger.debug("Completed Reseeding Tracks")
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error In Reseeding Random")
+        return jsonify(message="ERROR")
+
+
 
 @app.route('/artist/<artist_id>')
 @login_required

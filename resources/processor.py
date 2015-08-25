@@ -194,6 +194,7 @@ class Processor(ProcessorBase):
                         if not artist:
                             # Artist not found create
                             artist = Artist(Name=id3.artist)
+                            artist.Random = random.randint(1, 1000000)
                             mbArtist = mb.lookupArtist(id3.artist)
                             if mbArtist:
                                 # Populate with some MusicBrainz details

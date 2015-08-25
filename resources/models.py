@@ -126,6 +126,8 @@ class Artist(Document):
     Thumbnail = FileField()
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
     Rating = IntField()
+    # This is a random number generated at generation and then used to select random releases
+    Random = IntField()
     Tags = ListField(StringField(max_length=100))
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
@@ -160,6 +162,8 @@ class Track(Document):
     PartTitles = ListField(StringField())
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
     Rating = IntField()
+    # This is a random number generated at generation and then used to select random releases
+    Random = IntField()
     Tags = ListField(StringField(max_length=100))
     Title = StringField(required=True)
     meta = {

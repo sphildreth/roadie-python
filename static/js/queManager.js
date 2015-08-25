@@ -45,7 +45,7 @@ var queManager = ( function( window, undefined ) {
                         }
                     },
                     error:function(jq, st, error){
-                        alert(error);
+                        roadieLibrary.showErrorMessage(error);
                     }
                 });
             }
@@ -92,7 +92,7 @@ var queManager = ( function( window, undefined ) {
                 }
             },
             error:function(jq, st, error){
-                alert(error);
+                roadieLibrary.showErrorMessage(error);
             }
         });
 
