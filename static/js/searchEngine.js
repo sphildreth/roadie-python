@@ -38,10 +38,10 @@ var searchEngine = ( function( window, undefined ) {
                     result = [];
                     $.each(x.rows, function(i,d) {
                         result.push({
-                            id: d.ArtistId,
+                            id: d.id,
                             type: 'artist',
                             tn: d.ThumbnailUrl,
-                            value: d.Artist
+                            value: d.Name
                         });
                     });
                     return result;

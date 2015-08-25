@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="//bootswatch.com/slate/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table.min.css">
   </head>
   <body class="roadie">
     <noscript>
@@ -54,6 +55,14 @@
           </ul>
           {% if current_user.is_authenticated() %}
           <ul class="nav navbar-nav ">
+            <li>
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><i class="fa fa-database"></i> Browse <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="/browseArtists"  class="browse-artists"><i class="fa fa-users"></i> Artists</a></li>
+                <li><a href="/browseReleases" class="browse-releases"><i class="fa fa-music"></i> Releases</a></li>
+                <li><a href="/browseTagCloud" class="browse-tagcloud"><i class="fa fa-cloud"></i> Tag Cloud</a></li>
+              </ul>
+            </li>
             <li><a href="/collections"><i class="fa fa-list-ol"></i> Collections</a></li>
             <li><a href="/playlists"><i class="fa fa-list-ul"></i> Playlists</a></li>
             <li><a href="/stats"><i class="fa fa-pie-chart"></i> Stats</a></li>
@@ -95,6 +104,8 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-growl/1.0.0/jquery.bootstrap-growl.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js"></script>
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/mustache.js/2.1.3/mustache.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/bootstrap-table-all.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.8.1/locale/bootstrap-table-en-US.js"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-context-menu.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-rating.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='js/jquery-filedrop.min.js') }}"></script>

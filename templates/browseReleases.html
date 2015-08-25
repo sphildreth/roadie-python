@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% block title %}Browsing : Releases{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="browse-release-container">
+        <table id="browseReleasesGrid"></table>
+    </div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+    $(function() {
+        $('#browseReleasesGrid').bootstrapTable({
+            ajax: function(params) {
+                sort = params.data.sort ? params.data.sort : "";
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/releases?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=None&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                            params.complete();
+                        }
+                    },
+                    error:function(jq, st, error){
+                        alert(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            pageSize: 25,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "Rating",
+            sortOrder: "desc",
+            columns: [
+                { field: 'ReleaseId', visible: false },
+                { field: 'Title', title: 'Title', sortable: true, formatter: function(value,row,index) {
+                    var releaseId = row.ReleaseId;
+                    var title = row.Title;
+                    var rating = row.Rating;
+                    var thumbnail = row.ThumbnailUrl;
+                    return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
+                }},
+                { field: 'Rating', sortable: true, title: 'Rating' },
+                { field: 'Year', sortable: true, title: 'Year' },
+                { field: 'TrackCount', sortable: true, title: '# Tracks' },
+                { field: 'ArtistName', sortable: true, title: 'Artist', formatter: function(value,row, index) {
+                    var thumbnail = "/images/artist/thumbnail/" + row.ArtistId;
+                    return '<a href="/artist/' + row.ArtistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.ArtistName  + '" /></div><span class="label label-default">' + row.ArtistName + '</span></a>';
+                }},
+                { field: 'PlayedCount', title: '# Plays' }
+            ]
+        });
+    });
+    </script>
+{% endblock %}

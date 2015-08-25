@@ -2,7 +2,7 @@ import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
 from mongoengine import connect
-from resources.models import Artist, Release
+from resources.models import Artist, Release, Track, UserTrack
 
 
 class ArtistListApi(Resource):
@@ -14,6 +14,8 @@ class ArtistListApi(Resource):
         self.reqparse.add_argument('skip', type=int)
         self.reqparse.add_argument('filter', type=str)
         self.reqparse.add_argument('inc', type=str)
+        self.reqparse.add_argument('sort', type=str)
+        self.reqparse.add_argument('order', type=str)
         super(ArtistListApi, self).__init__()
 
     def get(self):
@@ -22,13 +24,19 @@ class ArtistListApi(Resource):
         get_limit = args.limit or 10
         get_skip = args.skip or 0
         includes = args.inc or 'releases,tracks'
+        sort = args.sort or 'SortName'
+        order = args.order or 'asc'
+        if order != 'asc':
+            order = "-"
+        else:
+            order = ""
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
         connect()
         if args.filter:
-            artists = Artist.objects(Name__icontains = args.filter)[get_skip:get_limit]
+            artists = Artist.objects(Name__icontains = args.filter).order_by(order + sort)[get_skip:get_limit]
         else:
-            artists = Artist.objects().order_by('SortName')[:get_limit]
+            artists = Artist.objects().order_by(order + sort)[:get_limit]
 
         rows = []
         if artists:
@@ -42,7 +50,7 @@ class ArtistListApi(Resource):
                             for track in release.Tracks:
                                 trackLength = 0
                                 if track:
-                                    trackLength = datetime.timedelta(seconds=track.Track.Length);
+                                    trackLength = datetime.timedelta(seconds=track.Track.Length)
                                 trackInfo.append({
                                     "TrackId": str(track.Track.id),
                                     "TrackNumber": track.TrackNumber,
@@ -58,8 +66,14 @@ class ArtistListApi(Resource):
                             "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                         })
                 rows.append({
-                    "Artist": artist.Name,
-                    "ArtistId": str(artist.id),
+                    "Name": artist.Name,
+                    "id": str(artist.id),
+                    "Rating": str(artist.Rating or 0),
+                    "ArtistReleaseCount": Release.objects(Artist=artist).count(),
+                    "ArtistTrackCount": Track.objects(Artist=artist).count(),
+                    # TODO: I could not figure this out
+                    #     playedCount = UserTrack.objects(Track__Artist=artist).aggregate_sum("Played")
+                    "ArtistPlayedCount": 0,
                     "Releases": releaseInfo,
                     "ThumbnailUrl": "/images/artist/thumbnail/" + str(artist.id)
                 })

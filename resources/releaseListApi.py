@@ -14,6 +14,8 @@ class ReleaseListApi(Resource):
         self.reqparse.add_argument('skip', type=int)
         self.reqparse.add_argument('filter', type=str)
         self.reqparse.add_argument('inc', type=str)
+        self.reqparse.add_argument('sort', type=str)
+        self.reqparse.add_argument('order', type=str)
         super(ReleaseListApi, self).__init__()
 
     def get(self):
@@ -22,13 +24,23 @@ class ReleaseListApi(Resource):
         get_limit = args.limit or 10
         get_skip = args.skip or 0
         includes = args.inc or 'tracks'
+        sort = args.sort or 'ReleasedDate'
+        if sort == "Year":
+            sort = "ReleaseDate"
+        if sort == "ArtistName":
+            sort = "Artist__Name"
+        order = args.order or 'asc'
+        if order != 'asc':
+            order = "-"
+        else:
+            order = ""
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
         connect()
         if args.filter:
-            releases = Release.objects(Title__icontains = args.filter)[get_skip:get_limit]
+            releases = Release.objects(Title__icontains = args.filter).order_by(order + sort)[get_skip:get_limit]
         else:
-            releases = Release.objects()[:get_limit]
+            releases = Release.objects().order_by(order + sort)[:get_limit]
 
         rows = []
         if releases:
@@ -48,9 +60,14 @@ class ReleaseListApi(Resource):
                         })
                 rows.append({
                     "ReleaseId": str(release.id),
+                    "ArtistId" : str(release.Artist.id),
                     "Year": release.ReleaseDate,
+                    "ArtistName": release.Artist.Name,
                     "Title": release.Title,
                     "Tracks": trackInfo,
+                    "TrackCount": release.TrackCount,
+                    "ReleasePlayedCount": 0,
+                    "Rating": release.Rating or 0,
                     "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                 })
 

@@ -149,6 +149,19 @@ def randomRelease(count):
         return jsonify(message="ERROR")
 
 
+@app.route("/browseArtists")
+@login_required
+def browseArtists():
+    return render_template('browseArtists.html')
+
+
+@app.route("/browseReleases")
+@login_required
+def browseReleases():
+    return render_template('browseReleases.html')
+
+
+
 @app.route('/artist/<artist_id>')
 @login_required
 def artist(artist_id):
