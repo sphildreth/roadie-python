@@ -38,7 +38,10 @@ class ReleaseListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
         connect()
         if args.filter:
-            releases = Release.objects(Title__icontains = args.filter).order_by(order + sort)[get_skip:get_limit]
+            releases = Release.objects(__raw__= {'$or' : [
+                { 'Title' : { '$regex' : args.filter, '$options': 'mi' }},
+                { 'AlternateNames': { '$regex' : args.filter, '$options': 'mi' } }
+            ]}).order_by(order + sort)[get_skip:get_limit]
         else:
             releases = Release.objects().order_by(order + sort)[:get_limit]
 

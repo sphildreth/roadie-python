@@ -34,7 +34,11 @@ class ArtistListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
         connect()
         if args.filter:
-            artists = Artist.objects(Name__icontains = args.filter).order_by(order + sort)[get_skip:get_limit]
+            artists = Artist.objects(__raw__= {'$or' : [
+                { 'Name' : { '$regex' : args.filter, '$options': 'mi' }},
+                { 'SortName': { '$regex' : args.filter, '$options': 'mi' } },
+                { 'AlternateNames': { '$regex' : args.filter, '$options': 'mi' } }
+            ]}).order_by(order + sort)[get_skip:get_limit]
         else:
             artists = Artist.objects().order_by(order + sort)[:get_limit]
 
