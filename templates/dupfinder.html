@@ -8,8 +8,10 @@
         {% for duplicateArtist in duplicateArtists %}
         <div class="row duplicate-artists">
             <div class="col-md-5 left" data-artist-id="{{ duplicateArtist['artist'].id }}">
-                <div>Name: {{ duplicateArtist['artist'].Name }}</div>
-                <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
+                <a href="/admin/artist/edit/?id={{ duplicateArtist['artist'].id  }}&amp;url=/artist/{{ duplicateArtist['artist'].id  }}">
+                    <div>Name: {{ duplicateArtist['artist'].Name }}</div>
+                    <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
+                </a>
             </div>
             <div class="col-md-2">
                 <button class="merge merge-right btn btn-default" title="Merge Right Into Left"><- Merge</button>
@@ -17,7 +19,7 @@
             </div>
             <div class="col-md-5 right" data-artist-id="{{ duplicateArtist['a'].id }}">
                 <div>Name: {{ duplicateArtist['a'].Name }}</div>
-                <div>Sortname: {{ duplicateArtist['a'].SortName }}</div>
+                <div>SortName: {{ duplicateArtist['a'].SortName }}</div>
             </div>
         </div>
         {% endfor %}

@@ -1,3 +1,4 @@
+import re
 import arrow
 import csv
 import linecache
@@ -77,14 +78,24 @@ class CollectionImporter(ProcessorBase):
             if not artist:
                 artist = Artist.objects(AlternateNames__iexact=csvArtist).first()
                 if not artist:
-                    self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
-                    continue
+                    artist = Artist.objects(__raw__= {'$or' : [
+                        { 'Name' : { '$regex' : csvRelease, '$options': 'mi' }},
+                        { 'AlternateNames' : { '$regex' : csvRelease, '$options': 'mi' }},
+                    ]}).first()
+                    if not artist:
+                        self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
+                        continue
             release = Release.objects(Title__iexact=csvRelease, Artist=artist).first()
             if not release:
-                release = Release.objects(AlternateNames__iexact=csvRelease).first()
+                release = Release.objects(AlternateNames__iexact=csvRelease, Artist=artist).first()
                 if not release:
-                    self.logger.warn(("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode('utf-8'))
-                    continue
+                    release = Release.objects(__raw__= {'$or' : [
+                        { 'Title' : { '$regex' : csvRelease, '$options': 'mi' }},
+                        { 'AlternateNames' : { '$regex' : csvRelease, '$options': 'mi' }},
+                    ]}).filter(Artist=artist).first()
+                    if not release:
+                        self.logger.warn(("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode('utf-8'))
+                        continue
             colRelease = CollectionRelease(Release=release, ListNumber=csvPosition)
             col.Releases.append(colRelease)
             self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release)+ "] To Collection")

@@ -174,7 +174,7 @@ def randomizer(type):
         return playRelease(release.id)
     elif type == "tracks":
         tracks = []
-        for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:25]:
+        for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:35]:
             release = Release.objects(Tracks__Track = track).first()
             tracks.append(M3U.makeTrackInfo(user, release, track))
         return send_file(M3U.generate(tracks),
