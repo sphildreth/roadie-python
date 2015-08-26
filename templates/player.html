@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Roadie : Player</title>
+    <meta name="robots" content="noindex"/>
+    <meta name="viewport" content="width=500, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bar-ui.css') }}"/>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//bootswatch.com/slate/bootstrap.min.css">
+</head>
+<body>
+<style>
+    body {
+        margin: 15px;
+        padding: 0;
+    }
+    .sm2-bar-ui {
+        font-size: 18px;
+    }
+    .sm2-bar-ui .sm2-main-controls,
+    .sm2-bar-ui .sm2-playlist-drawer {
+        background-color: #6f7980;
+    }
+    .sm2-bar-ui .sm2-inline-texture {
+        background: transparent;
+    }
+</style>
+<div class="sm2-bar-ui playlist-open full-width">
+    <div class="bd sm2-main-controls">
+        <div class="sm2-inline-texture"></div>
+        <div class="sm2-inline-gradient"></div>
+        <div class="sm2-inline-element sm2-button-element">
+            <div class="sm2-button-bd">
+                <a href="#play" class="sm2-inline-button play-pause">Play / pause</a>
+            </div>
+        </div>
+        <div class="sm2-inline-element sm2-inline-status">
+            <div class="sm2-playlist">
+                <div class="sm2-playlist-target">
+                    <noscript><p>JavaScript is required.</p></noscript>
+                </div>
+            </div>
+            <div class="sm2-progress">
+                <div class="sm2-row">
+                    <div class="sm2-inline-time">0:00</div>
+                    <div class="sm2-progress-bd">
+                        <div class="sm2-progress-track">
+                            <div class="sm2-progress-bar"></div>
+                            <div class="sm2-progress-ball">
+                                <div class="icon-overlay"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sm2-inline-duration">0:00</div>
+                </div>
+            </div>
+        </div>
+
+      <div class="sm2-inline-element sm2-button-element sm2-volume">
+       <div class="sm2-button-bd">
+        <span class="sm2-inline-button sm2-volume-control volume-shade"></span>
+        <a href="#volume" class="sm2-inline-button sm2-volume-control">volume</a>
+       </div>
+      </div>
+
+      <div class="sm2-inline-element sm2-button-element">
+       <div class="sm2-button-bd">
+        <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
+       </div>
+      </div>
+
+      <div class="sm2-inline-element sm2-button-element">
+       <div class="sm2-button-bd">
+        <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
+       </div>
+      </div>
+
+      <div class="sm2-inline-element sm2-button-element">
+       <div class="sm2-button-bd">
+        <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
+       </div>
+      </div>
+
+    </div>
+
+    <div class="bd sm2-playlist-drawer sm2-element">
+
+        <div class="sm2-inline-texture">
+            <div class="sm2-box-shadow"></div>
+        </div>
+
+        <div class="sm2-playlist-wrapper">
+            <ul class="sm2-playlist-bd">
+                {% for track in tracks %}
+                <li>
+                    <a href="{{ track.StreamUrl }}.mp3">
+                        <b>{{ track.ArtistName }}</b> - {{ track.ReleaseTitle }} - {{ track.Title }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+        <div class="sm2-extra-controls">
+
+            <div class="bd">
+
+                <div class="sm2-inline-element sm2-button-element">
+                    <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
+                </div>
+
+                <div class="sm2-inline-element sm2-button-element">
+                    <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
+                </div>
+
+                <div class="sm2-inline-element sm2-button-element disabled">
+                    <div class="sm2-button-bd">
+                        <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
+                    </div>
+                </div>
+
+                <div class="sm2-inline-element sm2-button-element disabled">
+                    <a href="#shuffle" title="Shuffle" class="sm2-inline-button shuffle">shuffle</a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/soundmanager2-jsmin.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bar-ui.js') }}"></script>
+
+</body>
+</html>

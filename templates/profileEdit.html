@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body_content %}
-  <form action="" method="post" enctype="multipart/form-data" class="form-horizontal">
+  <form action="" method="post" enctype="multipart/form-data" class="form-horizontal profile">
     <h2>Edit Your Profile</h2>
     <div class="control-group">
         <div class="controls">
@@ -13,6 +13,11 @@
           <input type="email" id="email" name="email" class="input-xlarge"
             placeholder="Enter Email" value="{{ user.Email }}"
             required />
+        </div>
+        <div class="controls">
+            <label for="useHTMLPlayer">Use HTML Player:</label>
+          <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="input-xlarge"
+            placeholder="Enter Email" value="true" {{ "checked" if user.DoUseHTMLPlayer else "" }} />
         </div>
         <div class="controls">
             <label for="avatar">Avatar:</label>

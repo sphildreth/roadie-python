@@ -61,6 +61,7 @@ class User(Document, UserMixin):
     Active = BooleanField(default=True)
     Avatar = FileField()
     Roles = ListField(ReferenceField(UserRole), required=False, default=[])
+    DoUseHTMLPlayer = BooleanField(default=False)
     meta = {
         'indexes': [
             {'fields': ['Username']}
@@ -132,7 +133,8 @@ class Artist(Document):
     Urls = ListField(EmbeddedDocumentField(Url))
     meta = {
         'indexes': [
-            'Name'
+            'Name',
+            'AlternateNames'
         ],
         'ordering': [
             'SortName',
@@ -275,6 +277,7 @@ class Release(Document):
         'indexes': [
             'Random',
             'Title',
+            'AlternateNames',
             'Tracks.Track',
             'Tracks.Random'
         ],

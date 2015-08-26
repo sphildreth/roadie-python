@@ -14,7 +14,7 @@ from urllib.parse import urlparse, urljoin
 import arrow
 from bson import objectid
 from PIL import Image
-from flask import Flask, jsonify, render_template, send_file, Response, request, \
+from flask import Flask, jsonify, render_template, send_file, Response, request, session, \
     flash, url_for, redirect, g
 import flask_admin as admin
 from flask_restful import Api
@@ -176,7 +176,12 @@ def randomizer(type):
         tracks = []
         for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:35]:
             release = Release.objects(Tracks__Track = track).first()
-            tracks.append(M3U.makeTrackInfo(user, release, track))
+            t = M3U.makeTrackInfo(user, release, track)
+            if t:
+                tracks.append(t)
+        if user.DoUseHTMLPlayer:
+            session['tracks'] = tracks
+            return player()
         return send_file(M3U.generate(tracks),
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
@@ -704,6 +709,9 @@ def playRelease(release_id):
     user = User.objects(id=current_user.id).first()
     for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
         tracks.append(M3U.makeTrackInfo(user, release, track.Track))
+    if user.DoUseHTMLPlayer:
+        session['tracks'] = tracks
+        return player()
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
@@ -719,6 +727,9 @@ def playTrack(release_id, track_id):
     tracks = []
     user = User.objects(id=current_user.id).first()
     tracks.append(M3U.makeTrackInfo(user, release, track))
+    if user.DoUseHTMLPlayer:
+        session['tracks'] = tracks
+        return player()
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
@@ -735,6 +746,9 @@ def playQue():
             track = Track.objects(id=t["trackId"]).first()
             if release and track:
                 tracks.append(M3U.makeTrackInfo(user, release, track))
+    if user.DoUseHTMLPlayer:
+        session['tracks'] = tracks
+        return player()
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
@@ -771,6 +785,8 @@ def saveQue(que_name):
 
 @app.route("/stream/track/<user_id>/<release_id>/<track_id>")
 def streamTrack(user_id, release_id, track_id):
+    if track_id.endswith(".mp3"):
+        track_id = track_id[:-4]
     track = Track.objects(id=track_id).first()
     if not track:
         return render_template('404.html'), 404
@@ -803,7 +819,7 @@ def streamTrack(user_id, release_id, track_id):
         begin = int(ranges[0])
         if len(ranges) > 1:
             end = int(ranges[1])
-        headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str(end - begin)))
+        headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str((end - begin)+1)))
     headers.add('Content-Length', str((end - begin) + 1))
     isFullRequest = begin == 0 and (end == (size - 1))
     isEndRangeRequest = begin > 0 and (end != (size - 1))
@@ -1141,6 +1157,9 @@ def editProfile():
         return render_template('404.html'), 404
     if request.method == 'GET':
         return render_template('profileEdit.html', user=user)
+    doUseHTMLPlayerSet = False
+    if 'useHTMLPlayer' in request.form:
+        doUseHTMLPlayerSet = True
     encryptedPassword = None
     password = request.form['password']
     if password:
@@ -1163,6 +1182,7 @@ def editProfile():
     if encryptedPassword:
         user.Password = encryptedPassword
     user.Email = email
+    user.DoUseHTMLPlayer = doUseHTMLPlayerSet
     user.LastUpdated = arrow.utcnow().datetime
     User.save(user)
     flash('Profile Edited successfully')
@@ -1274,6 +1294,9 @@ def playCollection(collection_id):
     for release in collection.Releases:
         for track in sorted(release.Release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
             tracks.append(M3U.makeTrackInfo(user, release.Release, track.Track))
+    if user.DoUseHTMLPlayer:
+        session['tracks'] = tracks
+        return player()
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename=collection.Name + ".m3u")
@@ -1389,6 +1412,12 @@ def mergeArtists(merge_into_id, merge_id):
     except:
         logger.exception("Error Merging Artists")
         return jsonify(message="ERROR")
+
+@app.route("/player")
+@login_required
+def player():
+    tracks = session['tracks']
+    return render_template('player.html', tracks=tracks)
 
 
 class WebSocket(WebSocketHandler):
