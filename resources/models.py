@@ -61,7 +61,7 @@ class User(Document, UserMixin):
     Active = BooleanField(default=True)
     Avatar = FileField()
     Roles = ListField(ReferenceField(UserRole), required=False, default=[])
-    DoUseHTMLPlayer = BooleanField(default=False)
+    DoUseHTMLPlayer = BooleanField(default=True)
     meta = {
         'indexes': [
             {'fields': ['Username']}

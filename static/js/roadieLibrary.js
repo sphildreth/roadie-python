@@ -34,7 +34,7 @@ var roadieLibrary = ( function( window, undefined ) {
     };
 
     function playLoader(url) {
-        var width = 700;
+        var width = 750;
         var height = 265;
         if(window.user.doUseHTMLPlayer) {
             window.open(url, '_blank','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=' + width + ',height=' + height);

@@ -11,18 +11,21 @@
 <body>
 <style>
     body {
-        margin: 15px;
-        padding: 0;
+    margin: 15px;
+    padding: 0;
     }
     .sm2-bar-ui {
-        font-size: 18px;
+    font-size: 18px;
     }
     .sm2-bar-ui .sm2-main-controls,
     .sm2-bar-ui .sm2-playlist-drawer {
-        background-color: #6f7980;
+    background-color: #6f7980;
     }
     .sm2-bar-ui .sm2-inline-texture {
-        background: transparent;
+    background: transparent;
+    }
+    img.artist-thumb, img.release-thumb {
+    height: 25px;
     }
 </style>
 <div class="sm2-bar-ui playlist-open full-width">
@@ -56,30 +59,30 @@
             </div>
         </div>
 
-      <div class="sm2-inline-element sm2-button-element sm2-volume">
-       <div class="sm2-button-bd">
-        <span class="sm2-inline-button sm2-volume-control volume-shade"></span>
-        <a href="#volume" class="sm2-inline-button sm2-volume-control">volume</a>
-       </div>
-      </div>
+        <div class="sm2-inline-element sm2-button-element sm2-volume">
+            <div class="sm2-button-bd">
+                <span class="sm2-inline-button sm2-volume-control volume-shade"></span>
+                <a href="#volume" class="sm2-inline-button sm2-volume-control">volume</a>
+            </div>
+        </div>
 
-      <div class="sm2-inline-element sm2-button-element">
-       <div class="sm2-button-bd">
-        <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
-       </div>
-      </div>
+        <div class="sm2-inline-element sm2-button-element">
+            <div class="sm2-button-bd">
+                <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
+            </div>
+        </div>
 
-      <div class="sm2-inline-element sm2-button-element">
-       <div class="sm2-button-bd">
-        <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
-       </div>
-      </div>
+        <div class="sm2-inline-element sm2-button-element">
+            <div class="sm2-button-bd">
+                <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
+            </div>
+        </div>
 
-      <div class="sm2-inline-element sm2-button-element">
-       <div class="sm2-button-bd">
-        <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
-       </div>
-      </div>
+        <div class="sm2-inline-element sm2-button-element">
+            <div class="sm2-button-bd">
+                <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
+            </div>
+        </div>
 
     </div>
 
@@ -94,7 +97,11 @@
                 {% for track in tracks %}
                 <li>
                     <a href="{{ track.StreamUrl }}.mp3">
-                        <b>{{ track.ArtistName }}</b> - {{ track.ReleaseTitle }} - {{ track.Title }}
+                        <b><img class="release-thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
+                                alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}</b> &#8226; <img
+                            class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
+                            alt="{{ track.ReleaseTitle }}"/> [{{ track.ReleaseYear }}] {{ track.ReleaseTitle }} &#8212;
+                        {{ track.Title }}
                     </a>
                 </li>
                 {% endfor %}

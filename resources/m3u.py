@@ -19,8 +19,10 @@ class M3U(object):
             return None
         return {
             'Length': str(math.ceil(track.Length)),
+            'ArtistId': str(track.Artist.id),
             'ArtistName': track.Artist.Name,
             'ReleaseTitle': release.Title,
+            'ReleaseYear': release.ReleaseDate[:4],
             'Title': track.Title,
             'ReleaseId': str(release.id),
             'UserId': str(user.id),
