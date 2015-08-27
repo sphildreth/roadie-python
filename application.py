@@ -694,6 +694,9 @@ def playArtist(artist_id, doShuffle):
             tracks.append(M3U.makeTrackInfo(user, release, track.Track))
     if doShuffle == "1":
         random.shuffle(tracks)
+    if user.DoUseHTMLPlayer:
+        session['tracks'] = tracks
+        return player()
     return send_file(M3U.generate(tracks),
                      as_attachment=True,
                      attachment_filename="playlist.m3u")
@@ -823,7 +826,7 @@ def streamTrack(user_id, release_id, track_id):
     headers.add('Content-Length', str((end - begin) + 1))
     isFullRequest = begin == 0 and (end == (size - 1))
     isEndRangeRequest = begin > 0 and (end != (size - 1))
-    user = None;
+    # user = None;
     if isFullRequest or isEndRangeRequest and current_user:
         user = User.objects(id=user_id).first()
         if user:
@@ -910,11 +913,11 @@ def stats():
         artist = Artist.objects(id=a['_id']).first()
         top10ArtistsTracks[artist] = str(a['count']).zfill(4)
 
-    topRatedReleases = Release.objects().order_by('-Rating')[:10]
+    topRatedReleases = Release.objects().order_by('-Rating', 'FilePath', 'Title' )[:10]
 
-    topRatedTracks = Track.objects(Rating__gt=0).order_by('-Rating')[:25]
+    topRatedTracks = Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]
 
-    mostRecentReleases = Release.objects().order_by('-CreatedDate', 'Title', 'Artist.SortName')[:25]
+    mostRecentReleases = Release.objects().order_by('-CreatedDate', 'FilePath', 'Title')[:25]
 
     return render_template('stats.html', top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
                            , top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
@@ -922,6 +925,33 @@ def stats():
                            , topRatedTracks=topRatedTracks
                            , mostRecentReleases=mostRecentReleases
                            , counts=counts)
+
+@app.route("/stats/play/<option>")
+@login_required
+def playStats(option):
+    user = User.objects(id=current_user.id).first()
+    tracks = []
+    if option == "top25songs":
+        for track in Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]:
+            release = Release.objects(Tracks__Track = track).first()
+            tracks.append(M3U.makeTrackInfo(user, release, track))
+        if user.DoUseHTMLPlayer:
+            session['tracks'] = tracks
+            return player()
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
+    if option == "top10Albums":
+        for release in Release.objects().order_by('-Rating', 'FilePath', 'Title' )[:10]:
+            user = User.objects(id=current_user.id).first()
+            for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
+                tracks.append(M3U.makeTrackInfo(user, release, track.Track))
+        if user.DoUseHTMLPlayer:
+            session['tracks'] = tracks
+            return player()
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
 
 
 def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/jpg'):

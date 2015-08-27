@@ -17,19 +17,24 @@
 
         <div class="row bordered">
             <div class="col-md-6 recent-releases">
-                <h4><span class="label label-primary">Top 25 Rated Songs</span></h4>
+                <h4><span class="label label-primary">Top 25 Rated Songs</span><a href="#" title="Play" id="playTop25"> <i class="fa fa-play"></i></a></h4>
                 <div class="table-responsive">
                     <table class="table table-striped table-condensed table-responsive">
                         <thead>
                             <tr>
-                                <td>Title</td>
+                                <td>Artist <i class="fa fa-ellipsis-v"></i> Title Rating</td>
                             </tr>
                         </thead>
                         <tbody>
                         {% for track in topRatedTracks %}
                             <tr>
                                  <td data-release-id="{{ track.id }}">
+                                    <span class="label label-default"><a href="/artist/{{ track.Artist.id }}">{{ track.Artist.Name}}</a></span>
+                                    <i class="fa fa-ellipsis-v"></i>
                                     <span class="label label-default">{{ track.Title }}</span>
+                                    <span class="track-rating-container">
+                                        <input type="hidden" class="track-rating rating" data-readonly value="{{ track.Rating }}" />
+                                    </span>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -38,7 +43,7 @@
                 </div>
             </div>
             <div class="col-md-6 recent-releases">
-                <h4><span class="label label-primary">Top 10 Rated Albums</span></h4>
+                <h4><span class="label label-primary">Top 10 Rated Albums</span><a href="#" title="Play" id="playTop10Albums"> <i class="fa fa-play"></i></a></h4>
                 <div class="table-responsive">
                     <table class="table table-striped table-condensed table-responsive">
                         <thead>
@@ -135,6 +140,13 @@
 {% block script_content %}
     <script type="text/javascript">
     $(function() {
+        $("#playTop25").on("click", function(e) {
+            roadieLibrary.playLoader("/stats/play/top25songs");
+        });
+        $("#playTop10Albums").on("click", function(e) {
+            roadieLibrary.playLoader("/stats/play/top10Albums");
+        });
+
     });
     </script>
 {% endblock %}

@@ -156,6 +156,10 @@ img.thumb {
     display: inline-block;
 }
 
+.recent-releases .track-rating-container {
+    margin: 3px 2px 0 0;
+}
+
 .release-info-container .release {
   display: inline-block;
   height: 425px;

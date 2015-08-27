@@ -50,7 +50,7 @@
     // useful when multiple players are in use, or other SM2 sounds are active etc.
     stopOtherSounds: true,
     // CSS class to let the browser load the URL directly e.g., <a href="foo.mp3" class="sm2-exclude">download foo.mp3</a>
-    excludeClass: 'sm2-exclude'
+    excludeClass: 'sm2-exclude',
   };
 
   soundManager.setup({
@@ -71,7 +71,9 @@
         players.push(new Player(nodes[i]));
       }
     }
-  
+
+    players[0].actions.play()
+
   });
 
   /**
@@ -172,6 +174,7 @@
         url: url,
 
         volume: defaultVolume,
+
 
         whileplaying: function() {
 
@@ -639,6 +642,7 @@
       }
 
       init();
+
 
       return {
         data: data,
@@ -1233,6 +1237,7 @@
       playlistController: playlistController
     };
 
+
     return exports;
 
   };
@@ -1673,5 +1678,6 @@
   window.sm2BarPlayers = players;
   window.sm2BarPlayerOptions = playerOptions;
   window.SM2BarPlayer = Player;
+
 
 }(window));

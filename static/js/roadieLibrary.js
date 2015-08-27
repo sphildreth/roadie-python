@@ -34,14 +34,20 @@ var roadieLibrary = ( function( window, undefined ) {
     };
 
     function playLoader(url) {
-        var frameName = "playlistloader";
-        var element = document.getElementById(frameName);
-        if(!element) {
-            element = document.createElement("iframe");
-            element.setAttribute('id', frameName);
-            document.body.appendChild(element);
+        var width = 700;
+        var height = 265;
+        if(window.user.doUseHTMLPlayer) {
+            window.open(url, '_blank','toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=' + width + ',height=' + height);
+        } else {
+            var frameName = "playlistloader";
+            var element = document.getElementById(frameName);
+            if(!element) {
+                element = document.createElement("iframe");
+                element.setAttribute('id', frameName);
+                document.body.appendChild(element);
+            }
+            element.setAttribute('src', url);
         }
-        element.setAttribute('src', url);
     };
 
     return {

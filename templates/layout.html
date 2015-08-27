@@ -79,10 +79,10 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
                        aria-expanded="false"><i class="fa fa-random"></i> Random <span class="caret"></span></a>
                     <ul class="dropdown-menu">
-                        <li><a href="/randomizer/artist" class="random-artist"><i class="fa fa-user"></i> Artist</a></li>
-                        <li><a href="/randomizer/release" class="random-release"><i class="fa fa-music"></i> Release</a>
+                        <li><a href="javascript:roadieLibrary.playLoader('/randomizer/artist');" class="random-artist"><i class="fa fa-user"></i> Artist</a></li>
+                        <li><a href="javascript:roadieLibrary.playLoader('/randomizer/release');" class="random-release"><i class="fa fa-music"></i> Release</a>
                         </li>
-                        <li><a href="/randomizer/tracks" class="random-playlist"><i class="fa fa-list-ul"></i> Tracks</a></li>
+                        <li><a href="javascript:roadieLibrary.playLoader('/randomizer/tracks');" class="random-playlist"><i class="fa fa-list-ul"></i> Tracks</a></li>
                     </ul>
                 </li>
                 <li id="queMenuItem" class="que hidden">
@@ -143,6 +143,8 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/queManager.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>
 <script>
+    window.user = { username: '{{ current_user }}' };
+    window.user.doUseHTMLPlayer = {{ "true" if current_user.DoUseHTMLPlayer else "false" }};
     $(function() {
 
         {% with messages = get_flashed_messages() %}
