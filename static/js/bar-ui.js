@@ -18,7 +18,8 @@
       // CSS selector that will get us the top-level DOM node for the player UI.
       playerSelector = '.sm2-bar-ui',
       playerOptions,
-      utils;
+      utils,
+      soundManagerresizeTimeout;
 
   /**
    * Slightly hackish: event callbacks.
@@ -59,6 +60,7 @@
     preferFlash: false,
     debugMode: false
   });
+
 
   soundManager.onready(function() {
 
@@ -194,6 +196,15 @@
             dom.time.innerHTML = getTime(this.position, true);
 
           }
+
+            window.addEventListener("resize",function () {
+                if ( !soundManagerresizeTimeout ) {
+                  soundManagerresizeTimeout = setTimeout(function() {
+                    soundManagerresizeTimeout = null;
+                    setTitle(playlistController.getItem());
+                  }, 66);
+                }
+            }, false);
 
         },
 
@@ -340,6 +351,10 @@
 
     function playLink(link) {
 
+      currentPlayer = this;
+
+      currentPlayingItem = link;
+
       // if a link is OK, play it.
 
       if (soundManager.canPlayURL(link.href)) {
@@ -361,6 +376,7 @@
         playlistController.select(link.parentNode);
 
         setTitle(link.parentNode);
+
 
         // reset the UI
         // TODO: function that also resets/hides timing info.
@@ -924,7 +940,6 @@
         utils.css.add(dom.o, 'grabbing');
         utils.events.add(document, 'mousemove', handleMouse);
         utils.events.add(document, 'mouseup', releaseMouse);
-
         return handleMouse(e);
 
       });
@@ -1110,7 +1125,7 @@
         }
 
         // playlist
-        dom.playlistContainer.style.height = (isOpen ? dom.playlistContainer.scrollHeight : 0) + 'px';
+     //   dom.playlistContainer.style.height = (isOpen ? dom.playlistContainer.scrollHeight : 0) + 'px';
 
       },
 
