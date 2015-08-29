@@ -27,7 +27,9 @@
         </div>
         <div class="row title bordered">
             <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Title }}" />
+            {% if collection.Urls %}
             <a class="external-link pull-left" target="_blank" href="{{ collection.Urls[0].Url }}"><span class="fa fa-external-link fa-2x"></span></a>
+            {% endif %}
             <h2><span class="label label-default">{{ collection.Name }}</span></h2>
         </div>
         {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
