@@ -17,6 +17,7 @@ class CollectionImporter(ProcessorBase):
         self.collectionId = collectionId
         self.dbName = config['MONGODB_SETTINGS']['DB']
         self.host = config['MONGODB_SETTINGS']['host']
+        self.notFoundEntryInfo = []
         self.readOnly = readOnly
         self.format = format
         self.positions = self.format.split(',')
@@ -69,6 +70,12 @@ class CollectionImporter(ProcessorBase):
                         {'AlternateNames': {'$regex': csvRelease, '$options': 'mi'}},
                     ]}).first()
                     if not artist:
+                        self.notFoundEntryInfo.append({
+                            'collection': col.Name,
+                            'artist' : csvArtist,
+                            'release': csvRelease,
+                            'position': csvPosition
+                        })
                         self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
                         continue
             release = Release.objects(Title__iexact=csvRelease, Artist=artist).first()
@@ -80,6 +87,12 @@ class CollectionImporter(ProcessorBase):
                         {'AlternateNames': {'$regex': csvRelease, '$options': 'mi'}},
                     ]}).filter(Artist=artist).first()
                     if not release:
+                        self.notFoundEntryInfo.append({
+                            'collection': col.Name,
+                            'artist' : csvArtist,
+                            'release': csvRelease,
+                            'position': csvPosition
+                        })
                         self.logger.warn(
                             ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
                                 'utf-8'))

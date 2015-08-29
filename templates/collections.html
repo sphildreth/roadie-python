@@ -24,7 +24,26 @@
             </a>
         </div>
         {% endfor %}
-        <h1>WIP</h1>
+        {% if notFoundEntryInfos %}
+        <div class="bordered">
+        {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
+        <div class="row not-found">
+            <div class="col-md-4">
+                [{{ notFoundEntryInfo['artist'] }}]
+            </div>
+            <div class="col-md-4">
+                [{{ notFoundEntryInfo['release'] }}]
+            </div>
+            <div class="col-md-3">
+                [{{ notFoundEntryInfo['collection'] }}]
+            </div>
+            <div class="col-md-1">
+                [{{ notFoundEntryInfo['position'] }}]
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+        {% endif %}
     </div>
 {% endblock %}
 {% block script_content %}

@@ -53,6 +53,23 @@
         {% endif %}
         {% endfor %}
         <div class="clearfix"></div>
+        {% if notFoundEntryInfos %}
+        <div class="bordered">
+        {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
+        <div class="row not-found">
+            <div class="col-md-5">
+                [{{ notFoundEntryInfo['artist'] }}]
+            </div>
+            <div class="col-md-5">
+                [{{ notFoundEntryInfo['release'] }}]
+            </div>
+            <div class="col-md-2">
+                [{{ notFoundEntryInfo['position'] }}]
+            </div>
+        </div>
+        {% endfor %}
+        </div>
+        {% endif %}
         <div class="row missing bordered">
         </div>
     </div>

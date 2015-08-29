@@ -1286,7 +1286,11 @@ def redirect_back(endpoint, **values):
 @login_required
 def collections():
     collections = Collection.objects().order_by("Name").all()
-    return render_template('collections.html', collections=collections)
+    notFoundEntryInfos = []
+    if 'notFoundEntryInfos' in session:
+        notFoundEntryInfos = session['notFoundEntryInfos']
+        session['notFoundEntryInfos'] = None
+    return render_template('collections.html', collections=collections, notFoundEntryInfos = notFoundEntryInfos)
 
 
 @app.route('/collection/<collection_id>')
@@ -1310,7 +1314,11 @@ def collection(collection_id):
                       'length': sumTime}
         except:
             pass
-    return render_template('collection.html', collection=collection, counts=counts)
+    notFoundEntryInfos = []
+    if 'notFoundEntryInfos' in session:
+        notFoundEntryInfos = session['notFoundEntryInfos']
+        session['notFoundEntryInfos'] = None
+    return render_template('collection.html', collection=collection, counts=counts, notFoundEntryInfos = notFoundEntryInfos)
 
 
 @app.route("/collection/play/<collection_id>")
@@ -1335,9 +1343,13 @@ def playCollection(collection_id):
 @app.route("/collections/updateall", methods=['POST'])
 def updateAllCollections():
     try:
+        notFoundEntryInfos = []
         for collection in Collection.objects(ListInCSVFormat__ne=None,ListInCSV__ne=None):
             i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
             i.importCsvData(io.StringIO(collection.ListInCSV))
+            for i in i.notFoundEntryInfo:
+                notFoundEntryInfos.append(i)
+            session['notFoundEntryInfos'] = notFoundEntryInfos
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
@@ -1346,11 +1358,15 @@ def updateAllCollections():
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
     try:
+        notFoundEntryInfos = []
         collection = Collection.objects(id=collection_id).first()
         if not collection or not collection.ListInCSVFormat or not collection.ListInCSV:
             return jsonify(message="ERROR")
         i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
         i.importCsvData(io.StringIO(collection.ListInCSV))
+        for i in i.notFoundEntryInfo:
+            notFoundEntryInfos.append(i)
+        session['notFoundEntryInfos'] = notFoundEntryInfos
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
