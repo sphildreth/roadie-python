@@ -188,6 +188,14 @@
             {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
             <div class="row insane-quick-edit">
             <div class="btn-group">
+                <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-edit"></i> With Checked<span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                <li><a data-selected-cd="1" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD1</a></li>
+                <li><a data-selected-cd="2" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD2</a></li>
+                <li><a data-selected-cd="3" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD3</a></li>
+                </ul>
                 <button id="setTrackCountToActual" class="btn btn-warning">Set Track Count To Tracks</button>
                 <button id="setDiscCountToActual" class="btn btn-warning">Set Disc Count To Discs</button>
             </div>
@@ -203,6 +211,7 @@
                     <div class="row track" data-track-id="{{ track.Track.id }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
                             <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                            <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1" /></span>
                         </div>
                         <div class="col-xs-7 col-sm-7 col-md-7">
                             <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
@@ -229,7 +238,7 @@
                                     <ul class="dropdown-menu">
                                         <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release" class="deleteRelease-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Release Track</a></li>
                                         <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track" class="delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Track</a></li>
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Releaes, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a></li>
+                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track from this Release, and delete the Track and delete the File" class="delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a></li>
                                     </ul>
                                 </li>
                                 {% endif %}
@@ -669,6 +678,43 @@
                 },
                 error:function(jq, st, error){
                     roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
+
+        $("input.track-select").on("change", function(e) {
+            var checkedCount = $("input.track-select:checked").length;
+            if (checkedCount) {
+                $("#withSelected").removeClass("disabled");
+            } else {
+                $("#withSelected").addClass("disabled");
+            }
+        });
+
+        $("a.moveSelectedToCD").on("click", function(e) {
+            var $this = $(this);
+            var selectedToCD = $this.data("selected-cd");
+            bootbox.confirm("Continue To Move Selected To CD" + selectedToCD + "?", function(result) {
+                if(result) {
+                    var tracksToMove = [];
+                    $.each($("input.track-select:checked"), function(i,d) {
+                        tracksToMove.push($(d).parents(".track").data("track-id"));
+                    });
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/release/movetrackstocd/' + releaseId + '/' + selectedToCD,
+                            data: { "tracksToMove": tracksToMove.join(",") },
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    location.reload(true);
+                                }
+                            },
+                            error:function(jq, st, error){
+                                roadieLibrary.showErrorMessage(error);
+                            }
+                        });
+                    });
                 }
             });
         });

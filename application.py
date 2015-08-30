@@ -320,6 +320,28 @@ def toggleUserArtistFavorite(artist_id, toggle):
         return jsonify(message="ERROR")
 
 
+@app.route("/release/movetrackstocd/<release_id>/<selected_to_cd>", methods=['POST'])
+@login_required
+def movetrackstocd(release_id, selected_to_cd):
+    release = Release.objects(id=release_id).first()
+    user = User.objects(id=current_user.id).first()
+    if not release or not user:
+        return jsonify(message="ERROR")
+    releaseMediaNumber = int(selected_to_cd)
+    tracksToMove = request.form['tracksToMove']
+    now = arrow.utcnow().datetime
+    for trackToMove in tracksToMove.split(','):
+        for track in release.Tracks:
+            if str(track.Track.id) == trackToMove:
+                track.ReleaseMediaNumber = releaseMediaNumber
+                release.LastUpdated = now
+                continue
+    if release.LastUpdated == now:
+        Release.save(release)
+    return jsonify(message="OK")
+
+
+
 @app.route("/user/release/setrating/<release_id>/<rating>", methods=['POST'])
 @login_required
 def setUserReleaseRating(release_id, rating):

@@ -131,7 +131,7 @@
                 {% if artist.AssociatedArtists %}
                 <h4><span class="label label-primary">Associated Artists</span></h4>
                 <ul>
-                    {% for artist in artist.AssociatedArtists|sort %}
+                    {% for artist in artist.AssociatedArtists|sort(attribute='Name') %}
                     <li>
                         <a href="/artist/{{ artist.id }}">
                         <div class="thumbnail-container pull-left">
