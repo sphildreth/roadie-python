@@ -351,10 +351,6 @@
 
     function playLink(link) {
 
-      currentPlayer = this;
-
-      currentPlayingItem = link;
-
       // if a link is OK, play it.
 
       if (soundManager.canPlayURL(link.href)) {
