@@ -84,7 +84,7 @@ class CollectionImporter(ProcessorBase):
                 release = Release.objects(AlternateNames__iexact=csvRelease, Artist=artist).first()
                 if not release:
                     release = Release.objects(__raw__={'$or': [
-                        {'Title': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
+                        {'Title': {'$regex': csvRelease.replace("'", "\'"), '$options': 'mi'}},
                         {'AlternateNames': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
                     ]}).filter(Artist=artist).first()
                     if not release:

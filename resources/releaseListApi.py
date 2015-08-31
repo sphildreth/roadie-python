@@ -70,6 +70,7 @@ class ReleaseListApi(Resource):
                     "Tracks": trackInfo,
                     "TrackCount": release.TrackCount,
                     "ReleasePlayedCount": 0,
+                    "LastUpdated": release.LastUpdated.strftime("%Y-%m-%d %H:%M"),
                     "Rating": release.Rating or 0,
                     "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
                 })
