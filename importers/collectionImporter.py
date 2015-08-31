@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 
 import arrow
 
@@ -66,8 +67,8 @@ class CollectionImporter(ProcessorBase):
                 artist = Artist.objects(AlternateNames__iexact=csvArtist).first()
                 if not artist:
                     artist = Artist.objects(__raw__={'$or': [
-                        {'Name': {'$regex': csvRelease, '$options': 'mi'}},
-                        {'AlternateNames': {'$regex': csvRelease, '$options': 'mi'}},
+                        {'Name': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
+                        {'AlternateNames': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
                     ]}).first()
                     if not artist:
                         self.notFoundEntryInfo.append({
@@ -78,13 +79,13 @@ class CollectionImporter(ProcessorBase):
                         })
                         self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
                         continue
-            release = Release.objects(Title__iexact=csvRelease, Artist=artist).first()
+            release = Release.objects(Title__iexact= csvRelease, Artist=artist).first()
             if not release:
                 release = Release.objects(AlternateNames__iexact=csvRelease, Artist=artist).first()
                 if not release:
                     release = Release.objects(__raw__={'$or': [
-                        {'Title': {'$regex': csvRelease, '$options': 'mi'}},
-                        {'AlternateNames': {'$regex': csvRelease, '$options': 'mi'}},
+                        {'Title': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
+                        {'AlternateNames': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
                     ]}).filter(Artist=artist).first()
                     if not release:
                         self.notFoundEntryInfo.append({
