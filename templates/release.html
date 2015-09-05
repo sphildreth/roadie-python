@@ -296,7 +296,11 @@
     };
 
     var isReleaseSane = function() {
-        return doTrackCountsMatch() && areNoTracksOfZeroLength() && doReleaseDiscCountsMatch();
+        var r1 = doTrackCountsMatch();
+        var r2 = areNoTracksOfZeroLength();
+        var r3 = doReleaseDiscCountsMatch();
+        var r4 = areTracksNumberedSequentially();
+        return  r1 && r2 && r3 && r4;
     };
 
     var areNoTracksOfZeroLength = function() {
@@ -316,7 +320,7 @@
         var releaseTrackCount = parseInt($("#releaseTrackCount").text());
         var foundTracks = parseInt($("span.track-count").data("track-count"));
         var sane = releaseTrackCount === foundTracks;
-                if (!sane) {
+        if (!sane) {
             $("#releaseTrackCount").removeClass("label-default").addClass("label-danger");
         }
         return sane
@@ -329,6 +333,19 @@
         if (!sane) {
             $("#releaseDiscCount").removeClass("label-default").addClass("label-danger");
         }
+        return sane;
+    };
+
+    var areTracksNumberedSequentially = function() {
+        var sane = true;
+        $.each($("span.trackNumber"), function(i,d) {
+            var $this = $(this);
+            var isTrackNumberRight = (i+1) === parseInt($this.text());
+            if (!isTrackNumberRight) {
+                $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
+            }
+            sane = sane && isTrackNumberRight;
+        });
         return sane;
     };
 
