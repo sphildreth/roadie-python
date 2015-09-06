@@ -338,11 +338,17 @@
 
     var areTracksNumberedSequentially = function() {
         var sane = true;
+        var firstTrackOnDisc = null;
         var discCount = parseInt($(".release-counts-container").data("disc-count"));
         for(var disc = 0; disc <= discCount; disc++) {
             $.each($(".track[data-releasemedianumber='" + disc + "'] span.trackNumber "), function(i,d) {
+                if(i === 0) {
+                    firstTrackOnDisc = parseInt($(d).text())-1;
+                }
+                firstTrackOnDisc++;
                 var $this = $(this);
-                var isTrackNumberRight = (i+1) === parseInt($this.text());
+                var isTrackNumberRight = firstTrackOnDisc === parseInt($this.text());
+                debugger;
                 if (!isTrackNumberRight) {
                     $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
                 }
