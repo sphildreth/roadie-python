@@ -208,7 +208,7 @@
                 </div>
                 {% endif %}
                 {% for track in group.list %}
-                    <div class="row track" data-track-id="{{ track.Track.id }}">
+                    <div class="row track" data-releasemedianumber="{{ track.ReleaseMediaNumber }}" data-track-id="{{ track.Track.id }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
                             <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
                             <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1" /></span>
@@ -338,14 +338,17 @@
 
     var areTracksNumberedSequentially = function() {
         var sane = true;
-        $.each($("span.trackNumber"), function(i,d) {
-            var $this = $(this);
-            var isTrackNumberRight = (i+1) === parseInt($this.text());
-            if (!isTrackNumberRight) {
-                $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
-            }
-            sane = sane && isTrackNumberRight;
-        });
+        var discCount = parseInt($(".release-counts-container").data("disc-count"));
+        for(var disc = 0; disc <= discCount; disc++) {
+            $.each($(".track[data-releasemedianumber='" + disc + "'] span.trackNumber "), function(i,d) {
+                var $this = $(this);
+                var isTrackNumberRight = (i+1) === parseInt($this.text());
+                if (!isTrackNumberRight) {
+                    $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
+                }
+                sane = sane && isTrackNumberRight;
+            });
+        }
         return sane;
     };
 
