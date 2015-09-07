@@ -1,0 +1,114 @@
+{% extends "layout.html" %}
+{% block title %}Single Track Release Finder{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+    <div class="singletrackrelease-container">
+        <h4><span class="label label-primary">Releases With Single Tracks [{{ singleTrackReleases|length }} of {{ total }} ]</span></h4>
+        <div class="btn-group">
+            <a id="selectAll" class="btn btn-primary"><i class="fa fa-check-square-o"></i> Select All</a>
+            <a id="deleteCheckedReleases" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Checked Releases</a>
+        </div>
+        {% for singleTrackRelease in singleTrackReleases %}
+        <div class="row single-track-release"  data-artist-id="{{ singleTrackRelease.Artist.id }}" data-release-id="{{ singleTrackRelease.id }}" >
+            <div class="col-md-1">
+                <input class="checkbox" type="checkbox" value="1" />
+            </div>
+            <div class="col-md-5">
+                <a title="View Artist" href="/artist/{{ singleTrackRelease.Artist.id }}">
+                    <div class="artist-name">{{ singleTrackRelease.Artist.Name }}</div>
+                </a>
+                <a class="btn btn-default btn-xs" title="Edit Artist" href="/admin/artist/edit/?id={{ singleTrackRelease.Artist.id  }}&amp;url=/artist/{{ singleTrackRelease.Artist.id  }}">
+                    <i class="fa fa-edit"></i>
+                </a>
+                <a class="btn btn-danger btn-xs" title="Delete Artist" href="/admin/artist/edit/?id={{ singleTrackRelease.Artist.id  }}&amp;url=/artist/{{ singleTrackRelease.Artist.id  }}">
+                    <i class="fa fa-trash-o"></i>
+                </a>
+            </div>
+            <div class="col-md-5">
+                <a title="View Release" href="/release/{{ singleTrackRelease.id  }}">
+                    <div class="release-title">{{ singleTrackRelease.Title }}</div>
+                </a>
+                <a class="btn btn-default btn-xs" title="Find All With This Release Title" href="javascript:selectRelease('{{ singleTrackRelease.Title }}');">
+                    <i class="fa fa-check-square-o"></i>
+                </a>
+                <a class="btn btn-default btn-xs" title="Edit Release" href="/admin/release/edit/?id={{ singleTrackRelease.id  }}&amp;url=/release/{{ singleTrackRelease.id  }}">
+                    <i class="fa fa-edit"></i>
+                </a>
+                <a class="btn btn-danger btn-xs" title="Delete Release" href="/admin/artist/edit/?id={{ singleTrackRelease.Artist.id  }}&amp;url=/artist/{{ singleTrackRelease.Artist.id  }}">
+                    <i class="fa fa-trash-o"></i>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="errors"></div>
+{% endblock %}
+{% block script_content %}
+    <script type="text/javascript">
+
+    var selectRelease = function(title) {
+        $.each($(".release-title"), function(i,d) {
+            var $this = $(d);
+            if($this.text() === title) {
+                $this.parents(".single-track-release").find("input.checkbox:first").attr("checked",true).trigger("change");
+            }
+        });
+    };
+
+    var selectedReleases = function() {
+        var result = [];
+        $.each($("input.checkbox:checked"), function(i,d) {
+            var $this = $(this);
+            var releaseId = $this.parents(".single-track-release").data("release-id");
+            var f = result.some(function(elem) { return elem === releaseId; });
+            if(!f) {
+                result.push(releaseId);
+            }
+        });
+        return result;
+    }
+
+    $(function() {
+        $("#selectAll").on("click", function(e) {
+           $("input.checkbox").attr("checked", true).trigger("change");
+        });
+
+        $(".single-track-release").on("change", "input.checkbox", function(e) {
+            var checked = $(this).is(":checked");
+            if (checked) {
+                $(this).parents(".single-track-release").addClass("selected");
+            } else {
+                $(this).parents(".single-track-release").removeClass("selected");
+            }
+        });
+
+        $("#deleteCheckedReleases").on("click", function(e) {
+            var r = selectedReleases();
+            if (!r) {
+                roadieLibrary.showErrorMessage("Please Select Releases To Delete!");
+                return false;
+            }
+            bootbox.confirm("Continue To Delete Selected Release(s)?", function(result) {
+                if(result) {
+                    $.each(r, function(i,d) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/release/delete/' + d,
+                            success: function(data) {
+                                if(data.message === "OK") {
+                                    $("div[data-release-id='" + d + "'").remove();
+                                }
+                            },
+                            error:function(jq, st, error){
+                                roadieLibrary.showErrorMessage(error);
+                            }
+                        });
+                    })
+                }
+            });
+        });
+
+    });
+    </script>
+{% endblock %}

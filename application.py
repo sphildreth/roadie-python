@@ -1399,6 +1399,14 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route("/singletrackreleasefinder", defaults={ 'count': 100 })
+@app.route("/singletrackreleasefinder/<count>")
+@login_required
+def singletrackreleasefinder(count):
+    count = int(count)
+    singleTrackReleases = Release.objects(__raw__={ 'Tracks' : { '$size': 1}}).order_by('Title', 'Artist.Name')
+    return render_template('singletrackreleasefinder.html', total= singleTrackReleases.count(), singleTrackReleases=singleTrackReleases[:count])
+
 
 @app.route('/dupfinder')
 @login_required

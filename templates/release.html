@@ -348,7 +348,6 @@
                 firstTrackOnDisc++;
                 var $this = $(this);
                 var isTrackNumberRight = firstTrackOnDisc === parseInt($this.text());
-                debugger;
                 if (!isTrackNumberRight) {
                     $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
                 }

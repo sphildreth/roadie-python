@@ -193,7 +193,8 @@ div.bordered {
 .collections-container .collection:nth-child(odd),
 .collection-container ul.collection li:nth-child(even),
 .release-detail-container .row.tracks .track:hover,
-.duplicates-container .duplicate-artists:nth-child(even)
+.duplicates-container .duplicate-artists:nth-child(even),
+.single-track-release:hover
 {
     background-color: #161C23;
 }
@@ -582,4 +583,14 @@ form.profile label {
 
 form.profile input {
     margin: 3px;
+}
+
+.singletrackrelease-container div.artist-name,
+ .singletrackrelease-container div.release-title {
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.singletrackrelease-container .row.selected {
+    background-color: #FA5882;
 }

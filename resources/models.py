@@ -1,5 +1,5 @@
 from flask.ext.login import UserMixin
-import datetime
+import arrow
 
 from mongoengine import *
 
@@ -57,7 +57,7 @@ class User(Document, UserMixin):
     Email = EmailField(required=True, unique=True)
     RegisteredOn = DateTimeField()
     LastLogin = DateTimeField()
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     Active = BooleanField(default=True)
     Avatar = FileField()
     Roles = ListField(ReferenceField(UserRole), required=False, default=[])
@@ -94,7 +94,7 @@ class Label(Document):
     AlternateNames = SortedListField(StringField(), default=[])
     BeginDate = DateTimeField()
     EndDate = DateTimeField()
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     MusicBrainzId = StringField()
     Name = StringField(required=True, unique=True)
     Tags = ListField(StringField(max_length=100))
@@ -118,7 +118,7 @@ class Artist(Document):
     IsLocked = BooleanField(default=False)
     EndDate = DateTimeField()
     Images = ListField(EmbeddedDocumentField(Image))
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     MusicBrainzId = StringField()
     Name = StringField(required=True)
     Profile = StringField()
@@ -155,7 +155,7 @@ class Track(Document):
     FilePath = StringField()
     # MD5 of file
     Hash = StringField(unique=True)
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     # Seconds long
     Length = FloatField()
     MusicBrainzId = StringField()
@@ -189,7 +189,7 @@ class UserArtist(Document):
     IsFavorite = BooleanField()
     IsDisliked = BooleanField()
     Rating = IntField()
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     meta = {
         'indexes': [
             'User',
@@ -208,7 +208,7 @@ class Playlist(Document):
     Name = StringField()
     IsPublic = BooleanField()
     Description = StringField()
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     meta = {
         'indexes': [
             'User'
@@ -256,8 +256,8 @@ class Release(Document):
     Images = ListField(EmbeddedDocumentField(Image))
     Genres = ListField(ReferenceField(Genre), default=[])
     Labels = ListField(EmbeddedDocumentField(ReleaseLabel), default=[])
-    CreatedDate = DateTimeField(default=datetime.datetime.now)
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    CreatedDate = DateTimeField(default=arrow.utcnow().datetime)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     MusicBrainzId = StringField()
     ReleaseDate = StringField(required=True)
     Thumbnail = FileField()
@@ -315,7 +315,7 @@ class UserRelease(Document):
     Rating = IntField()
     IsFavorite = BooleanField()
     IsDisliked = BooleanField()
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
     meta = {
         'indexes': [
             'User',
@@ -363,7 +363,7 @@ class Collection(Document):
     Maintainer = ReferenceField(User, required=True)
     Urls = ListField(EmbeddedDocumentField(Url))
     Releases = ListField(EmbeddedDocumentField(CollectionRelease), default=[])
-    LastUpdated = DateTimeField(default=datetime.datetime.now)
+    LastUpdated = DateTimeField(default=arrow.utcnow().datetime)
 
     def __unicode__(self):
         return self.Name
