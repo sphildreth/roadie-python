@@ -63,6 +63,10 @@ var queManager = ( function( window, undefined ) {
             success: function(response, status, xhr) {
                 var filename = "";
                 var disposition = xhr.getResponseHeader('Content-Disposition');
+                if (!disposition) {
+                    roadieLibrary.playLoader(null, response);
+                    return false;
+                }
                 if (disposition && disposition.indexOf('attachment') !== -1) {
                     var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
                     var matches = filenameRegex.exec(disposition);

@@ -767,7 +767,7 @@ def playQue():
     tracks = []
     for t in request.json:
         if (t["type"] == "track"):
-            release = Release.objects(id=t["releaseId"]).firts()
+            release = Release.objects(id=t["releaseId"]).first()
             track = Track.objects(id=t["trackId"]).first()
             if release and track:
                 tracks.append(M3U.makeTrackInfo(user, release, track))
