@@ -64,7 +64,7 @@ var queManager = ( function( window, undefined ) {
                 var filename = "";
                 var disposition = xhr.getResponseHeader('Content-Disposition');
                 if (!disposition) {
-                    roadieLibrary.playLoader(null, response);
+                    roadieLibrary.playLoader("about:blank", response);
                     return false;
                 }
                 if (disposition && disposition.indexOf('attachment') !== -1) {
