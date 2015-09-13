@@ -88,7 +88,7 @@ class ID3:
             try:
                 if trackNumber and "/" in trackNumber:
                     self.track = int(trackNumber.split("/")[0])
-                elif trackNumber:
+                if trackNumber:
                     self.track = int(trackNumber)
             except:
                 pass

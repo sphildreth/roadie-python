@@ -531,7 +531,7 @@
         });
         $("div.tracks a.play-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid, "Playlist");
+            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid);
         });
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

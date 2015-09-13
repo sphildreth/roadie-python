@@ -19,11 +19,14 @@ from shutil import move
 from mongoengine import connect
 from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
 from resources.musicBrainz import MusicBrainz
+from resources.artistSearcher import ArtistSearcher
+from resources.imageSearcher import ImageSearcher, ImageSearchResult
 from resources.id3 import ID3
 from resources.scanner import Scanner
 from resources.convertor import Convertor
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
+
 
 class Processor(ProcessorBase):
 
@@ -142,6 +145,7 @@ class Processor(ProcessorBase):
         self.logger.info("Processing Folder [" + inboundFolder + "]")
         connect(self.dbName, host=self.host)
         mb = MusicBrainz()
+        imageSearcher = ImageSearcher()
         scanner = Scanner(self.readOnly)
         startTime = arrow.utcnow().datetime
         newMp3Folder = None
@@ -149,6 +153,9 @@ class Processor(ProcessorBase):
         lastID3Album = None
         artist = None
         release = None
+        artistSearcher = ArtistSearcher()
+        iTunesArtist = None
+        mp3FoldersProcessed = []
 
         # Get all the folder in the InboundFolder
         for mp3Folder in self.allDirectoriesInDirectory(inboundFolder):
@@ -235,6 +242,13 @@ class Processor(ProcessorBase):
                                         if a and 'alias' in a:
                                             alias.append(string.capwords(a['alias']))
                                 artist.AlternateNames = alias
+                            iTunesArtist = artistSearcher.iTunesArtist(artist.Name)
+                            if iTunesArtist:
+                                artist.ITunesId = iTunesArtist.id
+                                artist.AllMusicGuideId = iTunesArtist.amgId
+                                if artist.Name.lower() != iTunesArtist.name.lower():
+                                    if not iTunesArtist.name in artist.AlternateNames:
+                                        artist.AlternateNames.append(iTunesArtist.name)
                             ba = None
                             # See if a file exists to use for the Artist thumbnail
                             artistFile = os.path.join(mp3Folder, "artist.jpg")
@@ -251,6 +265,8 @@ class Processor(ProcessorBase):
                         # Cannot continue past here if read only as object refer to DB objects must be saved
                         if self.readOnly:
                             continue
+                        if not iTunesArtist:
+                            iTunesArtist = artistSearcher.iTunesArtist(artist.Name)
                         # Get the Release
                         if lastID3Album != id3.album:
                             release = None
@@ -342,6 +358,15 @@ class Processor(ProcessorBase):
                                             ba = b.getvalue()
                                         except:
                                             pass
+                            if iTunesArtist:
+                                iTunesAlbum = artistSearcher.iTunesAlbumsForArtist(iTunesArtist, release.Title)[0]
+                                if iTunesAlbum:
+                                    release.TrackCount = iTunesAlbum.trackCount
+                                    if not ba:
+                                        try:
+                                            ba = imageSearcher.getImageBytesForUrl(iTunesAlbum.coverUrl)
+                                        except:
+                                            pass
                             # If Cover Art Thumbnail bytes found then set to Release Thumbnail
                             if ba:
                                 release.Thumbnail.new_file()
@@ -353,6 +378,8 @@ class Processor(ProcessorBase):
                         if self.shouldMoveToLibrary(artist, artist.id, id3, mp3):
                             newMp3 = self.moveToLibrary(artist, id3, mp3)
                             head, tail = os.path.split(newMp3)
+                            if not head in mp3FoldersProcessed:
+                                mp3FoldersProcessed.append(head)
                             newMp3Folder = head
 
             if artist and release:
@@ -378,7 +405,7 @@ class Processor(ProcessorBase):
                         self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                     except OSError:
                         pass
-
+            self.logger.debug("-> MP3 Folders Processed [" + ",".join([x for x in mp3FoldersProcessed]) + "]")
             self.logger.debug("Processed Folder [" + mp3Folder + "] Processed [" + str(foundMp3Files) + "] MP3 Files")
 
         elapsedTime = arrow.utcnow().datetime - startTime
