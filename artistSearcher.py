@@ -7,17 +7,14 @@ p.add_argument('--release', '-r', help="Release Title", required=False)
 args = p.parse_args()
 
 with ArtistSearcher() as s:
-    artistInfo = s.iTunesArtist(args.name)
+    artistInfo = s.searchForArtist(args.name)
     if artistInfo:
         print("Artist Info: " + str(artistInfo))
-        albums = s.iTunesAlbumsForArtist(artistInfo)
-        if albums:
-            print("Artist Albums Count [" + str(len(albums)) + "]")
-            for album in albums:
-                if args.release and album.title.lower() == args.release.lower():
-                    print("Release Info [" + str(album) + "]")
-                elif not args.release:
-                    print("Release Info [" + str(album) + "]")
+        releases = s.searchForArtistReleases(artistInfo, args.release)
+        if releases:
+            print("Artist Releases Count [" + str(len(releases)) + "]")
+            for releases in releases:
+                print("Release Info [" + str(releases) + "]")
         else:
             print("No Releases Found!")
     else:
