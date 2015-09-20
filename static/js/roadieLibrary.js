@@ -56,11 +56,19 @@ var roadieLibrary = (function(window, undefined) {
             element.setAttribute('src', url);
         }
     };
+
+
+    function doInternetSearch(searchFor) {
+        var url = "https://www.google.com/search?q=" + encodeURIComponent(searchFor);
+        window.open(url, "_blank");
+    };
+
     return {
         lpad: lpad,
         playLoader: playLoader,
         showSuccessMessage: showSuccessMessage,
         showErrorMessage: showErrorMessage,
-        downloadRelease: downloadRelease
+        downloadRelease: downloadRelease,
+        doInternetSearch: doInternetSearch
     };
 })(window);

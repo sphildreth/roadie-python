@@ -83,6 +83,9 @@ class User(Document, UserMixin):
     def has_role(self, role):
         return UserRole(Name=role) in self.Roles
 
+    def is_editor(self):
+        return UserRole(Name="Admin") in self.Roles or UserRole(Name="Editor") in self.Roles;
+
     def __repr__(self):
         return '<User %r>' % (self.Username)
 

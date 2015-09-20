@@ -21,17 +21,20 @@
                 <li><a id="playMostPopular" href="#">Play Most Popular</a></li>
               </ul>
             </div>
-            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+            <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
+            {% if current_user.is_editor() %}
               <div class="btn-group">
                 <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 {% if artist.IsLocked == False %}
-                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a id="delete-artist"><i class="fa fa-trash-o"></i> Delete Artist</a></li>
-                        <li><a id="deleteArtistReleases"><i class="fa fa-trash-o"></i> Delete All Releases</a></li>
-                    </ul>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a id="delete-artist"><i class="fa fa-trash-o"></i> Delete Artist</a></li>
+                            <li><a id="deleteArtistReleases"><i class="fa fa-trash-o"></i> Delete All Releases</a></li>
+                        </ul>
+                    </div>
                 <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
                 {% endif %}
              </div>
@@ -47,7 +50,7 @@
             <div class="rating-container">
                 <input type="hidden" class="rating" data-readonly value="{{ artist.Rating }}" />
             </div>
-            <h2><span class="label label-default">{{ artist.Name }}</span></h2>
+            <h2><span class="artist-name label label-default">{{ artist.Name }}</span></h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
@@ -411,6 +414,10 @@
                         });
                     }
                 });
+            });
+
+            $("#searchInternetArtst").on("click", function() {
+                roadieLibrary.doInternetSearch($("span.artist-name").text() + " Band");
             });
 
         });

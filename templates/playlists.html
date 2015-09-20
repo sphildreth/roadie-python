@@ -4,7 +4,7 @@
 {% endblock %}
 {% block body_content %}
     <div class="collections-container">
-        {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+        {% if current_user.is_editor() %}
         <div>
             <a class="btn btn-primary" href="/admin/playlist/new/?url=/playlists"><i class="fa fa-add"></i> Add</a>
         </div>

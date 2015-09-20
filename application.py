@@ -35,6 +35,7 @@ from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
 from resources.logger import Logger
+from resources.id3 import ID3
 from resources.models import Artist, ArtistType, Collection, Genre, Label, \
     Playlist, Quality, Release, Track, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
@@ -46,7 +47,7 @@ from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
 from resources.validator import Validator
-from viewModels.RoadieModelView import RoadieModelView
+from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
@@ -126,6 +127,27 @@ def index():
             'UserRating': 0
         })
     return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
+
+
+@app.route("/release/setTitle/<release_id>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
+def setReleaseTitle(release_id, new_title, set_tracks_title, create_alternate_name):
+    release = Release.objects(id = release_id).first()
+    user = User.objects(id=current_user.id).first()
+    now = arrow.utcnow().datetime
+    if not release or not user or not new_title:
+        return jsonify(message="ERROR")
+    oldTitle = release.Title
+    release.Title = new_title
+    release.LastUpdated = now
+    if create_alternate_name == "true" and not new_title in release.AlternateNames:
+            release.AlternateNames.append(oldTitle)
+    Release.save(release)
+    if set_tracks_title == "true":
+        for track in release.Tracks:
+            trackPath = os.path.join(track.Track.FilePath, track.Track.FileName)
+            id3 = ID3(trackPath, config)
+            id3.updateFromRelease(release, track)
+    return jsonify(message="OK")
 
 
 @app.route("/release/random/<count>", methods=['POST'])
@@ -1512,14 +1534,14 @@ if __name__ == '__main__':
     admin.add_view(RoadiePlaylistModelView(Playlist))
     admin.add_view(RoadieReleaseModelView(Release))
     admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieUserModelView(User, category='User'))
+    admin.add_view(RoadieModelAdminRequiredView(User, category='User'))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User'))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User'))
     admin.add_view(RoadieUserTrackModelView(UserTrack, category='User'))
     admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))
     admin.add_view(RoadieModelView(Genre, category='Reference Fields'))
     admin.add_view(RoadieModelView(Quality, category='Reference Fields'))
-    admin.add_view(RoadieModelView(UserRole, category='Reference Fields'))
+    admin.add_view(RoadieModelAdminRequiredView(UserRole, category='Reference Fields'))
     container = WSGIContainer(app)
     server = Application([
         (r'/websocket/', WebSocket),

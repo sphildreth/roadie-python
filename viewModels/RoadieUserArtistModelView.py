@@ -1,7 +1,6 @@
-from viewModels.RoadieModelView import RoadieModelView
+from viewModels.RoadieModelView import RoadieModelAdminRequiredView
 
-
-class RoadieUserArtistModelView(RoadieModelView):
+class RoadieUserArtistModelView(RoadieModelAdminRequiredView):
 
     form_ajax_refs = {
         'Artist': {
@@ -9,3 +8,5 @@ class RoadieUserArtistModelView(RoadieModelView):
             'page_size': 10
         }
     }
+
+

@@ -1,7 +1,7 @@
-from viewModels.RoadieModelView import RoadieModelView
+from viewModels.RoadieModelView import RoadieModelAdminRequiredView
 
 
-class RoadieUserReleaseModelView(RoadieModelView):
+class RoadieUserReleaseModelView(RoadieModelAdminRequiredView):
 
     form_ajax_refs = {
         'Release': {

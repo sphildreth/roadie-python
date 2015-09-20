@@ -11,18 +11,30 @@
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
                 <a id="playAll" class="btn btn-default"><i class="fa fa-play"></i> Play</a>
-                {% if current_user.has_role("Admin") or current_user.has_role("Download") %}
+                {% if current_user.is_editor() or current_user.has_role("Download") %}
                 <a id="downloadRelease" class="btn btn-default"><i class="fa fa-download"></i> Download</a>
                 {% endif %}
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-search"></i> Search <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a id="searchInternetArtist" href="#">Internet Artist</a></li>
+                        <li><a id="searchInternetTitle" href="#">Internet Title</a></li>
+                        <li><a id="searchInternetArtistAndTitle" href="#">Internet Artist and Title</a></li>
+                    </ul>
+                </div>
             </div>
 
-            {% if current_user.has_role("Admin") %}
+            {% if current_user.is_editor() %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
                 {% if release.Artist.IsLocked == False %}
-                <a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</a>
-                <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
+                <div class="btn-group">
+                    <a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</a>
+                    <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
+                </div>
                 {% endif %}
              </div>
             {% endif %}
@@ -37,9 +49,14 @@
             </div>
             <div class="artist-info">
                 <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
-                <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="label label-info">{{ release.Artist.Name }}</span></a></h5>
+                <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="release-artist-name label label-info">{{ release.Artist.Name }}</span></a></h5>
             </div>
-            <h2><span class="label label-default">{{ release.Title }}</span></h2>
+            <h2>
+                <span class="release-title label label-default">{{ release.Title }}</span>
+                {% if current_user.is_editor() %}
+                    <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i></button>
+                {% endif %}
+            </h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
@@ -163,7 +180,7 @@
             </div>
             <div class="col-md-3">
                 <div>
-                    {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                    {% if current_user.has_role("Admin") %}
                     <h4><span class="label label-primary">Library Folders</span></h4>
                     <ul class="folders">
                     {% for group in release|group_release_tracks_filepaths %}
@@ -185,7 +202,7 @@
             </div>
         </div>
         <div class="row tracks bordered">
-            {% if current_user.has_role("Admin") and release.Artist.IsLocked == False %}
+            {% if current_user.is_editor() and release.Artist.IsLocked == False %}
             <div class="row insane-quick-edit">
             <div class="btn-group">
                 <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -231,7 +248,7 @@
                               <ul class="dropdown-menu">
                                 <li><a href="#" class="play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
                                 <li><a href="#" class="que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
-                                {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                                {% if current_user.is_editor() %}
                                 <li><a href="#" class="edit-track btn btn-warning"><i class="fa fa-edit"></i> Edit</a></li>
                                 <li class="dropdown-submenu">
                                     <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
@@ -390,6 +407,7 @@
             });
         }
     };
+
 
     $(function() {
 
@@ -744,6 +762,79 @@
             });
         });
 
+        $("#searchInternetArtist").on("click", function() {
+            roadieLibrary.doInternetSearch($("span.release-artist-name").text() + " Band");
+        });
+
+        $("#searchInternetTitle").on("click", function() {
+            roadieLibrary.doInternetSearch($("span.release-title").text() + " Album");
+        });
+
+        $("#searchInternetArtistAndTitle").on("click", function() {
+            roadieLibrary.doInternetSearch($("span.release-artist-name").text() + " " + $("span.release-title").text());
+        });
+
+        $("#setAlbumTitle").on("click", function(e) {
+            var currentTitle = $("span.release-title").text();
+            bootbox.dialog({
+                title: "Set Release Title",
+                message: '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-5 control-label" for="name">Name</label> ' +
+                    '<div class="col-md-7"> ' +
+                    '<input id="newTitle" name="newTitle" type="text" placeholder="Title" class="form-control input-md" value="' + currentTitle + '" /> ' +
+                    '</div></div> ' +
+                    '<div class="form-group"><label class="col-md-5 control-label" for="setTracksTitle">Set Track(s) Title?</label> ' +
+                    '<div class="col-md-7 checkbox"><label><input type="checkbox" name="setTracksTitle" id="setTracksTitle" value="True" checked="checked">Yes</label>' +
+                    '</div></div>' +
+                    '<div class="form-group"><label class="col-md-5 control-label" for="createAlternateName">Create Release Alternate?</label> ' +
+                    '<div class="col-md-7 checkbox"><label><input type="checkbox" name="createAlternateName" id="createAlternateName" value="True" checked="checked">Yes</label>' +
+                    '</div></div>' +
+                    '</div>' +
+                    '</form> </div></div>',
+                buttons: {
+                    cancel: {
+                        label: "Cancel",
+                        className: "btn-default"
+                    },
+                    success: {
+                        label: "Save",
+                        className: "btn-success",
+                        callback: function () {
+                            var newTitle = $('#newTitle').val();
+                            var doSetTracksTitle = $("input[name='setTracksTitle']:checked").val();
+                            if (typeof doSetTracksTitle === "undefined") {
+                                doSetTracksTitle = false;
+                            } else {
+                                doSetTracksTitle = true;
+                            }
+                            var doCreateAlternateName = $("input[name='createAlternateName']:checked").val();
+                            if (typeof doCreateAlternateName === "undefined") {
+                                doCreateAlternateName = false;
+                            } else {
+                                doCreateAlternateName = true;
+                            }
+                            $(".loader").fadeIn("slow", function() {
+                                $.ajax({
+                                    type: 'POST',
+                                    url: '/release/setTitle/' + releaseId + '/' + encodeURIComponent(newTitle) + '/' + doSetTracksTitle + '/' + doCreateAlternateName,
+                                    success: function(data) {
+                                        if(data.message == "OK") {
+                                            location.reload(true);
+                                        }
+                                    },
+                                    error:function(jq, st, error){
+                                        roadieLibrary.showErrorMessage(error);
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            })
+        });
 
     });
     </script>

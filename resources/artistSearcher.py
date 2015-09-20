@@ -86,11 +86,11 @@ class ArtistSearcher(object):
 
     def __getArtistFromDB(self,name):
         c = self.conn.cursor()
-        sql = 'SELECT * FROM Artists WHERE Name = "' + name + '" COLLATE NOCASE'
+        sql = 'SELECT * FROM Artists WHERE name = "' + name + '" COLLATE NOCASE'
         c.execute(sql)
         r = c.fetchone()
         if r:
-            re = ArtistSearchResult(r[8])
+            re = ArtistSearchResult(r[9])
             re.id = r[0]
             re.roadieId = r[1]
             re.musicBrainzId = r[2]
@@ -215,13 +215,15 @@ class ArtistSearcher(object):
             mbArtist = self.__musicBrainzArtist(name)
             if mbArtist:
                 artistSearchResult.musicBrainzId = mbArtist.musicBrainzId
+                artistSearchResult.name = mbArtist.name
                 artistSearchResult.sortName = mbArtist.sortName
                 artistSearchResult.beginDate = mbArtist.beginDate
                 artistSearchResult.endDate = mbArtist.endDate
                 artistSearchResult.artistType = mbArtist.artistType
             itArtist = self.__iTunesArtist(name)
             if itArtist:
-                artistSearchResult.name = itArtist.name
+                if itArtist.name and itArtist.name.lower() != "none":
+                    artistSearchResult.name = itArtist.name
                 artistSearchResult.iTunesId = itArtist.iTunesId
                 artistSearchResult.amgId = itArtist.amgId
             if artistSearchResult:
@@ -234,6 +236,10 @@ class ArtistSearcher(object):
                 self.__saveArtistTagsToDB(artistSearchResult)
                 self.__saveArtistAlternateNamesToDB(artistSearchResult)
             artistSearchResult = self.__getArtistFromDB(name)
+        foundArtistName = None
+        if artistSearchResult:
+            foundArtistName = artistSearchResult.name
+        self.logger.debug("artistSearcher :: searchForArtist Name [" + name + "] Found [" + str(foundArtistName) + "]")
         return artistSearchResult
 
 
@@ -267,7 +273,6 @@ class ArtistSearcher(object):
                             an = string.capwords(a['alias'])
                             if not an in artistSearchResult.alternateNames:
                                 artistSearchResult.alternateNames.append(an)
-            print(artistSearchResult)
             return artistSearchResult
         except:
             pass
@@ -306,14 +311,14 @@ class ArtistSearcher(object):
             if albumsSearchResult:
                 albumsSearchResult = self.__markReleasesFoundInRoadie(artistSearchResult, albumsSearchResult)
                 self.__saveReleasesForArtistToDB(artistSearchResult, albumsSearchResult)
+        result = albumsSearchResult
         if titleFilter:
+            result = []
             for a in albumsSearchResult:
-                if a.Title.lower() == titleFilter.lower():
-                    albumsSearchResult = []
-                    albumsSearchResult.append(a)
+                if a.title.lower() == titleFilter.lower():
+                    result.append(a)
                     continue
-
-        return albumsSearchResult
+        return result
 
 
     def __iTunesAlbumsForArtist(self, artistSearchResult, titleFilter=None):

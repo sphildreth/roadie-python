@@ -20,7 +20,7 @@ class RoadieModelView(ModelView):
         if not current_user.is_active() or not current_user.is_authenticated():
             return False
 
-        if current_user.has_role('Admin'):
+        if current_user.is_editor():
             return True
 
         return False
@@ -29,3 +29,15 @@ class RoadieModelView(ModelView):
         # redirect to login page if user doesn't have access
         if not self.is_accessible():
             return redirect(url_for('login', next=request.url))
+
+
+class RoadieModelAdminRequiredView(RoadieModelView):
+
+    def is_accessible(self):
+        if not current_user.is_active() or not current_user.is_authenticated():
+            return False
+
+        if current_user.has_role('Admin'):
+            return True
+
+        return False

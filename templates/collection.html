@@ -15,7 +15,7 @@
                 <i class="fa fa-play"></i> Play All
               </button>
             </div>
-            {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+            {% if current_user.is_editor() %}
               <div class="btn-group">
                 <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>

@@ -24,7 +24,7 @@ with ArtistSearcher(None) as s:
                 elif not args.showMissing:
                     print("Release Info [" + str(release) + "]")
         else:
-            print("No Releases Found!")
+            print("No Release(s) Found!")
     else:
         print("Artist Not Found!")
 
