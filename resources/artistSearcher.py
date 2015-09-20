@@ -52,6 +52,7 @@ class ArtistReleaseSearchResult(object):
 class ArtistSearcher(object):
 
     databaseFilename = "artistsReference.db"
+    conn = None
 
     def __init__(self, referer=None):
         self.referer = referer

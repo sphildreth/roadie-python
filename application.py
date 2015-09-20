@@ -442,20 +442,20 @@ def toggleUserReleaseFavorite(release_id, toggle):
 @app.route("/artist/rescan/<artist_id>", methods=['POST'])
 @login_required
 def rescanArtist(artist_id):
-    try:
-        artist = Artist.objects(id=artist_id).first()
-        if not artist:
-            return jsonify(message="ERROR")
-        # Update Database with folders found in Library
-        processor = Processor(False, True, )
-        artistFolder = processor.artistFolder(artist)
-        processor.process(folder=artistFolder)
-        validator = Validator(False)
-        validator.validate(artist)
-        return jsonify(message="OK")
-    except:
-        logger.exception("Error Rescanning Artist")
+    # try:
+    artist = Artist.objects(id=artist_id).first()
+    if not artist:
         return jsonify(message="ERROR")
+    # Update Database with folders found in Library
+    processor = Processor(False, True, )
+    artistFolder = processor.artistFolder(artist)
+    processor.process(folder=artistFolder)
+    validator = Validator(False)
+    validator.validate(artist)
+    return jsonify(message="OK")
+    # except:
+    #     logger.exception("Error Rescanning Artist")
+    #     return jsonify(message="ERROR")
 
 
 @app.route("/release/setTrackCount/<release_id>", methods=['POST'])

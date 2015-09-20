@@ -153,7 +153,7 @@ class Processor(ProcessorBase):
         lastID3Album = None
         artist = None
         release = None
-        artistSearcher = ArtistSearcher()
+        searchArtistResult = None
         with ArtistSearcher(None) as searcherArtist:
             mp3FoldersProcessed = []
 
@@ -242,13 +242,13 @@ class Processor(ProcessorBase):
                                             if a and 'alias' in a:
                                                 alias.append(string.capwords(a['alias']))
                                     artist.AlternateNames = alias
-                                searcherArtist = artistSearcher.searchForArtist(artist.Name)
-                                if searcherArtist:
-                                    artist.ITunesId = searcherArtist.id
-                                    artist.AllMusicGuideId = searcherArtist.amgId
-                                    if artist.Name.lower() != searcherArtist.name.lower():
-                                        if not searcherArtist.name in artist.AlternateNames:
-                                            artist.AlternateNames.append(searcherArtist.name)
+                                searchArtistResult = searcherArtist.searchForArtist(artist.Name)
+                                if searchArtistResult:
+                                    artist.ITunesId = searchArtistResult.id
+                                    artist.AllMusicGuideId = searchArtistResult.amgId
+                                    if artist.Name.lower() != searchArtistResult.name.lower():
+                                        if not searchArtistResult.name in artist.AlternateNames:
+                                            artist.AlternateNames.append(searchArtistResult.name)
                                 ba = None
                                 # See if a file exists to use for the Artist thumbnail
                                 artistFile = os.path.join(mp3Folder, "artist.jpg")
@@ -265,8 +265,8 @@ class Processor(ProcessorBase):
                             # Cannot continue past here if read only as object refer to DB objects must be saved
                             if self.readOnly:
                                 continue
-                            if not searcherArtist:
-                                searcherArtist = artistSearcher.searchForArtist(artist.Name)
+                            if not searchArtistResult:
+                                searchArtistResult = searcherArtist.searchForArtist(artist.Name)
                             # Get the Release
                             if lastID3Album != id3.album:
                                 release = None
@@ -358,15 +358,17 @@ class Processor(ProcessorBase):
                                                 ba = b.getvalue()
                                             except:
                                                 pass
-                                if searcherArtist:
-                                    searchAlbum = artistSearcher.searchForArtistReleases(searcherArtist, release.Title)[0]
-                                    if searchAlbum:
-                                        release.TrackCount = searchAlbum.trackCount
-                                        if not ba:
-                                            try:
-                                                ba = imageSearcher.getImageBytesForUrl(searchAlbum.coverUrl)
-                                            except:
-                                                pass
+                                if searchArtistResult:
+                                    searchAlbumResult = searcherArtist.searchForArtistReleases(searchArtistResult, release.Title)
+                                    if searchAlbumResult:
+                                        searchAlbum = searchAlbumResult[0]
+                                        if searchAlbum:
+                                            release.TrackCount = searchAlbum.trackCount
+                                            if not ba:
+                                                try:
+                                                    ba = imageSearcher.getImageBytesForUrl(searchAlbum.coverUrl)
+                                                except:
+                                                    pass
                                 # If Cover Art Thumbnail bytes found then set to Release Thumbnail
                                 if ba:
                                     release.Thumbnail.new_file()
