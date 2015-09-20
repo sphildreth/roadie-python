@@ -95,7 +95,12 @@
         <div class="sm2-playlist-wrapper">
             <ul class="sm2-playlist-bd">
                 {% for track in tracks %}
-                <li>
+                <li data-artist-id="{{ track.ArtistId }}"
+                    data-artist-name="{{ track.ArtistName }}"
+                    data-track-id="{{ track.TrackId }}"
+                    data-track-title="{{ track.ReleaseTitle }}"
+                    data-release-title="{{ track.ReleaseTitle }}"
+                    data-release-year="{{ track.ReleaseYear }}">
                     <a href="{{ track.StreamUrl }}.mp3">
                         <b><img class="release-thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
                                 alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}</b> &#8226; <img
@@ -137,6 +142,7 @@
 
     </div>
 </div>
+<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/soundmanager2-jsmin.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/bar-ui.js') }}"></script>
 </body>

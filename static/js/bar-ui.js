@@ -167,6 +167,11 @@
         dom.playlistTarget.innerHTML = '<ul class="sm2-playlist-bd"><li><marquee>' + item.innerHTML + '</marquee></li></ul>';
       }
 
+      var playingLi = $("ul.sm2-playlist-bd > li.selected");
+      if(playingLi) {
+        var playingTrackInfo = playingLi.data("artist-name") + " • [" + playingLi.data("release-year") + "] " + playingLi.data("release-title") + " — " + playingLi.data("track-title") ;
+        document.title = playingTrackInfo;
+      }
     }
 
     function makeSound(url) {
