@@ -214,7 +214,7 @@
         $(".home-container td.track").on("click", ".play-track", function(e) {
             var releaseId = $(this).parent().siblings("td.release").data("release-id");
             var trackid = $(this).parent().data("track-id");
-            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid, "Playlist");
+            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackid);
         });
 
         $(".home-container td.track").on("click", ".que-track", function(e) {
