@@ -25,16 +25,21 @@
                     </ul>
                 </div>
             </div>
-
             {% if current_user.is_editor() %}
               <div class="btn-group">
                 <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
                 {% if release.Artist.IsLocked == False %}
                 <div class="btn-group">
-                    <a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete</a>
-                    <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
+                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Release</a></li>
+                        <li><a id="deleteReleaseAndTracks" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Release And Track Files</a></li>
+                    </ul>
                 </div>
+                <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
                 {% endif %}
              </div>
             {% endif %}
@@ -408,6 +413,23 @@
         }
     };
 
+    var doDelete = function(deleteFiles) {
+        $(".loader").fadeIn("slow", function() {
+            $.ajax({
+                type: 'POST',
+                url: '/release/delete/' + releaseId + '/' + deleteFiles,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        window.location.href = '/artist/{{ release.Artist.id }}';
+                    }
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
+    };
 
     $(function() {
 
@@ -582,23 +604,18 @@
         $("#deleteRelease").on("click", function(e) {
             bootbox.confirm("Continue To Delete Release?", function(result) {
                 if(result) {
-                    var $t = $(this);
-                    $.ajax({
-                        type: 'POST',
-                        url: '/release/delete/' + releaseId,
-                        contentType: "application/javascript",
-                        success: function(data) {
-                            if(data.message == "OK") {
-                                window.location.href = '/artist/{{ release.Artist.id }}';
-                            }
-                        },
-                        error:function(jq, st, error){
-                            roadieLibrary.showErrorMessage(error);
-                        }
-                    });
+                    doDelete(false);
                 }
             });
         });
+        $("#deleteReleaseAndTracks").on("click", function(e) {
+            bootbox.confirm("Continue To Delete Release and Delete Files?", function(result) {
+                if(result) {
+                    doDelete(true);
+                }
+            });
+        });
+
         $("a.setReleaseImage").on("click", function(e) {
             var $t = $(this);
             var imageId = $t.parents(".context-menu").data("image-id");

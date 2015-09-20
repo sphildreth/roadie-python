@@ -442,20 +442,20 @@ def toggleUserReleaseFavorite(release_id, toggle):
 @app.route("/artist/rescan/<artist_id>", methods=['POST'])
 @login_required
 def rescanArtist(artist_id):
-    # try:
-    artist = Artist.objects(id=artist_id).first()
-    if not artist:
+    try:
+        artist = Artist.objects(id=artist_id).first()
+        if not artist:
+            return jsonify(message="ERROR")
+        # Update Database with folders found in Library
+        processor = Processor(False, True, )
+        artistFolder = processor.artistFolder(artist)
+        processor.process(folder=artistFolder)
+        validator = Validator(False)
+        validator.validate(artist)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Rescanning Artist")
         return jsonify(message="ERROR")
-    # Update Database with folders found in Library
-    processor = Processor(False, True, )
-    artistFolder = processor.artistFolder(artist)
-    processor.process(folder=artistFolder)
-    validator = Validator(False)
-    validator.validate(artist)
-    return jsonify(message="OK")
-    # except:
-    #     logger.exception("Error Rescanning Artist")
-    #     return jsonify(message="ERROR")
 
 
 @app.route("/release/setTrackCount/<release_id>", methods=['POST'])
@@ -558,13 +558,25 @@ def deleteArtistReleases(artist_id):
         return jsonify(message="ERROR")
 
 
-@app.route('/release/delete/<release_id>', methods=['POST'])
+@app.route('/release/delete/<release_id>/<delete_files>', methods=['POST'])
 @login_required
-def deleteRelease(release_id):
+def deleteRelease(release_id,delete_files):
     release = Release.objects(id=release_id).first()
     if not release:
         return jsonify(message="ERROR")
     try:
+        if delete_files == "true":
+            try:
+                for track in release.Tracks:
+                    trackPath = track.Track.FilePath
+                    trackFilename = os.path.join(track.Track.FilePath, track.Track.FileName)
+                    os.remove(trackFilename)
+                    # if the folder is empty then delete the folder as well
+                    if trackPath:
+                        if not os.listdir(trackPath):
+                            os.rmdir(trackPath)
+            except OSError:
+                pass
         Release.delete(release)
         return jsonify(message="OK")
     except:
