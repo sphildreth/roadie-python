@@ -133,6 +133,16 @@
       }
     }
 
+    function checkIfInView(element){
+        var offset = element.offset().top - $(window).scrollTop();
+        if(offset > window.innerHeight || offset < 0){
+            // Not in view
+            $('html,body').animate({scrollTop: offset}, 1000);
+            return false;
+        }
+       return true;
+    }
+
     function getTime(msec, useString) {
 
       // convert milliseconds to hh:mm:ss, return as object literal or string
@@ -172,6 +182,8 @@
         var playingTrackInfo = playingLi.data("artist-name") + " • [" + playingLi.data("release-year") + "] " + playingLi.data("release-title") + " — " + playingLi.data("track-title") ;
         document.title = playingTrackInfo;
       }
+
+      checkIfInView(playingLi);
     }
 
     function makeSound(url) {

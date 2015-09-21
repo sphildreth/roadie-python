@@ -30,6 +30,13 @@
  transition: max-width 0.2s ease-in-out;
 }
 
+.sm2-bar-ui .bd.sm2-main-controls {
+ top: 0;
+ z-index: 99999;
+ position: fixed;
+ border: 1px solid #D8D8D8;
+}
+
 .sm2-bar-ui .sm2-playlist li {
  text-align: center;
  margin-top: -2px;
@@ -803,6 +810,7 @@
 .sm2-bar-ui.playlist-open .bd.sm2-playlist-drawer {
  height: auto;
  opacity: 1;
+ margin-top: 43px;
 }
 
 .sm2-bar-ui.playlist-open .bd.sm2-playlist-drawer a {
