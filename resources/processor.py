@@ -4,8 +4,6 @@
 # --- Determine if File Should Be Moved if so move
 # --- Each folder call scanner
 # --- If folder is empty delete
-import arrow
-import linecache
 import io
 import os
 import random
@@ -13,14 +11,19 @@ import shutil
 import string
 import json
 import hashlib
-from PIL import Image
-from dateutil.parser import *
 from shutil import move
+
+import arrow
+from PIL import Image
+
+from dateutil.parser import *
+
 from mongoengine import connect
-from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
-from resources.musicBrainz import MusicBrainz
-from resources.artistSearcher import ArtistSearcher
-from resources.imageSearcher import ImageSearcher, ImageSearchResult
+
+from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel
+from searchEngines.musicBrainz import MusicBrainz
+from searchEngines.artistSearcher import ArtistSearcher
+from searchEngines.imageSearcher import ImageSearcher
 from resources.id3 import ID3
 from resources.scanner import Scanner
 from resources.convertor import Convertor

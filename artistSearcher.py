@@ -1,5 +1,6 @@
 import argparse
-from resources.artistSearcher import ArtistSearcher
+
+from searchEngines.artistSearcher import ArtistSearcher
 
 p = argparse.ArgumentParser(description='Search For Artist Information.')
 p.add_argument('--name', '-n', help="Artist Name", required=True)

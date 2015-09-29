@@ -1,9 +1,9 @@
-import html
 import json
 from io import StringIO
 from urllib import request, parse
 
-from resources.musicBrainz import MusicBrainz
+from searchEngines.musicBrainz import MusicBrainz
+
 
 class ImageSearchResult(object):
     def __init__(self, height, width, url):

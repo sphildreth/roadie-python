@@ -17,7 +17,7 @@ class RoadieModelView(ModelView):
             model.LastUpdated = datetime.datetime.now()
 
     def is_accessible(self):
-        if not current_user.is_active() or not current_user.is_authenticated():
+        if not current_user.is_active or not current_user.is_authenticated:
             return False
 
         if current_user.is_editor():
@@ -34,7 +34,7 @@ class RoadieModelView(ModelView):
 class RoadieModelAdminRequiredView(RoadieModelView):
 
     def is_accessible(self):
-        if not current_user.is_active() or not current_user.is_authenticated():
+        if not current_user.is_active or not current_user.is_authenticated:
             return False
 
         if current_user.has_role('Admin'):

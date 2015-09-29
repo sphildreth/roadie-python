@@ -4,8 +4,6 @@ import hashlib
 import json
 import random
 import zipfile
-import zlib
-from itertools import groupby
 from time import time
 from operator import itemgetter
 from re import findall
@@ -24,13 +22,12 @@ from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
-
 from werkzeug.datastructures import Headers
 
 from importers.collectionImporter import CollectionImporter
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
-from resources.imageSearcher import ImageSearcher, ImageSearchResult
+from searchEngines.imageSearcher import ImageSearcher
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.processor import Processor
@@ -51,7 +48,6 @@ from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequired
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
-from viewModels.RoadieUserModelView import RoadieUserModelView
 from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
 from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
 from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
@@ -69,9 +65,12 @@ app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
 app.jinja_env.filters['count_new_lines'] = count_new_lines
 
+
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
+
+
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
 trackPathReplace = None
@@ -1341,7 +1340,13 @@ def redirect_back(endpoint, **values):
 @app.route("/collections")
 @login_required
 def collections():
-    collections = Collection.objects().order_by("Name").all()
+    collections = []
+    for collection in Collection.objects().order_by("Name"):
+        collections.append({
+            'id': collection.id,
+            'Name': collection.Name,
+            'ReleaseCount': 0 #collection.Releases # This is crazy slow
+        })
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']

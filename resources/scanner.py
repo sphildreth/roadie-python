@@ -2,19 +2,20 @@
 # -- Adds new MP3 files not in database to database
 # -- Updates MP3 files found in database but different tag data
 # -- Deletes MP3 files found in database but no longer found in folder
-import arrow
-import io
 import os
 import json
 import hashlib
 import random
-import argparse
+
+import arrow
 from mongoengine import connect
-from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel, Track, TrackRelease
-from resources.musicBrainz import MusicBrainz
+
+from resources.models import Release, Track, TrackRelease
+from searchEngines.musicBrainz import MusicBrainz
 from resources.id3 import ID3
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
+
 
 class Scanner(ProcessorBase):
 

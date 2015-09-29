@@ -34,7 +34,7 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
             <ul class="nav navbar-nav navbar-right">
-                {% if current_user.is_authenticated() and current_user.has_role("Admin") %}
+                {% if current_user.is_authenticated and current_user.has_role("Admin") %}
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
                        aria-expanded="false">Admin <span class="caret"></span></a>
@@ -47,7 +47,7 @@
                     </ul>
                 </li>
                 {% endif %}
-                {% if current_user.is_authenticated() %}
+                {% if current_user.is_authenticated %}
                 <li class="username">
                     <a href="/profile/edit" title="Edit Profile">
                         <img class="avatar" alt="Avatar" src="/images/user/avatar/{{ g.user.id }}"/> Hi, {{
@@ -56,12 +56,12 @@
                 </li>
                 <li><a href="{{ url_for('logout') }}"><i class="fa fa-sign-out"></i> Logout</a></li>
                 {% endif %}
-                {% if not g.user.is_authenticated() %}
+                {% if not g.user.is_authenticated %}
                 <li><a href="{{ url_for('login') }}"><i class="fa fa-sign-in"></i> Login</a></li>
                 <li><a href="{{ url_for('register') }}">Register</a></li>
                 {% endif %}
             </ul>
-            {% if current_user.is_authenticated() %}
+            {% if current_user.is_authenticated %}
             <ul class="nav navbar-nav ">
                 <li>
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
