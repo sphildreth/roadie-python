@@ -6,7 +6,7 @@ from searchEngines.searchResult import *
 
 class Spotify(SearchEngineBase):
 
-    IsActive = False
+    IsActive = True
 
     def __init__(self, referer = None):
         SearchEngineBase.__init__(self, referer)

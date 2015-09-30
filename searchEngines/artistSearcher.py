@@ -1,6 +1,7 @@
 import os
 
 import json
+import arrow
 import string
 from io import StringIO
 from urllib import request, parse
@@ -104,7 +105,7 @@ class ArtistSearcher(object):
             { 'AlternateNames': { '$regex' : artistSearchResult.name, '$options': 'mi' } }
         ]}).first()
         if artist:
-            artistSearchResult.roadieId = artist.id
+            artistSearchResult.roadieId = str(artist.id)
         return artistSearchResult
 
     def __markReleasesFoundInRoadie(self, artistSearchResult, artistReleaseSearchResults):
@@ -116,7 +117,7 @@ class ArtistSearcher(object):
                         { 'AlternateNames': { '$regex' : r.title, '$options': 'mi' } }
                     ]}).filter(Artist = artist).first()
                 if release:
-                    r.roadieId = release.id
+                    r.roadieId = str(release.id)
         return artistReleaseSearchResults
 
     def __saveReleasesForArtistToDB(self,artistSearchResult, ArtistReleaseSearchResults):
@@ -167,54 +168,61 @@ class ArtistSearcher(object):
 
     def __mergeArtistResult(self, left, right):
         result = left
-        if not result.name and right.name:
-            result.name = right.name
-        elif right.name and result.name.lower().strip() != right.name.lower().strip():
-            if not result.alternateNames:
-                result.alternateNames = []
-            if not right.name in result.alternateNames:
-                result.alternateNames.append(right.name)
-        result.sortName = result.sortName or right.sortName
-        result.musicBrainzId = result.musicBrainzId or right.musicBrainzId
-        result.iTunesId = result.iTunesId or right.iTunesId
-        result.amgId = result.amgId or right.amgId
-        result.spotifyId = result.spotifyId or right.spotifyId
-        result.beginDate = result.beginDate or right.beginDate
-        result.endDate = result.endDate or right.endDate
-        if not result.artistType or result.artistType.lower().strip() == "unknown" and right.artistType:
-            result.artistType = right.artistType
-        result.imageUrl = result.imageUrl or right.imageUrl
-        result.bioContext = result.bioContext or right.bioContext
-        if not result.tags and right.tags:
-            result.tags = right.tags
-        elif result.tags and right.tags:
-            for tag in right.tags:
-                if not tag in result.tags:
-                    result.tag.append(tag)
-        if not result.alternateNames and right.alternateNames:
-            result.alternateNames = right.alternateNames
-        elif result.alternateNames and right.alternateNames:
-            for alternateName in right.alternateNames:
-                if not alternateName in result.alternateNames:
-                    result.alternateNames.append(alternateName)
-        if not result.urls and right.urls:
-            result.urls = right.urls
-        elif result.urls and right.urls:
-            for url in right.urls:
-                if not url in result.urls:
-                    result.urls.append(url)
-        if not result.isniList and right.isniList:
-            result.isniList = right.isniList
-        elif result.isniList and right.isniList:
-            for isni in right.isniList:
-                if not isni in result.isniList:
-                    result.isniList.append(isni)
-        if not result.releases and right.releases:
-            result.releases = right.releases
-        elif result.releases and right.releases:
-            for release in right.releases:
-                if not filter(lambda x: x.title == release.title, result.releases):
-                    result.releases.append(release)
+        try:
+            if not result.name and right.name:
+                result.name = right.name
+            elif right.name and result.name.lower().strip() != right.name.lower().strip():
+                if not result.alternateNames:
+                    result.alternateNames = []
+                if not right.name in result.alternateNames:
+                    result.alternateNames.append(right.name)
+            result.sortName = result.sortName or right.sortName
+            result.musicBrainzId = result.musicBrainzId or right.musicBrainzId
+            result.iTunesId = result.iTunesId or right.iTunesId
+            result.amgId = result.amgId or right.amgId
+            result.spotifyId = result.spotifyId or right.spotifyId
+            result.beginDate = result.beginDate or right.beginDate
+            if result.beginDate:
+                result.beginDate = arrow.get(result.beginDate[:4], "YYYY").date()
+            result.endDate = result.endDate or right.endDate
+            if result.endDate:
+                result.endDate = arrow.get(result.endDate[:4], "YYYY").date()
+            if not result.artistType or result.artistType.lower().strip() == "unknown" and right.artistType:
+                result.artistType = right.artistType
+            result.imageUrl = result.imageUrl or right.imageUrl
+            result.bioContext = result.bioContext or right.bioContext
+            if not result.tags and right.tags:
+                result.tags = right.tags
+            elif result.tags and right.tags:
+                for tag in right.tags:
+                    if not tag in result.tags:
+                        result.tags.append(tag)
+            if not result.alternateNames and right.alternateNames:
+                result.alternateNames = right.alternateNames
+            elif result.alternateNames and right.alternateNames:
+                for alternateName in right.alternateNames:
+                    if not alternateName in result.alternateNames:
+                        result.alternateNames.append(alternateName)
+            if not result.urls and right.urls:
+                result.urls = right.urls
+            elif result.urls and right.urls:
+                for url in right.urls:
+                    if not url in result.urls:
+                        result.urls.append(url)
+            if not result.isniList and right.isniList:
+                result.isniList = right.isniList
+            elif result.isniList and right.isniList:
+                for isni in right.isniList:
+                    if not isni in result.isniList:
+                        result.isniList.append(isni)
+            if not result.releases and right.releases:
+                result.releases = right.releases
+            elif result.releases and right.releases:
+                for release in right.releases:
+                    if not filter(lambda x: x.title == release.title, result.releases):
+                        result.releases.append(release)
+        except:
+            pass
         return result
 
     def searchForArtistReleases(self,artistSearchResult, titleFilter=None):
@@ -236,7 +244,7 @@ class ArtistSearcher(object):
 
 
 with ArtistSearcher(None) as s:
-    b = s.searchForArtist("Men At Work")
+    b = s.searchForArtist("Cher")
     print(b)
 
 
