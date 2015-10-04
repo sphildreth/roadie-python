@@ -2,11 +2,12 @@ import json
 from io import StringIO
 from urllib import request, parse
 
+from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
-from resources.models.Artist import Artist
-from resources.models.Release import Release
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
+from searchEngines.models.Artist import Artist, ArtistType
+from searchEngines.models.Release import Release
+from searchEngines.models.ReleaseMedia import ReleaseMedia
+from searchEngines.models.Track import Track
 
 
 class Spotify(SearchEngineBase):
@@ -22,7 +23,7 @@ class Spotify(SearchEngineBase):
             url = "https://api.spotify.com/v1/search?offset=0&limit=1&type=artist&query=" + parse.quote_plus(name)
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing Spotify Lookup For Artist")
+            self.logger.debug("Performing Spotify Lookup For Artist")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -32,14 +33,15 @@ class Spotify(SearchEngineBase):
                         r = ar['items'][0]
                         artist = Artist(name=r['name'])
                         artist.spotifyId = r['id']
-                        artist.artistType = r['type']
+                        artist.artistType = ArtistType.Group if r['type'] and isEqual(r['type'],
+                                                                                      "group") else ArtistType.Person
                         if 'external_urls' in r and 'spotify' in r['external_urls']:
                             artist.urls = []
                             artist.urls.append(r['external_urls']['spotify'])
                         if 'genres' in r:
                             artist.tags = artist.tags or []
                             for genre in r['genres']:
-                                if genre not in artist.tags:
+                                if not isInList(artist.tags, genre):
                                     artist.tags.append(genre)
                         images = r['images']
                         if images:
@@ -67,7 +69,7 @@ class Spotify(SearchEngineBase):
                 if spotifyReleases:
                     for spotifyRelease in spotifyReleases:
                         spotifyReleaseName = spotifyRelease['name']
-                        if spotifyReleaseName.lower().strip() == title.lower().strip():
+                        if isEqual(spotifyReleaseName, title):
                             return self.lookupReleaseBySpotifyId(spotifyRelease['id'])
             return None
         except:
@@ -81,7 +83,7 @@ class Spotify(SearchEngineBase):
             url = "https://api.spotify.com/v1/albums/" + spotifyId
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing Spotify Lookup For Release")
+            self.logger.debug("Performing Spotify Lookup For Release")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -98,11 +100,11 @@ class Spotify(SearchEngineBase):
                                 track.dur = spTrack['duration_ms']
                                 track.releaseMediaNumber = spTrack['disc_number']
                                 track.spotifyId = spTrack['id']
-                                if not filter(lambda x: x.trackNumber == track.trackNumber, media.tracks):
+                                if not ([t for t in media.tracks if t.trackNumber == track.trackNumber]):
                                     media.tracks.append(track)
                         if 'genres' in o:
                             for genre in o['genres']:
-                                if genre not in tags:
+                                if not isInList(tags, genre):
                                     tags.append(genre)
                         if 'external_ids' in o and 'upc' in o['external_ids']:
                             tags.append("upc:" + o['external_ids']['upc'])

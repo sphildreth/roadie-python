@@ -6,18 +6,19 @@ from urllib import request, parse
 
 import arrow
 
+from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
-from resources.models.Artist import Artist
-from resources.models.Genre import Genre
-from resources.models.Image import Image
-from resources.models.Label import Label
-from resources.models.Release import Release
-from resources.models.ReleaseLabel import ReleaseLabel
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
+from searchEngines.models.Artist import Artist, ArtistType
+from searchEngines.models.Image import Image
+from searchEngines.models.Genre import Genre
+from searchEngines.models.Label import Label
+from searchEngines.models.Release import Release
+from searchEngines.models.ReleaseLabel import ReleaseLabel
+from searchEngines.models.ReleaseMedia import ReleaseMedia
+from searchEngines.models.Track import Track
 
 
-class AllMusicGuide(object):
+class AllMusicGuide(SearchEngineBase):
     IsActive = True
 
     api_url = 'http://api.rovicorp.com/data/v2'
@@ -44,7 +45,7 @@ class AllMusicGuide(object):
                 self._sig()) + "&query=" + parse.quote_plus(name) + "&entitytype=artist&include=all&size=1"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing All Music Guide Lookup For Artist")
+            self.logger.debug("Performing All Music Guide Lookup For Artist")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -54,18 +55,19 @@ class AllMusicGuide(object):
                         if amgArtist:
                             artist = Artist(name=amgArtist['name'])
                             artist.amgId = amgArtist['ids']['nameId']
-                            artist.artistType = 'Group' if amgArtist['isGroup'] == "true" else 'Person'
+                            artist.artistType = ArtistType.Group if isEqual(amgArtist['isGroup'],
+                                                                            "true") else ArtistType.Person
                             if 'genre' in amgArtist['musicGenres']:
                                 artist.genres = []
                                 for genre in amgArtist['musicGenres']:
-                                    if not genre in artist.genres:
+                                    if not isInList(artist.genres, genre):
                                         artist.genres.append(genre)
                             bdFormat = "YYYY"
                             bd = amgArtist['birth']['date'].replace("-??", "")
                             if bd:
                                 if len(bd) > 4:
                                     bdFormat = "YYYY-MM-DD"
-                                if artist.artistType == 'Person':
+                                if artist.artistType == ArtistType.Person:
                                     artist.birthDate = arrow.get(bd, bdFormat).datetime
                                 else:
                                     artist.beginDate = arrow.get(bd, bdFormat).datetime
@@ -80,9 +82,9 @@ class AllMusicGuide(object):
                                 for album in amgArtist['discography']:
                                     release = Release(title=album['title'])
                                     release.amgId = album['ids']['albumId']
-                                    rdFormat = "YYYY"
                                     rd = (album['year'] or '').replace("-??", "")
                                     if rd:
+                                        rdFormat = "YYYY"
                                         if len(rd) == 10:
                                             rdFormat = "YYYY-MM-DD"
                                         elif len(rd) == 7:
@@ -100,7 +102,7 @@ class AllMusicGuide(object):
                                     release.labels = []
                                     if album['label']:
                                         label = Label(name=album['label'], sortName=album['label'])
-                                        release.labels.append(ReleaseLabel(label=label))
+                                        release.labels.append(ReleaseLabel(label=label, release=release))
                                     release.releaseType = album['type']
                                     release.trackCount = 0
                                     artist.releases.append(release)
@@ -121,7 +123,7 @@ class AllMusicGuide(object):
                                 artist.genres = []
                                 for style in amgArtist['musicStyles']:
                                     genreName = style['name']
-                                    if not genreName in artist.genres:
+                                    if not ([g for g in artist.genres if isEqual(g.name, genreName)]):
                                         artist.genres.append(Genre(name=genreName))
                                         # TODO associateWith
                 except:
@@ -143,7 +145,7 @@ class AllMusicGuide(object):
                 self._sig()) + "&include=images,releases,styles,tracks&albumid=" + amgId
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing All Music Guide Lookup For Release(s)")
+            self.logger.debug("Performing All Music Guide Lookup For Release(s)")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -157,7 +159,7 @@ class AllMusicGuide(object):
                                 release.tags = []
                                 if 'flags' in album and album['flags']:
                                     for flag in album['flags']:
-                                        if not flag in release.tags:
+                                        if not isInList(release.tags, flag):
                                             release.tags.append(flag)
                                 rdFormat = "YYYY"
                                 rd = (album['originalReleaseDate'] or '').replace("-??", "")
@@ -171,13 +173,13 @@ class AllMusicGuide(object):
                                     release.genres = []
                                     for style in album['genres']:
                                         genreName = style['name']
-                                        if not genreName in release.genres:
+                                        if not isInList(release.genres, genreName):
                                             release.genres.append(Genre(name=genreName))
                                 if 'styles' in album and album['styles']:
                                     release.genres = release.genres or []
                                     for style in album['styles']:
                                         genreName = style['name']
-                                        if not genreName in release.genres:
+                                        if not isInList(release.genres, genreName):
                                             release.genres.append(Genre(name=genreName))
                                 if 'tracks' in album and album['tracks']:
                                     trackCount = 0
@@ -186,15 +188,14 @@ class AllMusicGuide(object):
                                     for disc in set(map(lambda x: x['disc'], album['tracks'])):
                                         media = ReleaseMedia(releaseMediaNumber=disc)
                                         media.tracks = []
-                                        for amgTrack in (filter(lambda x: x['disc'] == disc, album['tracks'])):
+                                        for amgTrack in ([t for t in album['tracks'] if isEqual(t['disc'], disc)]):
                                             currentTrack = currentTrack + 1
                                             track = Track(title=amgTrack['title'])
                                             track.duration = amgTrack['duration']
                                             track.trackNumber = currentTrack
                                             track.releaseMediaNumber = disc
                                             track.amgId = amgTrack['ids']['trackId']
-                                            if not [t for t in media.tracks if t.title == amgTrack[
-                                                'title']]:  # ] filter(lambda x: x.title == amgTrack['title'], tracks):
+                                            if not [t for t in media.tracks if isEqual(t.title, amgTrack['title'])]:
                                                 media.tracks.append(track)
                                         trackCount = trackCount + len(media.tracks)
                                         releaseMedia.append(media)
@@ -212,19 +213,19 @@ class AllMusicGuide(object):
         # see if title is found in artist releases
         release = None
         if artist and artist.releases:
-            release = [r for r in artist.releases if r.title == title]
+            release = [r for r in artist.releases if isEqual(r.title, title)]
         if not release:
             # if not fetch artist from AllMusic; see if found there
             amgArtist = self.lookupArtist(artist.name)
             if amgArtist and amgArtist.releases:
-                release = [r for r in amgArtist.releases if r.title == title]
+                release = [r for r in amgArtist.releases if isEqual(r.title, title)]
         if release:
             return self.lookupReleaseDetails(release.amgId)
         return None
 
 
 # a = AllMusicGuide()
-        # artist = a.lookupArtist('Men At Work')
-        # #release = a.lookupReleaseDetails(artist.releases[0].amgId)
-        # release = a.lookupReleaseDetails("MW0000190875")
-        # print(artist)
+# artist = a.lookupArtist('Men At Work')
+# #release = a.lookupReleaseDetails(artist.releases[0].amgId)
+# release = a.lookupReleaseDetails("MW0000190875")
+# print(artist)

@@ -2,9 +2,10 @@ import json
 from io import StringIO
 from urllib import request, parse
 
+from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
-from resources.models.Artist import Artist
-from resources.models.Release import Release
+from searchEngines.models.Artist import Artist
+from searchEngines.models.Release import Release
 
 
 class iTunes(SearchEngineBase):
@@ -21,16 +22,18 @@ class iTunes(SearchEngineBase):
             url = "http://itunes.apple.com/search?term=" + parse.quote_plus(name) + "&entity=musicArtist"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing iTunes Lookup For Artist")
+            self.logger.debug("Performing iTunes Lookup For Artist")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     for r in o['results']:
                         artist = Artist(name=r['artistName'])
-                        artist.iTunesId = r['artistId']
-                        artist.amgId = r['amgArtistId']
-                        if artist.name.lower() == name.lower():
+                        if 'artistId' in r:
+                            artist.iTunesId = r['artistId']
+                        if 'amgArtistId' in r:
+                            artist.amgId = r['amgArtistId']
+                        if isEqual(artist.name, name):
                             break
                 except:
                     self.logger.exception("iTunes: Error In LookupArtist")
@@ -54,14 +57,14 @@ class iTunes(SearchEngineBase):
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             albumsSearchResult = []
-            self.logger.debug("artistSearcher :: Performing iTunes Lookup For Album(s)")
+            self.logger.debug("Performing iTunes Lookup For Album(s)")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     for r in o['results']:
                         try:
-                            if 'collectionType' in r and r["collectionType"] == "Album":
+                            if 'collectionType' in r and isEqual(r["collectionType"], "Album"):
                                 a = Release(title=r['collectionName'], releaseDate=r['releaseDate'],
                                             trackCount=r['trackCount'], coverUrl=r['artworkUrl100'])
                                 a.iTunesId = r['collectionId']

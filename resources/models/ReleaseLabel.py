@@ -1,10 +1,10 @@
-from sqlalchemy import Column, ForeignKey, Integer, String, Date
+from sqlalchemy import Column, Index, ForeignKey, Integer, String, Date
 
 from resources.models.ModelBase import Base
 
 
 class ReleaseLabel(Base):
-
+    __table_args__ = (Index('idx_release_label', "releaseId", "labelId"),)
 
     catalogNumber = Column(String(200))
     beginDate = Column(Date())

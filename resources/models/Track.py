@@ -1,6 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Table, Integer, SmallInteger, String, DateTime
 from sqlalchemy_utils import ScalarListType
-
 from sqlalchemy.orm import relationship
 
 from resources.models.ModelBase import Base
@@ -50,6 +49,5 @@ class Track(Base):
     def info(self):
         return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) \
-               + "], Title [" + str(self.title) + "], ReleaseMediaNumber[" + str(
-            self.releaseMediaNumber) + "], TrackNumber [" + str(self.trackNumber) \
+               + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber) \
                + "], Duration [" + str(self.duration) + "]"

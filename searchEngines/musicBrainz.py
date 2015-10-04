@@ -7,13 +7,14 @@ from urllib import request
 import arrow
 import musicbrainzngs
 
+from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
-from resources.models.Artist import Artist
-from resources.models.Label import Label
-from resources.models.Release import Release
-from resources.models.ReleaseLabel import ReleaseLabel
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
+from searchEngines.models.Artist import Artist, ArtistType
+from searchEngines.models.Label import Label
+from searchEngines.models.Release import Release
+from searchEngines.models.ReleaseLabel import ReleaseLabel
+from searchEngines.models.ReleaseMedia import ReleaseMedia
+from searchEngines.models.Track import Track
 
 
 class MusicBrainz(SearchEngineBase):
@@ -35,8 +36,13 @@ class MusicBrainz(SearchEngineBase):
 
     def lookupArtist(self, name):
         results = musicbrainzngs.search_artists(artist=name)
-        if results and results['artist-list'][0]:
-            result = results['artist-list'][0]
+        if results and 'artist-list' in results and results['artist-list']:
+            result = None
+            for artisttResult in results['artist-list']:
+                if 'name' in artisttResult:
+                    if isEqual(artisttResult['name'], name):
+                        result = artisttResult
+                        break
             if result:
                 return self.lookupArtistByMusicBrainzId(result['id'])
         return None
@@ -47,19 +53,20 @@ class MusicBrainz(SearchEngineBase):
             raise RuntimeError("Invalid MusicBrainzId")
         try:
             artist = None
-            self.logger.debug("artistSearcher :: Performing MusicBrainz Lookup For Artist")
+            self.logger.debug("Performing MusicBrainz Lookup For Artist")
             results = musicbrainzngs.get_artist_by_id(musicbrainzId, includes=['tags','aliases','url-rels'])
             if results and results['artist']:
                 result = results['artist']
                 if result:
                     artist = Artist(name=result['name'])
                     artist.musicBrainzId = result['id']
-                    artist.artistType = result['type']
+                    artist.artistType = ArtistType.Group if result['type'] and isEqual(result['type'],
+                                                                                       "group") else ArtistType.Person
                     artist.sortName = result['sort-name']
                     if 'isni-list' in result:
                         artist.isniList = []
                         for isni in result['isni-list']:
-                            if not isni in artist.isniList:
+                            if not isInList(artist.isniList, isni):
                                 artist.isniList.append(isni)
                     if 'life-span' in result:
                         if 'begin' in result['life-span']:
@@ -70,7 +77,7 @@ class MusicBrainz(SearchEngineBase):
                         artist.alternateNames = []
                         for alias in result['alias-list']:
                             aliasName = alias['alias']
-                            if aliasName not in artist.alternateNames:
+                            if not isInList(artist.alternateNames, aliasName):
                                 artist.alternateNames.append(aliasName)
                     if 'url-relation-list' in result:
                         artist.urls = []
@@ -78,12 +85,12 @@ class MusicBrainz(SearchEngineBase):
                             target = url['target']
                             type = url['type']
                             if type != "image":
-                                if not target in artist.urls:
+                                if not isInList(artist.urls, target):
                                     artist.urls.append(target)
                     if 'tag-list' in  result:
                         artist.tags = []
                         for tag in result['tag-list']:
-                            if tag not in artist.tags:
+                            if not isInList(artist.tags, tag['name']):
                                 artist.tags.append(tag['name'])
             if artist:
                 artist.releases = self.lookupAllArtistsReleases(artist)
@@ -113,7 +120,7 @@ class MusicBrainz(SearchEngineBase):
         mbReleases = musicbrainzngs.browse_releases(artist=artist.musicBrainzId)
         if mbReleases and 'release-list' in mbReleases:
 
-            for x in range(15):
+            for x in range(10):
                 t = threading.Thread(target=self.threader)
                 t.daemon = True
                 t.start()
@@ -144,7 +151,7 @@ class MusicBrainz(SearchEngineBase):
             if not musicBrainzId:
                 raise RuntimeError("Invalid MusicBrainzId")
             release = None
-            self.logger.debug("artistSearcher :: Performing MusicBrainz Lookup For Album(s) [" + musicBrainzId + "]")
+            self.logger.debug("Performing MusicBrainz Lookup For Album(s) [" + musicBrainzId + "]")
             mbReleaseById = musicbrainzngs.get_release_by_id(id=musicBrainzId,
                                                              includes=['labels', 'aliases', 'recordings', 'url-rels'])
             if mbReleaseById:
@@ -173,6 +180,7 @@ class MusicBrainz(SearchEngineBase):
                     if 'label-info-list' in mbRelease:
                         for labelInfo in mbRelease['label-info-list']:
                             if 'label' in labelInfo and 'name' in labelInfo['label']:
+                                label = None
                                 labelName = labelInfo['label']['name']
                                 if labelName:
                                     label = Label(name=labelName)
@@ -182,7 +190,7 @@ class MusicBrainz(SearchEngineBase):
                                 if 'alias-list' in labelInfo['label']:
                                     label.alternateNames = []
                                     for alias in labelInfo['label']['alias-list']:
-                                        if not alias['alias'] in label.alternateNames:
+                                        if not isInList(label.alternateNames, alias['alias']):
                                             label.alternateNames.append(alias['alias'])
                                 catalogNumber = None
                                 if 'catalog-number' in labelInfo:
@@ -202,7 +210,7 @@ class MusicBrainz(SearchEngineBase):
                                     track.trackNumber = mbTrack['position']
                                     track.releaseMediaNumber = releaseMediaNumber
                                     track.musicBrainzId = mbTrack['id']
-                                    if not filter(lambda x: x.trackNumber == track.trackNumber, media.tracks):
+                                    if not ([t for t in media.tracks if t.trackNumber == track.trackNumber]):
                                         media.tracks.append(track)
                             trackCount = trackCount + len(media.tracks)
                             media.trackCount = len(media.tracks)
@@ -240,10 +248,15 @@ class MusicBrainz(SearchEngineBase):
 
 
 # a = MusicBrainz()
-# artist = a.lookupArtist('Men At Work')
-# r = a.lookupAllArtistsReleases(artist)
+# #artist = a.lookupArtist('Danger Danger')
+# #print(artist)
+#
+# release = a.lookupReleaseByMusicBrainzId("2990c4bd-d04f-4319-93a5-d95515bfb493")
+# print(release.info())
+#
+# #r = a.lookupAllArtistsReleases(artist)
 # # #release = a.searchForRelease(artist, "Cold Spring Harbor")
 # #r = a.lookupReleaseByMusicBrainzId('038acd9c-b845-461e-ae76-c4f3190fc774')
-# print(r)
+# #print(r)
 # # #print(artist.info())
 # #print(release.info())

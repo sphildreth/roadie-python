@@ -1,18 +1,23 @@
 import random
 import uuid
 
-from resources.models.Artist import Artist
+from resources.models.Artist import Artist as dbArtist
+from resources.models.Label import Label as dbLabel
 from resources.logger import Logger
 from searchEngines.imageSearcher import ImageSearcher
 from searchEngines.musicBrainz import MusicBrainz
 from searchEngines.iTunes import iTunes
 from searchEngines.lastFM import LastFM
 from searchEngines.spotify import Spotify
+from searchEngines.allMusic import AllMusicGuide
+from searchEngines.models.Artist import Artist
 
 
 class ArtistSearcher(object):
 
     dbSession = None
+
+    cache = dict()
 
     def __init__(self, dbSession, referer=None):
         self.dbSession = dbSession
@@ -23,16 +28,16 @@ class ArtistSearcher(object):
 
 
     def __getArtistFromDB(self,name):
-        return self.dbSession.query(Artist).filter(Artist.name == name).first()
+        return self.dbSession.query(dbArtist).filter(dbArtist.name == name).first()
 
-    def __saveArtistToDB(self, artist):
-        self.dbSession.add(artist)
-        self.dbSession.commit()
-
+    def __getLabelFromDB(self, name):
+        return self.dbSession.query(dbLabel).filter(dbLabel.name == name).first()
 
     def searchForArtist(self, name):
-        artist = self.__getArtistFromDB(name)
-        if not artist:
+        if name in self.cache:
+            return self.cache[name]
+        result = self.__getArtistFromDB(name)
+        if not result:
             artist = Artist(name=name)
             artist.random = random.randint(1, 9999999)
             artist.roadieId = str(uuid.uuid4())
@@ -48,9 +53,9 @@ class ArtistSearcher(object):
             spotifySearcher = Spotify(self.referer)
             if spotifySearcher.IsActive:
                 artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
-                #    allMusicSearcher = AllMusicGuide(self.referer)
-                #     if allMusicSearcher.IsActive:
-                #         artist = artist.mergeWithArtist(allMusicSearcher.lookupArtist(name))
+            allMusicSearcher = AllMusicGuide(self.referer)
+            if allMusicSearcher.IsActive:
+                artist = artist.mergeWithArtist(allMusicSearcher.lookupArtist(name))
             if artist:
                 # Fetch images with only urls
                 if artist.images:
@@ -58,22 +63,17 @@ class ArtistSearcher(object):
                     for image in artist.images:
                         if not image.image and image.url:
                             image.image = imageSearcher.getImageBytesForUrl(image.url)
+                self.cache[name] = artist
                 self.logger.debug("Saving Artist Info [" + artist.info() + "]")
-                if artist.releases:
-                    for release in artist.releases:
-                        release.roadieId = str(uuid.uuid4())
-                        if release.media:
-                            for media in release.media:
-                                media.roadieId = str(uuid.uuid4())
-                                if media.tracks:
-                                    for track in media.tracks:
-                                        track.roadieId = str(uuid.uuid4())
-                self.__saveArtistToDB(artist)
+                #   self.dbSession.expunge(artist)
+                # self.dbSession.add(artist)
+                #   self.dbSession.commit()
+                result = artist
         foundArtistName = None
-        if artist:
-            foundArtistName = artist.name
-        self.logger.debug("artistSearcher :: searchForArtist Name [" + name + "] Found [" + str(foundArtistName) + "]")
-        return artist
+        if result:
+            foundArtistName = result.name
+        self.logger.debug("searchForArtist Name [" + name + "] Found [" + str(foundArtistName) + "]")
+        return result
 
     def searchForArtistReleases(self, artist, titleFilter=None):
         # albumsSearchResult = self.__getAlbumsForArtistFromDB(artistSearchResult)
