@@ -11,6 +11,7 @@
         "Height": 60,
         "Width": 60
     },
+    "ROADIE_DATABASE_URL": "sqlite:///roadie.db",
     "ROADIE_CONVERTING": {
         "DoDeleteAfter": "True"
     },

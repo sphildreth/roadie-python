@@ -3,7 +3,11 @@ from io import StringIO
 from urllib import request, parse
 
 from searchEngines.searchEngineBase import SearchEngineBase
-from searchEngines.searchResult import *
+from resources.models.Artist import Artist
+from resources.models.Image import Image
+from resources.models.Release import Release
+from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.Track import Track
 
 
 class LastFM(SearchEngineBase):
@@ -18,7 +22,7 @@ class LastFM(SearchEngineBase):
 
     def lookupArtist(self, name):
         try:
-            artistSearchResult = None
+            artist = None
             url = self.baseUrl + "artist.getInfo&artist=" + parse.quote_plus(name)
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
@@ -28,25 +32,28 @@ class LastFM(SearchEngineBase):
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     r = o['artist']
-                    artistSearchResult = ArtistSearchResult(r['name'])
-                    artistSearchResult.musicBrainzId = r['mbid']
+                    artist = Artist(name=r['name'])
+                    artist.images = []
+                    artist.musicBrainzId = r['mbid']
                     images = r['image']
                     if images:
                         for image in images:
                             if image['size'] == 'extralarge':
-                                artistSearchResult.imageUrl = image['#text']
+                                artist.images.append(Image(url=image['#text']))
                     tags = r['tags']
                     if tags:
-                        artistSearchResult.tags = []
+                        artist.tags = []
                         for tag in r['tags']['tag']:
-                            artistSearchResult.tags.append(tag['name'])
+                            artist.tags.append(tag['name'])
                     bio = r['bio']
                     if bio:
-                        artistSearchResult.bioContent = bio['content']
-                    return artistSearchResult
+                        artist.bioContent = bio['content']
                 except:
+                    self.logger.exception("LastFM: Error In LookupArtist")
                     pass
-            return artistSearchResult
+                    #  if artist:
+                    #       print(artist.info())
+            return artist
         except:
             self.logger.exception("LastFM: Error In LookupArtist")
             pass
@@ -54,7 +61,7 @@ class LastFM(SearchEngineBase):
 
     def searchForRelease(self, artistSearchResult, title):
         try:
-            albumSearchResult = None
+            release = None
             artistPart = "&artist=" + parse.quote_plus(artistSearchResult.name)
             url = self.baseUrl + "album.getInfo" + artistPart + "&album=" + parse.quote_plus(title)
             rq = request.Request(url=url)
@@ -72,25 +79,28 @@ class LastFM(SearchEngineBase):
                         for image in images:
                             if image['size'] == 'extralarge':
                                 coverUrl = image['#text']
-                    albumSearchResult = ArtistReleaseSearchResult(r['name'], None, len(tracks), coverUrl)
+                    release = Release(title=r['name'], trackCount=len(tracks), coverUrl=coverUrl)
                     tags = r['tags']
                     if tags:
-                        albumSearchResult.tags = []
+                        release.tags = []
                         for tag in r['tags']['tag']:
-                            albumSearchResult.tags.append(tag['name'])
+                            release.tags.append(tag['name'])
                     if tracks:
-                        albumSearchResult.tracks = dict()
+                        media = ReleaseMedia(releaseMediaNumber=1)
+                        media.tracks = []
                         for t in tracks['track']:
-                            track = ArtistReleaseTrackSearchResult(t['name'])
+                            track = Track(title=t['name'])
                             track.duration = t['duration']
                             track.trackNumber = t['@attr']['rank']
-                            if track.trackNumber not in albumSearchResult.tracks:
-                                albumSearchResult.tracks[track.trackNumber] = track
-                        albumSearchResult.trackCount = len(albumSearchResult.tracks)
-                    return albumSearchResult
+                            if not filter(lambda x: x.trackNumber == track.trackNumber, media.tracks):
+                                media.tracks.append(track)
+                        release.media = []
+                        release.media.append(media)
+                        release.trackCount = len(media.tracks)
+                    return release
                 except:
                     pass
-            return albumSearchResult
+            return release
         except:
             self.logger.exception("LastFM: Error In SearchForRelease")
             pass

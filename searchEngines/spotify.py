@@ -1,8 +1,13 @@
 import json
 from io import StringIO
 from urllib import request, parse
+
 from searchEngines.searchEngineBase import SearchEngineBase
-from searchEngines.searchResult import *
+from resources.models.Artist import Artist
+from resources.models.Release import Release
+from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.Track import Track
+
 
 class Spotify(SearchEngineBase):
 
@@ -13,7 +18,7 @@ class Spotify(SearchEngineBase):
 
     def lookupArtist(self, name):
         try:
-            artistSearchResult = None
+            artist = None
             url = "https://api.spotify.com/v1/search?offset=0&limit=1&type=artist&query=" + parse.quote_plus(name)
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
@@ -25,24 +30,26 @@ class Spotify(SearchEngineBase):
                     ar = o['artists']
                     if ar and 'items' in ar:
                         r = ar['items'][0]
-                        artistSearchResult = ArtistSearchResult(r['name'])
-                        artistSearchResult.spotifyId = r['id']
-                        artistSearchResult.artistType = r['type']
+                        artist = Artist(name=r['name'])
+                        artist.spotifyId = r['id']
+                        artist.artistType = r['type']
                         if 'external_urls' in r and 'spotify' in r['external_urls']:
-                            artistSearchResult.urls = []
-                            artistSearchResult.urls.append(r['external_urls']['spotify'])
+                            artist.urls = []
+                            artist.urls.append(r['external_urls']['spotify'])
                         if 'genres' in r:
-                            artistSearchResult.tags = artistSearchResult.tags or []
+                            artist.tags = artist.tags or []
                             for genre in r['genres']:
-                                if genre not in artistSearchResult.tags:
-                                    artistSearchResult.tags.append(genre)
+                                if genre not in artist.tags:
+                                    artist.tags.append(genre)
                         images = r['images']
                         if images:
-                            artistSearchResult.imageUrl = images[0]['url']
-                    return artistSearchResult
+                            artist.imageUrl = images[0]['url']
                 except:
+                    self.logger.exception("LastFM: Error In LookupArtist")
                     pass
-            return artistSearchResult
+                    #    if artist:
+                    #         print(artist.info())
+            return artist
         except:
             pass
         return None
@@ -70,7 +77,7 @@ class Spotify(SearchEngineBase):
 
     def lookupReleaseBySpotifyId(self, spotifyId):
         try:
-            albumSearchResult = None
+            release = None
             url = "https://api.spotify.com/v1/albums/" + spotifyId
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
@@ -80,18 +87,19 @@ class Spotify(SearchEngineBase):
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     if o:
-                        tracks = dict()
+                        media = ReleaseMedia(releaseMediaNumber=1)
+                        media.tracks = []
                         tags = []
                         urls = []
                         if 'tracks' in o and 'items' in o['tracks']:
                             for spTrack in o['tracks']['items']:
-                                track = ArtistReleaseTrackSearchResult(spTrack['name'])
+                                track = Track(title=spTrack['name'])
                                 track.trackNumber = spTrack['track_number']
                                 track.dur = spTrack['duration_ms']
                                 track.releaseMediaNumber = spTrack['disc_number']
                                 track.spotifyId = spTrack['id']
-                                if track.trackNumber not in tracks:
-                                    tracks[track.trackNumber] = track
+                                if not filter(lambda x: x.trackNumber == track.trackNumber, media.tracks):
+                                    media.tracks.append(track)
                         if 'genres' in o:
                             for genre in o['genres']:
                                 if genre not in tags:
@@ -104,14 +112,15 @@ class Spotify(SearchEngineBase):
                         images = o['images']
                         if images:
                             coverUrl = images[0]['url']
-                        albumSearchResult = ArtistReleaseSearchResult(o['name'], o['release_date'], len(tracks), coverUrl)
-                        albumSearchResult.spotifyId = o['id']
-                        albumSearchResult.tags = tags
-                        albumSearchResult.urls = urls
-                    return albumSearchResult
+                        release = Release(title=o['name'], releaseDate=o['release_date'], trackCount=len(media.tracks),
+                                          coverUrl=coverUrl)
+                        release.spotifyId = o['id']
+                        release.tags = tags
+                        release.urls = urls
+                    return release
                 except:
                     pass
-                return albumSearchResult
+                return release
         except:
             pass
         return None

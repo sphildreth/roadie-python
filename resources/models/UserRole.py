@@ -1,13 +1,9 @@
 from sqlalchemy import Column, String
-from sqlalchemy.ext.declarative import declarative_base
 
-from models.ModelBase import ModelBase
-
-Base = declarative_base()
+from resources.models.ModelBase import Base
 
 
-class UserRole(ModelBase):
-    __tablename__ = "userRole"
+class UserRole(Base):
 
     name = Column(String(80), nullable=False, unique=True)
     description = Column(String(200))

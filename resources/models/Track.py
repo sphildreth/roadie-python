@@ -1,37 +1,40 @@
-from sqlalchemy import Column, ForeignKey, Integer, SmallInteger, String, DateTime
+from sqlalchemy import Column, ForeignKey, Table, Integer, SmallInteger, String, DateTime
 from sqlalchemy_utils import ScalarListType
-from sqlalchemy.ext.declarative import declarative_base
 
-from models.ModelBase import ModelBase
+from sqlalchemy.orm import relationship
 
-Base = declarative_base()
+from resources.models.ModelBase import Base
+from resources.models.PlaylistTrack import PlaylistTrack
+
+trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
+                                Column('trackId', Integer, ForeignKey('track.id'), index=True),
+                                Column('playlisttrackId', Integer, ForeignKey('playlisttrack.id'), index=True))
 
 
-class Track(ModelBase):
-    __tablename__ = "track"
+class Track(Base):
 
     fileName = Column(String(500), nullable=False)
     filePath = Column(String(1000), nullable=False)
     hash = Column(String(32), unique=True)
-    playedCount = Column(Integer(), default=0)
+    playedCount = Column(Integer, default=0)
     lastPlayed = Column(DateTime())
     partTitles = Column(ScalarListType())
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
-    rating = Column(SmallInteger(), nullable=False)
+    rating = Column(SmallInteger(), nullable=False, default=0)
     # This is a random number generated at generation and then used to select random releases
-    random = Column(Integer(), nullable=False)
+    random = Column(Integer, nullable=False, default=0, index=True)
     musicBrainzId = Column(String(100))
+    amgId = Column(String(100))
     spotifyId = Column(String(100))
     title = Column(String(500), nullable=False, index=True)
     trackNumber = Column(SmallInteger(), nullable=False)
     # Seconds long
-    duration = Column(Integer())
+    duration = Column(Integer)
     tags = Column(ScalarListType())
 
-    releaseMediaId = Column(Integer(), ForeignKey("releaseMedia.id"), index=True)
+    releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"), index=True)
+    playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable)
 
-    def __init__(self, title):
-        self.title = title
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -40,6 +43,9 @@ class Track(ModelBase):
 
     def __unicode__(self):
         return self.title
+
+    def __str(self):
+        return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self):
         return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(

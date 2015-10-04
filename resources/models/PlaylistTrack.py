@@ -1,13 +1,13 @@
 from sqlalchemy import Column, ForeignKey, Integer
 
-from models.ModelBase import ModelBase
+from resources.models.ModelBase import Base
 
 
-class PlaylistTrack(ModelBase):
-    __tablename__ = "playlistTrack"
+class PlaylistTrack(Base):
+    listNumber = Column(Integer, nullable=False)
+    trackId = Column(Integer, ForeignKey("track.id"))
+    playListId = Column(Integer, ForeignKey("playlist.id"))
 
-    listNumber = Column(Integer(), nullable=False)
-    trackId = Column(Integer(), ForeignKey("track.id"))
 
     def __unicode__(self):
-        return self.track.title
+        return self.playlist.name + " " + self.listNumber + " " + self.track.title

@@ -2,11 +2,11 @@ from sqlalchemy import Column, ForeignKey, Integer, BLOB, String, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
 
-from models.ModelBase import ModelBase
+from resources.models.ModelBase import Base
+from resources.models.CollectionRelease import CollectionRelease
 
 
-class Collection(ModelBase):
-    __tablename__ = "collection"
+class Collection(Base):
 
     name = Column(String(100), nullable=False, unique=True, index=True)
     edition = Column(String(200))
@@ -18,8 +18,8 @@ class Collection(ModelBase):
     thumbnail = Column(BLOB())
     urls = Column(ScalarListType())
 
-    maintainerId = Column(Integer(), ForeignKey("user.id"))
-    releases = relationship("CollectionRelease", backref="release")
+    maintainerId = Column(Integer, ForeignKey("user.id"))
+    releases = relationship(CollectionRelease, backref="release")
 
     def __unicode__(self):
         return self.name

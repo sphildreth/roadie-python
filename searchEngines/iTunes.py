@@ -1,8 +1,11 @@
 import json
 from io import StringIO
 from urllib import request, parse
-from searchEngines.searchResult import *
+
 from searchEngines.searchEngineBase import SearchEngineBase
+from resources.models.Artist import Artist
+from resources.models.Release import Release
+
 
 class iTunes(SearchEngineBase):
 
@@ -14,7 +17,7 @@ class iTunes(SearchEngineBase):
 
     def lookupArtist(self,name):
         try:
-            artistSearchResult = None
+            artist = None
             url = "http://itunes.apple.com/search?term=" + parse.quote_plus(name) + "&entity=musicArtist"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
@@ -24,14 +27,17 @@ class iTunes(SearchEngineBase):
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     for r in o['results']:
-                        artistSearchResult = ArtistSearchResult(r['artistName'])
-                        artistSearchResult.iTunesId = r['artistId']
-                        artistSearchResult.amgId = r['amgArtistId']
-                        if artistSearchResult.name.lower() == name.lower():
-                            return artistSearchResult
+                        artist = Artist(name=r['artistName'])
+                        artist.iTunesId = r['artistId']
+                        artist.amgId = r['amgArtistId']
+                        if artist.name.lower() == name.lower():
+                            break
                 except:
+                    self.logger.exception("iTunes: Error In LookupArtist")
                     pass
-            return artistSearchResult
+                    #   if artist:
+                    #        print(artist.info())
+            return artist
         except:
             self.logger.exception("iTunes: Error In LookupArtist")
             pass
@@ -56,7 +62,8 @@ class iTunes(SearchEngineBase):
                     for r in o['results']:
                         try:
                             if 'collectionType' in r and r["collectionType"] == "Album":
-                                a = ArtistReleaseSearchResult(r['collectionName'], r['releaseDate'], r['trackCount'], r['artworkUrl100'])
+                                a = Release(title=r['collectionName'], releaseDate=r['releaseDate'],
+                                            trackCount=r['trackCount'], coverUrl=r['artworkUrl100'])
                                 a.iTunesId = r['collectionId']
                                 albumsSearchResult.append(a)
                         except:

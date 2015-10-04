@@ -1,10 +1,9 @@
 from sqlalchemy import Column, ForeignKey, Integer, BLOB, String
 
-from models.ModelBase import ModelBase
+from resources.models.ModelBase import Base
 
 
-class Image(ModelBase):
-    __tablename__ = "image"
+class Image(Base):
 
     # If this is used then the image is stored in the database
     image = Column(BLOB, nullable=False)
@@ -12,8 +11,8 @@ class Image(ModelBase):
     url = Column(String(500))
     caption = Column(String(100))
 
-    artistId = Column(Integer(), ForeignKey("artist.id"))
-    releaseId = Column(Integer(), ForeignKey("release.id"))
+    artistId = Column(Integer, ForeignKey("artist.id"))
+    releaseId = Column(Integer, ForeignKey("release.id"))
 
     def __unicode__(self):
         return self.caption

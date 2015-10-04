@@ -1,14 +1,29 @@
 import json
+import threading
+from queue import Queue
 from io import StringIO
-from urllib import request, parse
+from urllib import request
+
+import arrow
 import musicbrainzngs
+
 from searchEngines.searchEngineBase import SearchEngineBase
-from searchEngines.searchResult import *
+from resources.models.Artist import Artist
+from resources.models.Label import Label
+from resources.models.Release import Release
+from resources.models.ReleaseLabel import ReleaseLabel
+from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.Track import Track
 
 
 class MusicBrainz(SearchEngineBase):
 
     IsActive = True
+
+    lock = threading.Lock()
+    que = Queue()
+
+    artistReleasesThreaded = []
 
     def __init__(self, referer=None):
         self.artists = {}
@@ -31,46 +46,49 @@ class MusicBrainz(SearchEngineBase):
         if not musicbrainzId:
             raise RuntimeError("Invalid MusicBrainzId")
         try:
-            artistSearchResult = None
+            artist = None
             self.logger.debug("artistSearcher :: Performing MusicBrainz Lookup For Artist")
             results = musicbrainzngs.get_artist_by_id(musicbrainzId, includes=['tags','aliases','url-rels'])
             if results and results['artist']:
                 result = results['artist']
                 if result:
-                    artistSearchResult = ArtistSearchResult(result['name'])
-                    artistSearchResult.musicBrainzId = result['id']
-                    artistSearchResult.artistType = result['type']
-                    artistSearchResult.sortName = result['sort-name']
+                    artist = Artist(name=result['name'])
+                    artist.musicBrainzId = result['id']
+                    artist.artistType = result['type']
+                    artist.sortName = result['sort-name']
                     if 'isni-list' in result:
-                        artistSearchResult.isniList = []
+                        artist.isniList = []
                         for isni in result['isni-list']:
-                            if not isni in artistSearchResult.isniList:
-                                artistSearchResult.isniList.append(isni)
+                            if not isni in artist.isniList:
+                                artist.isniList.append(isni)
                     if 'life-span' in result:
                         if 'begin' in result['life-span']:
-                            artistSearchResult.beginDate = result['life-span']['begin']
+                            artist.beginDate = result['life-span']['begin']
                         if 'end' in result['life-span']:
-                            artistSearchResult.endDate = result['life-span']['end']
+                            artist.endDate = result['life-span']['end']
                     if 'alias-list' in result:
-                        artistSearchResult.alternateNames = []
+                        artist.alternateNames = []
                         for alias in result['alias-list']:
                             aliasName = alias['alias']
-                            if aliasName not in artistSearchResult.alternateNames:
-                                artistSearchResult.alternateNames.append(aliasName)
+                            if aliasName not in artist.alternateNames:
+                                artist.alternateNames.append(aliasName)
                     if 'url-relation-list' in result:
-                        artistSearchResult.urls = []
+                        artist.urls = []
                         for url in result['url-relation-list']:
                             target = url['target']
                             type = url['type']
                             if type != "image":
-                                if not target in artistSearchResult.urls:
-                                    artistSearchResult.urls.append(target)
+                                if not target in artist.urls:
+                                    artist.urls.append(target)
                     if 'tag-list' in  result:
-                        artistSearchResult.tags = []
+                        artist.tags = []
                         for tag in result['tag-list']:
-                            if tag not in artistSearchResult.tags:
-                                artistSearchResult.tags.append(tag['name'])
-            return artistSearchResult
+                            if tag not in artist.tags:
+                                artist.tags.append(tag['name'])
+            if artist:
+                artist.releases = self.lookupAllArtistsReleases(artist)
+                #      print(artist.info())
+            return artist
         except:
             self.logger.exception("MusicBrainz: Error In LookupArtist")
             pass
@@ -91,50 +109,112 @@ class MusicBrainz(SearchEngineBase):
         except:
             pass
 
+    def lookupAllArtistsReleases(self, artist):
+        mbReleases = musicbrainzngs.browse_releases(artist=artist.musicBrainzId)
+        if mbReleases and 'release-list' in mbReleases:
 
-    def lookupReleaseByMusicBrainzId(self, musicbrainzId):
+            for x in range(15):
+                t = threading.Thread(target=self.threader)
+                t.daemon = True
+                t.start()
+
+            for mbRelease in mbReleases['release-list']:
+                self.que.put(mbRelease['id'])
+
+            self.que.join()
+
+            return self.artistReleasesThreaded
+
+        return None
+
+    def threader(self):
+        while True:
+            releaseMusicBrainzId = self.que.get()
+            self.threaderLookupRelease(releaseMusicBrainzId)
+            self.que.task_done()
+
+    def threaderLookupRelease(self, releaseMusicBrainzId):
+        release = self.lookupReleaseByMusicBrainzId(releaseMusicBrainzId)
+        if release:
+            with self.lock:
+                self.artistReleasesThreaded.append(release)
+
+    def lookupReleaseByMusicBrainzId(self, musicBrainzId):
         try:
-            if not musicbrainzId:
+            if not musicBrainzId:
                 raise RuntimeError("Invalid MusicBrainzId")
-            albumSearchResult = None
-            self.logger.debug("artistSearcher :: Performing MusicBrainz Lookup For Album(s)")
-            mbReleaseById = musicbrainzngs.get_release_by_id(id=musicbrainzId, includes=['labels', 'aliases', 'recordings', 'url-rels'])
+            release = None
+            self.logger.debug("artistSearcher :: Performing MusicBrainz Lookup For Album(s) [" + musicBrainzId + "]")
+            mbReleaseById = musicbrainzngs.get_release_by_id(id=musicBrainzId,
+                                                             includes=['labels', 'aliases', 'recordings', 'url-rels'])
             if mbReleaseById:
-                tracks = dict()
-                labels = []
-                coverUrl = self._getCoverArtUrl(musicbrainzId)
+                releaseLabels = []
+                releaseMedia = []
+                trackCount = 0
+                coverUrl = self._getCoverArtUrl(musicBrainzId)
                 if 'release' in mbReleaseById:
                     mbRelease = mbReleaseById['release']
+                    mbReleaseDate = None
+                    if 'date' in mbRelease:
+                        mbReleaseDate = mbRelease['date']
+                    mbReleaseFormat = "YYYY-MM-DD"
+                    if not mbReleaseDate:
+                        mbReleaseFormat = None
+                    elif len(mbReleaseDate) == 4:
+                        mbReleaseFormat = "YYYY"
+                    elif len(mbReleaseDate) == 7:
+                        mbReleaseFormat = "YYYY-MM"
+                    elif len(mbReleaseDate) != 10:
+                        mbReleaseFormat = None
+                    releaseDate = None
+                    if mbReleaseFormat:
+                        releaseDate = arrow.get(mbRelease['date'], mbReleaseFormat).datetime
+                    release = Release(title=mbRelease['title'], releaseDate=releaseDate)
                     if 'label-info-list' in mbRelease:
                         for labelInfo in mbRelease['label-info-list']:
-                            label = ArtistReleaseLabelSearchResult(labelInfo['label']['name'])
-                            label.musicBrainzId = labelInfo['label']['id']
-                            label.sortName = labelInfo['label']['sort-name']
-                            if 'alias-list' in labelInfo['label']:
-                                label.alternateNames = []
-                                for alias in labelInfo['label']['alias-list']:
-                                    if not alias['alias'] in label.alternateNames:
-                                        label.alternateNames.append(alias['alias'])
-                            labels.append(label)
+                            if 'label' in labelInfo and 'name' in labelInfo['label']:
+                                labelName = labelInfo['label']['name']
+                                if labelName:
+                                    label = Label(name=labelName)
+                                    label.musicBrainzId = labelInfo['label']['id']
+                                    labelSortName = labelInfo['label']['sort-name']
+                                    label.sortName = labelSortName or labelName
+                                if 'alias-list' in labelInfo['label']:
+                                    label.alternateNames = []
+                                    for alias in labelInfo['label']['alias-list']:
+                                        if not alias['alias'] in label.alternateNames:
+                                            label.alternateNames.append(alias['alias'])
+                                catalogNumber = None
+                                if 'catalog-number' in labelInfo:
+                                    catalogNumber = labelInfo['catalog-number']
+                                releaseLabels.append(
+                                    ReleaseLabel(catalogNumber=catalogNumber, label=label, release=release))
                     if 'medium-list' in mbRelease:
                         for medium in mbRelease['medium-list']:
                             releaseMediaNumber = medium['position']
-                            if 'track-list' in medium:
+                            media = ReleaseMedia(releaseMediaNumber=releaseMediaNumber)
+                            media.tracks = []
+                            if 'track-list' in medium and medium['track-list']:
                                 for mbTrack in medium['track-list']:
-                                    track = ArtistReleaseTrackSearchResult(mbTrack['recording']['title'])
-                                    track.duration = mbTrack['length']
+                                    track = Track(title=mbTrack['recording']['title'])
+                                    if 'length' in mbTrack:
+                                        track.duration = mbTrack['length']
                                     track.trackNumber = mbTrack['position']
                                     track.releaseMediaNumber = releaseMediaNumber
                                     track.musicBrainzId = mbTrack['id']
-                                    if not track.trackNumber in tracks:
-                                        tracks[track.trackNumber] = track
-                albumSearchResult = ArtistReleaseSearchResult(mbRelease['title'],mbRelease['date'], len(tracks),coverUrl)
-                albumSearchResult.musicBrainzId = mbRelease['id']
-                albumSearchResult.tracks = tracks
-                albumSearchResult.labels = labels
-            return albumSearchResult
+                                    if not filter(lambda x: x.trackNumber == track.trackNumber, media.tracks):
+                                        media.tracks.append(track)
+                            trackCount = trackCount + len(media.tracks)
+                            media.trackCount = len(media.tracks)
+                            releaseMedia.append(media)
+                release.trackCount = trackCount
+                release.coverUrl = coverUrl
+                release.musicBrainzId = musicBrainzId
+                release.media = releaseMedia
+                release.labels = releaseLabels
+            return release
         except:
-            self.logger.exception("iTunes: Error In SearchForRelease")
+            self.logger.exception("MusicBrainy: Error In SearchForRelease")
             pass
         return None
 
@@ -144,7 +224,6 @@ class MusicBrainz(SearchEngineBase):
             url = "http://coverartarchive.org/release/" + musicBrainzId + "/"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("artistSearcher :: Performing MusicBrainz Cover Art Lookup")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -161,9 +240,10 @@ class MusicBrainz(SearchEngineBase):
 
 
 # a = MusicBrainz()
-# artist = a.lookupArtist('Billy Joel')
-# release = a.searchForRelease(artist, "Cold Spring Harbor")
-# #r = a.lookupReleaseByMusicBrainzId('76df3287-6cda-33eb-8e9a-044b5e15ffdd')
-# print(artist)
-# print(release)
-
+# artist = a.lookupArtist('Men At Work')
+# r = a.lookupAllArtistsReleases(artist)
+# # #release = a.searchForRelease(artist, "Cold Spring Harbor")
+# #r = a.lookupReleaseByMusicBrainzId('038acd9c-b845-461e-ae76-c4f3190fc774')
+# print(r)
+# # #print(artist.info())
+# #print(release.info())
