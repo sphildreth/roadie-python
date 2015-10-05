@@ -66,18 +66,43 @@ class LastFM(SearchEngineBase):
             pass
         return None
 
+
     def searchForRelease(self, artist, title):
+        artistPart = "&artist=" + parse.quote_plus(artist.name)
+        url = self.baseUrl + "album.getInfo" + artistPart + "&album=" + parse.quote_plus(title)
+        self.logger.debug("Performing LastFM Lookup For Album [" + title + "]")
+        return self._fetchFromUrl(url)
+
+    def lookupReleasesForMusicBrainzIdList(self, mbIdList):
+        """
+        This is because there is no way to ge all the releases from an Artist via LastFM and their top albums query
+        contains releases not by the given artist.
+        :param mbIdList:
+        :return:
+        """
+        releases = []
+        for musicBrainzId in mbIdList:
+            url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
+            self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
+            release = self._fetchFromUrl(url)
+            if release:
+                releases.append(release)
+        return releases
+
+    def _fetchFromUrl(self, url):
+        if not url:
+            return None
         try:
             release = None
-            artistPart = "&artist=" + parse.quote_plus(artist.name)
-            url = self.baseUrl + "album.getInfo" + artistPart + "&album=" + parse.quote_plus(title)
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("Performing LastFM Lookup For Album")
             with request.urlopen(rq) as f:
+                mediaTrackCount = 0
                 try:
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
+                    if not 'album' in o:
+                        return None
                     r = o['album']
                     tracks = r['tracks']
                     images = r['image']
@@ -86,13 +111,18 @@ class LastFM(SearchEngineBase):
                         for image in images:
                             if isEqual(image['size'], 'extralarge'):
                                 coverUrl = image['#text']
-                    release = Release(title=r['name'], trackCount=len(tracks), coverUrl=coverUrl)
+                    release = Release(title=r['name'])
+                    release.trackCount = len(tracks)
+                    release.coverUrl = coverUrl
+                    if 'id' in r and r['id']:
+                        release.lastFMId = r['id']
                     tags = r['tags']
                     if tags:
                         release.tags = []
                         for tag in r['tags']['tag']:
-                            if not isInList(release.tags, tag):
-                                release.tags.append(tag['name'])
+                            tagName = tag['name']
+                            if not isInList(release.tags, tagName):
+                                release.tags.append(tagName)
                     if tracks:
                         media = ReleaseMedia(releaseMediaNumber=1)
                         media.tracks = []
@@ -102,11 +132,19 @@ class LastFM(SearchEngineBase):
                             track.trackNumber = t['@attr']['rank']
                             if not ([t for t in media.tracks if t.trackNumber == track.trackNumber]):
                                 media.tracks.append(track)
+                                mediaTrackCount = mediaTrackCount + 1
                         release.media = []
                         release.media.append(media)
                         release.trackCount = len(media.tracks)
+                    if 'wiki' in r and r['wiki']:
+                        if 'summary' in r['wiki'] and r['wiki']['summary']:
+                            release.lastFMSummary = r['wiki']['summary']
+                    # Not Valid
+                    if mediaTrackCount < 1:
+                        release = None
                     return release
                 except:
+                    self.logger.exception("LastFM: Error In SearchForRelease")
                     pass
             return release
         except:
@@ -117,5 +155,5 @@ class LastFM(SearchEngineBase):
 
         # a = LastFM()
         # artist = a.lookupArtist('Men At Work')
-        # release = a.searchForRelease(artist, "Cargo")
+        # release = a.searchForRelease(artist, None)
         # print(artist.info())

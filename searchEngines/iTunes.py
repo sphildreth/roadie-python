@@ -5,6 +5,7 @@ from urllib import request, parse
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
 from searchEngines.models.Artist import Artist
+from searchEngines.models.Genre import Genre
 from searchEngines.models.Release import Release
 
 
@@ -46,17 +47,16 @@ class iTunes(SearchEngineBase):
             pass
         return None
 
-
-    def searchForRelease(self,artistSearchResult,title):
-        if not artistSearchResult.iTunesId:
-            artistSearchResult = self.lookupArtist(artistSearchResult.name)
-            if not artistSearchResult.iTunesId:
+    def searchForRelease(self, artist, title):
+        if not artist.iTunesId:
+            artist = self.lookupArtist(artist.name)
+            if not artist.iTunesId:
                 raise RuntimeError("Invalid ArtistSearchResult, iTunesId Not Set")
         try:
-            url = "https://itunes.apple.com/lookup?id=" + str(artistSearchResult.iTunesId) + "&entity=album"
+            url = "https://itunes.apple.com/lookup?id=" + str(artist.iTunesId) + "&entity=album"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            albumsSearchResult = []
+            releases = []
             self.logger.debug("Performing iTunes Lookup For Album(s)")
             with request.urlopen(rq) as f:
                 try:
@@ -65,16 +65,24 @@ class iTunes(SearchEngineBase):
                     for r in o['results']:
                         try:
                             if 'collectionType' in r and isEqual(r["collectionType"], "Album"):
-                                a = Release(title=r['collectionName'], releaseDate=r['releaseDate'],
-                                            trackCount=r['trackCount'], coverUrl=r['artworkUrl100'])
+                                a = Release(title=r['collectionName'], releaseDate=r['releaseDate'])
+                                a.trackCount = r['trackCount']
+                                a.coverUrl = r['artworkUrl100']
                                 a.iTunesId = r['collectionId']
-                                albumsSearchResult.append(a)
+                                if 'primaryGenreName' in r and r['primaryGenreName']:
+                                    a.genres.append(Genre(name=r['primaryGenreName']))
+                                if 'artistViewUrl' in r and r['artistViewUrl']:
+                                    a.urls.append(r['artistViewUrl'])
+                                if 'collectionViewUrl' in r and r['collectionViewUrl']:
+                                    a.urls.append(r['collectionViewUrl'])
+                                releases.append(a)
                         except:
+                            self.logger.exception("iTunes: Error In SearchForRelease")
                             pass
                 except:
                     pass
-            albumsSearchResult = sorted(albumsSearchResult, key=lambda x: x.releaseDate)
-            return albumsSearchResult[0]
+            releases = sorted(releases, key=lambda x: x.releaseDate)
+            return releases
         except:
             self.logger.exception("iTunes: Error In SearchForRelease")
             pass

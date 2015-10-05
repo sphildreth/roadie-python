@@ -12,6 +12,7 @@ class ReleaseLabel(ModelBase):
         self.label = label
         self.release = release
         self.catalogNumber = catalogNumber
+        super(ReleaseLabel, self).__init__()
 
     def __unicode__(self):
         return self.label.name + " (" + self.beginDate.strfttime('%Y') + ")"

@@ -43,6 +43,7 @@ class Artist(ModelBase):
 
     def __init__(self, name):
         self.name = name
+        super(Artist, self).__init__()
 
     def __str__(self):
         return self.name

@@ -28,6 +28,7 @@ class Track(ModelBase):
 
     def __init__(self, title):
         self.title = title
+        super(Track, self).__init__()
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

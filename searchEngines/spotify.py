@@ -47,19 +47,21 @@ class Spotify(SearchEngineBase):
                         if images:
                             artist.imageUrl = images[0]['url']
                 except:
-                    self.logger.exception("LastFM: Error In LookupArtist")
+                    self.logger.exception("Spotify: Error In LookupArtist")
                     pass
                     #    if artist:
                     #         print(artist.info())
             return artist
         except:
+            self.logger.exception("Spotify: Error In LookupArtist")
             pass
         return None
 
 
     def searchForRelease(self, artistSearchResult, title):
         try:
-            url = "https://api.spotify.com/v1/artists/" + str(artistSearchResult.spotifyId) + "/albums?offset=0&limit=20&album_type=album"
+            url = "https://api.spotify.com/v1/artists/" + str(
+                artistSearchResult.spotifyId) + "/albums?offset=0&limit=20&album_type=album&market=US"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             with request.urlopen(rq) as f:
@@ -67,14 +69,21 @@ class Spotify(SearchEngineBase):
                 o = json.load(s)
                 spotifyReleases = o['items']
                 if spotifyReleases:
+                    releases = []
                     for spotifyRelease in spotifyReleases:
                         spotifyReleaseName = spotifyRelease['name']
-                        if isEqual(spotifyReleaseName, title):
-                            return self.lookupReleaseBySpotifyId(spotifyRelease['id'])
-            return None
+                        spotifyId = spotifyRelease['id']
+                        release = self.lookupReleaseBySpotifyId(spotifyId)
+                        if release:
+                            releases.append(release)
+                        if title:
+                            if isEqual(spotifyReleaseName, title):
+                                break
+                    return releases
         except:
+            self.logger.exception("Spotify: Error In searchForRelease")
             pass
-        return None
+
 
 
     def lookupReleaseBySpotifyId(self, spotifyId):
@@ -83,7 +92,7 @@ class Spotify(SearchEngineBase):
             url = "https://api.spotify.com/v1/albums/" + spotifyId
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
-            self.logger.debug("Performing Spotify Lookup For Release")
+            self.logger.debug("Performing Spotify Lookup For Release spotifyId [" + spotifyId + "]")
             with request.urlopen(rq) as f:
                 try:
                     s = StringIO((f.read().decode('utf-8')))
@@ -114,16 +123,19 @@ class Spotify(SearchEngineBase):
                         images = o['images']
                         if images:
                             coverUrl = images[0]['url']
-                        release = Release(title=o['name'], releaseDate=o['release_date'], trackCount=len(media.tracks),
-                                          coverUrl=coverUrl)
+                        release = Release(title=o['name'], releaseDate=o['release_date'])
+                        release.trackCount = len(media.tracks)
+                        release.coverUrl = coverUrl
                         release.spotifyId = o['id']
                         release.tags = tags
                         release.urls = urls
                     return release
                 except:
+                    self.logger.exception("Spotify: Error In lookupReleaseBySpotifyId")
                     pass
                 return release
         except:
+            self.logger.exception("Spotify: Error In lookupReleaseBySpotifyId")
             pass
         return None
 

@@ -13,6 +13,7 @@ class Label(ModelBase):
     def __init__(self, name, sortName=None):
         self.name = name
         self.sortName = sortName
+        super(Label, self).__init__()
 
     def __unicode__(self):
         return self.name

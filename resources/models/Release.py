@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Enum, ForeignKey, Table, Integer, SmallInteger, Boolean, BLOB, String, Date
+from sqlalchemy import Column, Enum, ForeignKey, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
 
@@ -37,6 +37,7 @@ class Release(Base):
     iTunesId = Column(String(100))
     amgId = Column(String(100))
     lastFMId = Column(String(100))
+    lastFMSummary = Column(Text())
     musicBrainzId = Column(String(100))
     spotifyId = Column(String(100))
     tags = Column(ScalarListType())

@@ -35,16 +35,18 @@ class Release(ModelBase):
     lastFMId = None
     musicBrainzId = None
     spotifyId = None
+    lastFMSummary = None
 
     artistId = None
     genres = []
-    labels = []
+    releaseLabels = []
     media = []
     images = []
 
     def __init__(self, title, releaseDate=None):
         self.title = title
         self.releaseDate = releaseDate
+        super(Release, self).__init__()
 
     def isLiveOrCompilation(self):
         """
@@ -68,10 +70,26 @@ class Release(ModelBase):
         return self.title
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+        trackCount = 0
+        mediaCount = 0
+        labelNames = []
+        if self.releaseLabels:
+            for releaseLabel in self.releaseLabels:
+                labelNames.append(releaseLabel.label.name)
+        if self.media:
+            for media in self.media:
+                trackCount = trackCount + len(media.tracks)
+                mediaCount = mediaCount + 1
+        return "RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
-               "], LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" + str(
-            self.releaseDate) + "], TrackCount [" + str(self.trackCount) + "], Title [" + str(self.title) + "]"
+               "], LastFMId [" + str(self.lastFMId) + "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(
+            self.amgId) + "], ReleaseDate [" + str(
+            self.releaseDate) + "], TrackCount [" + str(self.trackCount) + \
+               "] Labels [" + "|".join(labelNames) + \
+               "] Media [" + str(mediaCount) + "] Tracks [" + str(trackCount) + \
+               "], Title **[" + str(self.title) + "]** Urls [" + str(
+            len(self.urls or [])) + "] Last FM Summary Size [" + str(
+            len(self.lastFMSummary or "")) + "] Tags [" + "|".join(self.tags or [])
 
     def mergeWithRelease(self, right):
         """
@@ -100,6 +118,7 @@ class Release(ModelBase):
         result.lastFMId = result.lastFMId or right.lastFMId
         result.musicBrainzId = result.musicBrainzId or right.musicBrainzId
         result.spotifyId = result.spotifyId or right.spotifyId
+        result.lastFMSummary = result.lastFMSummary or right.lastFMSummary
         if not result.tags and right.tags:
             result.tags = right.tags
         elif result.tags and right.tags:
@@ -128,14 +147,14 @@ class Release(ModelBase):
             result.genres = right.genres
         elif result.genres and right.genres:
             for genre in right.genres:
-                if not isInList(result.genres, genre):
+                if not ([g for g in result.genres if isEqual(g.name, genre.name)]):
                     result.genres.append(genre)
-        if not result.labels and right.labels:
-            result.labels = right.labels
-        elif result.labels and right.labels:
-            for releaseLabel in right.labels:
-                if not ([l for l in result.labels if isEqual(l.label.name, releaseLabel.label.name)]):
-                    result.labels.append(releaseLabel)
+        if not result.releaseLabels and right.releaseLabels:
+            result.releaseLabels = right.releaseLabels
+        elif result.releaseLabels and right.releaseLabels:
+            for releaseLabel in right.releaseLabels:
+                if not ([l for l in result.releaseLabels if isEqual(l.label.name, releaseLabel.label.name)]):
+                    result.releaseLabels.append(releaseLabel)
         if not result.images and right.images:
             result.images = right.images
         elif result.images and right.images:

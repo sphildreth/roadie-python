@@ -13,6 +13,7 @@ class Image(ModelBase):
 
     def __init__(self, url):
         self.url = url
+        super(Image, self).__init__()
 
     def __unicode__(self):
         return self.caption

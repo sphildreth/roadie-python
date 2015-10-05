@@ -16,6 +16,7 @@ class ReleaseMedia(ModelBase):
 
     def __init__(self, releaseMediaNumber):
         self.releaseMediaNumber = releaseMediaNumber
+        super(ReleaseMedia, self).__init__()
 
     def __unicode__(self):
         return self.release.title + " " + self.releaseMediaNumber

@@ -6,6 +6,7 @@ class Genre(ModelBase):
 
     def __init__(self, name):
         self.name = name
+        super(Genre, self).__init__()
 
     def __unicode__(self):
         return self.name

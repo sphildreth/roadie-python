@@ -4,7 +4,6 @@ import argparse
 
 import arrow
 from sqlalchemy import create_engine
-
 from sqlalchemy.orm import sessionmaker
 
 from searchEngines.artistSearcher import ArtistSearcher
@@ -35,15 +34,14 @@ if artist:
     releases = s.searchForArtistReleases(artist, args.release)
     if releases:
         missing = 0
-        for release in releases:
-            if not release.roadieId or release.roadieId == "None":
-                missing += 1
+        # for release in releases:
+
         print("Artist Releases Count [" + str(len(releases)) + "] Missing [" + str(missing) + "]")
         for release in releases:
             if args.showMissing and not release.roadieId or release.roadieId == "None":
-                print("[Missing] Release Info [" + str(release) + "]")
+                print("[Missing] Release Info [" + str(release.info()) + "]")
             elif not args.showMissing:
-                print("Release Info [" + str(release) + "]")
+                print("Release Info [" + str(release.info()) + "]")
     else:
         print("No Release(s) Found!")
 else:
