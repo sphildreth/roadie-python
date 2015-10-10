@@ -118,13 +118,13 @@ class ArtistSearcher(object):
             if lastFMSearcher.IsActive:
                 mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
                 releases = self._mergeReleaseLists(releases,
-                                                   lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
+                lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
             spotifySearcher = Spotify(self.referer)
             if spotifySearcher.IsActive:
                 releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
             if self.allMusicSearcher.IsActive:
                 releases = self._mergeReleaseLists(releases,
-                                                   self.allMusicSearcher.searchForRelease(artist, titleFilter))
+                self.allMusicSearcher.searchForRelease(artist, titleFilter))
             if releases:
                 result = releases
                 artist.releases = result
