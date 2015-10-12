@@ -20,7 +20,7 @@ from dateutil.parser import *
 
 from mongoengine import connect
 
-from resources.models import Artist, ArtistType, Label, Release, ReleaseLabel
+from resources.mongoModels import Artist, ArtistType, Label, Release, ReleaseLabel
 from searchEngines.musicBrainz import MusicBrainz
 from searchEngines.artistSearcher import ArtistSearcher
 from searchEngines.imageSearcher import ImageSearcher

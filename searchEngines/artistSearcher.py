@@ -2,8 +2,6 @@ import random
 import uuid
 
 from resources.common import *
-from resources.models.Artist import Artist as dbArtist
-from resources.models.Label import Label as dbLabel
 from resources.logger import Logger
 from searchEngines.imageSearcher import ImageSearcher
 from searchEngines.musicBrainz import MusicBrainz
@@ -15,74 +13,62 @@ from searchEngines.models.Artist import Artist
 
 
 class ArtistSearcher(object):
-
-    dbSession = None
-
+    """
+    Query Enabled Search Engines and Find Artist Information and aggregate results.
+    """
     allMusicSearcher = None
 
     cache = dict()
 
-    def __init__(self, dbSession, referer=None):
-        self.dbSession = dbSession
+    def __init__(self, referer=None):
         self.referer = referer
         if not self.referer or self.referer.startswith("http://localhost"):
             self.referer = "http://github.com/sphildreth/roadie"
         self.logger = Logger()
         self.allMusicSearcher = AllMusicGuide(self.referer)
 
-    def __getArtistFromDB(self,name):
-        return self.dbSession.query(dbArtist).filter(dbArtist.name == name).first()
-
-    def __getLabelFromDB(self, name):
-        return self.dbSession.query(dbLabel).filter(dbLabel.name == name).first()
-
-    def __getReleasesForArtistFromDB(self, artist):
-        return None
-
-    def __saveReleasesForArtistToDB(self, artist):
-        return None
-
     def searchForArtist(self, name):
+        """
+        Perform a search in all enabled search engines and return an aggregate Artist for the given Artist name
+        :param name: String
+                     Name of the Artist to find
+        :return: Artist
+                 Populated Artist or None if error or not found
+        """
+        if not name:
+            return None
         if name in self.cache:
             return self.cache[name]
-        result = self.__getArtistFromDB(name)
-        if not result:
-            artist = Artist(name=name)
-            artist.random = random.randint(1, 9999999)
-            artist.roadieId = str(uuid.uuid4())
-            iTunesSearcher = iTunes(self.referer)
-            if iTunesSearcher.IsActive:
-                artist = artist.mergeWithArtist(iTunesSearcher.lookupArtist(name))
-            mbSearcher = MusicBrainz(self.referer)
-            if mbSearcher.IsActive:
-                artist = artist.mergeWithArtist(mbSearcher.lookupArtist(name))
-            lastFMSearcher = LastFM(self.referer)
-            if lastFMSearcher.IsActive:
-                artist = artist.mergeWithArtist(lastFMSearcher.lookupArtist(name))
-            spotifySearcher = Spotify(self.referer)
-            if spotifySearcher.IsActive:
-                artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
-            if self.allMusicSearcher.IsActive:
-                artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
-            if artist:
-                # Fetch images with only urls
-                if artist.images:
-                    imageSearcher = ImageSearcher()
-                    for image in artist.images:
-                        if not image.image and image.url:
-                            image.image = imageSearcher.getImageBytesForUrl(image.url)
-                self.cache[name] = artist
-                #   self.dbSession.expunge(artist)
-                # self.dbSession.add(artist)
-                #   self.dbSession.commit()
-                result = artist
-        foundArtistName = None
-        if result:
-            foundArtistName = result.name
-        self.logger.debug("searchForArtist Name [" + name + "] Found [" + str(foundArtistName) + "]")
-        return result
+        artist = Artist(name=name)
+        artist.random = random.randint(1, 9999999)
+        artist.roadieId = str(uuid.uuid4())
+        iTunesSearcher = iTunes(self.referer)
+        if iTunesSearcher.IsActive:
+            artist = artist.mergeWithArtist(iTunesSearcher.lookupArtist(name))
+        mbSearcher = MusicBrainz(self.referer)
+        if mbSearcher.IsActive:
+            artist = artist.mergeWithArtist(mbSearcher.lookupArtist(name))
+        lastFMSearcher = LastFM(self.referer)
+        if lastFMSearcher.IsActive:
+            artist = artist.mergeWithArtist(lastFMSearcher.lookupArtist(name))
+        spotifySearcher = Spotify(self.referer)
+        if spotifySearcher.IsActive:
+            artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
+        if self.allMusicSearcher.IsActive:
+            artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
+        if artist:
+            # Fetch images with only urls
+            if artist.images:
+                imageSearcher = ImageSearcher()
+                for image in artist.images:
+                    if not image.image and image.url:
+                        image.image = imageSearcher.getImageBytesForUrl(image.url)
+            self.cache[name] = artist
+        self.logger.debug("searchForArtist Name [" + name + "] Found [" + artist.name if artist else "" + "]")
+        return artist
 
-    def _mergeReleaseLists(self, left, right):
+    @staticmethod
+    def _mergeReleaseLists(left, right):
         if left and not right:
             return left
         elif not left and right:
@@ -103,33 +89,36 @@ class ArtistSearcher(object):
                     mergedReleases.append(release)
             return mergedReleases
 
-
     def searchForArtistReleases(self, artist, titleFilter=None):
-        result = self.__getReleasesForArtistFromDB(artist)
-        if not result:
-            releases = []
-            iTunesSearcher = iTunes(self.referer)
-            if iTunesSearcher.IsActive:
-                releases = iTunesSearcher.searchForRelease(artist, titleFilter)
-            mbSearcher = MusicBrainz(self.referer)
-            if mbSearcher.IsActive:
-                releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
-            lastFMSearcher = LastFM(self.referer)
-            if lastFMSearcher.IsActive:
-                mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
-                releases = self._mergeReleaseLists(releases,
-                lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
-            spotifySearcher = Spotify(self.referer)
-            if spotifySearcher.IsActive:
-                releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
-            if self.allMusicSearcher.IsActive:
-                releases = self._mergeReleaseLists(releases,
-                self.allMusicSearcher.searchForRelease(artist, titleFilter))
-            if releases:
-                result = releases
-                artist.releases = result
-                self.__saveReleasesForArtistToDB(artist)
+        """
+        Using the given populated Artist find all releases, with an optional filter
+
+        :param artist: Artist
+                       Artist to find releases for
+        :param titleFilter: String
+                            Optional filter of release Title to only include in results
+        :return: iterable Release
+                 Collection of releases found for artist
+        """
+        if not artist:
+            return None
+        releases = []
+        iTunesSearcher = iTunes(self.referer)
+        if iTunesSearcher.IsActive:
+            releases = iTunesSearcher.searchForRelease(artist, titleFilter)
+        mbSearcher = MusicBrainz(self.referer)
+        if mbSearcher.IsActive:
+            releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
+        lastFMSearcher = LastFM(self.referer)
+        if lastFMSearcher.IsActive:
+            mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
+            releases = self._mergeReleaseLists(releases,
+                                               lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
+        spotifySearcher = Spotify(self.referer)
+        if spotifySearcher.IsActive:
+            releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
+        if releases:
+            artist.releases = releases
         if titleFilter:
-            return ([r for r in result if isEqual(r.title, titleFilter)])
-        return result
-        pass
+            return [r for r in releases if isEqual(r.title, titleFilter)]
+        return releases

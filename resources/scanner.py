@@ -10,7 +10,7 @@ import random
 import arrow
 from mongoengine import connect
 
-from resources.models import Release, Track, TrackRelease
+from resources.mongoModels import Release, Track, TrackRelease
 from searchEngines.musicBrainz import MusicBrainz
 from resources.id3 import ID3
 from resources.logger import Logger

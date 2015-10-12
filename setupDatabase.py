@@ -4,6 +4,7 @@ import logging
 
 from sqlalchemy import create_engine
 
+# These need to be here for SQlAlchemy to setup the DB to read MetaData
 from resources.models.ModelBase import Base
 from resources.models.Artist import Artist
 from resources.models.Collection import Collection

@@ -2,7 +2,7 @@ import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
 from mongoengine import connect
-from resources.models import Artist, Release, Track, UserTrack
+from resources.mongoModels import Artist, Release, Track, UserTrack
 
 
 class ArtistListApi(Resource):

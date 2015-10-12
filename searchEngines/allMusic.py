@@ -19,6 +19,10 @@ from searchEngines.models.Track import Track
 
 
 class AllMusicGuide(SearchEngineBase):
+    """
+    AllMusicGuide search is very verbose in its albums for an Artist. Instead of just supplying the studio albums
+        it returns all albums the Artist has appeared on.
+    """
     IsActive = True
 
     cache = dict()
@@ -39,10 +43,10 @@ class AllMusicGuide(SearchEngineBase):
         m.update(str(timestamp).encode('utf-8'))
         return m.hexdigest()
 
-    def lookupArtist(self, name, fetchReleases=True):
+    def lookupArtist(self, name, fetchReleases=False):
         # http://api.rovicorp.com/search/v2.1/music/search?apikey=5um457xsnur2a6hp43vuarrs&sig=972d1b7669c7362c4789016442c03b93&query=Men+At+Work&entitytype=artist&include=all
         try:
-            if not name in self.cache:
+            if name not in self.cache:
                 artist = []
                 include = "all"
                 if not fetchReleases:
@@ -90,7 +94,6 @@ class AllMusicGuide(SearchEngineBase):
                                         release.amgId = album['ids']['albumId']
                                         rd = (album['year'] or '').replace("-??", "")
                                         if rd:
-                                            rdFormat = "YYYY"
                                             if len(rd) == 10:
                                                 rdFormat = "YYYY-MM-DD"
                                             elif len(rd) == 7:
@@ -99,11 +102,12 @@ class AllMusicGuide(SearchEngineBase):
                                                 rdFormat = None
                                             if rdFormat:
                                                 release.releaseDate = arrow.get(rd, rdFormat).datetime
+                                        print(album['type'])
                                         release.releaseType = album['type']
                                         release.tags = []
                                         if 'flags' in album and album['flags']:
                                             for flag in album['flags']:
-                                                if not flag in release.tags:
+                                                if flag not in release.tags:
                                                     release.tags.append(flag)
                                         release.releaseLabels = []
                                         if album['label']:
@@ -115,11 +119,14 @@ class AllMusicGuide(SearchEngineBase):
                                 # TODO groupMembers
                                 if 'images' in amgArtist:
                                     artist.images = []
-                                    for image in amgArtist['images'] and amgArtist['images']:
-                                        if image['formatid'] == 16:  # the largest images
-                                            imageUrl = image['url']
-                                            if not imageUrl in artist.images:
-                                                artist.images.append(Image(url=imageUrl))
+                                    try:
+                                        for image in amgArtist['images']:
+                                            if image['formatid'] == 16:  # the largest images
+                                                imageUrl = image['url']
+                                                if imageUrl not in artist.images:
+                                                    artist.images.append(Image(url=imageUrl))
+                                    except:
+                                        pass
                                 try:
                                     if 'musicBioOverview' in amgArtist['musicBio']:
                                         artist.bioContext = amgArtist['musicBio']['musicBioOverview'][0]['overview']
@@ -145,7 +152,6 @@ class AllMusicGuide(SearchEngineBase):
         return None
 
     def lookupReleaseDetails(self, amgId):
-        #http://api.rovicorp.com/data/v1.1/release/info?apikey=apikey&sig=sig&releaseid=MR0002392414
         try:
             release = None
             url = "http://api.rovicorp.com/data/v1.1/album/info?apikey=" + self.API_KEY + "&sig=" + str(
@@ -196,8 +202,8 @@ class AllMusicGuide(SearchEngineBase):
                                         media = ReleaseMedia(releaseMediaNumber=disc)
                                         media.tracks = []
                                         for amgTrack in (
-                                        [t for t in album['tracks'] if isEqual(str(t['disc']), str(disc))]):
-                                            currentTrack = currentTrack + 1
+                                                [t for t in album['tracks'] if isEqual(str(t['disc']), str(disc))]):
+                                            currentTrack += 1
                                             track = Track(title=amgTrack['title'])
                                             track.duration = amgTrack['duration']
                                             track.trackNumber = currentTrack
@@ -205,7 +211,7 @@ class AllMusicGuide(SearchEngineBase):
                                             track.amgId = amgTrack['ids']['trackId']
                                             if not [t for t in media.tracks if isEqual(t.title, amgTrack['title'])]:
                                                 media.tracks.append(track)
-                                        trackCount = trackCount + len(media.tracks)
+                                        trackCount += len(media.tracks)
                                         releaseMedia.append(media)
                                     release.media = releaseMedia
                 except:
@@ -218,7 +224,6 @@ class AllMusicGuide(SearchEngineBase):
         return None
 
     def searchForRelease(self, artist, title):
-        amgArtist = None
         if not artist.name.lower() in self.cache:
             amgArtist = self.lookupArtist(artist.name)
         else:
@@ -234,7 +239,6 @@ class AllMusicGuide(SearchEngineBase):
                 if r:
                     releases.append(r)
         return releases
-
 
 # a = AllMusicGuide()
 # artist = a.lookupArtist('Men At Work')

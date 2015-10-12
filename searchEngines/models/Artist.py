@@ -62,8 +62,8 @@ class Artist(ModelBase):
                         for releaseLabel in release.labels:
                             labelNames.append(releaseLabel.label.name + " (" + str(releaseLabel.roadieId) + ")")
                     for media in release.media:
-                        trackCount = trackCount + len(media.tracks)
-                        mediaCount = mediaCount + 1
+                        trackCount += len(media.tracks)
+                        mediaCount += 1
         return "RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], " + \
                "AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \

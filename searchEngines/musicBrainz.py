@@ -8,7 +8,7 @@ import arrow
 import musicbrainzngs
 
 from resources.common import *
-from searchEngines.searchEngineBase import SearchEngineBase
+from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist, ArtistType
 from searchEngines.models.Label import Label
 from searchEngines.models.Release import Release
@@ -18,9 +18,9 @@ from searchEngines.models.Track import Track
 
 
 class MusicBrainz(SearchEngineBase):
-
     IsActive = True
 
+    threadDataType = "musicBrainz"
     lock = threading.Lock()
     que = Queue()
 
@@ -33,27 +33,26 @@ class MusicBrainz(SearchEngineBase):
         SearchEngineBase.__init__(self, referer)
         musicbrainzngs.set_useragent("Roadie", "0.1", self.referer)
 
-
     def lookupArtist(self, name):
         results = musicbrainzngs.search_artists(artist=name)
         if results and 'artist-list' in results and results['artist-list']:
             result = None
-            for artisttResult in results['artist-list']:
-                if 'name' in artisttResult:
-                    if isEqual(artisttResult['name'], name):
-                        result = artisttResult
+            for artistResult in results['artist-list']:
+                if 'name' in artistResult:
+                    if isEqual(artistResult['name'], name):
+                        result = artistResult
                         break
             if result:
                 return self.lookupArtistByMusicBrainzId(result['id'])
         return None
 
-    def lookupArtistByMusicBrainzId(self, musicbrainzId, fetchReleases=False):
-        if not musicbrainzId:
+    def lookupArtistByMusicBrainzId(self, musicBrainzId, fetchReleases=False):
+        if not musicBrainzId:
             raise RuntimeError("Invalid MusicBrainzId")
         try:
             artist = None
             self.logger.debug("Performing MusicBrainz Lookup For Artist")
-            results = musicbrainzngs.get_artist_by_id(musicbrainzId, includes=['tags','aliases','url-rels'])
+            results = musicbrainzngs.get_artist_by_id(musicBrainzId, includes=['tags', 'aliases', 'url-rels'])
             if results and results['artist']:
                 result = results['artist']
                 if result:
@@ -82,11 +81,11 @@ class MusicBrainz(SearchEngineBase):
                         artist.urls = []
                         for url in result['url-relation-list']:
                             target = url['target']
-                            type = url['type']
-                            if type != "image":
+                            imageType = url['type']
+                            if imageType != "image":
                                 if not isInList(artist.urls, target):
                                     artist.urls.append(target)
-                    if 'tag-list' in  result:
+                    if 'tag-list' in result:
                         artist.tags = []
                         for tag in result['tag-list']:
                             if not isInList(artist.tags, tag['name']):
@@ -128,13 +127,13 @@ class MusicBrainz(SearchEngineBase):
         mbReleases = musicbrainzngs.browse_releases(artist=artist.musicBrainzId)
         if mbReleases and 'release-list' in mbReleases:
 
-            for x in range(10):
+            for x in range(self.threadCount):
                 t = threading.Thread(target=self.threader)
                 t.daemon = True
                 t.start()
 
             for mbRelease in mbReleases['release-list']:
-                self.que.put(mbRelease['id'])
+                self.que.put(ThreadData(self.threadDataType, mbRelease['id']))
 
             self.que.join()
 
@@ -144,9 +143,10 @@ class MusicBrainz(SearchEngineBase):
 
     def threader(self):
         while True:
-            releaseMusicBrainzId = self.que.get()
-            self.threaderLookupRelease(releaseMusicBrainzId)
-            self.que.task_done()
+            threadData = self.que.get()
+            if threadData.threadDataType == self.threadDataType:
+                self.threaderLookupRelease(threadData.data)
+                self.que.task_done()
 
     def threaderLookupRelease(self, releaseMusicBrainzId):
         release = self.lookupReleaseByMusicBrainzId(releaseMusicBrainzId)
@@ -191,7 +191,7 @@ class MusicBrainz(SearchEngineBase):
                             if 'label' in labelInfo and 'name' in labelInfo['label']:
                                 label = None
                                 labelName = labelInfo['label']['name']
-                                if not labelName in labelsFound:
+                                if labelName not in labelsFound:
                                     if labelName:
                                         label = Label(name=labelName)
                                         label.musicBrainzId = labelInfo['label']['id']
@@ -223,7 +223,7 @@ class MusicBrainz(SearchEngineBase):
                                     track.musicBrainzId = mbTrack['id']
                                     if not ([t for t in media.tracks if t.trackNumber == track.trackNumber]):
                                         media.tracks.append(track)
-                            trackCount = trackCount + len(media.tracks)
+                            trackCount += len(media.tracks)
                             media.trackCount = len(media.tracks)
                             releaseMedia.append(media)
                 release.trackCount = trackCount
@@ -237,8 +237,7 @@ class MusicBrainz(SearchEngineBase):
             pass
         return None
 
-
-    def _getCoverArtUrl(self,musicBrainzId):
+    def _getCoverArtUrl(self, musicBrainzId):
         try:
             url = "http://coverartarchive.org/release/" + musicBrainzId + "/"
             rq = request.Request(url=url)
@@ -256,7 +255,6 @@ class MusicBrainz(SearchEngineBase):
                     pass
         except:
             pass
-
 
 # a = MusicBrainz()
 # #artist = a.lookupArtist('Danger Danger')

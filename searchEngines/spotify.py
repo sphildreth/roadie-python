@@ -1,9 +1,11 @@
 import json
+import threading
+from queue import Queue
 from io import StringIO
 from urllib import request, parse
 
 from resources.common import *
-from searchEngines.searchEngineBase import SearchEngineBase
+from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist, ArtistType
 from searchEngines.models.Release import Release
 from searchEngines.models.ReleaseMedia import ReleaseMedia
@@ -11,10 +13,15 @@ from searchEngines.models.Track import Track
 
 
 class Spotify(SearchEngineBase):
-
     IsActive = True
 
-    def __init__(self, referer = None):
+    threadDataType = "spotify"
+    lock = threading.Lock()
+    que = Queue()
+
+    artistReleasesThreaded = []
+
+    def __init__(self, referer=None):
         SearchEngineBase.__init__(self, referer)
 
     def lookupArtist(self, name):
@@ -57,11 +64,10 @@ class Spotify(SearchEngineBase):
             pass
         return None
 
-
-    def searchForRelease(self, artistSearchResult, title):
+    def searchForRelease(self, artist, title):
         try:
             url = "https://api.spotify.com/v1/artists/" + str(
-                artistSearchResult.spotifyId) + "/albums?offset=0&limit=20&album_type=album&market=US"
+                artist.spotifyId) + "/albums?offset=0&limit=20&album_type=album&market=US"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             with request.urlopen(rq) as f:
@@ -69,22 +75,41 @@ class Spotify(SearchEngineBase):
                 o = json.load(s)
                 spotifyReleases = o['items']
                 if spotifyReleases:
-                    releases = []
+
+                    for x in range(self.threadCount):
+                        t = threading.Thread(target=self.threader)
+                        t.daemon = True
+                        t.start()
+
                     for spotifyRelease in spotifyReleases:
-                        spotifyReleaseName = spotifyRelease['name']
                         spotifyId = spotifyRelease['id']
-                        release = self.lookupReleaseBySpotifyId(spotifyId)
-                        if release:
-                            releases.append(release)
-                        if title:
-                            if isEqual(spotifyReleaseName, title):
-                                break
-                    return releases
+                        self.que.put(ThreadData(self.threadDataType, spotifyId))
+
+                    self.que.join()
+
+            if title:
+                r = [r for r in self.artistReleasesThreaded if isEqual(r.title, title)]
+                if r:
+                    self.artistReleasesThreaded = []
+                    self.artistReleasesThreaded.append(r[0])
+            return self.artistReleasesThreaded
+
         except:
             self.logger.exception("Spotify: Error In searchForRelease")
             pass
 
+    def threader(self):
+        while True:
+            threadData = self.que.get()
+            if threadData.threadDataType == self.threadDataType:
+                self.threaderLookupRelease(threadData.data)
+                self.que.task_done()
 
+    def threaderLookupRelease(self, spotifyId):
+        release = self.lookupReleaseBySpotifyId(spotifyId)
+        if release:
+            with self.lock:
+                self.artistReleasesThreaded.append(release)
 
     def lookupReleaseBySpotifyId(self, spotifyId):
         try:
@@ -139,10 +164,9 @@ class Spotify(SearchEngineBase):
             pass
         return None
 
-
 # a = Spotify()
 # artist = a.lookupArtist('Men At Work')
 # release = a.searchForRelease(artist, "Cargo")
-# #r = a.lookupReleaseByMusicBrainzId('76df3287-6cda-33eb-8e9a-044b5e15ffdd')
+# # #r = a.lookupReleaseByMusicBrainzId('76df3287-6cda-33eb-8e9a-044b5e15ffdd')
 # print(artist)
 # print(release)

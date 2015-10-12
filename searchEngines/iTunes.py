@@ -10,14 +10,12 @@ from searchEngines.models.Release import Release
 
 
 class iTunes(SearchEngineBase):
-
     IsActive = True
 
     def __init__(self, referer=None):
         SearchEngineBase.__init__(self, referer)
 
-
-    def lookupArtist(self,name):
+    def lookupArtist(self, name):
         try:
             artist = None
             url = "http://itunes.apple.com/search?term=" + parse.quote_plus(name) + "&entity=musicArtist"
@@ -81,7 +79,7 @@ class iTunes(SearchEngineBase):
                             pass
                 except:
                     pass
-            releases = sorted(releases, key=lambda x: x.releaseDate)
+            releases = sorted(releases, key=lambda x: (x.weight(), x.releaseDate, x.title))
             return releases
         except:
             self.logger.exception("iTunes: Error In SearchForRelease")

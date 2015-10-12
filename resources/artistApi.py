@@ -1,6 +1,6 @@
 from flask_restful import Resource
 from flask import jsonify
-from resources.models import Artist
+from resources.mongoModels import Artist
 
 class ArtistApi(Resource):
 

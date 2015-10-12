@@ -25,6 +25,7 @@ from tornado.ioloop import IOLoop
 from werkzeug.datastructures import Headers
 
 from importers.collectionImporter import CollectionImporter
+from resources.common import *
 from resources.artistApi import ArtistApi
 from resources.artistListApi import ArtistListApi
 from searchEngines.imageSearcher import ImageSearcher
@@ -33,9 +34,11 @@ from resources.trackListApi import TrackListApi
 from resources.processor import Processor
 from resources.logger import Logger
 from resources.id3 import ID3
-from resources.models import Artist, ArtistType, Collection, Genre, Label, \
+from resources.mongoModels import Artist, ArtistType, Collection, Genre, Label, \
     Playlist, Quality, Release, Track, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
+from resources.validator import Validator
+
 from flask.ext.mongoengine import MongoEngine, MongoEngineSessionInterface
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
@@ -43,7 +46,7 @@ from flask.ext.bcrypt import Bcrypt
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
-from resources.validator import Validator
+
 from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieTrackModelView import RoadieTrackModelView
@@ -859,7 +862,7 @@ def streamTrack(user_id, release_id, track_id):
                 path = path.replace(key, val)
     mp3File = os.path.join(path, track.FileName)
     if not os.path.isfile(mp3File):
-        print("! Unable To Find Track File [" + mp3File + "]")
+        logger.debug("! Unable To Find Track File [" + mp3File + "]")
         return render_template('404.html'), 404
     (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime) = os.stat(mp3File)
     headers = Headers()
@@ -1285,6 +1288,7 @@ def login():
     if 'remember_me' in request.form:
         remember_me = True
     registered_user = User.objects(Username=username).first()
+
     if registered_user and bcrypt.check_password_hash(registered_user.Password, password):
         registered_user.LastLogin = arrow.utcnow().datetime
         User.save(registered_user)

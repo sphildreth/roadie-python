@@ -1,9 +1,11 @@
 import json
+import threading
+from queue import Queue
 from io import StringIO
 from urllib import request, parse
 
 from resources.common import *
-from searchEngines.searchEngineBase import SearchEngineBase
+from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist
 from searchEngines.models.Image import Image
 from searchEngines.models.Release import Release
@@ -16,6 +18,12 @@ class LastFM(SearchEngineBase):
     API_SECRET = "35b3684601b2ecf9c0c0c1cfda28159e"
 
     IsActive = True
+
+    threadDataType = "lastFm"
+    lock = threading.Lock()
+    que = Queue()
+
+    artistReleasesThreaded = []
 
     def __init__(self, referer=None):
         self.baseUrl = "http://ws.audioscrobbler.com/2.0/?api_key=" + self.API_KEY + "&format=json&method="
@@ -66,12 +74,24 @@ class LastFM(SearchEngineBase):
             pass
         return None
 
-
     def searchForRelease(self, artist, title):
         artistPart = "&artist=" + parse.quote_plus(artist.name)
         url = self.baseUrl + "album.getInfo" + artistPart + "&album=" + parse.quote_plus(title)
         self.logger.debug("Performing LastFM Lookup For Album [" + title + "]")
         return self._fetchFromUrl(url)
+
+    def threader(self):
+        while True:
+            threadData = self.que.get()
+            if threadData.threadDataType == self.threadDataType:
+                self.threaderLookupRelease(threadData.data)
+                self.que.task_done()
+
+    def threaderLookupRelease(self, url):
+        release = self._fetchFromUrl(url)
+        if release:
+            with self.lock:
+                self.artistReleasesThreaded.append(release)
 
     def lookupReleasesForMusicBrainzIdList(self, mbIdList):
         """
@@ -80,14 +100,20 @@ class LastFM(SearchEngineBase):
         :param mbIdList:
         :return:
         """
-        releases = []
+        for x in range(self.threadCount):
+            t = threading.Thread(target=self.threader)
+            t.daemon = True
+            t.start()
+
         for musicBrainzId in mbIdList:
             url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
             self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
-            release = self._fetchFromUrl(url)
-            if release:
-                releases.append(release)
-        return releases
+
+            self.que.put(ThreadData(self.threadDataType, url))
+
+        self.que.join()
+
+        return self.artistReleasesThreaded
 
     def _fetchFromUrl(self, url):
         if not url:
@@ -101,7 +127,7 @@ class LastFM(SearchEngineBase):
                 try:
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
-                    if not 'album' in o:
+                    if 'album' not in o:
                         return None
                     r = o['album']
                     tracks = r['tracks']
@@ -132,7 +158,7 @@ class LastFM(SearchEngineBase):
                             track.trackNumber = t['@attr']['rank']
                             if not ([t for t in media.tracks if t.trackNumber == track.trackNumber]):
                                 media.tracks.append(track)
-                                mediaTrackCount = mediaTrackCount + 1
+                                mediaTrackCount += 1
                         release.media = []
                         release.media.append(media)
                         release.trackCount = len(media.tracks)
@@ -153,7 +179,7 @@ class LastFM(SearchEngineBase):
         return None
 
 
-        # a = LastFM()
-        # artist = a.lookupArtist('Men At Work')
-        # release = a.searchForRelease(artist, None)
-        # print(artist.info())
+# a = LastFM()
+# artist = a.lookupArtist('Men At Work')
+# release = a.searchForRelease(artist, None)
+# print(artist.info())

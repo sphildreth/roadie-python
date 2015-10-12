@@ -12,7 +12,8 @@ from resources.models.ModelBase import Base
 p = argparse.ArgumentParser(description='Search For Artist Information.')
 p.add_argument('--name', '-n', help="Artist Name", required=True)
 p.add_argument('--release', '-r', help="Release Title", required=False)
-p.add_argument('--showMissing', '-s', action='store_true', help="Show Releases Not Found In Roadie Database", required=False)
+p.add_argument('--showMissing', '-s', action='store_true', help="Show Releases Not Found In Roadie Database",
+               required=False)
 args = p.parse_args()
 
 d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
@@ -26,17 +27,19 @@ start = arrow.utcnow()
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 dbSession = DBSession()
-s = ArtistSearcher(dbSession)
+s = ArtistSearcher()
 artist = s.searchForArtist(args.name)
 if artist:
     elapsed = arrow.utcnow() - start
     print("Artist Info [Elapsed Time: " + str(elapsed) + "]: " + artist.info())
+    start = arrow.utcnow()
     releases = s.searchForArtistReleases(artist, args.release)
+    elapsed = arrow.utcnow() - start
     if releases:
         missing = 0
-        # for release in releases:
-
-        print("Artist Releases Count [" + str(len(releases)) + "] Missing [" + str(missing) + "]")
+        print(
+            "Artist Releases [Elapsed Time: " + str(elapsed) + "]: Count [" + str(len(releases)) + "] Missing [" + str(
+                missing) + "]")
         for release in releases:
             if args.showMissing and not release.roadieId or release.roadieId == "None":
                 print("[Missing] Release Info [" + str(release.info()) + "]")

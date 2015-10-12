@@ -78,18 +78,43 @@ class Release(ModelBase):
                 labelNames.append(releaseLabel.label.name)
         if self.media:
             for media in self.media:
-                trackCount = trackCount + len(media.tracks)
-                mediaCount = mediaCount + 1
-        return "RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+                trackCount += len(media.tracks)
+                mediaCount += 1
+        return "Weight [" + str(self.weight()) + "], [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
                "], LastFMId [" + str(self.lastFMId) + "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(
             self.amgId) + "], ReleaseDate [" + str(
-            self.releaseDate) + "], TrackCount [" + str(self.trackCount) + \
+            self.releaseDate) + "], ReleaseType [" + str(self.releaseType) + "], TrackCount [" + str(self.trackCount) + \
                "] Labels [" + "|".join(labelNames) + \
                "] Media [" + str(mediaCount) + "] Tracks [" + str(trackCount) + \
                "], Title **[" + str(self.title) + "]** Urls [" + str(
             len(self.urls or [])) + "] Last FM Summary Size [" + str(
             len(self.lastFMSummary or "")) + "] Tags [" + "|".join(self.tags or [])
+
+    def weight(self):
+        weight = self.trackCount
+        if self.releaseDate:
+            weight += 1
+        if self.media:
+            weight += len(self.media)
+        if self.images:
+            weight += len(self.images)
+        if self.tags:
+            weight += len(self.tags)
+        if self.genres:
+            weight += len(self.genres)
+        if self.musicBrainzId:
+            weight += 1
+        if self.iTunesId:
+            weight += 1
+        if self.lastFMId:
+            weight += 1
+        if self.spotifyId:
+            weight += 1
+        if self.amgId:
+            weight += 1
+        return weight
+
 
     def mergeWithRelease(self, right):
         """
@@ -175,5 +200,5 @@ class Release(ModelBase):
         if result.media:
             result.trackCount = 0
             for media in result.media:
-                result.trackCount = result.trackCount + len(media.tracks or [])
+                result.trackCount += len(media.tracks or [])
         return result
