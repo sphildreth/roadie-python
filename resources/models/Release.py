@@ -17,7 +17,7 @@ class Release(Base):
 
     isVirtual = Column(Boolean(), default=False)
     title = Column(String(500), nullable=False, index=True)
-    alternateNames = Column(ScalarListType())
+    alternateNames = Column(ScalarListType(separator="|"))
     releaseDate = Column(Date())
     # Calculated when a user rates an artist based on average User Ratings and stored here for performance
     rating = Column(SmallInteger(), nullable=False, default=0)
@@ -40,8 +40,8 @@ class Release(Base):
     lastFMSummary = Column(Text())
     musicBrainzId = Column(String(100))
     spotifyId = Column(String(100))
-    tags = Column(ScalarListType())
-    urls = Column(ScalarListType())
+    tags = Column(ScalarListType(separator="|"))
+    urls = Column(ScalarListType(separator="|"))
 
     artistId = Column(Integer, ForeignKey("artist.id"), index=True)
     genres = relationship(Genre, secondary=releaseGenreTable)

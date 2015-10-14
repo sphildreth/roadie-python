@@ -13,7 +13,7 @@ class Playlist(Base):
     name = Column(String(100), nullable=False, unique=True, index=True)
     description = Column(String(1000))
     thumbnail = Column(BLOB())
-    urls = Column(ScalarListType())
+    urls = Column(ScalarListType(separator="|"))
 
     userId = Column(Integer, ForeignKey("user.id"), index=True)
     tracks = relationship(PlaylistTrack, backref="playlist")

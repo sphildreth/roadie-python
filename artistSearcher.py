@@ -4,10 +4,10 @@ import argparse
 
 import arrow
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from searchEngines.artistSearcher import ArtistSearcher
-from resources.models.ModelBase import Base
+#from searchEngines.artistSearcher import ArtistSearcher
+from factories.artistFactory import ArtistFactory
+
 
 p = argparse.ArgumentParser(description='Search For Artist Information.')
 p.add_argument('--name', '-n', help="Artist Name", required=True)
@@ -24,28 +24,32 @@ with open(path, "r") as rf:
 engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
 
 start = arrow.utcnow()
-Base.metadata.bind = engine
-DBSession = sessionmaker(bind=engine)
-dbSession = DBSession()
-s = ArtistSearcher()
-artist = s.searchForArtist(args.name)
-if artist:
-    elapsed = arrow.utcnow() - start
-    print("Artist Info [Elapsed Time: " + str(elapsed) + "]: " + artist.info())
-    start = arrow.utcnow()
-    releases = s.searchForArtistReleases(artist, args.release)
-    elapsed = arrow.utcnow() - start
-    if releases:
-        missing = 0
-        print(
-            "Artist Releases [Elapsed Time: " + str(elapsed) + "]: Count [" + str(len(releases)) + "] Missing [" + str(
-                missing) + "]")
-        for release in releases:
-            if args.showMissing and not release.roadieId or release.roadieId == "None":
-                print("[Missing] Release Info [" + str(release.info()) + "]")
-            elif not args.showMissing:
-                print("Release Info [" + str(release.info()) + "]")
-    else:
-        print("No Release(s) Found!")
-else:
-    print("Artist Not Found!")
+
+
+f = ArtistFactory(config)
+artist = f.get(args.name)
+print(artist.info())
+
+
+# s = ArtistSearcher()
+# artist = s.searchForArtist(args.name)
+# if artist:
+#     elapsed = arrow.utcnow() - start
+#     print("Artist Info [Elapsed Time: " + str(elapsed) + "]: " + artist.info())
+#     start = arrow.utcnow()
+#     releases = s.searchForArtistReleases(artist, args.release)
+#     elapsed = arrow.utcnow() - start
+#     if releases:
+#         missing = 0
+#         print(
+#             "Artist Releases [Elapsed Time: " + str(elapsed) + "]: Count [" + str(len(releases)) + "] Missing [" + str(
+#                 missing) + "]")
+#         for release in releases:
+#             if args.showMissing and not release.roadieId or release.roadieId == "None":
+#                 print("[Missing] Release Info [" + str(release.info()) + "]")
+#             elif not args.showMissing:
+#                 print("Release Info [" + str(release.info()) + "]")
+#     else:
+#         print("No Release(s) Found!")
+# else:
+#     print("Artist Not Found!")

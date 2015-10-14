@@ -16,5 +16,8 @@ class ModelBase(object):
     createdDate = Column(DateTime(), default=arrow.utcnow().datetime)
     lastUpdated = Column(DateTime(), nullable=True)
 
+    def __init__(self):
+        self.createdDate = arrow.utcnow().datetime
+
 
 Base = declarative_base(cls=ModelBase)

@@ -11,6 +11,8 @@ from searchEngines.spotify import Spotify
 from searchEngines.allMusic import AllMusicGuide
 from searchEngines.models.Artist import Artist
 
+from resources.models.ModelBase import ModelBase
+
 
 class ArtistSearcher(object):
     """
@@ -64,7 +66,7 @@ class ArtistSearcher(object):
                     if not image.image and image.url:
                         image.image = imageSearcher.getImageBytesForUrl(image.url)
             self.cache[name] = artist
-        self.logger.debug("searchForArtist Name [" + name + "] Found [" + artist.name if artist else "" + "]")
+        self.logger.debug("searchForArtist Name [" + name + "] Found [" + (artist.name if artist else "") + "]")
         return artist
 
     @staticmethod

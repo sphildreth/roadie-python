@@ -16,7 +16,7 @@ class Collection(Base):
     listInCSV = Column(Text())
     description = Column(String(1000))
     thumbnail = Column(BLOB())
-    urls = Column(ScalarListType())
+    urls = Column(ScalarListType(separator="|"))
 
     maintainerId = Column(Integer, ForeignKey("user.id"))
     releases = relationship(CollectionRelease, backref="release")

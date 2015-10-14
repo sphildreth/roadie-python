@@ -17,5 +17,4 @@ class ArtistApi(Resource):
 
     def getThumbnail(self, artist_id):
         artist = Artist.objects(id=artist_id).first()
-        image = artist.Thumbnail.read()
-        return 
+        return artist.Thumbnail.read()

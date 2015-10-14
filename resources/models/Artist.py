@@ -21,7 +21,8 @@ Index("idx_artistGenreAssociation", artistGenreTable.c.artistId, artistGenreTabl
 
 
 class Artist(Base):
-
+    # For artists with same name append ' (XXXX)' as year started to make unique
+    # Example: 'Prism (1974)', 'Prism (1977)', 'Prism (2013)'
     name = Column(String(500), nullable=False, index=True, unique=True)
     sortName = Column(String(500))
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
@@ -40,10 +41,10 @@ class Artist(Base):
     endDate = Column(Date())
     artistType = Column(Enum('Person', 'Group', 'Orchestra', 'Choir', 'Character', 'Other', name='artistType'))
     bioContext = Column(Text())
-    tags = Column(ScalarListType())
-    alternateNames = Column(ScalarListType(), index=True)
-    urls = Column(ScalarListType())
-    isniList = Column(ScalarListType())
+    tags = Column(ScalarListType(separator="|"))
+    alternateNames = Column(ScalarListType(separator="|"), index=True)
+    urls = Column(ScalarListType(separator="|"))
+    isniList = Column(ScalarListType(separator="|"))
 
     releases = relationship(Release, backref="artist")
     images = relationship(Image)
@@ -72,8 +73,8 @@ class Artist(Base):
                         for releaseLabel in release.labels:
                             labelNames.append(releaseLabel.label.name + " (" + str(releaseLabel.labelId) + ")")
                     for media in release.media:
-                        trackCount = trackCount + len(media.tracks)
-                        mediaCount = mediaCount + 1
+                        trackCount += len(media.tracks)
+                        mediaCount += 1
         return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], " + \
                "AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \

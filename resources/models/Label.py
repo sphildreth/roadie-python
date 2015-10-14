@@ -13,9 +13,9 @@ class Label(Base):
     beginDate = Column(Date())
     endDate = Column(Date())
     imageUrl = Column(String(500))
-    tags = Column(ScalarListType())
-    alternateNames = Column(ScalarListType())
-    urls = Column(ScalarListType())
+    tags = Column(ScalarListType(separator="|"))
+    alternateNames = Column(ScalarListType(separator="|"))
+    urls = Column(ScalarListType(separator="|"))
     releases = relationship(ReleaseLabel, backref="label")
 
     def __unicode__(self):
