@@ -148,7 +148,7 @@ class Spotify(SearchEngineBase):
                         images = o['images']
                         if images:
                             coverUrl = images[0]['url']
-                        release = Release(title=o['name'], releaseDate=o['release_date'])
+                        release = Release(title=o['name'], releaseDate= parseDate(o['release_date']))
                         release.trackCount = len(media.tracks)
                         release.coverUrl = coverUrl
                         release.spotifyId = o['id']

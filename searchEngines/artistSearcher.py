@@ -1,5 +1,9 @@
+import io
 import random
 import uuid
+import wikipedia
+
+from PIL import Image
 
 from resources.common import *
 from resources.logger import Logger
@@ -19,6 +23,8 @@ class ArtistSearcher(object):
     Query Enabled Search Engines and Find Artist Information and aggregate results.
     """
     allMusicSearcher = None
+
+    thumbnailSize = 160, 160
 
     cache = dict()
 
@@ -59,12 +65,40 @@ class ArtistSearcher(object):
         if self.allMusicSearcher.IsActive:
             artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
         if artist:
-            # Fetch images with only urls
+            # Fetch images with only urls, remove any with neither URL or BLOB
             if artist.images:
+                images = []
                 imageSearcher = ImageSearcher()
+                firstImageInImages = None
                 for image in artist.images:
                     if not image.image and image.url:
                         image.image = imageSearcher.getImageBytesForUrl(image.url)
+                    if image.image:
+                        firstImageInImages = firstImageInImages or image.image
+                        images.append(image)
+                artist.images = images
+                if not artist.thumbnail:
+                    try:
+                        img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                        img.thumbnail(self.thumbnailSize)
+                        b = io.BytesIO()
+                        img.save(b, "JPEG")
+                        artist.thumbnail = b.getvalue()
+                    except:
+                        pass
+            # Add special search names to alternate names
+            if not artist.alternateNames:
+                artist.alternateNames = []
+            if artist.name not in artist.alternateNames:
+                cleanedArtistName = createCleanedName(artist.name)
+                if cleanedArtistName != artist.name.lower().strip() and cleanedArtistName not in artist.alternateNames:
+                    artist.alternateNames.append(cleanedArtistName)
+            if not artist.bioContext:
+                try:
+                    artist.bioContext = wikipedia.summary(artist.name)
+                except:
+                    pass
+
             self.cache[name] = artist
         self.logger.debug("searchForArtist Name [" + name + "] Found [" + (artist.name if artist else "") + "]")
         return artist

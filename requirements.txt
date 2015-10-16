@@ -3,6 +3,7 @@ appdirs==1.4.0
 arrow==0.6.0
 asyncwsgi==0.1.0
 bcrypt==2.0.0
+beautifulsoup4==4.4.1
 blinker==1.4
 cffi==1.2.1
 DateTime==4.0.1
@@ -51,6 +52,7 @@ tornado==4.2.1
 virtualenv==13.1.2
 Werkzeug==0.10.4
 wheel==0.26.0
+wikipedia==1.4.0
 WTForms==2.0.2
 zipline==0.7.0
 zope.interface==4.1.3

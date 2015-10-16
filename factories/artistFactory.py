@@ -2,7 +2,7 @@ import arrow
 import datetime
 
 from sqlalchemy import create_engine
-from sqlalchemy.sql import select, and_, or_, not_
+from sqlalchemy.sql import select, func, and_, or_, not_, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -31,20 +31,21 @@ class ArtistFactory(object):
         self.logger = Logger()
         self.searcher = ArtistSearcher()
 
-    def add(self, artist):
+    def add(self, artist, newRecord=True):
         """
         Add the Artist to the Database
         :type artist: Artist
         """
-        doesExist = self._getFromDatabase(artist.name)
-        if doesExist:
-            appendDate = str(arrow.utcnow().date)
-            if artist.beginDate:
-                appendDate = str(artist.beginDate)
-            artist.name = artist.name + " (" + appendDate + ")"
+        if newRecord:
             doesExist = self._getFromDatabase(artist.name)
             if doesExist:
-                artist.name = artist.name + " (" + arrow.utcnow().isoformat() + ")"
+                appendDate = str(arrow.utcnow().date)
+                if artist.beginDate:
+                    appendDate = str(artist.beginDate)
+                artist.name = artist.name + " (" + appendDate + ")"
+                doesExist = self._getFromDatabase(artist.name)
+                if doesExist:
+                    artist.name = artist.name + " (" + arrow.utcnow().isoformat() + ")"
         self.session.add(artist)
         self.session.commit()
         return artist
@@ -57,10 +58,35 @@ class ArtistFactory(object):
         self.session.delete(artist)
         self.session.commit()
 
-    def _getFromDatabase(self, name):
-        return self.session.query(Artist).filter(or_(Artist.name == name,
-                                                     Artist.sortName == name,
-                                                     Artist.alternateNames.contains(name))).first()
+    def _getFromDatabaseByName(self, name):
+        if not name:
+            return None
+        name = name.lower().strip()
+        stmt = or_(func.lower(Artist.name) == name,
+                   func.lower(Artist.sortName) == name,
+                   text("(lower(alternatenames) == '" + name + "'" + ""
+                   " OR alternatenames like '" + name + "|%'" +
+                   " OR alternatenames like '%|" + name + "|%'" +
+                   " OR alternatenames like '%|" + name + "')"))
+        return self.session.query(Artist).filter(stmt).first()
+
+    def _getFromDatabaseByExternalIds(self, musicBrainzId, iTunesId, amgId, spotifyId):
+        stmt = or_(Artist.musicBrainzId == musicBrainzId,
+                   Artist.iTunesId == iTunesId,
+                   Artist.amgId == amgId,
+                   Artist.spotifyId == spotifyId
+                   )
+        return self.session.query(Artist).filter(stmt).first()
+
+    def _getFromDatabaseByRoadieId(self,roadieId):
+        return self.session.query(Artist).filter(Artist.roadieId == roadieId).first()
+
+    def _saveToDatabase(self, artist):
+        self.add(artist, False)
+        self.commit()
+
+
+
 
     def get(self, name):
         """
@@ -69,13 +95,21 @@ class ArtistFactory(object):
         """
         if not name:
             return None
-        artist = self._getFromDatabase(name)
+        name = deriveArtistFromName(name)
+        artist = self._getFromDatabaseByName(name)
         if not artist:
+            self.logger.info("Artist Not Found By Name [" + name + "]")
             artist = Artist()
-            self.logger.info("Artist Not Found")
-            return None
             sa = self.searcher.searchForArtist(name)
             if sa:
+                existsByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId, sa.spotifyId)
+                if existsByExternalIds:
+                    if not existsByExternalIds.alternatenames:
+                        existsByExternalIds.alternatenames = []
+                    existsByExternalIds.alternatenames.append(name)
+                    self.logger.debug("Found Artist By External Ids [" + existsByExternalIds.name + "] Added [" + name + "] To AlternateNames")
+                    self._saveToDatabase(existsByExternalIds)
+                    return existsByExternalIds
                 artist.name = sa.name
                 artist.roadieId = sa.roadieId
                 artist.sortName = sa.sortName

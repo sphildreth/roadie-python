@@ -1,5 +1,9 @@
 import datetime
+import unicodedata
+import string
 import arrow
+from string import ascii_letters, digits
+import sys
 
 
 def isEqual(s1, s2):
@@ -44,3 +48,40 @@ def parseDate(date):
     except:
         pass
     return result
+
+
+def deriveArtistFromName(name):
+    """
+    Ensure that the given name doesnt have usual suspects like "Featuring" or "Ft" or " with" to attempt to return just
+    the artist name
+
+    :param name: str
+    :return: str
+    """
+    if not name:
+        return name
+    removeParts = [" ft. ", " ft ", " feat ", " feat. "]
+    for removePart in removeParts:
+        i = name.lower().find(removePart)
+        if i > -1:
+            name = name[:i]
+    return string.capwords(name)
+
+
+def createCleanedName(name):
+    """
+    Take the given name and strip out everything not alphanumeric for saving as a potential alternate name
+    :param name: str
+    :return: str
+    """
+    name = name.lower().replace("&", "and")
+    return "".join([ch for ch in name if ch in (ascii_letters + digits)])
+
+
+def uprint(*objects, sep=' ', end='\n', file=sys.stdout):
+    enc = file.encoding
+    if enc == 'UTF-8':
+        print(*objects, sep=sep, end=end, file=file)
+    else:
+        f = lambda obj: str(obj).encode(enc, errors='backslashreplace').decode(enc)
+        print(*map(f, objects), sep=sep, end=end, file=file)

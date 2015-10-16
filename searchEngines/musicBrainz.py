@@ -169,21 +169,7 @@ class MusicBrainz(SearchEngineBase):
                 coverUrl = self._getCoverArtUrl(musicBrainzId)
                 if 'release' in mbReleaseById:
                     mbRelease = mbReleaseById['release']
-                    mbReleaseDate = None
-                    if 'date' in mbRelease:
-                        mbReleaseDate = mbRelease['date']
-                    mbReleaseFormat = "YYYY-MM-DD"
-                    if not mbReleaseDate:
-                        mbReleaseFormat = None
-                    elif len(mbReleaseDate) == 4:
-                        mbReleaseFormat = "YYYY"
-                    elif len(mbReleaseDate) == 7:
-                        mbReleaseFormat = "YYYY-MM"
-                    elif len(mbReleaseDate) != 10:
-                        mbReleaseFormat = None
-                    releaseDate = None
-                    if mbReleaseFormat:
-                        releaseDate = arrow.get(mbRelease['date'], mbReleaseFormat).datetime
+                    releaseDate = parseDate(mbRelease)
                     release = Release(title=mbRelease['title'], releaseDate=releaseDate)
                     if 'label-info-list' in mbRelease:
                         labelsFound = []

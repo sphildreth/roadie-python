@@ -1,3 +1,4 @@
+import codecs
 import os
 import json
 import argparse
@@ -5,7 +6,13 @@ import argparse
 import arrow
 from sqlalchemy import create_engine
 
+from mongoengine import connect
+from resources.mongoModels import Artist, Release, Track, UserTrack
+
+from resources.common import *
+
 #from searchEngines.artistSearcher import ArtistSearcher
+import sys
 from factories.artistFactory import ArtistFactory
 
 
@@ -21,14 +28,21 @@ path = os.path.join(os.sep.join(d), "settings.json")
 with open(path, "r") as rf:
     config = json.load(rf)
 
+dbName = config['MONGODB_SETTINGS']['DB']
+host = config['MONGODB_SETTINGS']['host']
+mongoClient = connect(dbName, host=host)
+
 engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
 
 start = arrow.utcnow()
 
 
+for artist in Artist.objects()[:200]:
+    uprint(deriveArtistFromName(artist.Name))
+
 f = ArtistFactory(config)
 artist = f.get(args.name)
-print(artist.info())
+uprint(artist.info())
 
 
 # s = ArtistSearcher()

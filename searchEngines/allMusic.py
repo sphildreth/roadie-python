@@ -72,21 +72,15 @@ class AllMusicGuide(SearchEngineBase):
                                     for genre in amgArtist['musicGenres']:
                                         if not isInList(artist.genres, genre):
                                             artist.genres.append(genre)
-                                bdFormat = "YYYY"
                                 bd = amgArtist['birth']['date'].replace("-??", "")
                                 if bd:
-                                    if len(bd) > 4:
-                                        bdFormat = "YYYY-MM-DD"
                                     if artist.artistType == ArtistType.Person:
-                                        artist.birthDate = arrow.get(bd, bdFormat).datetime
+                                        artist.birthDate = parseDate(bd)
                                     else:
-                                        artist.beginDate = arrow.get(bd, bdFormat).datetime
-                                edFormat = "YYYY"
+                                        artist.beginDate = parseDate(bd)
                                 ed = (amgArtist['death']['date'] or '').replace("-??", "")
                                 if ed:
-                                    if len(ed) > 4:
-                                        edFormat = "YYYY-MM-DD"
-                                    artist.endDate = arrow.get(ed, edFormat).datetime
+                                    artist.endDate = parseDate(ed)
                                 if 'discography' in amgArtist and amgArtist['discography']:
                                     artist.releases = []
                                     for album in amgArtist['discography']:
@@ -94,14 +88,7 @@ class AllMusicGuide(SearchEngineBase):
                                         release.amgId = album['ids']['albumId']
                                         rd = (album['year'] or '').replace("-??", "")
                                         if rd:
-                                            if len(rd) == 10:
-                                                rdFormat = "YYYY-MM-DD"
-                                            elif len(rd) == 7:
-                                                rdFormat = "YYYY-MM"
-                                            else:
-                                                rdFormat = None
-                                            if rdFormat:
-                                                release.releaseDate = arrow.get(rd, rdFormat).datetime
+                                            release.releaseDate = parseDate(rd)
                                         print(album['type'])
                                         release.releaseType = album['type']
                                         release.tags = []
@@ -174,14 +161,9 @@ class AllMusicGuide(SearchEngineBase):
                                     for flag in album['flags']:
                                         if not isInList(release.tags, flag):
                                             release.tags.append(flag)
-                                rdFormat = "YYYY"
                                 rd = (album['originalReleaseDate'] or '').replace("-??", "")
                                 if rd:
-                                    if len(rd) == 10:
-                                        rdFormat = "YYYY-MM-DD"
-                                    elif len(rd) == 7:
-                                        rdFormat = "YYYY-MM"
-                                    release.releaseDate = arrow.get(rd, rdFormat).datetime
+                                    release.releaseDate = parseDate(rd)
                                 if 'genres' in album and album['genres']:
                                     release.genres = []
                                     for style in album['genres']:
