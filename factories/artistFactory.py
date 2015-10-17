@@ -1,8 +1,6 @@
 from sqlalchemy.sql import func, and_, or_, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy import create_engine, update
+from sqlalchemy import update
 
 from resources.common import *
 from resources.models.Artist import Artist
@@ -12,16 +10,11 @@ from resources.logger import Logger
 from searchEngines.artistSearcher import ArtistSearcher
 from searchEngines.models.Artist import ArtistType as SearchArtistType
 
-Base = declarative_base()
-
 
 class ArtistFactory(object):
-    def __init__(self, config):
-        engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
-        self.conn = engine.connect()
-        Base.metadata.bind = engine
-        DBSession = sessionmaker(bind=engine)
-        self.session = DBSession()
+    def __init__(self, dbConn, dbSession):
+        self.conn = dbConn
+        self.session = dbSession
         self.logger = Logger()
         self.searcher = ArtistSearcher()
 
@@ -158,6 +151,7 @@ class ArtistFactory(object):
                     for image in sa.images:
                         i = Image()
                         i.url = image.url
+                        i.roadieId = image.roadieId
                         i.caption = image.caption
                         i.image = image.image
                         artist.images.append(i)
@@ -168,6 +162,7 @@ class ArtistFactory(object):
                         if not dbGenre:
                             g = Genre()
                             g.name = genre.name
+                            g.roadieId = genre.roadieId
                             artist.genres.append(g)
                         else:
                             artist.genres.append(dbGenre)

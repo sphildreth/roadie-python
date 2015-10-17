@@ -8,7 +8,7 @@ from resources.models.ReleaseLabel import ReleaseLabel
 
 class Label(Base):
     name = Column(String(500), nullable=False, index=True, unique=True)
-    sortName = Column(String(500), nullable=False)
+    sortName = Column(String(500))
     musicBrainzId = Column(String(100))
     beginDate = Column(Date())
     endDate = Column(Date())

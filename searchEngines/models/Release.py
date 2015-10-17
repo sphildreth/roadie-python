@@ -10,7 +10,6 @@ class ReleaseType(Enum):
     Complete = 1
     Incomplete = 2
     Missing = 3
-    Wishlist = 4
 
 
 class Release(ModelBase):

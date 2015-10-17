@@ -154,8 +154,8 @@ class ArtistSearcher(object):
         spotifySearcher = Spotify(self.referer)
         if spotifySearcher.IsActive:
             releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
-        if releases:
+        if not titleFilter and releases:
             artist.releases = releases
-        if titleFilter:
+        if titleFilter and releases:
             return [r for r in releases if isEqual(r.title, titleFilter)]
         return releases

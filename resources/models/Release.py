@@ -29,8 +29,7 @@ class Release(Base):
     mediaCount = Column(SmallInteger(), default=1)
     thumbnail = Column(BLOB())
     profile = Column(String(2000))
-    coverUrl = Column(String(500))
-    releaseType = Column(Enum('Album', 'EP', 'Single', name='releaseType'), default='Album')
+    releaseType = Column(Enum('Album', 'EP', 'Single', 'Unknown', name='releaseType'), default='Album')
     # Flag if all tracks are found (Complete), missing some tracks (Incomplete),
     #     no Folder Found/Missing All Tracks (Missing) or Missing and Wished for (Wishlist)
     libraryStatus = Column(Enum('Complete', 'Incomplete', 'Missing', 'Wishlist', name='releaseType'), default='Missing')
@@ -45,7 +44,7 @@ class Release(Base):
 
     artistId = Column(Integer, ForeignKey("artist.id"), index=True)
     genres = relationship(Genre, secondary=releaseGenreTable)
-    labels = relationship(ReleaseLabel, backref="release")
+    releaseLabels = relationship(ReleaseLabel, backref="release")
     media = relationship(ReleaseMedia, backref="release")
     images = relationship(Image)
 

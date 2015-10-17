@@ -12,12 +12,12 @@ trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
 
 class Track(Base):
 
-    fileName = Column(String(500), nullable=False)
-    filePath = Column(String(1000), nullable=False)
+    fileName = Column(String(500))
+    filePath = Column(String(1000))
     hash = Column(String(32), unique=True)
     playedCount = Column(Integer, default=0)
     lastPlayed = Column(DateTime())
-    partTitles = Column(ScalarListType())
+    partTitles = Column(ScalarListType(separator="|"))
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
     rating = Column(SmallInteger(), nullable=False, default=0)
     # This is a random number generated at generation and then used to select random releases
@@ -29,7 +29,7 @@ class Track(Base):
     trackNumber = Column(SmallInteger(), nullable=False)
     # Seconds long
     duration = Column(Integer)
-    tags = Column(ScalarListType())
+    tags = Column(ScalarListType(separator="|"))
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"), index=True)
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable)

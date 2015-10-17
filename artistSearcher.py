@@ -1,6 +1,7 @@
 import codecs
 import os
 import json
+import sys
 import argparse
 
 import arrow
@@ -9,12 +10,14 @@ from sqlalchemy import create_engine
 from mongoengine import connect
 from resources.mongoModels import Artist, Release, Track, UserTrack
 
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
+
 from resources.common import *
 
-#from searchEngines.artistSearcher import ArtistSearcher
-import sys
 from factories.artistFactory import ArtistFactory
-
+from factories.releaseFactory import ReleaseFactory
 
 p = argparse.ArgumentParser(description='Search For Artist Information.')
 p.add_argument('--name', '-n', help="Artist Name", required=True)
@@ -33,20 +36,43 @@ host = config['MONGODB_SETTINGS']['host']
 mongoClient = connect(dbName, host=host)
 
 engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
+conn = engine.connect()
+
+Base = declarative_base()
+
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+
+artistFactory = ArtistFactory(conn, session)
+releaseFactory = ReleaseFactory(conn, session)
 
 start = arrow.utcnow()
+artist = artistFactory.get(args.name)
+if artist:
+    elapsed = arrow.utcnow() - start
+    uprint("Artist Info [Elapsed Time: " + str(elapsed) + "]: " + artist.info())
+    releaseName = args.release
+    if releaseName:
+        start = arrow.utcnow()
+        release = releaseFactory.get(artist, args.release)
+        elapsed = arrow.utcnow() - start
+        if release:
+            uprint("Release Info [" + str(release.info()) + "]")
+        else:
+            print("No Release(s) Found!")
+else:
+    print("Artist Not Found!")
 
 
-f = ArtistFactory(config)
-# artist = f.get(args.name)
 # uprint(artist.info())
 
-for artist in Artist.objects()[:500]:
-    a = f.get(artist.Name)
-    uprint(a.info())
+# for artist in Artist.objects()[:500]:
+#     a = f.get(artist.Name)
+#     uprint(a.info())
 
 
-# s = ArtistSearcher()
+#s = ArtistSearcher()
 # artist = s.searchForArtist(args.name)
 # if artist:
 #     elapsed = arrow.utcnow() - start
