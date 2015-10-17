@@ -1,20 +1,14 @@
-import arrow
-import datetime
-
-from sqlalchemy import create_engine
-from sqlalchemy.sql import select, func, and_, or_, not_, text
+from sqlalchemy.sql import func, and_, or_, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+
 from sqlalchemy import create_engine, update
 
 from resources.common import *
-
 from resources.models.Artist import Artist
 from resources.models.Image import Image
 from resources.models.Genre import Genre
-
 from resources.logger import Logger
-
 from searchEngines.artistSearcher import ArtistSearcher
 from searchEngines.models.Artist import ArtistType as SearchArtistType
 
@@ -22,7 +16,6 @@ Base = declarative_base()
 
 
 class ArtistFactory(object):
-
     def __init__(self, config):
         engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
         self.conn = engine.connect()
@@ -38,14 +31,14 @@ class ArtistFactory(object):
         :type artist: Artist
         """
         if newRecord:
-            doesExist = self._getFromDatabase(artist.name)
+            doesExist = self._getFromDatabaseByName(artist.name)
             if doesExist:
                 # Ensure that tthere is only one with the name append the BeginDate if not unique
                 appendDate = str(arrow.utcnow().date)
                 if artist.beginDate:
                     appendDate = str(artist.beginDate)
                 artist.name = artist.name + " (" + appendDate + ")"
-                doesExist = self._getFromDatabase(artist.name)
+                doesExist = self._getFromDatabaseByName(artist.name)
                 if doesExist:
                     artist.name = artist.name + " (" + arrow.utcnow().isoformat() + ")"
         self.session.add(artist)
@@ -63,13 +56,13 @@ class ArtistFactory(object):
     def _getFromDatabaseByName(self, name):
         if not name:
             return None
-        name = name.lower().strip()
+        name = name.lower().strip().replace("'", "''")
         stmt = or_(func.lower(Artist.name) == name,
                    func.lower(Artist.sortName) == name,
                    text("(lower(alternateNames) == '" + name + "'" + ""
-                   " OR alternateNames like '" + name + "|%'" +
-                   " OR alternateNames like '%|" + name + "|%'" +
-                   " OR alternateNames like '%|" + name + "')"))
+                                                                     " OR alternateNames like '" + name + "|%'" +
+                        " OR alternateNames like '%|" + name + "|%'" +
+                        " OR alternateNames like '%|" + name + "')"))
         return self.session.query(Artist).filter(stmt).first()
 
     def _getFromDatabaseByExternalIds(self, musicBrainzId, iTunesId, amgId, spotifyId):
@@ -102,16 +95,20 @@ class ArtistFactory(object):
             artist = Artist()
             sa = self.searcher.searchForArtist(name)
             if sa:
-                artistByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId, sa.spotifyId)
+                artistByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId,
+                                                                         sa.spotifyId)
                 if artistByExternalIds:
                     if not artistByExternalIds.alternateNames:
                         artistByExternalIds.alternateNames = []
                     if name not in artistByExternalIds.alternateNames:
                         artistByExternalIds.alternateNames.append(name)
-                        self.logger.debug("Found Artist By External Ids [" + artistByExternalIds.name.encode('ascii', 'ignore').decode('utf-8') + "] Added [" + printableName + "] To AlternateNames")
-                        stmt = update(Artist.__table__).where(Artist.id == artistByExternalIds.id)\
-                                                       .values(lastUpdated=arrow.utcnow().datetime,
-                                                               alternateNames=artistByExternalIds.alternateNames)
+                        self.logger.debug("Found Artist By External Ids [" +
+                                          artistByExternalIds.name.encode('ascii', 'ignore')
+                                          .decode('utf-8') + "] Added [" +
+                                          printableName + "] To AlternateNames")
+                        stmt = update(Artist.__table__).where(Artist.id == artistByExternalIds.id) \
+                            .values(lastUpdated=arrow.utcnow().datetime,
+                                    alternateNames=artistByExternalIds.alternateNames)
                         self.conn.execute(stmt)
                     return artistByExternalIds
                 artist.name = sa.name
@@ -178,4 +175,3 @@ class ArtistFactory(object):
                 self.session.commit()
 
         return artist
-

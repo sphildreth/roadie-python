@@ -58,8 +58,9 @@ class MusicBrainz(SearchEngineBase):
                 if result:
                     artist = Artist(name=result['name'])
                     artist.musicBrainzId = result['id']
-                    artist.artistType = ArtistType.Group if result['type'] and isEqual(result['type'],
-                                                                                       "group") else ArtistType.Person
+                    artist.artistType = ArtistType.Person
+                    if 'type' in result and isEqual(result['type'], "group"):
+                        artist.artistType = ArtistType.Group
                     artist.sortName = result['sort-name']
                     if 'isni-list' in result:
                         artist.isniList = []

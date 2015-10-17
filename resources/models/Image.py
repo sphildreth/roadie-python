@@ -11,8 +11,8 @@ class Image(Base):
     url = Column(String(500))
     caption = Column(String(100))
 
-    artistId = Column(Integer, ForeignKey("artist.id"))
-    releaseId = Column(Integer, ForeignKey("release.id"))
+    artistId = Column(Integer, ForeignKey("artist.id"), index=True)
+    releaseId = Column(Integer, ForeignKey("release.id"), index=True)
 
     def __unicode__(self):
         return self.caption

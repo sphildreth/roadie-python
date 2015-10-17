@@ -38,11 +38,10 @@ start = arrow.utcnow()
 
 
 f = ArtistFactory(config)
-
 # artist = f.get(args.name)
 # uprint(artist.info())
 
-for artist in Artist.objects()[:200]:
+for artist in Artist.objects()[:500]:
     a = f.get(artist.Name)
     uprint(a.info())
 

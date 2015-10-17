@@ -12,7 +12,7 @@ class ModelBase(object):
     id = Column(Integer, primary_key=True)
     isLocked = Column(Boolean(), default=False)
     status = Column(SmallInteger(), default=0)
-    roadieId = Column(String(36), nullable=True)
+    roadieId = Column(String(36), nullable=True, index=True)
     createdDate = Column(DateTime(), default=arrow.utcnow().datetime)
     lastUpdated = Column(DateTime(), nullable=True)
 
