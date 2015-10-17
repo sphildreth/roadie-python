@@ -40,29 +40,30 @@ class LastFM(SearchEngineBase):
                 try:
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
-                    r = o['artist']
-                    artist = Artist(name=r['name'])
-                    artist.images = []
-                    if 'mbid' in r:
-                        artist.musicBrainzId = r['mbid']
-                    if 'image' in r:
-                        images = r['image']
-                        if images:
-                            for image in images:
-                                if isEqual(image['size'], 'extralarge'):
-                                    artist.images.append(Image(url=image['#text']))
-                    if 'tags' in r:
-                        tags = r['tags']
-                        if tags:
-                            artist.tags = []
-                            for tags in r['tags']['tag']:
-                                tag = tags['name']
-                                if not isInList(artist.tags, tag):
-                                    artist.tags.append(tag)
-                    if 'bio' in r:
-                        bio = r['bio']
-                        if bio:
-                            artist.bioContent = bio['content']
+                    if 'artist' in o and o['artist']:
+                        r = o['artist']
+                        artist = Artist(name=r['name'])
+                        artist.images = []
+                        if 'mbid' in r:
+                            artist.musicBrainzId = r['mbid']
+                        if 'image' in r:
+                            images = r['image']
+                            if images:
+                                for image in images:
+                                    if isEqual(image['size'], 'extralarge'):
+                                        artist.images.append(Image(url=image['#text']))
+                        if 'tags' in r:
+                            tags = r['tags']
+                            if tags:
+                                artist.tags = []
+                                for tags in r['tags']['tag']:
+                                    tag = tags['name']
+                                    if not isInList(artist.tags, tag):
+                                        artist.tags.append(tag)
+                        if 'bio' in r:
+                            bio = r['bio']
+                            if bio:
+                                artist.bioContent = bio['content']
                 except:
                     self.logger.exception("LastFM: Error In LookupArtist")
                     pass

@@ -37,12 +37,14 @@ engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
 start = arrow.utcnow()
 
 
-for artist in Artist.objects()[:200]:
-    uprint(deriveArtistFromName(artist.Name))
-
 f = ArtistFactory(config)
-artist = f.get(args.name)
-uprint(artist.info())
+
+# artist = f.get(args.name)
+# uprint(artist.info())
+
+for artist in Artist.objects()[:200]:
+    a = f.get(artist.Name)
+    uprint(a.info())
 
 
 # s = ArtistSearcher()

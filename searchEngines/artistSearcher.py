@@ -100,7 +100,8 @@ class ArtistSearcher(object):
                     pass
 
             self.cache[name] = artist
-        self.logger.debug("searchForArtist Name [" + name + "] Found [" + (artist.name if artist else "") + "]")
+        printableName = name.encode('ascii', 'ignore').decode('utf-8')
+        self.logger.debug("searchForArtist Name [" + printableName + "] Found [" + (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
         return artist
 
     @staticmethod

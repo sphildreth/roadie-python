@@ -67,11 +67,12 @@ class AllMusicGuide(SearchEngineBase):
                                 artist = Artist(name=amgArtist['name'])
                                 artist.amgId = amgArtist['ids']['nameId']
                                 artist.artistType = ArtistType.Group if amgArtist['isGroup'] else ArtistType.Person
-                                if 'genre' in amgArtist['musicGenres']:
-                                    artist.genres = []
-                                    for genre in amgArtist['musicGenres']:
-                                        if not isInList(artist.genres, genre):
-                                            artist.genres.append(genre)
+                                if 'musicGenres' in amgArtist and amgArtist['musicGenres']:
+                                    if 'genre' in amgArtist['musicGenres']:
+                                        artist.genres = []
+                                        for genre in amgArtist['musicGenres']:
+                                            if not isInList(artist.genres, genre):
+                                                artist.genres.append(genre)
                                 bd = amgArtist['birth']['date'].replace("-??", "")
                                 if bd:
                                     if artist.artistType == ArtistType.Person:

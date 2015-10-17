@@ -65,6 +65,9 @@ class ImageSearcher(object):
         return None
 
     def getImageBytesForUrl(self, url):
-        s = parse.unquote(url)
-        response = request.urlopen(s)
-        return response.read()
+        try:
+            s = parse.unquote(url)
+            response = request.urlopen(s)
+            return response.read()
+        except:
+            return None

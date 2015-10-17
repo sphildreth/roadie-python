@@ -36,7 +36,7 @@ class Spotify(SearchEngineBase):
                     s = StringIO((f.read().decode('utf-8')))
                     o = json.load(s)
                     ar = o['artists']
-                    if ar and 'items' in ar:
+                    if ar and 'items' in ar and ar['items']:
                         r = ar['items'][0]
                         artist = Artist(name=r['name'])
                         artist.spotifyId = r['id']
