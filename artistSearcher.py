@@ -35,7 +35,7 @@ dbName = config['MONGODB_SETTINGS']['DB']
 host = config['MONGODB_SETTINGS']['host']
 mongoClient = connect(dbName, host=host)
 
-engine = create_engine(config['ROADIE_DATABASE_URL'], echo=True)
+engine = create_engine(config['ROADIE_DATABASE_URL'])
 conn = engine.connect()
 
 Base = declarative_base()
@@ -58,7 +58,7 @@ if artist:
         release = releaseFactory.get(artist, args.release)
         elapsed = arrow.utcnow() - start
         if release:
-            uprint("Release Info [" + str(release.info()) + "]")
+            uprint("Release Info [Elapsed Time: " + str(elapsed) + "]: " + str(release.info()) + "]")
         else:
             print("No Release(s) Found!")
 else:

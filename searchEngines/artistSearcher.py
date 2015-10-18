@@ -110,6 +110,8 @@ class ArtistSearcher(object):
             return left
         elif not left and right:
             return right
+        elif not left and not right:
+            return None
         else:
             mergedReleases = []
             # Merge or add the left side
@@ -145,15 +147,21 @@ class ArtistSearcher(object):
             releases = iTunesSearcher.searchForRelease(artist, titleFilter)
         mbSearcher = MusicBrainz(self.referer)
         if mbSearcher.IsActive:
-            releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
+            mbReleases = mbSearcher.searchForRelease(artist, titleFilter)
+            if mbReleases:
+                releases = self._mergeReleaseLists(releases, mbReleases)
         lastFMSearcher = LastFM(self.referer)
         if lastFMSearcher.IsActive:
             mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
-            releases = self._mergeReleaseLists(releases,
-                                               lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
+            lastFMReleases = lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList)
+            if lastFMReleases:
+                releases = self._mergeReleaseLists(releases,
+                                                   lastFMReleases) or releases
         spotifySearcher = Spotify(self.referer)
         if spotifySearcher.IsActive:
-            releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
+            spotifyReleases = spotifySearcher.searchForRelease(artist, titleFilter)
+            if spotifyReleases:
+                releases = self._mergeReleaseLists(releases, spotifyReleases)
         if not titleFilter and releases:
             artist.releases = releases
         if titleFilter and releases:

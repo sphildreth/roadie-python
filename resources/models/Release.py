@@ -72,6 +72,8 @@ class Release(Base):
     def info(self):
         return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
-               "], LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" + str(
-            self.releaseDate) + "], TrackCount [" + str(self.trackCount) + "], Title [" + str(self.title) + "]"
+               "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId) \
+               + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" + \
+               str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +\
+               "], Title [" + str(self.title) + "]"
 

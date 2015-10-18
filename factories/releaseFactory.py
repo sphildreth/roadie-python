@@ -42,7 +42,12 @@ class ReleaseFactory(object):
             self.logger.info("Release For Artist [" + printableArtistName +
                              "] Not Found By Title [" + printableTitle + "]")
             release = Release()
-            sr = self.searcher.searchForArtistReleases(artist, title)[0]
+            srList = self.searcher.searchForArtistReleases(artist, title)
+            if not srList:
+                self.logger.info("Release For Artist [" + printableArtistName +
+                                 "] Not Found By Title [" + printableTitle + "]")
+                return None
+            sr = srList[0]
             if sr:
                 releaseByExternalIds = self._getFromDatabaseByExternalIds(sr.musicBrainzId,
                                                                           sr.iTunesId,
@@ -80,6 +85,7 @@ class ReleaseFactory(object):
                 release.lastFMSummary = sr.lastFMSummary
                 release.musicBrainzId = sr.musicBrainzId
                 release.spotifyId = sr.spotifyId
+                release.amgId = sr.amgId
                 release.tags = sr.tags
                 release.alternateNames = sr.alternateNames
                 release.urls = sr.urls
@@ -145,7 +151,7 @@ class ReleaseFactory(object):
                         release.media.append(media)
                 self.session.add(release)
                 self.session.commit()
-            return release
+        return release
 
     def _getFromDatabaseByTitle(self, title):
         if not title:

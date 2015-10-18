@@ -105,7 +105,7 @@ class MusicBrainz(SearchEngineBase):
             if not artist.musicBrainzId:
                 artist = self.lookupArtist(artist.name)
                 if not artist.musicBrainzId:
-                    raise RuntimeError("Invalid ArtistSearchResult, MusicBrainzId Not Set")
+                    return None
             if title:
                 result = musicbrainzngs.search_releases(limit=1, arid=artist.musicBrainzId, release=title, format='CD',
                                                         country='US')

@@ -69,8 +69,8 @@ class Artist(Base):
         if self.releases:
             for release in self.releases:
                 if release.media:
-                    if release.labels:
-                        for releaseLabel in release.labels:
+                    if release.releaseLabels:
+                        for releaseLabel in release.releaseLabels:
                             labelNames.append(releaseLabel.label.name + " (" + str(releaseLabel.labelId) + ")")
                     for media in release.media:
                         trackCount += len(media.tracks)

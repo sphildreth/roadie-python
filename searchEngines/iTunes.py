@@ -46,10 +46,12 @@ class iTunes(SearchEngineBase):
         return None
 
     def searchForRelease(self, artist, title):
+        if not artist or not artist.name or not title:
+            return None
         if not artist.iTunesId:
             artist = self.lookupArtist(artist.name)
-            if not artist.iTunesId:
-                raise RuntimeError("Invalid ArtistSearchResult, iTunesId Not Set")
+            if not artist or not artist.iTunesId:
+                return None
         try:
             url = "https://itunes.apple.com/lookup?id=" + str(artist.iTunesId) + "&entity=album"
             rq = request.Request(url=url)
