@@ -79,8 +79,8 @@ class Release(ModelBase):
             for media in self.media:
                 trackCount += len(media.tracks)
                 mediaCount += 1
-        return "Weight [" + str(self.weight()) + "], [" + str(self.roadieId) +\
-                "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
+        return "Weight [" + str(self.weight()) + "], [" + str(self.roadieId) + \
+               "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
                "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
                "], LastFMId [" + str(self.lastFMId) + "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(
@@ -130,7 +130,6 @@ class Release(ModelBase):
         cleanedTitle = createCleanedName(self.title)
         if other.alternateNames and cleanedTitle in other.alternateNames:
             return True
-
 
     def mergeWithRelease(self, right):
         """
@@ -182,7 +181,7 @@ class Release(ModelBase):
             result.images = right.images
         elif result.images and right.images:
             for image in right.images:
-                if not image in result.images:
+                if image not in result.images:
                     result.images.append(image)
         if not result.genres and right.genres:
             result.genres = right.genres
@@ -196,12 +195,6 @@ class Release(ModelBase):
             for releaseLabel in right.releaseLabels:
                 if not ([l for l in result.releaseLabels if isEqual(l.label.name, releaseLabel.label.name)]):
                     result.releaseLabels.append(releaseLabel)
-        if not result.images and right.images:
-            result.images = right.images
-        elif result.images and right.images:
-            for image in right.images:
-                if not image in result.images:
-                    result.images.append(image)
         if not result.media and right.media:
             result.media = right.media
         elif result.media and right.media:

@@ -14,6 +14,7 @@ from searchEngines.lastFM import LastFM
 from searchEngines.spotify import Spotify
 from searchEngines.allMusic import AllMusicGuide
 from searchEngines.models.Artist import Artist
+from searchEngines.models.Image import Image as ArtistImage
 
 from resources.models.ModelBase import ModelBase
 
@@ -24,7 +25,8 @@ class ArtistSearcher(object):
     """
     allMusicSearcher = None
 
-    thumbnailSize = 160, 160
+    artistThumbnailSize = 160, 160
+    releaseThumbnailSize = 80, 80
 
     cache = dict()
 
@@ -80,7 +82,7 @@ class ArtistSearcher(object):
                 if not artist.thumbnail:
                     try:
                         img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
-                        img.thumbnail(self.thumbnailSize)
+                        img.thumbnail(self.artistThumbnailSize)
                         b = io.BytesIO()
                         img.save(b, "JPEG")
                         artist.thumbnail = b.getvalue()
@@ -154,6 +156,33 @@ class ArtistSearcher(object):
         spotifySearcher = Spotify(self.referer)
         if spotifySearcher.IsActive:
             releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
+        if releases:
+            imageSearcher = ImageSearcher()
+            for release in releases:
+                if release.coverUrl:
+                    coverImage = ArtistImage(release.coverUrl)
+                    if coverImage not in release.images:
+                        release.images.append(coverImage)
+                # Fetch images with only urls, remove any with neither URL or BLOB
+                if release.images:
+                    images = []
+                    firstImageInImages = None
+                    for image in release.images:
+                        if not image.image and image.url:
+                            image.image = imageSearcher.getImageBytesForUrl(image.url)
+                        if image.image:
+                            firstImageInImages = firstImageInImages or image.image
+                            images.append(image)
+                    release.images = images
+                    if not release.thumbnail:
+                        try:
+                            img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                            img.thumbnail(self.releaseThumbnailSize)
+                            b = io.BytesIO()
+                            img.save(b, "JPEG")
+                            release.thumbnail = b.getvalue()
+                        except:
+                            pass
         if titleFilter and releases:
             filteredReleases = []
             cleanedTitleFilter = createCleanedName(titleFilter)

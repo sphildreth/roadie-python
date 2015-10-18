@@ -146,13 +146,8 @@ class Spotify(SearchEngineBase):
                             tags.append("upc:" + o['external_ids']['upc'])
                         if 'external_urls' in o and 'spotify' in o['external_urls']:
                             urls.append(o['external_urls']['spotify'])
-                        coverUrl = None
-                        images = o['images']
-                        if images:
-                            coverUrl = images[0]['url']
                         release = Release(title=o['name'], releaseDate= parseDate(o['release_date']))
                         release.trackCount = len(media.tracks)
-                        release.coverUrl = coverUrl
                         release.spotifyId = o['id']
                         release.tags = tags
                         release.urls = urls

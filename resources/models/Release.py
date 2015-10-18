@@ -9,8 +9,11 @@ from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Image import Image
 
 releaseGenreTable = Table('releaseGenreTable', Base.metadata,
-                          Column('releaseId', Integer, ForeignKey('release.id'), index=True),
-                          Column('genreId', Integer, ForeignKey('genre.id')))
+                          Column('releaseId', Integer, ForeignKey('release.id')),
+                          Column('genreId', Integer, ForeignKey('genre.id')),
+                          Index("idx_releaseGenreTableReleaseAndGenre", "releaseId", "genreId")
+                          )
+
 
 
 class Release(Base):
@@ -79,3 +82,5 @@ class Release(Base):
                "], Title [" + str(self.title) + "]"
 
 Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)
+
+

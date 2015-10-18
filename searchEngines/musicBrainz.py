@@ -18,7 +18,7 @@ from searchEngines.models.Track import Track
 
 
 class MusicBrainz(SearchEngineBase):
-    IsActive = False
+    IsActive = True
 
     threadDataType = "musicBrainz"
     lock = threading.Lock()

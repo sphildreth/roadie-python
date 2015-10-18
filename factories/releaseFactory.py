@@ -27,7 +27,7 @@ class ReleaseFactory(object):
         self.logger = Logger()
         self.searcher = ArtistSearcher()
 
-    def getAllForArtist(self, artist):
+    def getAllForArtist(self, artist, forceRefresh=False):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
         :type artist: Artist
@@ -36,9 +36,11 @@ class ReleaseFactory(object):
             return None
         printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
         releases = self._getAllFromDatabaseForArtist(artist)
-        if not releases:
-            self.logger.info("Releases For Artist [" + printableArtistName +
-                             "] Not Found")
+        if not releases or forceRefresh:
+            if not releases:
+                self.logger.info("Releases For Artist [" + printableArtistName + "] Not Found")
+            else:
+                self.logger.info("Refreshing Releases For Artist [" + printableArtistName + "]")
             releases = []
             srList = self.searcher.searchForArtistReleases(artist)
             if not srList:
@@ -54,7 +56,7 @@ class ReleaseFactory(object):
             self.session.commit()
         return releases
 
-    def get(self, artist, title):
+    def get(self, artist, title, forceRefresh=False):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
         :type artist: Artist
@@ -65,9 +67,12 @@ class ReleaseFactory(object):
         printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
         printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
         release = self._getFromDatabaseByTitle(title)
-        if not release:
-            self.logger.info("Release For Artist [" + printableArtistName +
-                             "] Not Found By Title [" + printableTitle + "]")
+        if not release or forceRefresh:
+            if not release:
+                self.logger.info("Release For Artist [" + printableArtistName +
+                                 "] Not Found By Title [" + printableTitle + "]")
+            else:
+                self.logger.info("Refreshing Release [" + printableTitle + "] For Artist [" + printableArtistName)
             release = Release()
             srList = self.searcher.searchForArtistReleases(artist, title)
             if not srList:
@@ -160,6 +165,7 @@ class ReleaseFactory(object):
                     l.name = srReleaseLabel.label.name
                 if l:
                     rl = ReleaseLabel()
+                    rl.roadieId = srReleaseLabel.roadieId
                     rl.catalogNumber = srReleaseLabel.catalogNumber
                     rl.beginDate = parseDate(srReleaseLabel.beginDate)
                     rl.endDate = parseDate(srReleaseLabel.endDate)

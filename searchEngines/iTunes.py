@@ -67,7 +67,6 @@ class iTunes(SearchEngineBase):
                             if 'collectionType' in r and isEqual(r["collectionType"], "Album"):
                                 a = Release(title=r['collectionName'], releaseDate=r['releaseDate'])
                                 a.trackCount = r['trackCount']
-                                a.coverUrl = r['artworkUrl100']
                                 a.iTunesId = r['collectionId']
                                 if 'primaryGenreName' in r and r['primaryGenreName']:
                                     a.genres.append(Genre(name=r['primaryGenreName']))
