@@ -111,21 +111,19 @@ class ArtistSearcher(object):
         elif not left and right:
             return right
         elif not left and not right:
-            return None
+            return []
         else:
-            mergedReleases = []
-            # Merge or add the left side
-            for release in left:
-                rRelease = ([r for r in right if isEqual(r.title, release.title)])
-                if rRelease:
-                    mergedReleases.append(release.mergeWithRelease(rRelease[0]))
-                else:
-                    mergedReleases.append(release)
-            # Merge the right with the new merged list
-            for release in right:
-                rRelease = ([r for r in mergedReleases if isEqual(r.title, release.title)])
-                if not rRelease:
-                    mergedReleases.append(release)
+            mergedReleases = left
+            # Merge the right to the result
+            for rRelease in right:
+                foundRightInMerged = False
+                for mRelease in mergedReleases:
+                    if mRelease == rRelease:
+                        mRelease.mergeWithRelease(rRelease)
+                        foundRightInMerged = True
+                        break
+                if not foundRightInMerged:
+                    mergedReleases.append(rRelease)
             return mergedReleases
 
     def searchForArtistReleases(self, artist, titleFilter=None):
@@ -144,26 +142,23 @@ class ArtistSearcher(object):
         releases = []
         iTunesSearcher = iTunes(self.referer)
         if iTunesSearcher.IsActive:
-            releases = iTunesSearcher.searchForRelease(artist, titleFilter)
+            releases = self._mergeReleaseLists(releases, iTunesSearcher.searchForRelease(artist, titleFilter))
         mbSearcher = MusicBrainz(self.referer)
         if mbSearcher.IsActive:
-            mbReleases = mbSearcher.searchForRelease(artist, titleFilter)
-            if mbReleases:
-                releases = self._mergeReleaseLists(releases, mbReleases)
+            releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
         lastFMSearcher = LastFM(self.referer)
         if lastFMSearcher.IsActive:
             mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
-            lastFMReleases = lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList)
-            if lastFMReleases:
-                releases = self._mergeReleaseLists(releases,
-                                                   lastFMReleases) or releases
+            if mbIdList:
+                releases = self._mergeReleaseLists(releases, lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
         spotifySearcher = Spotify(self.referer)
         if spotifySearcher.IsActive:
-            spotifyReleases = spotifySearcher.searchForRelease(artist, titleFilter)
-            if spotifyReleases:
-                releases = self._mergeReleaseLists(releases, spotifyReleases)
-        if not titleFilter and releases:
-            artist.releases = releases
+            releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
         if titleFilter and releases:
-            return [r for r in releases if isEqual(r.title, titleFilter)]
+            filteredReleases = []
+            cleanedTitleFilter = createCleanedName(titleFilter)
+            for release in releases:
+                if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
+                    filteredReleases.append(release)
+            releases = filteredReleases
         return releases

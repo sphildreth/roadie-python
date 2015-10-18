@@ -92,7 +92,12 @@ class LastFM(SearchEngineBase):
         release = self._fetchFromUrl(url)
         if release:
             with self.lock:
-                self.artistReleasesThreaded.append(release)
+                if release in self.artistReleasesThreaded:
+                    for r in self.artistReleasesThreaded:
+                        if r == release:
+                            r.mergeWithRelease(release)
+                else:
+                    self.artistReleasesThreaded.append(release)
 
     def lookupReleasesForMusicBrainzIdList(self, mbIdList):
         """
@@ -166,6 +171,11 @@ class LastFM(SearchEngineBase):
                     if 'wiki' in r and r['wiki']:
                         if 'summary' in r['wiki'] and r['wiki']['summary']:
                             release.lastFMSummary = r['wiki']['summary']
+                    if not release.alternateNames:
+                        release.alternateNames = []
+                    cleanedTitle = createCleanedName(release.title)
+                    if cleanedTitle not in release.alternateNames and cleanedTitle != release.title:
+                        release.alternateNames.append(cleanedTitle)
                     # Not Valid
                     if mediaTrackCount < 1:
                         release = None

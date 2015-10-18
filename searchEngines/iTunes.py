@@ -75,6 +75,11 @@ class iTunes(SearchEngineBase):
                                     a.urls.append(r['artistViewUrl'])
                                 if 'collectionViewUrl' in r and r['collectionViewUrl']:
                                     a.urls.append(r['collectionViewUrl'])
+                                if not a.alternateNames:
+                                    a.alternateNames = []
+                                cleanedTitle = createCleanedName(a.title)
+                                if cleanedTitle not in a.alternateNames and cleanedTitle != a.title:
+                                    a.alternateNames.append(cleanedTitle)
                                 releases.append(a)
                         except:
                             self.logger.exception("iTunes: Error In SearchForRelease")
@@ -87,3 +92,11 @@ class iTunes(SearchEngineBase):
             self.logger.exception("iTunes: Error In SearchForRelease")
             pass
         return None
+
+# s = iTunes()
+# artist = s.lookupArtist("Men At Work")
+# release = s.searchForRelease(artist, "Cargo")
+# uprint(release.info())
+
+
+

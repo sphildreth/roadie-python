@@ -197,6 +197,11 @@ class AllMusicGuide(SearchEngineBase):
                                         trackCount += len(media.tracks)
                                         releaseMedia.append(media)
                                     release.media = releaseMedia
+                                if not release.alternateNames:
+                                    release.alternateNames = []
+                                cleanedTitle = createCleanedName(release.title)
+                                if cleanedTitle not in release.alternateNames and cleanedTitle != release.title:
+                                    release.alternateNames.append(cleanedTitle)
                 except:
                     self.logger.exception("AllMusicGuide: Error In lookupArtist")
                     pass

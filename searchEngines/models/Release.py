@@ -79,7 +79,9 @@ class Release(ModelBase):
             for media in self.media:
                 trackCount += len(media.tracks)
                 mediaCount += 1
-        return "Weight [" + str(self.weight()) + "], [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+        return "Weight [" + str(self.weight()) + "], [" + str(self.roadieId) +\
+                "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
+               "], MusicBrainzId [" + str(
             self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
                "], LastFMId [" + str(self.lastFMId) + "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(
             self.amgId) + "], ReleaseDate [" + str(
@@ -113,6 +115,21 @@ class Release(ModelBase):
         if self.amgId:
             weight += 1
         return weight
+
+    def __eq__(self, other):
+        """
+        Sees if the given Release is the same as the current release
+        :type other: Release
+        """
+        if not isinstance(other, Release):
+            return False
+
+        if isEqual(self.title, other.title):
+            return True
+
+        cleanedTitle = createCleanedName(self.title)
+        if other.alternateNames and cleanedTitle in other.alternateNames:
+            return True
 
 
     def mergeWithRelease(self, right):

@@ -75,16 +75,13 @@ class Spotify(SearchEngineBase):
                 o = json.load(s)
                 spotifyReleases = o['items']
                 if spotifyReleases:
-
                     for x in range(self.threadCount):
                         t = threading.Thread(target=self.threader)
                         t.daemon = True
                         t.start()
-
                     for spotifyRelease in spotifyReleases:
                         spotifyId = spotifyRelease['id']
                         self.que.put(ThreadData(self.threadDataType, spotifyId))
-
                     self.que.join()
 
             if title:
@@ -109,7 +106,12 @@ class Spotify(SearchEngineBase):
         release = self.lookupReleaseBySpotifyId(spotifyId)
         if release:
             with self.lock:
-                self.artistReleasesThreaded.append(release)
+                if release in self.artistReleasesThreaded:
+                    for r in self.artistReleasesThreaded:
+                        if r == release:
+                            r.mergeWithRelease(release)
+                else:
+                    self.artistReleasesThreaded.append(release)
 
     def lookupReleaseBySpotifyId(self, spotifyId):
         try:
@@ -154,6 +156,11 @@ class Spotify(SearchEngineBase):
                         release.spotifyId = o['id']
                         release.tags = tags
                         release.urls = urls
+                        if not release.alternateNames:
+                            release.alternateNames = []
+                        cleanedTitle = createCleanedName(release.title)
+                        if cleanedTitle not in release.alternateNames and cleanedTitle != release.title:
+                            release.alternateNames.append(cleanedTitle)
                     return release
                 except:
                     self.logger.exception("Spotify: Error In lookupReleaseBySpotifyId")

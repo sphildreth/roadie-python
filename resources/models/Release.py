@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Enum, ForeignKey, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
+from sqlalchemy import Column, Enum, ForeignKey, Index, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
 
@@ -42,7 +42,7 @@ class Release(Base):
     tags = Column(ScalarListType(separator="|"))
     urls = Column(ScalarListType(separator="|"))
 
-    artistId = Column(Integer, ForeignKey("artist.id"), index=True)
+    artistId = Column(Integer, ForeignKey("artist.id"))
     genres = relationship(Genre, secondary=releaseGenreTable)
     releaseLabels = relationship(ReleaseLabel, backref="release")
     media = relationship(ReleaseMedia, backref="release")
@@ -70,10 +70,12 @@ class Release(Base):
         return self.title
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
+        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +\
+                "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
+               "], MusicBrainzId [" + str(self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
                "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId) \
                + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" + \
                str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +\
                "], Title [" + str(self.title) + "]"
 
+Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)

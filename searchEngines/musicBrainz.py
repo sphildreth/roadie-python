@@ -18,7 +18,7 @@ from searchEngines.models.Track import Track
 
 
 class MusicBrainz(SearchEngineBase):
-    IsActive = True
+    IsActive = False
 
     threadDataType = "musicBrainz"
     lock = threading.Lock()
@@ -153,7 +153,12 @@ class MusicBrainz(SearchEngineBase):
         release = self.lookupReleaseByMusicBrainzId(releaseMusicBrainzId)
         if release:
             with self.lock:
-                self.artistReleasesThreaded.append(release)
+                if release in self.artistReleasesThreaded:
+                    for r in self.artistReleasesThreaded:
+                        if r == release:
+                            r.mergeWithRelease(release)
+                else:
+                    self.artistReleasesThreaded.append(release)
 
     def lookupReleaseByMusicBrainzId(self, musicBrainzId):
         try:
@@ -218,6 +223,11 @@ class MusicBrainz(SearchEngineBase):
                 release.musicBrainzId = musicBrainzId
                 release.media = releaseMedia
                 release.releaseLabels = releaseLabels
+                if not release.alternateNames:
+                    release.alternateNames = []
+                cleanedTitle = createCleanedName(release.title)
+                if cleanedTitle not in release.alternateNames and cleanedTitle != release.title:
+                    release.alternateNames.append(cleanedTitle)
             return release
         except:
             self.logger.exception("MusicBrainy: Error In SearchForRelease")

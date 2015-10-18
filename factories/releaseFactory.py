@@ -27,6 +27,33 @@ class ReleaseFactory(object):
         self.logger = Logger()
         self.searcher = ArtistSearcher()
 
+    def getAllForArtist(self, artist):
+        """
+        Query Database for a release with the given title, if not found search and if found save and return results
+        :type artist: Artist
+        """
+        if not artist:
+            return None
+        printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
+        releases = self._getAllFromDatabaseForArtist(artist)
+        if not releases:
+            self.logger.info("Releases For Artist [" + printableArtistName +
+                             "] Not Found")
+            releases = []
+            srList = self.searcher.searchForArtistReleases(artist)
+            if not srList:
+                self.logger.info("Releases For Artist [" + printableArtistName +
+                                 "] Not Found")
+                return None
+            if srList:
+                for sr in srList:
+                    title = sr.title
+                    release = self._createDatabaseModelFromSearchModel(artist, title, sr)
+                    self.session.add(release)
+                    releases.append(release)
+            self.session.commit()
+        return releases
+
     def get(self, artist, title):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
@@ -49,109 +76,126 @@ class ReleaseFactory(object):
                 return None
             sr = srList[0]
             if sr:
-                releaseByExternalIds = self._getFromDatabaseByExternalIds(sr.musicBrainzId,
-                                                                          sr.iTunesId,
-                                                                          sr.lastFMId,
-                                                                          sr.amgId,
-                                                                          sr.spotifyId)
-                if releaseByExternalIds:
-                    if not releaseByExternalIds.alternateNames:
-                        releaseByExternalIds.alternateNames = []
-                    if title not in releaseByExternalIds.alternateNames:
-                        releaseByExternalIds.alternateNames.append(title)
-                        self.logger.debug("Found Title By External Ids [" +
-                                          releaseByExternalIds.name.encode('ascii', 'ignore')
-                                          .decode('utf-8') + "] Added [" +
-                                          printableTitle + "] To AlternateNames")
-                        stmt = update(Release.__table__).where(Release.id == releaseByExternalIds.id) \
-                            .values(lastUpdated=arrow.utcnow().datetime,
-                                    alternateNames=releaseByExternalIds.alternateNames)
-                        self.conn.execute(stmt)
-                    return releaseByExternalIds
-                release.artist = artist
-                release.roadieId = sr.roadieId
-                release.title = title
-                release.releaseDate = parseDate(sr.releaseDate)
-                release.random = sr.random
-                release.trackCount = sr.trackCount
-                release.mediaCount = sr.mediaCount
-                release.thumbnail = sr.thumbnail
-                release.profile = sr.profile
-                # TODO
-        #        release.releaseType = sr.releaseType
-                release.iTunesId = sr.iTunesId
-                release.amgId = sr.amgId
-                release.lastFMId = sr.lastFMId
-                release.lastFMSummary = sr.lastFMSummary
-                release.musicBrainzId = sr.musicBrainzId
-                release.spotifyId = sr.spotifyId
-                release.amgId = sr.amgId
-                release.tags = sr.tags
-                release.alternateNames = sr.alternateNames
-                release.urls = sr.urls
-                if sr.images:
-                    release.images = []
-                    for image in sr.images:
-                        i = Image()
-                        i.roadieId = image.roadieId
-                        i.url = image.url
-                        i.caption = image.caption
-                        i.image = image.image
-                        release.images.append(i)
-                if sr.genres:
-                    release.genres = []
-                    for genre in sr.genres:
-                        dbGenre = self.session.query(Genre).filter(Genre.name == genre.name).first()
-                        if not dbGenre:
-                            g = Genre()
-                            g.name = genre.name
-                            g.roadieId = genre.roadieId
-                            release.genres.append(g)
-                        else:
-                            release.genres.append(dbGenre)
-                if sr.releaseLabels:
-                    release.releaseLabels = []
-                    for srReleaseLabel in sr.releaseLabels:
-                        l = self.session.query(Label).filter(Label.name == srReleaseLabel.label.name).first()
-                        if not l:
-                            l = Label()
-                            l.roadieId = srReleaseLabel.label.roadieId
-                            l.name = srReleaseLabel.label.name
-                        if l:
-                            rl = ReleaseLabel()
-                            rl.catalogNumber = srReleaseLabel.catalogNumber
-                            rl.beginDate = parseDate(srReleaseLabel.beginDate)
-                            rl.endDate = parseDate(srReleaseLabel.endDate)
-                            rl.label = l
-                            if rl not in release.releaseLabels:
-                                release.releaseLabels.append(rl)
-                if sr.media:
-                    release.media = []
-                    for srMedia in sr.media:
-                        media = ReleaseMedia()
-                        media.roadieId = srMedia.roadieId
-                        media.releaseMediaNumber = srMedia.releaseMediaNumber
-                        media.releaseSubTitle = srMedia.releaseSubTitle
-                        media.trackCount = srMedia.trackCount
-                        if srMedia.tracks:
-                            media.tracks = []
-                            for srTrack in srMedia.tracks:
-                                track = Track()
-                                track.roadieId = srTrack.roadieId
-                                track.partTitles = srTrack.partTitles
-                                track.random = srTrack.random
-                                track.musicBrainzId = srTrack.musicBrainzId
-                                track.amgId = srTrack.amgId
-                                track.spotifyId = srTrack.spotifyId
-                                track.title = srTrack.title
-                                track.trackNumber = srTrack.trackNumber
-                                track.duration = srTrack.duration
-                                track.tags = srTrack.tags
-                                media.tracks.append(track)
-                        release.media.append(media)
-                self.session.add(release)
-                self.session.commit()
+                release = self._createDatabaseModelFromSearchModel(artist, title, sr)
+            self.session.add(release)
+            self.session.commit()
         return release
+
+    def _createDatabaseModelFromSearchModel(self, artist, title, sr):
+        """
+        Take the given SearchResult Release Model and create a Database Model
+        :type artist: Artist
+        :type title: str
+        :type sr: searchEngines.models.Release.Release
+        """
+        release = Release()
+        printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
+        releaseByExternalIds = self._getFromDatabaseByExternalIds(sr.musicBrainzId,
+                                                                  sr.iTunesId,
+                                                                  sr.lastFMId,
+                                                                  sr.amgId,
+                                                                  sr.spotifyId)
+        if releaseByExternalIds:
+            if not releaseByExternalIds.alternateNames:
+                releaseByExternalIds.alternateNames = []
+            if title not in releaseByExternalIds.alternateNames:
+                releaseByExternalIds.alternateNames.append(title)
+                self.logger.debug("Found Title By External Ids [" +
+                                  releaseByExternalIds.name.encode('ascii', 'ignore')
+                                  .decode('utf-8') + "] Added [" +
+                                  printableTitle + "] To AlternateNames")
+                stmt = update(Release.__table__).where(Release.id == releaseByExternalIds.id) \
+                    .values(lastUpdated=arrow.utcnow().datetime,
+                            alternateNames=releaseByExternalIds.alternateNames)
+                self.conn.execute(stmt)
+            return releaseByExternalIds
+        release.artist = artist
+        release.roadieId = sr.roadieId
+        release.title = title
+        release.releaseDate = parseDate(sr.releaseDate)
+        release.random = sr.random
+        release.trackCount = sr.trackCount
+        release.mediaCount = sr.mediaCount
+        release.thumbnail = sr.thumbnail
+        release.profile = sr.profile
+        # TODO
+    #        release.releaseType = sr.releaseType
+        release.iTunesId = sr.iTunesId
+        release.amgId = sr.amgId
+        release.lastFMId = sr.lastFMId
+        release.lastFMSummary = sr.lastFMSummary
+        release.musicBrainzId = sr.musicBrainzId
+        release.spotifyId = sr.spotifyId
+        release.amgId = sr.amgId
+        release.tags = sr.tags
+        release.alternateNames = sr.alternateNames
+        release.urls = sr.urls
+        if sr.images:
+            release.images = []
+            for image in sr.images:
+                i = Image()
+                i.roadieId = image.roadieId
+                i.url = image.url
+                i.caption = image.caption
+                i.image = image.image
+                release.images.append(i)
+        if sr.genres:
+            release.genres = []
+            for genre in sr.genres:
+                dbGenre = self.session.query(Genre).filter(Genre.name == genre.name).first()
+                if not dbGenre:
+                    g = Genre()
+                    g.name = genre.name
+                    g.roadieId = genre.roadieId
+                    release.genres.append(g)
+                else:
+                    release.genres.append(dbGenre)
+        if sr.releaseLabels:
+            release.releaseLabels = []
+            for srReleaseLabel in sr.releaseLabels:
+                l = self.session.query(Label).filter(Label.name == srReleaseLabel.label.name).first()
+                if not l:
+                    l = Label()
+                    l.roadieId = srReleaseLabel.label.roadieId
+                    l.name = srReleaseLabel.label.name
+                if l:
+                    rl = ReleaseLabel()
+                    rl.catalogNumber = srReleaseLabel.catalogNumber
+                    rl.beginDate = parseDate(srReleaseLabel.beginDate)
+                    rl.endDate = parseDate(srReleaseLabel.endDate)
+                    rl.label = l
+                    if rl not in release.releaseLabels:
+                        release.releaseLabels.append(rl)
+        if sr.media:
+            release.media = []
+            for srMedia in sr.media:
+                media = ReleaseMedia()
+                media.roadieId = srMedia.roadieId
+                media.releaseMediaNumber = srMedia.releaseMediaNumber
+                media.releaseSubTitle = srMedia.releaseSubTitle
+                media.trackCount = srMedia.trackCount
+                if srMedia.tracks:
+                    media.tracks = []
+                    for srTrack in srMedia.tracks:
+                        track = Track()
+                        track.roadieId = srTrack.roadieId
+                        track.partTitles = srTrack.partTitles
+                        track.random = srTrack.random
+                        track.musicBrainzId = srTrack.musicBrainzId
+                        track.amgId = srTrack.amgId
+                        track.spotifyId = srTrack.spotifyId
+                        track.title = srTrack.title
+                        track.trackNumber = srTrack.trackNumber
+                        track.duration = srTrack.duration
+                        track.tags = srTrack.tags
+                        media.tracks.append(track)
+                release.media.append(media)
+        return release
+
+    def _getAllFromDatabaseForArtist(self, artist):
+        if not artist:
+            return None
+        return self.session.query(Release).filter(Release.artistId == artist.id).order_by(Release.releaseDate).all()
 
     def _getFromDatabaseByTitle(self, title):
         if not title:

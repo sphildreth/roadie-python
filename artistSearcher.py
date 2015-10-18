@@ -61,6 +61,16 @@ if artist:
             uprint("Release Info [Elapsed Time: " + str(elapsed) + "]: " + str(release.info()) + "]")
         else:
             print("No Release(s) Found!")
+    else:
+        start = arrow.utcnow()
+        releases = releaseFactory.getAllForArtist(artist)
+        elapsed = arrow.utcnow() - start
+        if releases:
+            uprint("Releases Info(s) [Elapsed Time: " + str(elapsed) + "]")
+            for release in releases:
+                uprint(release.info())
+        else:
+            print("No Release(s) Found!")
 else:
     print("Artist Not Found!")
 
