@@ -167,7 +167,7 @@ class MusicBrainz(SearchEngineBase):
             release = None
             self.logger.debug("Performing MusicBrainz Lookup For Album(s) [" + musicBrainzId + "]")
             mbReleaseById = musicbrainzngs.get_release_by_id(id=musicBrainzId,
-                                                             includes=['labels', 'aliases', 'recordings', 'url-rels'])
+                                                             includes=['labels', 'aliases', 'recordings', 'release-groups', 'media', 'url-rels'])
             if mbReleaseById:
                 releaseLabels = []
                 releaseMedia = []
@@ -175,8 +175,17 @@ class MusicBrainz(SearchEngineBase):
                 coverUrl = self._getCoverArtUrl(musicBrainzId)
                 if 'release' in mbReleaseById:
                     mbRelease = mbReleaseById['release']
-                    releaseDate = parseDate(mbRelease)
+                    releaseDate = None
+                    releaseType = None
+                    if 'release-group' in mbRelease and mbRelease['release-group']:
+                        if 'first-release-date' in mbRelease['release-group'] and mbRelease['release-group']['first-release-date']:
+                            releaseDate = parseDate(mbRelease['release-group']['first-release-date'])
+                        if 'type' in mbRelease['release-group'] and mbRelease['release-group']['type']:
+                            releaseType = mbRelease['release-group']['type']
+                        if not releaseType and 'primary-type' in mbRelease['release-group'] and mbRelease['release-group']['primary-type']:
+                            releaseType = mbRelease['release-group']['primary-type']
                     release = Release(title=mbRelease['title'], releaseDate=releaseDate)
+                    release.releaseType = releaseType
                     if 'label-info-list' in mbRelease:
                         labelsFound = []
                         for labelInfo in mbRelease['label-info-list']:
@@ -254,8 +263,12 @@ class MusicBrainz(SearchEngineBase):
             pass
 
 # a = MusicBrainz()
-# #artist = a.lookupArtist('Danger Danger')
-# #print(artist)
+# artist = a.lookupArtist('Danger Danger')
+# #uprint(artist.info())
+#
+# release = a.lookupReleaseByMusicBrainzId("ae694c34-dbf4-31a3-89fc-1f2328ed53f4")
+# uprint(release.info())
+
 #
 # release = a.lookupReleaseByMusicBrainzId("2990c4bd-d04f-4319-93a5-d95515bfb493")
 # print(release.info())

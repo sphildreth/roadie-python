@@ -14,7 +14,7 @@ class Label(Base):
     endDate = Column(Date())
     imageUrl = Column(String(500))
     tags = Column(ScalarListType(separator="|"))
-    alternateNames = Column(ScalarListType(separator="|"))
+    alternateNames = Column(ScalarListType(separator="|"), index=True)
     urls = Column(ScalarListType(separator="|"))
     releases = relationship(ReleaseLabel, backref="label")
 

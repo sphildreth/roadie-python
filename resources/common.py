@@ -34,13 +34,14 @@ def parseDate(date):
     if isinstance(date, (datetime.date, datetime.datetime)):
         date = date.isoformat()
     result = None
+    yearFormat = "YYYY"
     dateFormat = "YYYY-MM-DD"
     if len(date) == 4:
-        dateFormat = "YYYY"
+        dateFormat = yearFormat
     elif len(date) == 7:
         dateFormat = "YYYY-MM"
     elif len(date) != 10:
-        dateFormat = None
+        dateFormat = yearFormat
     if not dateFormat:
         return result
     try:

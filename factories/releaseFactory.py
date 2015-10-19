@@ -158,10 +158,17 @@ class ReleaseFactory(object):
         if sr.releaseLabels:
             release.releaseLabels = []
             for srReleaseLabel in sr.releaseLabels:
-                l = self.session.query(Label).filter(Label.name == srReleaseLabel.label.name).first()
+                l = self._getLabelFromDatabase(srReleaseLabel.label.name)
                 if not l:
                     l = Label()
                     l.roadieId = srReleaseLabel.label.roadieId
+                    l.musicBrainzId = srReleaseLabel.label.musicBrainzId
+                    l.beginDate = srReleaseLabel.label.beginDate
+                    l.end = srReleaseLabel.label.endDate
+                    l.imageUrl = srReleaseLabel.label.imageUrl
+                    l.tags = srReleaseLabel.label.tags
+                    l.alternateNames = srReleaseLabel.label.alternateNames
+                    l.sortName = srReleaseLabel.label.sortName
                     l.name = srReleaseLabel.label.name
                 if l:
                     rl = ReleaseLabel()
@@ -213,6 +220,17 @@ class ReleaseFactory(object):
                         " OR alternateNames like '%|" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "')"))
         return self.session.query(Release).filter(stmt).first()
+
+    def _getLabelFromDatabase(self, name):
+        if not name:
+            return None
+        name = name.lower().strip().replace("'", "''")
+        stmt = or_(func.lower(Label.name) == name,
+                   text("(lower(alternateNames) == '" + name + "'" + ""
+                        " OR alternateNames like '" + name + "|%'" +
+                        " OR alternateNames like '%|" + name + "|%'" +
+                        " OR alternateNames like '%|" + name + "')"))
+        return self.session.query(Label).filter(stmt).first()
 
     def _getFromDatabaseByExternalIds(self, musicBrainzId, iTunesId, lastFMId, amgId, spotifyId):
         mb = and_(Release.musicBrainzId == musicBrainzId, musicBrainzId is not None)

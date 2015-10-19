@@ -14,6 +14,8 @@ class Track(Base):
 
     fileName = Column(String(500))
     filePath = Column(String(1000))
+    # File size of the track in bytes
+    fileSize = Column(Integer, default=0)
     hash = Column(String(32), unique=True)
     playedCount = Column(Integer, default=0)
     lastPlayed = Column(DateTime())
