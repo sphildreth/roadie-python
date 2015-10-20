@@ -15,12 +15,12 @@ Built on:
 * Flask
 * Flask-Admin
 * Mutagen
-* MongoEngine
+* SQLAlchemy
 
 Requirements
 ------------
-* MongoDB
 * Python 3
+* Either SQLite or Database server that works with SQLAlchemy
 
 Installation
 ------------
