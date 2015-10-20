@@ -1,34 +1,41 @@
-# Scanner that looks at a folder and manages MP3 files found
-# -- Adds new MP3 files not in database to database
-# -- Updates MP3 files found in database but different tag data
-# -- Deletes MP3 files found in database but no longer found in folder
 import os
 import json
 import hashlib
 import random
-
+import uuid
 import arrow
-from mongoengine import connect
 
-from resources.mongoModels import Release, Track, TrackRelease
-from searchEngines.musicBrainz import MusicBrainz
+from sqlalchemy.sql import func, and_, or_, text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, update
+
+from resources.common import *
+from resources.models.Artist import Artist
+from resources.models.Genre import Genre
+from resources.models.Image import Image
+from resources.models.Label import Label
+from resources.models.Release import Release
+from resources.models.ReleaseLabel import ReleaseLabel
+from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.Track import Track, TrackStatus
+
+from factories.artistFactory import ArtistFactory
+from factories.releaseFactory import ReleaseFactory
+
 from resources.id3 import ID3
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 
 
 class Scanner(ProcessorBase):
-
-    def __init__(self,readOnly):
-        d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
-        path = os.path.join(os.sep.join(d[:-1]), "settings.json")
-        with open(path, "r") as rf:
-            config = json.load(rf)
-        self.dbName = config['MONGODB_SETTINGS']['DB']
-        self.host = config['MONGODB_SETTINGS']['host']
-        self.thumbnailSize =  config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+    def __init__(self, config, dbConn, dbSession, readOnly):
+        self.config = config
+        self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
         self.logger = Logger()
+        self.conn = dbConn
+        self.session = dbSession
 
     def inboundMp3Files(self, folder):
         for root, dirs, files in os.walk(self.fixPath(folder)):
@@ -36,8 +43,29 @@ class Scanner(ProcessorBase):
                 if os.path.splitext(filename)[1] == ".mp3":
                     yield os.path.join(root, filename)
 
+    def _markTrackMissing(self, trackId, title, fileName):
+        if not self.readOnly:
+            stmt = update(Track.__table__) \
+                .where(Track.id == trackId) \
+                .values(fileName=None,
+                        filePath=None,
+                        fileSize=0,
+                        lastUpdated=arrow.utcnow().datetime,
+                        hash=None)
+            self.conn.execute(stmt)
+        self.logger.warn("x Marked Track Missing [" + title + "]: File [" + fileName + "] Not Found.")
+
+    def _makeTrackHash(self, artistId, id3String):
+        return hashlib.md5((str(artistId) + str(id3String)).encode('utf-8')).hexdigest()
 
     def scan(self, folder, artist, release):
+        """
+        Scan the given folder and update, insert or delete track information
+        :param folder: str
+        :param artist: Artist
+        :param release: Release
+        :return:
+        """
         if self.readOnly:
             self.logger.debug("[Read Only] Would Process Folder [" + folder + "] With Artist [" + str(artist) + "]")
             return None
@@ -45,26 +73,21 @@ class Scanner(ProcessorBase):
             raise RuntimeError("Invalid Artist")
         if not release:
             raise RuntimeError("Invalid Release")
-        release.Tracks = release.Tracks or []
         if not folder:
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
         foundReleaseTracks = 0
         createdReleaseTracks = 0
-        connect(self.dbName, host=self.host)
-        mb = MusicBrainz()
         startTime = arrow.utcnow().datetime
         self.logger.info("Scanning Folder [" + folder + "]")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
-            for track in Track.objects(FilePath__iexact=folder):
-                filename = self.fixPath(os.path.join(track.FilePath, track.FileName))
+            for track in self.session.query(Track).filter(Track.filePath == folder).all():
+                filename = self.fixPath(os.path.join(track.filePath, track.fileName))
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     if not self.readOnly:
-                        Release.objects(Artist = track.Artist).update_one(pull__Tracks__Track = track)
-                        track.delete()
-                    self.logger.warn("x Deleting Track [" + track.Title + "]: File [" + filename + "] Not Found.")
+                        self._markTrackMissing(track.id, track.title, filename)
                 else:
                     id3 = ID3(filename)
                     # File has invalid ID3 tags now
@@ -75,89 +98,87 @@ class Scanner(ProcessorBase):
                                 os.remove(filename)
                             except OSError:
                                 pass
-                            track.delete()
+                            self._markTrackMissing(track.id, track.title, filename)
                     else:
-                        #See if tags match track details if not matching delete and let scan process find and add it proper
                         try:
-                            id3Hash = hashlib.md5((str(track.Artist.id) + str(id3)).encode('utf-8')).hexdigest()
+                            id3Hash = self._makeTrackHash(track.Artist.id, str(id3))
                             if id3Hash != track.Hash:
                                 if not self.readOnly:
-                                    track.delete()
-                                self.logger.warn("x Deleting Track [" + track.Title + "]: Hash Mismatch")
+                                    self.logger.warn("x Hash Mismattch [" + track.Title + "]")
+                                    self._markTrackMissing(track.id, track.title, filename)
                         except:
                             pass
+
         # For each file found in folder get ID3 info and insert record into Track DB
         scannedMp3Files = 0
-        releaseLastUpdated = release.LastUpdated
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
-            if id3 != None:
+            if id3 is not None:
                 if not id3.isValid():
                     self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     foundGoodMp3s = True
                     head, tail = os.path.split(mp3)
-                    trackHash = hashlib.md5((str(artist.id) + str(id3)).encode('utf-8')).hexdigest()
-                    track = Track.objects(Hash = trackHash).first()
+                    headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
+                    trackHash = self._makeTrackHash(artist.id, str(id3))
+                    track = None
+                    for releaseMedia in release.media:
+                        for releaseTrack in releaseMedia.tracks:
+                            if isEqual(releaseTrack.title, id3.title) and isEqual(str(releaseTrack.trackNumber),
+                                                                                  str(id3.track)):
+                                track = releaseTrack
+                                break
+                            else:
+                                continue
+                            break
+                        else:
+                            continue
+                        break
+                    mp3FileSize = os.path.getsize(mp3)
                     if not track:
-                        track = Track(Title=id3.title, Artist=artist)
-                        track.Random = random.randint(1, 1000000)
-                        track.FileName = tail
-                        track.FilePath = head
-                        track.Hash = trackHash
-                        try:
-                            mbTracks = mb.tracksForRelease(release.MusicBrainzId)
-                            if mbTracks:
-                                try:
-                                    for mbTrackPosition in mbTracks:
-                                        for mbt in mbTrackPosition['track-list']:
-                                            mbtPosition = int(mbt['position'])
-                                            if mbtPosition == id3.track:
-                                                track.MusicBrainzId = mbt['recording']['id']
-                                                break
-                                except:
-                                    pass
-                        except:
-                            pass
-                        track.Length = id3.length
-                        if not self.readOnly:
-                            Track.save(track)
-                        self.logger.info("+ Added Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
-                    else:
-                        self.logger.info("= Found Existing Track: Title [" + track.Title + "] Path [" + str(os.path.join(track.FilePath, track.FileName)) + "]")
-                    releaseTrack = None
-                    for rt in release.Tracks:
-                        try:
-                            if rt.Track.Hash == track.Hash and \
-                               rt.TrackNumber == id3.track and \
-                               rt.ReleaseMediaNumber == id3.disc:
-                                releaseTrack = rt
-                                break;
-                        except:
-                            pass
-                    if not releaseTrack:
-                        releaseTrack = TrackRelease(Track=track, TrackNumber=id3.track, ReleaseMediaNumber=id3.disc)
-                        releaseTrack.Random = random.randint(1, 1000000)
-                        try:
-                            release.Tracks.append(releaseTrack)
-                            release.LastUpdated = arrow.utcnow().datetime
-                            self.logger.info("+ Added Release Track: Track [" + str(track.Title) + "], Release Track Count ["+ str(len(release.Tracks)) + "]")
-                        except:
-                            self.logger.exception("Error Adding ReleaseTracks")
-                            pass
                         createdReleaseTracks += 1
-                    else:
-                        foundReleaseTracks += 1
-                    scannedMp3Files += 1
+                        releaseMedia = self.session.query(ReleaseMedia).filter(ReleaseMedia.releaseId == release.id).first()
+                        track = Track()
+                        track.random = random.randint(1, 9999999)
+                        track.fileName = tail
+                        track.filePath = headNoLibrary
+                        track.hash = trackHash
+                        track.fileSize = mp3FileSize
+                        track.createdDate = arrow.utcnow().datetime
+                        track.roadieId = str(uuid.uuid4())
+                        track.title = id3.title
+                        track.trackNumber = id3.track
+                        track.duration = id3.length
+                        track.status = TrackStatus.ProcessorAdded
+                        track.tags = []
+                        track.partTitles = []
+                        releaseMedia.tracks.append(track)
+                        self.logger.info("+ Added Track [" + str(track.info()) + "] To ReleaseMedia")
 
-        if not self.readOnly and releaseLastUpdated != release.LastUpdated:
-            Release.save(release)
+                    elif not self.readOnly:
+                        foundReleaseTracks += 1
+                        if track.fileName != tail or track.filePath != headNoLibrary or \
+                                        track.fileSize != mp3FileSize or track.hash != trackHash:
+                            track.fileName = tail
+                            track.filePath = headNoLibrary
+                            track.fileSize = mp3FileSize
+                            track.lastUpdated = arrow.utcnow().datetime
+                            track.hash = trackHash
+                            self.logger.debug(
+                                "Update Release [" + str(release.info()) + "] Track [" + str(track.info()) + "]")
+                    scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
         matches = scannedMp3Files == (createdReleaseTracks + foundReleaseTracks)
+        if matches:
+            release.libraryStatus = 'Complete'
+        elif (createdReleaseTracks + foundReleaseTracks) > 0:
+            release.libraryStatus = 'Incomplete'
+        else:
+            release.libraryStatus = 'Missing'
         self.logger.info(("Scanning Folder [" + folder + "] Complete, Scanned [" +
-               ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +
-               "] Release Tracks, Found [" + str(foundReleaseTracks) +
-               "] Release Tracks. Sane Counts [" + str(matches) + "] Elapsed Time [" + str(elapsedTime) +
-               "]").encode('utf-8'))
+                          ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +
+                          "] Release Tracks, Found [" + str(foundReleaseTracks) +
+                          "] Release Tracks. Sane Counts [" + str(matches) + "] Elapsed Time [" + str(elapsedTime) +
+                          "]").encode('utf-8'))
         return foundGoodMp3s

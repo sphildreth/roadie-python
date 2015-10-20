@@ -1,24 +1,18 @@
 import os
 import string
-import json
 
 from goldfinch import validFileName as vfn
 
+from resources.pathInfo import PathInfo
+
 
 class ProcessorBase(object):
-
     trackPathReplace = None
-
-    def getConfig(self):
-        d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
-        path = os.path.join(os.sep.join(d[:-1]), "settings.json")
-        with open(path, "r") as rf:
-            return json.load(rf)
+    config = None
 
     def getTrackPathReplace(self):
-        config = self.getConfig()
-        if 'ROADIE_TRACK_PATH_REPLACE' in config:
-            return config['ROADIE_TRACK_PATH_REPLACE']
+        if 'ROADIE_TRACK_PATH_REPLACE' in self.config:
+            return self.config['ROADIE_TRACK_PATH_REPLACE']
         return []
 
     def fixPath(self, path):
@@ -30,30 +24,50 @@ class ProcessorBase(object):
                     path = path.replace(key, val)
         return path
 
-    def allDirectoriesInDirectory(self, directory):
+    @staticmethod
+    def allDirectoriesInDirectory(directory):
         for root, dirs, files in os.walk(directory):
             if not dirs:
                 yield root
             for dir in dirs:
                 yield os.path.join(root, dir)
 
-    def folderMp3Files(self, folder):
+    @staticmethod
+    def folderMp3Files(folder):
         for root, dirs, files in os.walk(folder):
             for filename in files:
                 if os.path.splitext(filename)[1].lower() == ".mp3":
                     yield root, os.path.join(root, filename)
 
-    def makeFileFriendly(self, input):
-        return vfn(string.capwords(input), space="keep").decode('utf-8')
+    @staticmethod
+    def makeFileFriendly(fileName):
+        return vfn(string.capwords(fileName), space="keep").decode('utf-8')
 
     def artistFolder(self, artist):
-        artistFolder = artist.SortName or artist.Name
-        config = self.getConfig()
-        return self.fixPath(os.path.join(config['ROADIE_LIBRARY_FOLDER'], self.makeFileFriendly(artistFolder)))
+        artistFolder = artist.sortName or artist.name
+        return self.fixPath(os.path.join(self.config['ROADIE_LIBRARY_FOLDER'], self.makeFileFriendly(artistFolder)))
 
     def albumFolder(self, artist, year, albumTitle):
         return self.fixPath(os.path.join(self.artistFolder(artist),
-                            "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(albumTitle)))
+                                         "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(albumTitle)))
 
     def trackName(self, trackNumber, trackTitle):
         return str(trackNumber).zfill(2) + " " + self.makeFileFriendly(trackTitle) + ".mp3"
+
+    @staticmethod
+    def infoFromPath(filePath):
+        """
+        See if given path is in "<Artist> -- [Year] <ReleaseTitle>" format is so then return parsed info
+        :param filePath: str
+                         Path To Parse
+        :return: PathInfo
+        """
+        if not filePath:
+            return None
+        parts = filePath.split("--")
+        if parts and len(parts) == 2:
+            artistName = string.capwords(parts[0])
+            secondPart = parts[1].strip()
+            releaseYear = secondPart[1:4]
+            releaseTitle = string.capwords(secondPart[4:])
+            return PathInfo(artistName, releaseYear, releaseTitle)

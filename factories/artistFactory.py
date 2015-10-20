@@ -155,6 +155,17 @@ class ArtistFactory(object):
                         i.caption = image.caption
                         i.image = image.image
                         artist.images.append(i)
+
+                # TODO
+                # # See if a file exists to use for the Artist thumbnail
+                # artistFile = os.path.join(mp3Folder, "artist.jpg")
+                # if os.path.exists(artistFile):
+                #     ba = self.readImageThumbnailBytesFromFile(artistFile)
+                # if ba:
+                #     artist.Thumbnail.new_file()
+                #     artist.Thumbnail.write(ba)
+                #     artist.Thumbnail.close()
+
                 if sa.genres:
                     artist.genres = []
                     for genre in sa.genres:

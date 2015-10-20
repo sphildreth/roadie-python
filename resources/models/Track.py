@@ -1,3 +1,5 @@
+from enum import IntEnum
+
 from sqlalchemy import Column, ForeignKey, Table, Integer, SmallInteger, String, DateTime
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
@@ -10,10 +12,15 @@ trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
                                 Column('playlisttrackId', Integer, ForeignKey('playlisttrack.id'), index=True))
 
 
+class TrackStatus(IntEnum):
+    Standard = 0
+    ProcessorAdded = 1
+
+
 class Track(Base):
 
-    fileName = Column(String(500))
     filePath = Column(String(1000))
+    fileName = Column(String(500))
     # File size of the track in bytes
     fileSize = Column(Integer, default=0)
     hash = Column(String(32), unique=True)
@@ -35,7 +42,6 @@ class Track(Base):
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"), index=True)
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable)
-
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

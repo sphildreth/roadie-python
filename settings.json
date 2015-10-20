@@ -5,11 +5,11 @@
         "host": "192.168.2.254"
     },
     "ROADIE_SITE_NAME": "Roadie",
-    "ROADIE_INBOUND_FOLDER": "/storage/Music/inbound",
-    "ROADIE_LIBRARY_FOLDER": "/storage/Music/library",
+    "ROADIE_INBOUND_FOLDER": "Z:/library/Nettles, Jennifer/",
+    "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
-        "Height": 60,
-        "Width": 60
+        "Height": 80,
+        "Width": 80
     },
     "ROADIE_DATABASE_URL": "sqlite:///roadie.db",
     "ROADIE_CONVERTING": {

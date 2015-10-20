@@ -144,6 +144,28 @@ class ReleaseFactory(object):
                 i.caption = image.caption
                 i.image = image.image
                 release.images.append(i)
+
+        # TODO
+        # See if cover file found in Release Folder
+        # coverFile = os.path.join(mp3Folder, "cover.jpg")
+        # if os.path.isfile(coverFile):
+        #     ba = self.readImageThumbnailBytesFromFile(coverFile)
+        # else:
+        #     coverFile = os.path.join(mp3Folder, "front.jpg")
+        #     if os.path.isfile(coverFile):
+        #         ba = self.readImageThumbnailBytesFromFile(coverFile)
+        # # if no bytes found see if MusicBrainz has cover art
+        # if not ba:
+        #     coverArtBytes = mb.lookupCoverArt(release.MusicBrainzId)
+        #     if coverArtBytes:
+        #         try:
+        #             img = Image.open(io.BytesIO(coverArtBytes))
+        #             img.thumbnail(self.thumbnailSize)
+        #             b = io.BytesIO()
+        #             img.save(b, "JPEG")
+        #             ba = b.getvalue()
+        #         except:
+        #             pass
         if sr.genres:
             release.genres = []
             for genre in sr.genres:
