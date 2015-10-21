@@ -114,6 +114,7 @@ class Scanner(ProcessorBase):
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 is not None:
+                cleanedTitle = createCleanedName(id3.title)
                 if not id3.isValid():
                     self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
@@ -124,8 +125,7 @@ class Scanner(ProcessorBase):
                     track = None
                     for releaseMedia in release.media:
                         for releaseTrack in releaseMedia.tracks:
-                            if isEqual(releaseTrack.title, id3.title) and isEqual(str(releaseTrack.trackNumber),
-                                                                                  str(id3.track)):
+                            if isEqual(str(releaseTrack.trackNumber), str(id3.track)):
                                 track = releaseTrack
                                 break
                             else:
@@ -140,9 +140,9 @@ class Scanner(ProcessorBase):
                         releaseMediaNumber = id3.disc
                         releaseMedia = None
                         firstReleaseMedia = None
-                        for rm in self.session\
-                                      .query(ReleaseMedia)\
-                                      .filter(ReleaseMedia.releaseId == release.id).all():
+                        for rm in self.session \
+                                .query(ReleaseMedia) \
+                                .filter(ReleaseMedia.releaseId == release.id).all():
                             firstReleaseMedia = firstReleaseMedia or rm
                             if rm.releaseMediaNumber == releaseMediaNumber:
                                 releaseMedia = rm
@@ -170,10 +170,13 @@ class Scanner(ProcessorBase):
                         track.roadieId = str(uuid.uuid4())
                         track.title = id3.title
                         track.trackNumber = id3.track
-                        track.duration = int(id3.length)
+                        track.duration = int(id3.length) * 1000
                         track.status = TrackStatus.ProcessorAdded
                         track.tags = []
                         track.partTitles = []
+                        track.alternateNames = []
+                        if cleanedTitle != id3.title.lower().strip():
+                            track.alternateNames.append(cleanedTitle)
                         releaseMedia.tracks.append(track)
                         self.logger.info("+ Added Track [" + str(track.info()) + "] To ReleaseMedia")
 
@@ -186,6 +189,11 @@ class Scanner(ProcessorBase):
                             track.fileSize = mp3FileSize
                             track.lastUpdated = arrow.utcnow().datetime
                             track.hash = trackHash
+                            if not track.alternateNames:
+                                track.alternateNames = []
+                            if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
+                                track.alternateNames.append(cleanedTitle)
+                            releaseMedia.tracks.append(track)
                             self.logger.debug(
                                 "Update Release [" + str(release.info()) + "] Track [" + str(track.info()) + "]")
                     scannedMp3Files += 1

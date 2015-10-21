@@ -237,6 +237,10 @@ class ReleaseFactory(object):
                         track.trackNumber = srTrack.trackNumber
                         track.duration = srTrack.duration
                         track.tags = srTrack.tags
+                        track.alternateNames = []
+                        cleanedTitle = createCleanedName(srTrack.title)
+                        if cleanedTitle != srTrack.title.lower().strip():
+                            track.alternateNames.append(cleanedTitle)
                         media.tracks.append(track)
                 release.media.append(media)
         return release
@@ -292,9 +296,9 @@ class ReleaseFactory(object):
         release.createdDate = arrow.utcnow().datetime
         release.roadieId = str(uuid.uuid4())
         release.alternateNames = []
-        cleanedArtistName = createCleanedName(artist.name)
-        if cleanedArtistName != title.lower().strip():
-            release.alternateNames.append(cleanedArtistName)
+        cleanedTitle = createCleanedName(title)
+        if cleanedTitle != title.lower().strip():
+            release.alternateNames.append(cleanedTitle)
         return release
 
     def add(self, release):

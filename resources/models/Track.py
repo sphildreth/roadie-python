@@ -35,6 +35,7 @@ class Track(Base):
     amgId = Column(String(100))
     spotifyId = Column(String(100))
     title = Column(String(500), nullable=False, index=True)
+    alternateNames = Column(ScalarListType(separator="|"))
     trackNumber = Column(SmallInteger(), nullable=False)
     # Seconds long
     duration = Column(Integer)
