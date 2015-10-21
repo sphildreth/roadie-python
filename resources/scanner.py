@@ -120,7 +120,7 @@ class Scanner(ProcessorBase):
                     foundGoodMp3s = True
                     head, tail = os.path.split(mp3)
                     headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
-                    trackHash = self._makeTrackHash(artist.id, str(id3))
+                    trackHash = self._makeTrackHash(artist.roadieId, str(id3))
                     track = None
                     for releaseMedia in release.media:
                         for releaseTrack in releaseMedia.tracks:
@@ -137,7 +137,29 @@ class Scanner(ProcessorBase):
                     mp3FileSize = os.path.getsize(mp3)
                     if not track:
                         createdReleaseTracks += 1
-                        releaseMedia = self.session.query(ReleaseMedia).filter(ReleaseMedia.releaseId == release.id).first()
+                        releaseMediaNumber = id3.disc
+                        releaseMedia = None
+                        firstReleaseMedia = None
+                        for rm in self.session\
+                                      .query(ReleaseMedia)\
+                                      .filter(ReleaseMedia.releaseId == release.id).all():
+                            firstReleaseMedia = firstReleaseMedia or rm
+                            if rm.releaseMediaNumber == releaseMediaNumber:
+                                releaseMedia = rm
+                                break
+                        if not releaseMedia:
+                            releaseMedia = firstReleaseMedia
+                        if not releaseMedia:
+                            releaseMedia = ReleaseMedia()
+                            releaseMedia.tracks = []
+                            releaseMedia.status = TrackStatus.ProcessorAdded
+                            releaseMedia.trackCount = 1
+                            releaseMedia.releaseMediaNumber = releaseMediaNumber
+                            releaseMedia.roadieId = str(uuid.uuid4())
+                            if not release.media:
+                                release.media = []
+                            release.media.append(releaseMedia)
+                            self.logger.info("+ Added ReleaseMedia [" + str(releaseMedia.info()) + "] To Release")
                         track = Track()
                         track.random = random.randint(1, 9999999)
                         track.fileName = tail
@@ -148,7 +170,7 @@ class Scanner(ProcessorBase):
                         track.roadieId = str(uuid.uuid4())
                         track.title = id3.title
                         track.trackNumber = id3.track
-                        track.duration = id3.length
+                        track.duration = int(id3.length)
                         track.status = TrackStatus.ProcessorAdded
                         track.tags = []
                         track.partTitles = []

@@ -32,12 +32,14 @@ class ID3:
             return False
 
     def info(self):
-        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist  + "], Year [" + str(self.year) + "], Album: ["\
-               + self.album + "], Disc: [" + str(self.disc) + "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], ("\
-               + str(self.bitrate) + "bps::" + str(self.length) + ")"
+        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist  + "], Year [" +\
+               str(self.year) + "], Album: [" + self.album + "], Disc: [" + str(self.disc) +\
+               "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], (" +\
+               str(self.bitrate) + "bps::" + str(self.length) + ")"
 
     def __str__(self):
-        return self.artist + "." + str(self.year) + "." + self.album  + "." + str(self.track) + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
+        return self.artist + "." + str(self.year) + "." + self.album + "." + str(self.track) \
+               + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
 
 
     def updateFromRelease(self, Release, TrackRelease):

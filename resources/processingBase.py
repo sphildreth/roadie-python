@@ -8,6 +8,7 @@ from resources.pathInfo import PathInfo
 
 class ProcessorBase(object):
     trackPathReplace = None
+    libraryFolder = None
     config = None
 
     def getTrackPathReplace(self):
@@ -44,8 +45,10 @@ class ProcessorBase(object):
         return vfn(string.capwords(fileName), space="keep").decode('utf-8')
 
     def artistFolder(self, artist):
+        if not self.libraryFolder:
+            self.libraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
         artistFolder = artist.sortName or artist.name
-        return self.fixPath(os.path.join(self.config['ROADIE_LIBRARY_FOLDER'], self.makeFileFriendly(artistFolder)))
+        return self.fixPath(os.path.join(self.libraryFolder, self.makeFileFriendly(artistFolder)))
 
     def albumFolder(self, artist, year, albumTitle):
         return self.fixPath(os.path.join(self.artistFolder(artist),

@@ -18,5 +18,12 @@ class ReleaseMedia(Base):
     # The Release for the Release Media
     releaseId = Column(Integer, ForeignKey("release.id"), index=True)
 
+    def info(self):
+        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +\
+                "], ReleaseMediaNumber [" + str(self.releaseMediaNumber) +\
+               "], ReleaseSubTitle [" + str(self.releaseSubTitle) + "], trackCount [" + str(self.trackCount) + \
+               "]"
+
     def __unicode__(self):
         return self.release.title + " " + self.releaseMediaNumber
+

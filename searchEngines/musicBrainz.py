@@ -104,7 +104,7 @@ class MusicBrainz(SearchEngineBase):
         try:
             if not artist.musicBrainzId:
                 artist = self.lookupArtist(artist.name)
-                if not artist.musicBrainzId:
+                if not artist or not artist.musicBrainzId:
                     return None
             if title:
                 result = musicbrainzngs.search_releases(limit=1, arid=artist.musicBrainzId, release=title, format='CD',

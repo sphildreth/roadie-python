@@ -1,3 +1,7 @@
+import random
+import uuid
+import arrow
+
 from sqlalchemy.sql import func, and_, or_, text
 
 from sqlalchemy import update
@@ -87,22 +91,29 @@ class ArtistFactory(object):
             self.logger.info("Artist Not Found By Name [" + printableName + "]")
             artist = Artist()
             sa = self.searcher.searchForArtist(name)
-            if sa:
+            if not sa:
+                artist.name = name
+                artist.random = random.randint(1, 9999999)
+                artist.createdDate = arrow.utcnow().datetime
+                artist.roadieId = str(uuid.uuid4())
+                artist.alternateNames = []
+                cleanedArtistName = createCleanedName(name)
+                if cleanedArtistName != name.lower().strip():
+                    artist.alternateNames.append(cleanedArtistName)
+            else:
                 artistByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId,
                                                                          sa.spotifyId)
                 if artistByExternalIds:
                     if not artistByExternalIds.alternateNames:
                         artistByExternalIds.alternateNames = []
                     if name not in artistByExternalIds.alternateNames:
-                        artistByExternalIds.alternateNames.append(name)
                         self.logger.debug("Found Artist By External Ids [" +
                                           artistByExternalIds.name.encode('ascii', 'ignore')
                                           .decode('utf-8') + "] Added [" +
                                           printableName + "] To AlternateNames")
-                        stmt = update(Artist.__table__).where(Artist.id == artistByExternalIds.id) \
-                            .values(lastUpdated=arrow.utcnow().datetime,
-                                    alternateNames=artistByExternalIds.alternateNames)
-                        self.conn.execute(stmt)
+                        artistByExternalIds.alternateNames.append(name)
+                        artistByExternalIds.lastUpdated = arrow.utcnow().datetime
+                        self.session.commit()
                     return artistByExternalIds
                 artist.name = sa.name
                 artist.roadieId = sa.roadieId

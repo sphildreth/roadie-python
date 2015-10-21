@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from sqlalchemy import Column, ForeignKey, Table, Integer, SmallInteger, String, DateTime
+from sqlalchemy import Column, ForeignKey, Table, Index, Integer, SmallInteger, String, DateTime
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
 
@@ -40,7 +40,7 @@ class Track(Base):
     duration = Column(Integer)
     tags = Column(ScalarListType(separator="|"))
 
-    releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"), index=True)
+    releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable)
 
     def __eq__(self, other):
@@ -59,3 +59,6 @@ class Track(Base):
             self.musicBrainzId) \
                + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber) \
                + "], Duration [" + str(self.duration) + "]"
+
+
+Index("idx_track_unique_to_eleasemedia", Track.releaseMediaId, Track.trackNumber, unique=True)

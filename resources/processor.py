@@ -16,12 +16,11 @@ from resources.common import *
 from resources.pathInfo import PathInfo
 from resources.models.Artist import Artist
 from resources.models.Genre import Genre
-from resources.models.Image import Image
 from resources.models.Label import Label
 from resources.models.Release import Release
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
+from resources.models.Track import Track, TrackStatus
 
 from factories.artistFactory import ArtistFactory
 from factories.releaseFactory import ReleaseFactory
@@ -129,7 +128,7 @@ class Processor(ProcessorBase):
                 except OSError:
                     pass
 
-            if isMp3File and not os.path.samefile(mp3, newFilename):
+            if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
                 try:
                     move(mp3, newFilename)
                     self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
@@ -203,6 +202,25 @@ class Processor(ProcessorBase):
                             if not release:
                                 lastID3Album = id3.album
                                 release = self.releaseFactory.get(artist, id3.album)
+                                if not release:
+                                    # Was not found in any Searcher create and add
+                                    release = self.releaseFactory.create(artist,
+                                                                         string.capwords(id3.album),
+                                                                         1,
+                                                                         id3.year)
+                                    if release:
+                                        if id3.imageBytes:
+                                            try:
+                                                img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                                img.thumbnail(self.thumbnailSize)
+                                                b = io.BytesIO()
+                                                img.save(b, "JPEG")
+                                                release.thumbnail = b.getvalue()
+                                            except:
+                                                pass
+                                        release.status = TrackStatus.ProcessorAdded
+                                        self.releaseFactory.add(release)
+                                        self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
                             if self.shouldMoveToLibrary(artist, artist.id, id3, mp3):
                                 newMp3 = self.moveToLibrary(artist, id3, mp3)
                                 head, tail = os.path.split(newMp3)
@@ -213,9 +231,9 @@ class Processor(ProcessorBase):
                         try:
                             im = Image.open(coverImage).convert('RGB')
                             newPath = os.path.join(newMp3Folder, "cover.jpg")
-                            if not self.readOnly:
+                            if (not os.path.isfile(newPath) or not os.path.samefile(coverImage, newPath)) and not self.readOnly:
                                 im.save(newPath)
-                            self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                                self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
                         except:
                             self.logger.exception("Error Copying File [" + coverImage + "]")
                             pass

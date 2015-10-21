@@ -5,7 +5,7 @@
         "host": "192.168.2.254"
     },
     "ROADIE_SITE_NAME": "Roadie",
-    "ROADIE_INBOUND_FOLDER": "Z:/library/Nettles, Jennifer/",
+    "ROADIE_INBOUND_FOLDER": "Z:/library/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
         "Height": 80,

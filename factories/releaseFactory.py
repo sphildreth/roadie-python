@@ -1,3 +1,10 @@
+import os
+import json
+import hashlib
+import random
+import uuid
+import arrow
+
 from sqlalchemy.sql import func, and_, or_, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -76,9 +83,16 @@ class ReleaseFactory(object):
             release = Release()
             srList = self.searcher.searchForArtistReleases(artist, title)
             if not srList:
+                # If no release found see if the release is "Artist ReleaseTitle" as in "The Who Sell Out"
+                searchAgainTitle = artist.name + " " + title
                 self.logger.info("Release For Artist [" + printableArtistName +
-                                 "] Not Found By Title [" + printableTitle + "]")
-                return None
+                                 "] Not Found By Title [" + printableTitle + "]: Searching again using [" +
+                                 searchAgainTitle.encode('ascii', 'ignore').decode('utf-8') + "]")
+                srList = self.searcher.searchForArtistReleases(artist, searchAgainTitle)
+                if not srList:
+                    self.logger.info("Release For Artist [" + printableArtistName +
+                                     "] Not Found By Title [" + printableTitle + "]")
+                    return None
             sr = srList[0]
             if sr:
                 release = self._createDatabaseModelFromSearchModel(artist, title, sr)
@@ -104,15 +118,15 @@ class ReleaseFactory(object):
             if not releaseByExternalIds.alternateNames:
                 releaseByExternalIds.alternateNames = []
             if title not in releaseByExternalIds.alternateNames:
-                releaseByExternalIds.alternateNames.append(title)
                 self.logger.debug("Found Title By External Ids [" +
-                                  releaseByExternalIds.name.encode('ascii', 'ignore')
+                                  releaseByExternalIds.title.encode('ascii', 'ignore')
                                   .decode('utf-8') + "] Added [" +
                                   printableTitle + "] To AlternateNames")
-                stmt = update(Release.__table__).where(Release.id == releaseByExternalIds.id) \
-                    .values(lastUpdated=arrow.utcnow().datetime,
-                            alternateNames=releaseByExternalIds.alternateNames)
-                self.conn.execute(stmt)
+                if not releaseByExternalIds.alternateNames:
+                    releaseByExternalIds.alternateNames = []
+                releaseByExternalIds.alternateNames.append(title)
+                releaseByExternalIds.lastUpdated = arrow.utcnow().datetime
+                self.session.commit()
             return releaseByExternalIds
         release.artist = artist
         release.roadieId = sr.roadieId
@@ -266,8 +280,27 @@ class ReleaseFactory(object):
     def _getFromDatabaseByRoadieId(self, roadieId):
         return self.session.query(Release).filter(Release.roadieId == roadieId).first()
 
+    def create(self, artist, title, trackCount, releaseDate):
+        if not artist or not title or not trackCount or not releaseDate:
+            return None
+        release = Release()
+        release.random = random.randint(1, 9999999)
+        release.title = title
+        release.releaseDate = parseDate(releaseDate)
+        release.trackCount = trackCount
+        release.artistId = artist.id
+        release.createdDate = arrow.utcnow().datetime
+        release.roadieId = str(uuid.uuid4())
+        release.alternateNames = []
+        cleanedArtistName = createCleanedName(artist.name)
+        if cleanedArtistName != title.lower().strip():
+            release.alternateNames.append(cleanedArtistName)
+        return release
+
     def add(self, release):
-        pass
+        self.session.add(release)
+        self.session.commit()
 
     def delete(self, release):
-        pass
+        self.session.delete(release)
+        self.session.commit()

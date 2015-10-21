@@ -49,61 +49,65 @@ class ArtistSearcher(object):
             return None
         if name in self.cache:
             return self.cache[name]
-        artist = Artist(name=name)
-        artist.random = random.randint(1, 9999999)
-        artist.roadieId = str(uuid.uuid4())
-        iTunesSearcher = iTunes(self.referer)
-        if iTunesSearcher.IsActive:
-            artist = artist.mergeWithArtist(iTunesSearcher.lookupArtist(name))
-        mbSearcher = MusicBrainz(self.referer)
-        if mbSearcher.IsActive:
-            artist = artist.mergeWithArtist(mbSearcher.lookupArtist(name))
-        lastFMSearcher = LastFM(self.referer)
-        if lastFMSearcher.IsActive:
-            artist = artist.mergeWithArtist(lastFMSearcher.lookupArtist(name))
-        spotifySearcher = Spotify(self.referer)
-        if spotifySearcher.IsActive:
-            artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
-        if self.allMusicSearcher.IsActive:
-            artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
-        if artist:
-            # Fetch images with only urls, remove any with neither URL or BLOB
-            if artist.images:
-                images = []
-                imageSearcher = ImageSearcher()
-                firstImageInImages = None
-                for image in artist.images:
-                    if not image.image and image.url:
-                        image.image = imageSearcher.getImageBytesForUrl(image.url)
-                    if image.image:
-                        firstImageInImages = firstImageInImages or image.image
-                        images.append(image)
-                artist.images = images
-                if not artist.thumbnail:
+        try:
+            artist = Artist(name=name)
+            artist.random = random.randint(1, 9999999)
+            artist.roadieId = str(uuid.uuid4())
+            iTunesSearcher = iTunes(self.referer)
+            if iTunesSearcher.IsActive:
+                artist = artist.mergeWithArtist(iTunesSearcher.lookupArtist(name))
+            mbSearcher = MusicBrainz(self.referer)
+            if mbSearcher.IsActive:
+                artist = artist.mergeWithArtist(mbSearcher.lookupArtist(name))
+            lastFMSearcher = LastFM(self.referer)
+            if lastFMSearcher.IsActive:
+                artist = artist.mergeWithArtist(lastFMSearcher.lookupArtist(name))
+            spotifySearcher = Spotify(self.referer)
+            if spotifySearcher.IsActive:
+                artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
+            if self.allMusicSearcher.IsActive:
+                artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
+            if artist:
+                # Fetch images with only urls, remove any with neither URL or BLOB
+                if artist.images:
+                    images = []
+                    imageSearcher = ImageSearcher()
+                    firstImageInImages = None
+                    for image in artist.images:
+                        if not image.image and image.url:
+                            image.image = imageSearcher.getImageBytesForUrl(image.url)
+                        if image.image:
+                            firstImageInImages = firstImageInImages or image.image
+                            images.append(image)
+                    artist.images = images
+                    if not artist.thumbnail:
+                        try:
+                            img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                            img.thumbnail(self.artistThumbnailSize)
+                            b = io.BytesIO()
+                            img.save(b, "JPEG")
+                            artist.thumbnail = b.getvalue()
+                        except:
+                            pass
+                # Add special search names to alternate names
+                if not artist.alternateNames:
+                    artist.alternateNames = []
+                if artist.name not in artist.alternateNames:
+                    cleanedArtistName = createCleanedName(artist.name)
+                    if cleanedArtistName != artist.name.lower().strip() and cleanedArtistName not in artist.alternateNames:
+                        artist.alternateNames.append(cleanedArtistName)
+                if not artist.bioContext:
                     try:
-                        img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
-                        img.thumbnail(self.artistThumbnailSize)
-                        b = io.BytesIO()
-                        img.save(b, "JPEG")
-                        artist.thumbnail = b.getvalue()
+                        artist.bioContext = wikipedia.summary(artist.name)
                     except:
                         pass
-            # Add special search names to alternate names
-            if not artist.alternateNames:
-                artist.alternateNames = []
-            if artist.name not in artist.alternateNames:
-                cleanedArtistName = createCleanedName(artist.name)
-                if cleanedArtistName != artist.name.lower().strip() and cleanedArtistName not in artist.alternateNames:
-                    artist.alternateNames.append(cleanedArtistName)
-            if not artist.bioContext:
-                try:
-                    artist.bioContext = wikipedia.summary(artist.name)
-                except:
-                    pass
 
-            self.cache[name] = artist
-        printableName = name.encode('ascii', 'ignore').decode('utf-8')
-        self.logger.debug("searchForArtist Name [" + printableName + "] Found [" + (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
+                self.cache[name] = artist
+            printableName = name.encode('ascii', 'ignore').decode('utf-8')
+        except:
+            self.logger.exception("Error In searchForArtist")
+        self.logger.debug("searchForArtist Name [" + printableName + "] Found [" +
+                          (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
         return artist
 
     @staticmethod
@@ -142,52 +146,56 @@ class ArtistSearcher(object):
         if not artist:
             return None
         releases = []
-        iTunesSearcher = iTunes(self.referer)
-        if iTunesSearcher.IsActive:
-            releases = self._mergeReleaseLists(releases, iTunesSearcher.searchForRelease(artist, titleFilter))
-        mbSearcher = MusicBrainz(self.referer)
-        if mbSearcher.IsActive:
-            releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
-        lastFMSearcher = LastFM(self.referer)
-        if lastFMSearcher.IsActive:
-            mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
-            if mbIdList:
-                releases = self._mergeReleaseLists(releases, lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
-        spotifySearcher = Spotify(self.referer)
-        if spotifySearcher.IsActive:
-            releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
-        if releases:
-            imageSearcher = ImageSearcher()
-            for release in releases:
-                if release.coverUrl:
-                    coverImage = ArtistImage(release.coverUrl)
-                    if coverImage not in release.images:
-                        release.images.append(coverImage)
-                # Fetch images with only urls, remove any with neither URL or BLOB
-                if release.images:
-                    images = []
-                    firstImageInImages = None
-                    for image in release.images:
-                        if not image.image and image.url:
-                            image.image = imageSearcher.getImageBytesForUrl(image.url)
-                        if image.image:
-                            firstImageInImages = firstImageInImages or image.image
-                            images.append(image)
-                    release.images = images
-                    if not release.thumbnail:
-                        try:
-                            img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
-                            img.thumbnail(self.releaseThumbnailSize)
-                            b = io.BytesIO()
-                            img.save(b, "JPEG")
-                            release.thumbnail = b.getvalue()
-                        except:
-                            pass
-        if titleFilter and releases:
-            filteredReleases = []
-            cleanedTitleFilter = createCleanedName(titleFilter)
-            for release in releases:
-                if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
-                    filteredReleases.append(release)
-            releases = filteredReleases
+        try:
+            iTunesSearcher = iTunes(self.referer)
+            if iTunesSearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, iTunesSearcher.searchForRelease(artist, titleFilter))
+            mbSearcher = MusicBrainz(self.referer)
+            if mbSearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
+            lastFMSearcher = LastFM(self.referer)
+            if lastFMSearcher.IsActive and releases:
+                mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
+                if mbIdList:
+                    releases = self._mergeReleaseLists(releases, lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
+            spotifySearcher = Spotify(self.referer)
+            if spotifySearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
+            if releases:
+                imageSearcher = ImageSearcher()
+                for release in releases:
+                    if release.coverUrl:
+                        coverImage = ArtistImage(release.coverUrl)
+                        if coverImage not in release.images:
+                            release.images.append(coverImage)
+                    # Fetch images with only urls, remove any with neither URL or BLOB
+                    if release.images:
+                        images = []
+                        firstImageInImages = None
+                        for image in release.images:
+                            if not image.image and image.url:
+                                image.image = imageSearcher.getImageBytesForUrl(image.url)
+                            if image.image:
+                                firstImageInImages = firstImageInImages or image.image
+                                images.append(image)
+                        release.images = images
+                        if not release.thumbnail:
+                            try:
+                                img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                                img.thumbnail(self.releaseThumbnailSize)
+                                b = io.BytesIO()
+                                img.save(b, "JPEG")
+                                release.thumbnail = b.getvalue()
+                            except:
+                                pass
+            if titleFilter and releases:
+                filteredReleases = []
+                cleanedTitleFilter = createCleanedName(titleFilter)
+                for release in releases:
+                    if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
+                        filteredReleases.append(release)
+                releases = filteredReleases
+        except:
+            self.logger.exception("Error In searchForArtistReleases")
+            pass
         return releases

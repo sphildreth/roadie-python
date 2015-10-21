@@ -90,7 +90,7 @@ class Release(ModelBase):
                "] Media [" + str(mediaCount) + "] Tracks [" + str(trackCount) + \
                "], Title **[" + str(self.title) + "]** Urls [" + str(
             len(self.urls or [])) + "] Last FM Summary Size [" + str(
-            len(self.lastFMSummary or "")) + "] Tags [" + "|".join(self.tags or [])
+            len(self.lastFMSummary or "")) + "] Tags [" + "|".join(self.tags or []) + "]"
 
     def weight(self):
         weight = self.trackCount
