@@ -73,7 +73,7 @@ class ReleaseFactory(object):
             return None
         printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
         printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
-        release = self._getFromDatabaseByTitle(title)
+        release = self._getFromDatabaseByTitle(artist, title)
         if not release or forceRefresh:
             if not release:
                 self.logger.info("Release For Artist [" + printableArtistName +
@@ -250,16 +250,22 @@ class ReleaseFactory(object):
             return None
         return self.session.query(Release).filter(Release.artistId == artist.id).order_by(Release.releaseDate).all()
 
-    def _getFromDatabaseByTitle(self, title):
+    def _getFromDatabaseByTitle(self, artist, title):
         if not title:
             return None
         title = title.lower().strip().replace("'", "''")
+        cleanedTitle = createCleanedName(title)
         stmt = or_(func.lower(Release.title) == title,
                    text("(lower(alternateNames) == '" + title + "'" + ""
                         " OR alternateNames like '" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "|%'" +
-                        " OR alternateNames like '%|" + title + "')"))
-        return self.session.query(Release).filter(stmt).first()
+                        " OR alternateNames like '%|" + title + "')"),
+                   text("(alternateNames == '" + cleanedTitle + "'" + ""
+                        " OR alternateNames like '" + cleanedTitle + "|%'" +
+                        " OR alternateNames like '%|" + cleanedTitle + "|%'" +
+                        " OR alternateNames like '%|" + cleanedTitle + "')")
+                   )
+        return self.session.query(Release).filter(Release.artistId == artist.id).filter(stmt).first()
 
     def _getLabelFromDatabase(self, name):
         if not name:

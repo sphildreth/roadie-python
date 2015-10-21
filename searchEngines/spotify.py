@@ -3,6 +3,7 @@ import threading
 from queue import Queue
 from io import StringIO
 from urllib import request, parse
+from requests.exceptions import HTTPError
 
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
@@ -90,7 +91,8 @@ class Spotify(SearchEngineBase):
                     self.artistReleasesThreaded = []
                     self.artistReleasesThreaded.append(r[0])
             return self.artistReleasesThreaded
-
+        except HTTPError:
+            pass
         except:
             self.logger.exception("Spotify: Error In searchForRelease")
             pass
