@@ -83,12 +83,6 @@ class ReleaseFactory(object):
             release = Release()
             srList = self.searcher.searchForArtistReleases(artist, title)
             if not srList:
-                # If no release found see if the release is "Artist ReleaseTitle" as in "The Who Sell Out"
-                searchAgainTitle = artist.name + " " + title
-                self.logger.info("Release For Artist [" + printableArtistName +
-                                 "] Not Found By Title [" + printableTitle + "]: Searching again using [" +
-                                 searchAgainTitle.encode('ascii', 'ignore').decode('utf-8') + "]")
-                srList = self.searcher.searchForArtistReleases(artist, searchAgainTitle)
                 if not srList:
                     self.logger.info("Release For Artist [" + printableArtistName +
                                      "] Not Found By Title [" + printableTitle + "]")

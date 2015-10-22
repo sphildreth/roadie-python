@@ -92,7 +92,7 @@ class Spotify(SearchEngineBase):
                     self.artistReleasesThreaded.append(r[0])
             return self.artistReleasesThreaded
         except HTTPError:
-            pass
+            print("Spotify: Http Error")
         except:
             self.logger.exception("Spotify: Error In searchForRelease")
             pass
