@@ -4,9 +4,6 @@ import re
 
 import arrow
 
-from mongoengine import connect
-
-from resources.mongoModels import Artist, Collection, CollectionRelease, Release
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 

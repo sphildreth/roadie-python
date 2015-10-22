@@ -1,23 +1,24 @@
+import arrow
 import io
 import os
 import hashlib
 import json
 import random
 import zipfile
+
 from time import time
 from operator import itemgetter
 from re import findall
 from urllib.parse import urlparse, urljoin
 
-import arrow
-from bson import objectid
 from PIL import Image
 from flask import Flask, jsonify, render_template, send_file, Response, request, session, \
     flash, url_for, redirect, g
 import flask_admin as admin
+from flask_admin.contrib import sqla
+from flask_admin.contrib.sqla import filters
 from flask_restful import Api
-from flask_mongoengine import MongoEngine
-from mongoengine import Q
+
 from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
@@ -26,7 +27,23 @@ from werkzeug.datastructures import Headers
 
 from importers.collectionImporter import CollectionImporter
 from resources.common import *
-from resources.artistApi import ArtistApi
+from resources.pathInfo import PathInfo
+from resources.models.Artist import Artist
+from resources.models.Collection import Collection
+
+from resources.models.Genre import Genre
+from resources.models.Label import Label
+from resources.models.Release import Release
+from resources.models.Playlist import Playlist
+from resources.models.ReleaseLabel import ReleaseLabel
+from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.Track import Track, TrackStatus
+from resources.models.User import User
+from resources.models.UserArtist import UserArtist
+from resources.models.UserRelease import UserRelease
+from resources.models.UserRole import UserRole
+from resources.models.UserTrack import UserTrack
+
 from resources.artistListApi import ArtistListApi
 from searchEngines.imageSearcher import ImageSearcher
 from resources.releaseListApi import ReleaseListApi
@@ -34,12 +51,13 @@ from resources.trackListApi import TrackListApi
 from resources.processor import Processor
 from resources.logger import Logger
 from resources.id3 import ID3
-from resources.mongoModels import Artist, ArtistType, Collection, Genre, Label, \
-    Playlist, Quality, Release, Track, User, UserArtist, UserRelease, UserRole, UserTrack
 from resources.m3u import M3U
 from resources.validator import Validator
 
-from flask.ext.mongoengine import MongoEngine, MongoEngineSessionInterface
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, desc
+
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from flask.ext.bcrypt import Bcrypt
@@ -68,11 +86,9 @@ app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
 app.jinja_env.filters['count_new_lines'] = count_new_lines
 
-
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
-
 
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
@@ -81,8 +97,16 @@ if 'ROADIE_TRACK_PATH_REPLACE' in config:
     trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
 avatarSize = 30, 30
 
-db = MongoEngine(app)
-app.session_interface = MongoEngineSessionInterface(db)
+engine = create_engine(config['ROADIE_DATABASE_URL'])
+conn = engine.connect()
+Base = declarative_base()
+Base.metadata.bind = engine
+DBSession = sessionmaker(bind=engine)
+session = DBSession()
+
+# TODO
+# app.session_interface = MongoEngineSessionInterface(db)
+
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
@@ -100,32 +124,34 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    for ut in UserTrack.objects().order_by('-LastPlayed')[:35]:
-        info = {
-            'TrackId': str(ut.Track.id),
-            'TrackTitle': ut.Track.Title,
-            'ReleaseId': str(ut.Release.id),
-            'ReleaseTitle': ut.Release.Title,
-            'ReleaseThumbnail': "/images/release/thumbnail/" + str(ut.Release.id),
-            'ArtistId': str(ut.Track.Artist.id),
-            'ArtistName': ut.Track.Artist.Name,
-            'ArtistThumbnail': "/images/artist/thumbnail/" + str(ut.Track.Artist.id),
-            'UserId': str(ut.User.id),
-            'Username': ut.User.Username,
-            'UserThumbnail': "/images/user/avatar/" + str(ut.User.id),
-            'UserRating': ut.Rating,
-            'LastPlayed': arrow.get(ut.LastPlayed).humanize()
-        }
-        lastPlayedInfos.append(info)
+    #for ut in session.query(UserTrack).orderby(desc(UserTrack.lastPlayed))[:35]:
+    # info = {
+    #     'TrackId': str(ut.trackId),
+    #     'TrackTitle': ut.track.title,
+    #     'ReleaseId': str(ut.Release.id),
+    #     'ReleaseTitle': ut.Release.Title,
+    #     'ReleaseThumbnail': "/images/release/thumbnail/" + str(ut.Release.id),
+    #     'ArtistId': str(ut.Track.Artist.id),
+    #     'ArtistName': ut.Track.Artist.Name,
+    #     'ArtistThumbnail': "/images/artist/thumbnail/" + str(ut.Track.Artist.id),
+    #     'UserId': str(ut.User.id),
+    #     'Username': ut.User.Username,
+    #     'UserThumbnail': "/images/user/avatar/" + str(ut.User.id),
+    #     'UserRating': ut.Rating,
+    #     'LastPlayed': arrow.get(ut.LastPlayed).humanize()
+    # }
+    # lastPlayedInfos.append(info)
     wsRoot = request.url_root.replace("http://", "ws://")
     randomSeed1 = random.randint(1, 1000000)
     randomSeed2 = random.randint(randomSeed1, 1000000)
     releases = []
-    for release in Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:12]:
+    for r in session.query(Release) \
+                     .filter(Release.random >= randomSeed1, Release.random <= randomSeed2) \
+                     .order_by(Release.random)[:12]:
         releases.append({
-            'id': release.id,
-            'ArtistName': release.Artist.Name,
-            'Title': release.Title,
+            'id': r.id,
+            'ArtistName': r.artist.name,
+            'Title': r.title,
             'UserRating': 0
         })
     return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
@@ -133,7 +159,7 @@ def index():
 
 @app.route("/release/setTitle/<release_id>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
 def setReleaseTitle(release_id, new_title, set_tracks_title, create_alternate_name):
-    release = Release.objects(id = release_id).first()
+    release = Release.objects(id=release_id).first()
     user = User.objects(id=current_user.id).first()
     now = arrow.utcnow().datetime
     if not release or not user or not new_title:
@@ -142,7 +168,7 @@ def setReleaseTitle(release_id, new_title, set_tracks_title, create_alternate_na
     release.Title = new_title
     release.LastUpdated = now
     if create_alternate_name == "true" and not new_title in release.AlternateNames:
-            release.AlternateNames.append(oldTitle)
+        release.AlternateNames.append(oldTitle)
     Release.save(release)
     if set_tracks_title == "true":
         for track in release.Tracks:
@@ -184,6 +210,7 @@ def browseArtists():
 def browseReleases():
     return render_template('browseReleases.html')
 
+
 @app.route("/randomizer/<type>")
 @login_required
 def randomizer(type):
@@ -199,7 +226,7 @@ def randomizer(type):
     elif type == "tracks":
         tracks = []
         for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:35]:
-            release = Release.objects(Tracks__Track = track).first()
+            release = Release.objects(Tracks__Track=track).first()
             t = M3U.makeTrackInfo(user, release, track)
             if t:
                 tracks.append(t)
@@ -247,7 +274,6 @@ def reseed():
     except:
         logger.exception("Error In Reseeding Random")
         return jsonify(message="ERROR")
-
 
 
 @app.route('/artist/<artist_id>')
@@ -365,7 +391,6 @@ def movetrackstocd(release_id, selected_to_cd):
     return jsonify(message="OK")
 
 
-
 @app.route("/user/release/setrating/<release_id>/<rating>", methods=['POST'])
 @login_required
 def setUserReleaseRating(release_id, rating):
@@ -474,6 +499,7 @@ def setTrackCount(release_id):
         logger.exception("Error Setting Track Count")
         return jsonify(message="ERROR")
 
+
 @app.route("/release/setDiscCount/<release_id>", methods=['POST'])
 @login_required
 def setDiscCount(release_id):
@@ -491,6 +517,7 @@ def setDiscCount(release_id):
     except:
         logger.exception("Error Setting Disc Count")
         return jsonify(message="ERROR")
+
 
 @app.route("/release/rescan/<release_id>", methods=['POST'])
 @login_required
@@ -531,6 +558,7 @@ def downloadRelease(release_id):
     zipAttachmentName = release.Artist.Name + " - " + release.Title + ".zip"
     return send_file(memory_file, attachment_filename=zipAttachmentName, as_attachment=True)
 
+
 @app.route('/artist/delete/<artist_id>', methods=['POST'])
 @login_required
 def deleteArtist(artist_id):
@@ -562,7 +590,7 @@ def deleteArtistReleases(artist_id):
 
 @app.route('/release/delete/<release_id>/<delete_files>', methods=['POST'])
 @login_required
-def deleteRelease(release_id,delete_files):
+def deleteRelease(release_id, delete_files):
     release = Release.objects(id=release_id).first()
     if not release:
         return jsonify(message="ERROR")
@@ -880,7 +908,7 @@ def streamTrack(user_id, release_id, track_id):
         begin = int(ranges[0])
         if len(ranges) > 1:
             end = int(ranges[1])
-        headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str((end - begin)+1)))
+        headers.add('Content-Range', 'bytes %s-%s/%s' % (str(begin), str(end), str((end - begin) + 1)))
     headers.add('Content-Length', str((end - begin) + 1))
     isFullRequest = begin == 0 and (end == (size - 1))
     isEndRangeRequest = begin > 0 and (end != (size - 1))
@@ -931,7 +959,9 @@ def streamTrack(user_id, release_id, track_id):
     response.expires = int(time()) + cachetimeout
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
-    logger.debug("Streaming To Ip [" + request.remote_addr + "] Mp3 [" + mp3File + "], Size [" + str(size) + "], Begin [" + str(begin) + "] End [" + str(end) + "]")
+    logger.debug(
+        "Streaming To Ip [" + request.remote_addr + "] Mp3 [" + mp3File + "], Size [" + str(size) + "], Begin [" + str(
+            begin) + "] End [" + str(end) + "]")
     return response
 
 
@@ -971,7 +1001,7 @@ def stats():
         artist = Artist.objects(id=a['_id']).first()
         top10ArtistsTracks[artist] = str(a['count']).zfill(4)
 
-    topRatedReleases = Release.objects().order_by('-Rating', 'FilePath', 'Title' )[:10]
+    topRatedReleases = Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]
 
     topRatedTracks = Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]
 
@@ -984,6 +1014,7 @@ def stats():
                            , mostRecentReleases=mostRecentReleases
                            , counts=counts)
 
+
 @app.route("/stats/play/<option>")
 @login_required
 def playStats(option):
@@ -991,7 +1022,7 @@ def playStats(option):
     tracks = []
     if option == "top25songs":
         for track in Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]:
-            release = Release.objects(Tracks__Track = track).first()
+            release = Release.objects(Tracks__Track=track).first()
             tracks.append(M3U.makeTrackInfo(user, release, track))
         if user.DoUseHTMLPlayer:
             session['tracks'] = tracks
@@ -1000,7 +1031,7 @@ def playStats(option):
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
     if option == "top10Albums":
-        for release in Release.objects().order_by('-Rating', 'FilePath', 'Title' )[:10]:
+        for release in Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]:
             user = User.objects(id=current_user.id).first()
             for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
                 tracks.append(M3U.makeTrackInfo(user, release, track.Track))
@@ -1158,8 +1189,8 @@ def jdefault(o):
 
 
 @app.route("/images/find/<type>/<type_id>", methods=['POST'])
-def findImageForType(type,type_id):
-    if type == 'r': # release
+def findImageForType(type, type_id):
+    if type == 'r':  # release
         release = Release.objects(id=type_id).first()
         if not release:
             return jsonify(message="ERROR")
@@ -1177,11 +1208,13 @@ def findImageForType(type,type_id):
         if it:
             for i in it:
                 data.append(i)
-        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault), mimetype="application/json")
-    elif type == 'a': # artist
+        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
+                        mimetype="application/json")
+    elif type == 'a':  # artist
         return jsonify(message="ERROR")
     else:
         return jsonify(message="ERROR")
+
 
 @app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
 def setCoverViaUrl(release_id):
@@ -1209,7 +1242,6 @@ def setCoverViaUrl(release_id):
         return jsonify(message="ERROR")
 
 
-api.add_resource(ArtistApi, '/api/v1.0/artist/<artist_id>')
 api.add_resource(ArtistListApi, '/api/v1.0/artists')
 api.add_resource(ReleaseListApi, '/api/v1.0/releases')
 api.add_resource(TrackListApi, '/api/v1.0/tracks')
@@ -1221,7 +1253,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(id):
-    return User.objects(id=id).first()
+    return session.query(User).filter(User.id == id).first()
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -1229,18 +1261,20 @@ def register():
     if request.method == 'GET':
         return render_template('register.html')
     pwd = bcrypt.generate_password_hash(request.form['password'])
-    user = User(Username=request.form['username'],
-                Password=pwd,
-                Email=request.form['email'],
-                RegisteredOn=arrow.utcnow().datetime)
-    user.save()
+    user = User()
+    user.username = request.form['username']
+    user.password = pwd
+    user.email = request.form['email']
+    user.registeredOn = arrow.utcnow().datetime
+    session.add(user)
+    session.commit()
     flash('User successfully registered')
     return redirect(url_for('login'))
 
 
 @app.route("/profile/edit", methods=['GET', 'POST'])
 def editProfile():
-    user = User.objects(id=current_user.id).first()
+    user = session.query(User).filter(User.id == current_user.id).first()
     if not user:
         return render_template('404.html'), 404
     if request.method == 'GET':
@@ -1253,7 +1287,7 @@ def editProfile():
     if password:
         encryptedPassword = bcrypt.generate_password_hash(password)
     email = request.form['email']
-    userWithDuplicateEmail = User.objects(Email=email, id__ne=user.id).first()
+    userWithDuplicateEmail = session.query(User).filter(User.email == email, User.id != user.id).first()
     if userWithDuplicateEmail:
         flash('Email Address Already Exists!', 'error')
         return redirect(url_for('profile/edit'))
@@ -1264,15 +1298,15 @@ def editProfile():
         img.thumbnail(thumbnailSize)
         b = io.BytesIO()
         img.save(b, "PNG")
-        user.Avatar.new_file()
-        user.Avatar.write(b.getvalue())
-        user.Avatar.close()
+        user.avatar.new_file()
+        user.avatar.write(b.getvalue())
+        user.avatar.close()
     if encryptedPassword:
-        user.Password = encryptedPassword
-    user.Email = email
-    user.DoUseHTMLPlayer = doUseHTMLPlayerSet
-    user.LastUpdated = arrow.utcnow().datetime
-    User.save(user)
+        user.password = encryptedPassword
+    user.email = email
+    user.doUseHTMLPlayer = doUseHTMLPlayerSet
+    user.lastUpdated = arrow.utcnow().datetime
+    session.commit()
     flash('Profile Edited successfully')
     return redirect(url_for("index"))
 
@@ -1287,11 +1321,11 @@ def login():
     remember_me = False
     if 'remember_me' in request.form:
         remember_me = True
-    registered_user = User.objects(Username=username).first()
+    registered_user = session.query(User).filter(User.username == username).first()
 
     if registered_user and bcrypt.check_password_hash(registered_user.Password, password):
         registered_user.LastLogin = arrow.utcnow().datetime
-        User.save(registered_user)
+        session.commit()
         login_user(registered_user, remember=remember_me)
         flash('Logged in successfully')
         return redirect_back('index')
@@ -1349,13 +1383,13 @@ def collections():
         collections.append({
             'id': collection.id,
             'Name': collection.Name,
-            'ReleaseCount': 0 #collection.Releases # This is crazy slow
+            'ReleaseCount': 0  # collection.Releases # This is crazy slow
         })
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
-    return render_template('collections.html', collections=collections, notFoundEntryInfos = notFoundEntryInfos)
+    return render_template('collections.html', collections=collections, notFoundEntryInfos=notFoundEntryInfos)
 
 
 @app.route('/collection/<collection_id>')
@@ -1383,7 +1417,8 @@ def collection(collection_id):
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
-    return render_template('collection.html', collection=collection, counts=counts, notFoundEntryInfos = notFoundEntryInfos)
+    return render_template('collection.html', collection=collection, counts=counts,
+                           notFoundEntryInfos=notFoundEntryInfos)
 
 
 @app.route("/collection/play/<collection_id>")
@@ -1409,7 +1444,7 @@ def playCollection(collection_id):
 def updateAllCollections():
     try:
         notFoundEntryInfos = []
-        for collection in Collection.objects(ListInCSVFormat__ne=None,ListInCSV__ne=None):
+        for collection in Collection.objects(ListInCSVFormat__ne=None, ListInCSV__ne=None):
             i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
             i.importCsvData(io.StringIO(collection.ListInCSV))
             for i in i.notFoundEntryInfo:
@@ -1419,6 +1454,7 @@ def updateAllCollections():
     except:
         logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
+
 
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
@@ -1437,18 +1473,21 @@ def updateCollection(collection_id):
         logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
 
+
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route("/singletrackreleasefinder", defaults={ 'count': 100 })
+
+@app.route("/singletrackreleasefinder", defaults={'count': 100})
 @app.route("/singletrackreleasefinder/<count>")
 @login_required
 def singletrackreleasefinder(count):
     count = int(count)
-    singleTrackReleases = Release.objects(__raw__={ 'Tracks' : { '$size': 1}}).order_by('Title', 'Artist.Name')
-    return render_template('singletrackreleasefinder.html', total= singleTrackReleases.count(), singleTrackReleases=singleTrackReleases[:count])
+    singleTrackReleases = Release.objects(__raw__={'Tracks': {'$size': 1}}).order_by('Title', 'Artist.Name')
+    return render_template('singletrackreleasefinder.html', total=singleTrackReleases.count(),
+                           singleTrackReleases=singleTrackReleases[:count])
 
 
 @app.route('/dupfinder')
@@ -1457,7 +1496,7 @@ def dupFinder():
     artists = []
     for a in Artist.objects():
         artists.append({
-            'id' : a.id,
+            'id': a.id,
             'Name': a.Name,
             'SortName': a.SortName
         })
@@ -1478,17 +1517,19 @@ def dupFinder():
                     aSortname = sn.lower().strip()
                 artistName = artist['Name'].lower().strip()
                 artistSortName = None
-                sn =  artist['SortName']
+                sn = artist['SortName']
                 if sn:
-                    artistSortName =sn.lower().strip()
+                    artistSortName = sn.lower().strip()
                 if (artistName == aName or
-                        (aSortname and artistSortName and artistSortName == aSortname) or (artistSortName and artistSortName == aName)) and artist['id'] != a['id']:
+                        (aSortname and artistSortName and artistSortName == aSortname) or (
+                            artistSortName and artistSortName == aName)) and artist['id'] != a['id']:
                     duplicateArtists.append({
                         'artist': artist,
                         'a': a
                     })
 
     return render_template('dupfinder.html', duplicateArtists=duplicateArtists)
+
 
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
 @login_required
@@ -1532,6 +1573,7 @@ def mergeArtists(merge_into_id, merge_id):
         logger.exception("Error Merging Artists")
         return jsonify(message="ERROR")
 
+
 @app.route("/player")
 @login_required
 def player():
@@ -1540,6 +1582,12 @@ def player():
 
 
 class WebSocket(WebSocketHandler):
+    # def data_received(self, chunk):
+    #     pass
+    #
+    # def on_message(self, message):
+    #     pass
+
     def open(self, *args):
         clients.append(self)
 
@@ -1549,20 +1597,18 @@ class WebSocket(WebSocketHandler):
 
 if __name__ == '__main__':
     admin = admin.Admin(app, 'Roadie: Admin', template_mode='bootstrap3')
-    admin.add_view(RoadieArtistModelView(Artist))
-    admin.add_view(RoadieCollectionModelView(Collection))
-    admin.add_view(RoadieModelView(Label))
-    admin.add_view(RoadiePlaylistModelView(Playlist))
-    admin.add_view(RoadieReleaseModelView(Release))
-    admin.add_view(RoadieTrackModelView(Track))
-    admin.add_view(RoadieModelAdminRequiredView(User, category='User'))
-    admin.add_view(RoadieUserArtistModelView(UserArtist, category='User'))
-    admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User'))
-    admin.add_view(RoadieUserTrackModelView(UserTrack, category='User'))
-    admin.add_view(RoadieModelView(ArtistType, category='Reference Fields'))
-    admin.add_view(RoadieModelView(Genre, category='Reference Fields'))
-    admin.add_view(RoadieModelView(Quality, category='Reference Fields'))
-    admin.add_view(RoadieModelAdminRequiredView(UserRole, category='Reference Fields'))
+    admin.add_view(RoadieArtistModelView(Artist, session))
+    admin.add_view(RoadieCollectionModelView(Collection, session))
+    admin.add_view(RoadieModelView(Label, session))
+    admin.add_view(RoadiePlaylistModelView(Playlist, session))
+    admin.add_view(RoadieReleaseModelView(Release, session))
+    admin.add_view(RoadieTrackModelView(Track, session))
+    admin.add_view(RoadieModelAdminRequiredView(User, category='User', session=session))
+    admin.add_view(RoadieUserArtistModelView(UserArtist, category='User', session=session))
+    admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User', session=session))
+    admin.add_view(RoadieUserTrackModelView(UserTrack, category='User', session=session))
+    admin.add_view(RoadieModelView(Genre, category='Reference Fields', session=session))
+    admin.add_view(RoadieModelAdminRequiredView(UserRole, category='Reference Fields', session=session))
     container = WSGIContainer(app)
     server = Application([
         (r'/websocket/', WebSocket),

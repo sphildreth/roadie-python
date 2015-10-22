@@ -1,28 +1,30 @@
-from viewModels.RoadieModelView import RoadieModelView
+from flask_admin.contrib.sqla import ModelView
 import os
 import json
 from resources.id3 import ID3
 
+from viewModels.RoadieModelView import RoadieModelView
+
 class RoadieReleaseModelView(RoadieModelView):
     form_subdocuments = {
-        'Labels': {
+        'labels': {
             'form_subdocuments': {
                 None: {
                     'form_ajax_refs': {
                         'Label': {
-                            'fields': ['Name'],
+                            'fields': ['name'],
                             'page_size': 10
                         }
                     }
                 }
             }
         },
-        'Tracks': {
+        'tracks': {
             'form_subdocuments': {
                 None: {
                     'form_ajax_refs': {
                         'Track': {
-                            'fields': ['Title'],
+                            'fields': ['title'],
                             'page_size': 10
                         }
                     }
@@ -32,8 +34,8 @@ class RoadieReleaseModelView(RoadieModelView):
     }
 
     form_ajax_refs = {
-        'Artist': {
-            'fields': ['Name'],
+        'artist': {
+            'fields': ['name'],
             'page_size': 10
         }
     }

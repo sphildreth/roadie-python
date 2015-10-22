@@ -8,6 +8,5 @@ class PlaylistTrack(Base):
     trackId = Column(Integer, ForeignKey("track.id"))
     playListId = Column(Integer, ForeignKey("playlist.id"))
 
-
     def __unicode__(self):
         return self.playlist.name + " " + self.listNumber + " " + self.track.title

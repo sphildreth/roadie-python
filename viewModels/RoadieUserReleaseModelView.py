@@ -4,8 +4,8 @@ from viewModels.RoadieModelView import RoadieModelAdminRequiredView
 class RoadieUserReleaseModelView(RoadieModelAdminRequiredView):
 
     form_ajax_refs = {
-        'Release': {
-            'fields': ['Title'],
+        'release': {
+            'fields': ['title'],
             'page_size': 10
         }
     }

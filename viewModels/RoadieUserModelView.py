@@ -2,7 +2,7 @@ from viewModels.RoadieModelView import RoadieModelView
 
 class RoadieUserModelView(RoadieModelView):
 
-    form_excluded_columns = ('Password')
+    form_excluded_columns = ('password')
 
-    column_list = ('Username','Email', 'RegisteredOn','LastUpdated','LastLogin')
+    column_list = ('username', 'email', 'registeredOn', 'lastUpdated', 'lastLogin')
 

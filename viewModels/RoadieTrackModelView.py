@@ -3,8 +3,8 @@ from viewModels.RoadieModelView import RoadieModelView
 
 class RoadieTrackModelView(RoadieModelView):
     form_ajax_refs = {
-        'Artist': {
-            'fields': ['Name'],
+        'artist': {
+            'fields': ['name'],
             'page_size': 10
         }
     }

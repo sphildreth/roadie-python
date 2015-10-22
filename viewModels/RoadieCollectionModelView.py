@@ -3,12 +3,12 @@ from viewModels.RoadieModelView import RoadieModelView
 
 class RoadieCollectionModelView(RoadieModelView):
     form_subdocuments = {
-        'Releases': {
+        'releases': {
             'form_subdocuments': {
                 None: {
                     'form_ajax_refs': {
-                        'Release': {
-                            'fields': ['Title'],
+                        'release': {
+                            'fields': ['title'],
                             'page_size': 10
                         }
                     }
@@ -18,8 +18,8 @@ class RoadieCollectionModelView(RoadieModelView):
     }
 
     form_ajax_refs = {
-        'Maintainer': {
-            'fields': ['Username'],
+        'user': {
+            'fields': ['username'],
             'page_size': 10
         }
     }

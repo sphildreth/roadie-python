@@ -4,6 +4,8 @@ from sqlalchemy.orm import relationship
 
 from resources.models.ModelBase import Base
 from resources.models.UserRole import UserRole
+from resources.models.Collection import Collection
+from resources.models.Playlist import Playlist
 
 usersInRolesTable = Table('usersInRoles', Base.metadata,
                           Column('userId', Integer, ForeignKey('user.id'), index=True),
@@ -21,6 +23,9 @@ class User(Base):
     avatar = Column(BLOB())
     doUseHtmlPlayer = Column(Boolean(), default=True)
     roles = relationship(UserRole, secondary=usersInRolesTable, backref="user")
+
+    collectionMaintainer = relationship(Collection, backref="user")
+    playlistUser = relationship(Playlist, backref="user")
 
     def get_id(self):
         return self.id
@@ -41,7 +46,7 @@ class User(Base):
         return UserRole(name="Admin") in self.roles or UserRole(name="Editor") in self.roles
 
     def __repr__(self):
-        return '<User %r>' % (self.username)
+        return '<User %r>' % self.username
 
     def __unicode__(self):
         return self.username

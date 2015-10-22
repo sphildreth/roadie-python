@@ -9,8 +9,7 @@ from shutil import move
 
 import arrow
 from PIL import Image
-# from dateutil.parser import *
-from mongoengine import connect
+import gc
 
 from resources.common import *
 from resources.pathInfo import PathInfo
@@ -250,6 +249,7 @@ class Processor(ProcessorBase):
                         self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                     except OSError:
                         pass
+            gc.collect()
         elapsedTime = arrow.utcnow().datetime - startTime
         self.session.commit()
         self.logger.debug("-> MP3 Folders Processed [" + ",".join([x for x in mp3FoldersProcessed]) + "]")

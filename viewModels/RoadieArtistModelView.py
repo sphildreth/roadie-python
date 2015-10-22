@@ -2,11 +2,11 @@ from viewModels.RoadieModelView import RoadieModelView
 
 class RoadieArtistModelView(RoadieModelView):
 
-    form_excluded_columns = ('Rating')
+    form_excluded_columns = ('rating')
 
     form_ajax_refs = {
-        'AssociatedArtists': {
-            'fields': ['Name'],
+        'associatedArtists': {
+            'fields': ['name'],
             'page_size': 10
         }
     }

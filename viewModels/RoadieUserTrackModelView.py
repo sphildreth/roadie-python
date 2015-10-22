@@ -4,12 +4,12 @@ from viewModels.RoadieModelView import RoadieModelAdminRequiredView
 class RoadieUserTrackModelView(RoadieModelAdminRequiredView):
 
     form_ajax_refs = {
-        'Release': {
-            'fields': ['Title'],
+        'release': {
+            'fields': ['title'],
             'page_size': 10
         },
-        'Track': {
-            'fields': ['Title'],
+        'track': {
+            'fields': ['title'],
             'page_size': 10
         }
     }

@@ -1,9 +1,10 @@
 import datetime
-from flask_admin.contrib.mongoengine import ModelView
+from flask_admin.contrib.sqla import ModelView
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from widgets.ckeditor import CKTextAreaField
 from flask import redirect, url_for, request
+
 
 class RoadieModelView(ModelView):
     form_overrides = {
@@ -13,7 +14,7 @@ class RoadieModelView(ModelView):
     edit_template = 'ckeditor.html'
 
     def on_model_change(self, form, model, is_created):
-        if 'LastUpdated' in model:
+        if 'lastUpdated' in model:
             model.LastUpdated = datetime.datetime.now()
 
     def is_accessible(self):

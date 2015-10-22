@@ -42,7 +42,7 @@ class Track(Base):
     tags = Column(ScalarListType(separator="|"))
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
-    playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable)
+    playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable, backref="track")
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
