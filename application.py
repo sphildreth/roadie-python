@@ -32,6 +32,8 @@ from resources.models.Artist import Artist
 from resources.models.Collection import Collection
 
 from resources.models.Genre import Genre
+from resources.models.Collection import Collection
+from resources.models.CollectionRelease import CollectionRelease
 from resources.models.Label import Label
 from resources.models.Release import Release
 from resources.models.Playlist import Playlist
@@ -149,7 +151,7 @@ def index():
                      .filter(Release.random >= randomSeed1, Release.random <= randomSeed2) \
                      .order_by(Release.random)[:12]:
         releases.append({
-            'id': r.id,
+            'id': r.roadieId,
             'ArtistName': r.artist.name,
             'Title': r.title,
             'UserRating': 0
@@ -186,9 +188,9 @@ def randomRelease(count):
         releases = []
         for release in session.query(Release).filder(Release.random >= randomSeed1).filter(Release.random <= randomSeed2).order_by(Release.random)[:int(count)]:
             releaseInfo = {
-                'id': str(release.id),
-                'ArtistName': release.Artist.Name,
-                'Title': release.Title,
+                'id': str(release.roadieId),
+                'ArtistName': release.artist.name,
+                'Title': release.title,
                 'UserRating': 0
             }
             releases.append(releaseInfo)
@@ -744,27 +746,27 @@ def setReleaseImage(release_id, image_id):
         return jsonify(message="ERROR")
 
 
-@app.route('/release/<release_id>')
+@app.route('/release/<roadieId>')
 @login_required
-def release(release_id):
-    release = Release.objects(id=release_id).first()
+def release(roadieId):
+    release = session.query(Release).filter(Release.roadieId == roadieId).first()
     if not release:
         return render_template('404.html'), 404
-    user = User.objects(id=current_user.id).first()
-    userRelease = UserRelease.objects(User=user, Release=release).first()
-    collections = Collection.objects(Releases__Release=release).all()
+    user = session.query(User).filter(User.id == current_user.id).first()
+    userRelease = session.query(UserRelease).filter(UserRelease.userId == user.id).filter(UserRelease.releaseId == release.id).first()
+    collections = session.query(CollectionRelease).filter(CollectionRelease.releaseId == release.id).all()
     collectionReleases = []
     if collections:
         for collection in collections:
             for crt in collection.Releases:
-                if crt.Release.id == release.id:
-                    crt.CollectionId = collection.id
-                    crt.CollectionName = collection.Name
+                if crt.release.id == release.id:
+                    crt.collectionId = collection.id
+                    crt.collectionName = collection.Name
                     collectionReleases.append(crt)
-    for track in release.Tracks:
-        userTrack = UserTrack.objects(User=user, Track=track.Track).first()
+    for track in release.tracks:
+        userTrack = session.query(UserTrack).filter(UserTrack.userId == user.id).filter(UserTrack.trackId == track.id).first()
         if userTrack:
-            track.UserRating = userTrack.Rating
+            track.userRating = userTrack.rating
     return render_template('release.html', release=release, collectionReleases=collectionReleases,
                            userRelease=userRelease)
 
@@ -1114,17 +1116,17 @@ def getArtistImage(artist_id, grid_id, height, width):
 
 @app.route("/images/user/avatar/<user_id>")
 def getUserAvatarThumbnailImage(user_id):
-    user = User.objects(id=user_id).first()
+    user = session.query(User).filter(User.id == user_id).first()
     try:
         if user:
-            image = user.Avatar.read()
+            image = user.avatar.read()
             img = Image.open(io.BytesIO(image))
             img.thumbnail(avatarSize)
             b = io.BytesIO()
             img.save(b, "PNG")
             ba = b.getvalue()
             etag = hashlib.sha1(str(user.LastUpdated).encode('utf-8')).hexdigest()
-            return makeImageResponse(ba, user.LastUpdated, 'avatar.png', etag, "image/png")
+            return makeImageResponse(ba, user.lastUpdated, 'avatar.png', etag, "image/png")
     except:
         return send_file("static/img/user.png",
                          attachment_filename='avatar.png',
@@ -1168,16 +1170,16 @@ def getArtistThumbnailImage(artist_id):
                          mimetype='image/gif')
 
 
-@app.route("/images/release/thumbnail/<release_id>")
-def getReleaseThumbnailImage(release_id):
-    release = Release.objects(id=release_id).first()
+@app.route("/images/release/thumbnail/<roadieId>")
+def getReleaseThumbnailImage(roadieId):
+    release = session.query(Release).filter(Release.roadieId == roadieId).first()
     try:
         if release:
-            image = release.Thumbnail.read()
+            image = release.thumbnail.read()
             if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
-            etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(image, release.LastUpdated, "r_tn_" + str(release.id) + ".jpg", etag)
+            etag = hashlib.sha1(('%s%s' % (release.id, release.lastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(image, release.lastUpdated, "r_tn_" + str(release.id) + ".jpg", etag)
     except:
         return send_file("static/img/release.gif",
                          attachment_filename='thumbnail.jpg',
@@ -1325,7 +1327,7 @@ def login():
         remember_me = True
     registered_user = session.query(User).filter(User.username == username).first()
 
-    if registered_user and bcrypt.check_password_hash(registered_user.Password, password):
+    if registered_user and bcrypt.check_password_hash(registered_user.password, password):
         registered_user.LastLogin = arrow.utcnow().datetime
         session.commit()
         login_user(registered_user, remember=remember_me)
