@@ -6,6 +6,7 @@ from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
+from resources.models.UserRelease import UserRelease
 from resources.models.Image import Image
 
 releaseGenreTable = Table('releaseGenreTable', Base.metadata,
@@ -50,6 +51,7 @@ class Release(Base):
     releaseLabels = relationship(ReleaseLabel, backref="release")
     media = relationship(ReleaseMedia, backref="release")
     images = relationship(Image)
+    userRatings = relationship(UserRelease, backref="release")
 
     def isLiveOrCompilation(self):
         """

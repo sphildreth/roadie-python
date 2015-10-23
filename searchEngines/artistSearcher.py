@@ -1,8 +1,8 @@
 import io
 import random
 import uuid
-import wikipedia
 
+import wikipedia
 from PIL import Image
 
 from resources.common import *
@@ -15,8 +15,6 @@ from searchEngines.spotify import Spotify
 from searchEngines.allMusic import AllMusicGuide
 from searchEngines.models.Artist import Artist
 from searchEngines.models.Image import Image as ArtistImage
-
-from resources.models.ModelBase import ModelBase
 
 
 class ArtistSearcher(object):
@@ -104,11 +102,12 @@ class ArtistSearcher(object):
 
                 self.cache[name] = artist
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
+            self.logger.debug("searchForArtist Name [" + printableName + "] Found [" \
+                              + (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
+            return artist
         except:
             self.logger.exception("Error In searchForArtist")
-        self.logger.debug("searchForArtist Name [" + printableName + "] Found [" +
-                          (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
-        return artist
+        return None
 
     @staticmethod
     def _mergeReleaseLists(left, right):
@@ -145,8 +144,8 @@ class ArtistSearcher(object):
         """
         if not artist:
             return None
-        releases = []
         try:
+            releases = []
             iTunesSearcher = iTunes(self.referer)
             if iTunesSearcher.IsActive:
                 releases = self._mergeReleaseLists(releases, iTunesSearcher.searchForRelease(artist, titleFilter))
@@ -157,7 +156,8 @@ class ArtistSearcher(object):
             if lastFMSearcher.IsActive and releases:
                 mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
                 if mbIdList:
-                    releases = self._mergeReleaseLists(releases, lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
+                    releases = self._mergeReleaseLists(releases,
+                                                       lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
             spotifySearcher = Spotify(self.referer)
             if spotifySearcher.IsActive:
                 releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
@@ -195,7 +195,8 @@ class ArtistSearcher(object):
                     if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
                         filteredReleases.append(release)
                 releases = filteredReleases
+            return releases
         except:
             self.logger.exception("Error In searchForArtistReleases")
             pass
-        return releases
+        return None

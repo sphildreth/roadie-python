@@ -1,6 +1,7 @@
 import time
 import hashlib
 import json
+from urllib.error import HTTPError
 from io import StringIO
 from urllib import request, parse
 
@@ -62,6 +63,8 @@ class AllMusicGuide(SearchEngineBase):
                         s = StringIO((f.read().decode('utf-8')))
                         o = json.load(s)
                         if o:
+                            if not 'searchResponse' in o or not 'results' in o['searchResponse']:
+                                return None
                             amgArtist = o['searchResponse']['results'][0]['name']
                             if amgArtist:
                                 artist = Artist(name=amgArtist['name'])
@@ -127,6 +130,8 @@ class AllMusicGuide(SearchEngineBase):
                                         if not ([g for g in artist.genres if isEqual(g.name, genreName)]):
                                             artist.genres.append(Genre(name=genreName))
                                             # TODO associateWith
+                    except HTTPError:
+                        print("Spotify: Http Error")
                     except:
                         self.logger.exception("AllMusicGuide: Error In lookupArtist")
                         pass

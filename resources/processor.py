@@ -74,7 +74,7 @@ class Processor(ProcessorBase):
         return False
 
     # Determine if the found file should be moved into the library; check for existing and see if better
-    def shouldMoveToLibrary(self, artist, artistId, id3, mp3):
+    def shouldMoveToLibrary(self, artist, id3, mp3):
         try:
             fileFolderLibPath = self.albumFolder(artist, id3.year, id3.album)
             os.makedirs(fileFolderLibPath, exist_ok=True)
@@ -88,17 +88,17 @@ class Processor(ProcessorBase):
                 existingId3 = ID3(fullFileLibPath, self.processingOptions)
                 if not existingId3.isValid():
                     return True
-                existingId3Hash = hashlib.md5((str(artistId) + str(existingId3)).encode('utf-8')).hexdigest()
-                id3Hash = hashlib.md5(str(id3).encode('utf-8')).hexdigest()
+                existingId3Hash = hashlib.md5((str(artist.roadieId) + str(existingId3)).encode('utf-8')).hexdigest()
+                id3Hash = hashlib.md5((str(artist.roadieId) + str(id3)).encode('utf-8')).hexdigest()
                 if existingId3Hash == id3Hash:
                     # If the hashes are equal its Likely the same file
                     return False
-                # If The existing is longer or has a high bitrate then use existing
+                # If The existing is longer or has a higher bitrate then use existing
                 if existingId3.length > id3.length and existingId3.bitrate > id3.bitrate:
                     return False
             return True
         except:
-            self.logger.exception()
+            self.logger.exception("shouldMoveToLibrary: Id3 [" + str(id3) + "]")
             return False
 
     def readImageThumbnailBytesFromFile(self, path):
@@ -195,6 +195,9 @@ class Processor(ProcessorBase):
                                 self.logger.debug(
                                     "Skipping Processing Track [" + mp3 + "], Artist [" + str(artist) + "] Is Locked")
                                 continue
+                            if not artist:
+                                self.logger.warn("! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + mp3 + "]")
+                                continue
                             # Get the Release
                             if lastID3Album != id3.album:
                                 release = None
@@ -207,6 +210,10 @@ class Processor(ProcessorBase):
                                                                          string.capwords(id3.album),
                                                                          1,
                                                                          id3.year)
+                                    if not release:
+                                        self.logger.warn("! Unable to Create Album [" + id3.album +
+                                                         "] For Track [" + mp3 + "]")
+                                        continue
                                     if release:
                                         if id3.imageBytes:
                                             try:
@@ -220,7 +227,7 @@ class Processor(ProcessorBase):
                                         release.status = TrackStatus.ProcessorAdded
                                         self.releaseFactory.add(release)
                                         self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
-                            if self.shouldMoveToLibrary(artist, artist.id, id3, mp3):
+                            if self.shouldMoveToLibrary(artist, id3, mp3):
                                 newMp3 = self.moveToLibrary(artist, id3, mp3)
                                 head, tail = os.path.split(newMp3)
                                 newMp3Folder = head
@@ -249,6 +256,7 @@ class Processor(ProcessorBase):
                         self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                     except OSError:
                         pass
+            self.session.commit()
             gc.collect()
         elapsedTime = arrow.utcnow().datetime - startTime
         self.session.commit()

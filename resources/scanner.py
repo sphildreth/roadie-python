@@ -101,7 +101,7 @@ class Scanner(ProcessorBase):
                             self._markTrackMissing(track.id, track.title, filename)
                     else:
                         try:
-                            id3Hash = self._makeTrackHash(track.Artist.id, str(id3))
+                            id3Hash = self._makeTrackHash(artist.roadieId, str(id3))
                             if id3Hash != track.Hash:
                                 if not self.readOnly:
                                     self.logger.warn("x Hash Mismattch [" + track.Title + "]")

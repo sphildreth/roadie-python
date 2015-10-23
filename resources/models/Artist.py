@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.Release import Release
+from resources.models.UserArtist import UserArtist
 from resources.models.Image import Image
 
 artistAssociationTable = Table('artistAssociation', Base.metadata,
@@ -49,6 +50,8 @@ class Artist(Base):
     releases = relationship(Release, backref="artist")
     images = relationship(Image)
     genres = relationship(Genre, secondary=artistGenreTable, backref="artist")
+
+    userRatings = relationship(UserArtist, backref="artist")
 
     associated_artists = relationship("Artist",
                                       secondary="artistAssociation",

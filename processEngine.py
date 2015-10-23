@@ -1,12 +1,19 @@
 import os
 import json
 import argparse
+import sys
+import codecs
 from resources.processor import Processor
 from resources.validator import Validator
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
+
+if sys.stdout.encoding != 'cp850':
+  sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
+if sys.stderr.encoding != 'cp850':
+  sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
 
 p = argparse.ArgumentParser(description='Process Inbound and Library Folders For Updates.')
 p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',

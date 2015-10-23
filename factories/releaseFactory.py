@@ -1,15 +1,8 @@
-import os
-import json
-import hashlib
 import random
 import uuid
-import arrow
 
 from sqlalchemy.sql import func, and_, or_, text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-from sqlalchemy import create_engine, update
 
 from resources.common import *
 from resources.models.Artist import Artist
@@ -20,7 +13,6 @@ from resources.models.Release import Release
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track
-
 from resources.logger import Logger
 from searchEngines.artistSearcher import ArtistSearcher
 
@@ -69,30 +61,35 @@ class ReleaseFactory(object):
         :type artist: Artist
         :type title: str
         """
-        if not title or not artist:
-            return None
-        printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
-        printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
-        release = self._getFromDatabaseByTitle(artist, title)
-        if not release or forceRefresh:
-            if not release:
-                self.logger.info("Release For Artist [" + printableArtistName +
-                                 "] Not Found By Title [" + printableTitle + "]")
-            else:
-                self.logger.info("Refreshing Release [" + printableTitle + "] For Artist [" + printableArtistName)
-            release = Release()
-            srList = self.searcher.searchForArtistReleases(artist, title)
-            if not srList:
-                if not srList:
+        try:
+            if not title or not artist:
+                return None
+            printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
+            printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
+            release = self._getFromDatabaseByTitle(artist, title)
+            if not release or forceRefresh:
+                if not release:
                     self.logger.info("Release For Artist [" + printableArtistName +
                                      "] Not Found By Title [" + printableTitle + "]")
-                    return None
-            sr = srList[0]
-            if sr:
-                release = self._createDatabaseModelFromSearchModel(artist, title, sr)
-            self.session.add(release)
-            self.session.commit()
-        return release
+                else:
+                    self.logger.info("Refreshing Release [" + printableTitle + "] For Artist [" + printableArtistName)
+                release = Release()
+                srList = self.searcher.searchForArtistReleases(artist, title)
+                if not srList:
+                    if not srList:
+                        self.logger.info("Release For Artist [" + printableArtistName +
+                                         "] Not Found By Title [" + printableTitle + "]")
+                        return None
+                sr = srList[0]
+                if sr:
+                    release = self._createDatabaseModelFromSearchModel(artist, title, sr)
+                self.session.add(release)
+                self.session.commit()
+            return release
+        except:
+            self.logger.exception("MusicBrainz: Error In LookupArtist")
+            pass
+        return None
 
     def _createDatabaseModelFromSearchModel(self, artist, title, sr):
         """
@@ -132,7 +129,7 @@ class ReleaseFactory(object):
         release.thumbnail = sr.thumbnail
         release.profile = sr.profile
         # TODO
-    #        release.releaseType = sr.releaseType
+        #        release.releaseType = sr.releaseType
         release.iTunesId = sr.iTunesId
         release.amgId = sr.amgId
         release.lastFMId = sr.lastFMId
@@ -251,11 +248,11 @@ class ReleaseFactory(object):
         cleanedTitle = createCleanedName(title)
         stmt = or_(func.lower(Release.title) == title,
                    text("(lower(alternateNames) == '" + title + "'" + ""
-                        " OR alternateNames like '" + title + "|%'" +
+                                                                      " OR alternateNames like '" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "')"),
                    text("(alternateNames == '" + cleanedTitle + "'" + ""
-                        " OR alternateNames like '" + cleanedTitle + "|%'" +
+                                                                      " OR alternateNames like '" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "')")
                    )
@@ -267,7 +264,7 @@ class ReleaseFactory(object):
         name = name.lower().strip().replace("'", "''")
         stmt = or_(func.lower(Label.name) == name,
                    text("(lower(alternateNames) == '" + name + "'" + ""
-                        " OR alternateNames like '" + name + "|%'" +
+                                                                     " OR alternateNames like '" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "')"))
         return self.session.query(Label).filter(stmt).first()

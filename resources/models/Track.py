@@ -6,6 +6,7 @@ from sqlalchemy.orm import relationship
 
 from resources.models.ModelBase import Base
 from resources.models.PlaylistTrack import PlaylistTrack
+from resources.models.UserTrack import UserTrack
 
 trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
                                 Column('trackId', Integer, ForeignKey('track.id'), index=True),
@@ -43,6 +44,7 @@ class Track(Base):
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable, backref="track")
+    userRatings = relationship(UserTrack, backref="track")
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

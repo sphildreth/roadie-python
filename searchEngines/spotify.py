@@ -3,7 +3,7 @@ import threading
 from queue import Queue
 from io import StringIO
 from urllib import request, parse
-from requests.exceptions import HTTPError
+from urllib.error import HTTPError
 
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
@@ -94,8 +94,8 @@ class Spotify(SearchEngineBase):
         except HTTPError:
             print("Spotify: Http Error")
         except:
-            self.logger.exception("Spotify: Error In searchForRelease")
-            pass
+            self.logger.exception('Spotify: Error In searchForRelease')
+        return None
 
     def threader(self):
         while True:

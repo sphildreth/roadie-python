@@ -1,11 +1,11 @@
-aniso8601==1.0.0
+aniso8601==1.1.0
 appdirs==1.4.0
-arrow==0.6.0
+arrow==0.7.0
 asyncwsgi==0.1.0
 bcrypt==2.0.0
 beautifulsoup4==4.4.1
 blinker==1.4
-cffi==1.2.1
+cffi==1.3.0
 DateTime==4.0.1
 Flask==0.10.1
 Flask-Admin==1.3.0
@@ -31,7 +31,7 @@ MarkupSafe==0.23
 musicbrainzngs==0.6.dev0
 mutagen==1.31
 nose==1.3.7
-numpy==1.10.0.post2
+numpy==1.10.1
 object-mapper==1.0.3
 pandas==0.17.0
 passlib==1.6.5
@@ -41,9 +41,9 @@ pycparser==2.14
 python-bcrypt==0.3.1
 python-dateutil==2.4.2
 pytz==2015.6
-requests==2.8.0
+requests==2.8.1
 six==1.10.0
-SQLAlchemy==1.0.8
+SQLAlchemy==1.0.9
 SQLAlchemy-Utils==0.31.0
 tornado==4.2.1
 virtualenv==13.1.2

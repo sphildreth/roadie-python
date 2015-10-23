@@ -159,22 +159,22 @@ def index():
 
 @app.route("/release/setTitle/<release_id>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
 def setReleaseTitle(release_id, new_title, set_tracks_title, create_alternate_name):
-    release = Release.objects(id=release_id).first()
+    setReleaseTitle = session.query(Release).filter(Release.id == release_id).first()
     user = User.objects(id=current_user.id).first()
     now = arrow.utcnow().datetime
-    if not release or not user or not new_title:
+    if not setReleaseTitle or not user or not new_title:
         return jsonify(message="ERROR")
-    oldTitle = release.Title
-    release.Title = new_title
-    release.LastUpdated = now
-    if create_alternate_name == "true" and not new_title in release.AlternateNames:
-        release.AlternateNames.append(oldTitle)
-    Release.save(release)
+    oldTitle = setReleaseTitle.Title
+    setReleaseTitle.Title = new_title
+    setReleaseTitle.LastUpdated = now
+    if create_alternate_name == "true" and not new_title in setReleaseTitle.AlternateNames:
+        setReleaseTitle.AlternateNames.append(oldTitle)
+    session.commit()
     if set_tracks_title == "true":
-        for track in release.Tracks:
+        for track in setReleaseTitle.Tracks:
             trackPath = os.path.join(track.Track.FilePath, track.Track.FileName)
             id3 = ID3(trackPath, config)
-            id3.updateFromRelease(release, track)
+            id3.updateFromRelease(setReleaseTitle, track)
     return jsonify(message="OK")
 
 
@@ -184,8 +184,7 @@ def randomRelease(count):
         randomSeed1 = random.randint(1, 1000000)
         randomSeed2 = random.randint(randomSeed1, 1000000)
         releases = []
-        for release in Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[
-                       :int(count)]:
+        for release in session.query(Release).filder(Release.random >= randomSeed1).filter(Release.random <= randomSeed2).order_by(Release.random)[:int(count)]:
             releaseInfo = {
                 'id': str(release.id),
                 'ArtistName': release.Artist.Name,
@@ -216,18 +215,17 @@ def browseReleases():
 def randomizer(type):
     randomSeed1 = random.randint(1, 1000000)
     randomSeed2 = random.randint(randomSeed1, 1000000)
-    user = User.objects(id=current_user.id).first()
+    user = session.query(User).filter(User.id == current_user.id).first()
     if type == "artist":
-        artist = Artist.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random').first()
+        artist = session.query(Artist).filter(Artist.random >= randomSeed1).filter(Artist.random <= randomSeed2).order_by(Release.random).first()
         return playArtist(artist.id, "0")
     elif type == "release":
-        release = Release.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random').first()
+        release = session.query(Release).filter(Release.random >= randomSeed1).filter(Release.random <= randomSeed2).order_by(Release.random).first()
         return playRelease(release.id)
     elif type == "tracks":
         tracks = []
-        for track in Track.objects(Q(Random__gte=randomSeed1) & Q(Random__lte=randomSeed2)).order_by('Random')[:35]:
-            release = Release.objects(Tracks__Track=track).first()
-            t = M3U.makeTrackInfo(user, release, track)
+        for track in session.query(Track).filter(Track.random >= randomSeed1).filter(Track.random <= randomSeed2).order_by(Track.Release)[:35]:
+            t = M3U.makeTrackInfo(user, track.release, track)
             if t:
                 tracks.append(t)
         if user.DoUseHTMLPlayer:
@@ -238,60 +236,54 @@ def randomizer(type):
                          attachment_filename="playlist.m3u")
 
 
-@app.route('/db/reseed', methods=['POST'])
-@login_required
-def reseed():
-    try:
-        now = arrow.utcnow().datetime
-        for artist in Artist.objects():
-            try:
-                artist.Random = random.randint(1, 1000000)
-                artist.Last = now
-                Artist.save(artist)
-            except:
-                logger.exception("Error In Reseeding Artist")
-                pass
-        logger.debug("Completed Reseeding Artists")
-        for release in Release.objects():
-            try:
-                release.Random = random.randint(1, 1000000)
-                release.Last = now
-                Release.save(release)
-            except:
-                logger.exception("Error In Reseeding Release")
-                pass
-        logger.debug("Completed Reseeding Releases")
-        for track in Track.objects():
-            try:
-                track.Random = random.randint(1, 1000000)
-                track.Last = now
-                Track.save(track)
-            except:
-                logger.exception("Error In Reseeding Track")
-                pass
-        logger.debug("Completed Reseeding Tracks")
-        return jsonify(message="OK")
-    except:
-        logger.exception("Error In Reseeding Random")
-        return jsonify(message="ERROR")
+# @app.route('/db/reseed', methods=['POST'])
+# @login_required
+# def reseed():
+#     try:
+#         now = arrow.utcnow().datetime
+#         for artist in Artist.objects():
+#             try:
+#                 artist.Random = random.randint(1, 1000000)
+#                 artist.Last = now
+#                 Artist.save(artist)
+#             except:
+#                 logger.exception("Error In Reseeding Artist")
+#                 pass
+#         logger.debug("Completed Reseeding Artists")
+#         for release in Release.objects():
+#             try:
+#                 release.Random = random.randint(1, 1000000)
+#                 release.Last = now
+#                 Release.save(release)
+#             except:
+#                 logger.exception("Error In Reseeding Release")
+#                 pass
+#         logger.debug("Completed Reseeding Releases")
+#         for track in Track.objects():
+#             try:
+#                 track.Random = random.randint(1, 1000000)
+#                 track.Last = now
+#                 Track.save(track)
+#             except:
+#                 logger.exception("Error In Reseeding Track")
+#                 pass
+#         logger.debug("Completed Reseeding Tracks")
+#         return jsonify(message="OK")
+#     except:
+#         logger.exception("Error In Reseeding Random")
+#         return jsonify(message="ERROR")
 
 
 @app.route('/artist/<artist_id>')
 @login_required
 def artist(artist_id):
-    artist = Artist.objects(id=artist_id).first()
+    artist = session.query(Artist).filter(Artist.id == artist_id).first()
     if not artist:
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
-    counts = {'releases': "{0:,}".format(Release.objects(Artist=artist).count()),
-              'tracks': "{0:,}".format(Track.objects(Artist=artist).count())}
-    totalTime = Track.objects(Artist=artist).aggregate(
-        {"$group": {"_id": "null", "total": {"$sum": "$Length"}}},
-    )
-    user = User.objects(id=current_user.id).first()
-    userArtist = UserArtist.objects(User=user, Artist=artist).first()
-    for t in totalTime:
-        counts['length'] = t['total']
+    user = session.query(User).filter(User.id == current_user.id).first()
+    userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(UserArtist.artistId == artist.id).first()
+    count = 0
     return render_template('artist.html', artist=artist, releases=releases, counts=counts, userArtist=userArtist)
 
 
@@ -299,22 +291,27 @@ def artist(artist_id):
 @login_required
 def setUserArtistRating(artist_id, rating):
     try:
-        artist = Artist.objects(id=artist_id).first()
-        user = User.objects(id=current_user.id).first()
+        artist = session.query(Artist).filter(Artist.id == artist_id).first()
+        user = session.query(User).filter(User.id == current_user.id).first()
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userArtist = UserArtist.objects(User=user, Artist=artist).first()
+        userArtist = session.query(UserArtist).filter(UserArtist.id == user.id).filter(UserArtist.artistId == artist.id).first()
         if not userArtist:
-            userArtist = UserArtist(User=user, Artist=artist)
+            userArtist = UserArtist()
+            userArtist.userId = user.id
+            userArtist.artistId = artist.id
         userArtist.Rating = rating
         userArtist.LastUpdated = now
-        UserArtist.save(userArtist)
+        session.add(userArtist)
+        session.commit()
         # Update artist average rating
-        artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
-        artist.Rating = artistAverage
-        artist.LastUpdated = now
-        Artist.save(artist)
+        # TODO
+        #artistAverage = session.query(UserArtist).filter(UserArtist.id == artist.id).aggregate_average('Rating')
+        artistAverage = 0
+        #artist.Rating = artistAverage
+        #artist.LastUpdated = now
+        #Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Rating")
@@ -325,25 +322,30 @@ def setUserArtistRating(artist_id, rating):
 @login_required
 def toggleUserArtistDislike(artist_id, toggle):
     try:
-        artist = Artist.objects(id=artist_id).first()
-        user = User.objects(id=current_user.id).first()
+        artist = session.query(Artist).filter(Artist.id == artist_id).first()
+        user = session.query(User).filter(User.id == current_user.id).first()
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userArtist = UserArtist.objects(User=user, Artist=artist).first()
+        userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(UserArtist.artistId == artist.id).first()
         if not userArtist:
-            userArtist = UserArtist(User=user, Artist=artist)
+            userArtist = UserArtist()
+            userArtist.userId = user.id
+            userArtist.artistId = artist.id
         userArtist.IsDisliked = toggle.lower() == "true"
         userArtist.LastUpdated = now
         if userArtist.IsDisliked:
             userArtist.Rating = 0
-        UserArtist.save(userArtist)
-        artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
-        if userArtist.IsDisliked:
-            # Update artist average rating
-            artist.Rating = artistAverage
-            artist.LastUpdated = now
-            Artist.save(artist)
+        session.add(userArtist)
+        session.commit()
+        # TODO
+        #artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
+        artistAverage = 0
+       # if userArtist.IsDisliked:
+       #     # Update artist average rating
+      #      artist.Rating = artistAverage
+      #      artist.LastUpdated = now
+      #      Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Dislike")
@@ -1602,7 +1604,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Label, session))
     admin.add_view(RoadiePlaylistModelView(Playlist, session))
     admin.add_view(RoadieReleaseModelView(Release, session))
-    admin.add_view(RoadieTrackModelView(Track, session))
+    #admin.add_view(RoadieTrackModelView(Track, session))
     admin.add_view(RoadieModelAdminRequiredView(User, category='User', session=session))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User', session=session))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User', session=session))

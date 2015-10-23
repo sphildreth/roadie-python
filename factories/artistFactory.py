@@ -1,10 +1,7 @@
 import random
 import uuid
-import arrow
 
 from sqlalchemy.sql import func, and_, or_, text
-
-from sqlalchemy import update
 
 from resources.common import *
 from resources.models.Artist import Artist
@@ -84,111 +81,115 @@ class ArtistFactory(object):
         """
         if not name:
             return None
-        name = deriveArtistFromName(name)
-        printableName = name.encode('ascii', 'ignore').decode('utf-8')
-        artist = self._getFromDatabaseByName(name)
-        if not artist:
-            self.logger.info("Artist Not Found By Name [" + printableName + "]")
-            artist = Artist()
-            sa = self.searcher.searchForArtist(name)
-            if not sa:
-                artist.name = name
-                artist.random = random.randint(1, 9999999)
-                artist.createdDate = arrow.utcnow().datetime
-                artist.roadieId = str(uuid.uuid4())
-                artist.alternateNames = []
-                cleanedArtistName = createCleanedName(name)
-                if cleanedArtistName != name.lower().strip():
-                    artist.alternateNames.append(cleanedArtistName)
-            else:
-                artistByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId,
-                                                                         sa.spotifyId)
-                if artistByExternalIds:
-                    if not artistByExternalIds.alternateNames:
-                        artistByExternalIds.alternateNames = []
-                    if name not in artistByExternalIds.alternateNames:
-                        self.logger.debug("Found Artist By External Ids [" +
-                                          artistByExternalIds.name.encode('ascii', 'ignore')
-                                          .decode('utf-8') + "] Added [" +
-                                          printableName + "] To AlternateNames")
-                        artistByExternalIds.alternateNames.append(name)
-                        artistByExternalIds.lastUpdated = arrow.utcnow().datetime
-                        self.session.commit()
-                    return artistByExternalIds
-                artist.name = sa.name
-                artist.roadieId = sa.roadieId
-                artist.sortName = sa.sortName
-                artist.rating = sa.rating
-                artist.random = sa.random
-                artist.realName = sa.realName
-                artist.musicBrainzId = sa.musicBrainzId
-                artist.iTunesId = sa.iTunesId
-                artist.amgId = sa.amgId
-                artist.spotifyId = sa.spotifyId
-                artist.thumbnail = sa.thumbnail
-                artist.profile = sa.profile
-                if sa.birthDate:
-                    artist.birthDate = parseDate(sa.birthDate)
-                if sa.beginDate:
-                    artist.beginDate = parseDate(sa.beginDate)
-                if sa.endDate:
-                    artist.endDate = parseDate(sa.endDate)
-                if sa.artistType == SearchArtistType.Person:
-                    artist.artistType = 'Person'
-                elif sa.artistType == SearchArtistType.Group:
-                    artist.artistType = 'Group'
-                elif sa.artistType == SearchArtistType.Orchestra:
-                    artist.artistType = 'Orchestra'
-                elif sa.artistType == SearchArtistType.Choir:
-                    artist.artistType = 'Choir'
-                elif sa.artistType == SearchArtistType.Character:
-                    artist.artistType = 'Character'
-                artist.bioContext = sa.bioContext
-                artist.tags = sa.tags
-                if sa.alternateNames:
+        try:
+            name = deriveArtistFromName(name)
+            printableName = name.encode('ascii', 'ignore').decode('utf-8')
+            artist = self._getFromDatabaseByName(name)
+            if not artist:
+                self.logger.info("Artist Not Found By Name [" + printableName + "]")
+                artist = Artist()
+                sa = self.searcher.searchForArtist(name)
+                if not sa:
+                    artist.name = name
+                    artist.random = random.randint(1, 9999999)
+                    artist.createdDate = arrow.utcnow().datetime
+                    artist.roadieId = str(uuid.uuid4())
                     artist.alternateNames = []
-                    for an in sa.alternateNames:
-                        artist.alternateNames.append(an)
-                if sa.urls:
-                    artist.urls = []
-                    for url in sa.urls:
-                        artist.urls.append(url)
-                if sa.isniList:
-                    artist.isniList = []
-                    for isni in sa.isniList:
-                        artist.isniList.append(isni)
-                if sa.images:
-                    artist.images = []
-                    for image in sa.images:
-                        i = Image()
-                        i.url = image.url
-                        i.roadieId = image.roadieId
-                        i.caption = image.caption
-                        i.image = image.image
-                        artist.images.append(i)
+                    cleanedArtistName = createCleanedName(name)
+                    if cleanedArtistName != name.lower().strip():
+                        artist.alternateNames.append(cleanedArtistName)
+                else:
+                    artistByExternalIds = self._getFromDatabaseByExternalIds(sa.musicBrainzId, sa.iTunesId, sa.amgId,
+                                                                             sa.spotifyId)
+                    if artistByExternalIds:
+                        if not artistByExternalIds.alternateNames:
+                            artistByExternalIds.alternateNames = []
+                        if name not in artistByExternalIds.alternateNames:
+                            self.logger.debug("Found Artist By External Ids [" +
+                                              artistByExternalIds.name.encode('ascii', 'ignore')
+                                              .decode('utf-8') + "] Added [" +
+                                              printableName + "] To AlternateNames")
+                            artistByExternalIds.alternateNames.append(name)
+                            artistByExternalIds.lastUpdated = arrow.utcnow().datetime
+                            self.session.commit()
+                        return artistByExternalIds
+                    artist.name = sa.name
+                    artist.roadieId = sa.roadieId
+                    artist.sortName = sa.sortName
+                    artist.rating = sa.rating
+                    artist.random = sa.random
+                    artist.realName = sa.realName
+                    artist.musicBrainzId = sa.musicBrainzId
+                    artist.iTunesId = sa.iTunesId
+                    artist.amgId = sa.amgId
+                    artist.spotifyId = sa.spotifyId
+                    artist.thumbnail = sa.thumbnail
+                    artist.profile = sa.profile
+                    if sa.birthDate:
+                        artist.birthDate = parseDate(sa.birthDate)
+                    if sa.beginDate:
+                        artist.beginDate = parseDate(sa.beginDate)
+                    if sa.endDate:
+                        artist.endDate = parseDate(sa.endDate)
+                    if sa.artistType == SearchArtistType.Person:
+                        artist.artistType = 'Person'
+                    elif sa.artistType == SearchArtistType.Group:
+                        artist.artistType = 'Group'
+                    elif sa.artistType == SearchArtistType.Orchestra:
+                        artist.artistType = 'Orchestra'
+                    elif sa.artistType == SearchArtistType.Choir:
+                        artist.artistType = 'Choir'
+                    elif sa.artistType == SearchArtistType.Character:
+                        artist.artistType = 'Character'
+                    artist.bioContext = sa.bioContext
+                    artist.tags = sa.tags
+                    if sa.alternateNames:
+                        artist.alternateNames = []
+                        for an in sa.alternateNames:
+                            artist.alternateNames.append(an)
+                    if sa.urls:
+                        artist.urls = []
+                        for url in sa.urls:
+                            artist.urls.append(url)
+                    if sa.isniList:
+                        artist.isniList = []
+                        for isni in sa.isniList:
+                            artist.isniList.append(isni)
+                    if sa.images:
+                        artist.images = []
+                        for image in sa.images:
+                            i = Image()
+                            i.url = image.url
+                            i.roadieId = image.roadieId
+                            i.caption = image.caption
+                            i.image = image.image
+                            artist.images.append(i)
 
-                # TODO
-                # # See if a file exists to use for the Artist thumbnail
-                # artistFile = os.path.join(mp3Folder, "artist.jpg")
-                # if os.path.exists(artistFile):
-                #     ba = self.readImageThumbnailBytesFromFile(artistFile)
-                # if ba:
-                #     artist.Thumbnail.new_file()
-                #     artist.Thumbnail.write(ba)
-                #     artist.Thumbnail.close()
+                    # TODO
+                    # # See if a file exists to use for the Artist thumbnail
+                    # artistFile = os.path.join(mp3Folder, "artist.jpg")
+                    # if os.path.exists(artistFile):
+                    #     ba = self.readImageThumbnailBytesFromFile(artistFile)
+                    # if ba:
+                    #     artist.Thumbnail.new_file()
+                    #     artist.Thumbnail.write(ba)
+                    #     artist.Thumbnail.close()
 
-                if sa.genres:
-                    artist.genres = []
-                    for genre in sa.genres:
-                        dbGenre = self.session.query(Genre).filter(Genre.name == genre.name).first()
-                        if not dbGenre:
-                            g = Genre()
-                            g.name = genre.name
-                            g.roadieId = genre.roadieId
-                            artist.genres.append(g)
-                        else:
-                            artist.genres.append(dbGenre)
-                self.session.add(artist)
-                self.session.commit()
-
-        return artist
+                    if sa.genres:
+                        artist.genres = []
+                        for genre in sa.genres:
+                            dbGenre = self.session.query(Genre).filter(Genre.name == genre.name).first()
+                            if not dbGenre:
+                                g = Genre()
+                                g.name = genre.name
+                                g.roadieId = genre.roadieId
+                                artist.genres.append(g)
+                            else:
+                                artist.genres.append(dbGenre)
+                    self.session.add(artist)
+                    self.session.commit()
+            return artist
+        except:
+            self.logger.exception("MusicBrainz: Error In LookupArtist")
+            pass
+        return None
