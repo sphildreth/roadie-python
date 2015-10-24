@@ -44,7 +44,7 @@ class Track(Base):
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable, backref="track")
-    userRatings = relationship(UserTrack, backref="track")
+    userRating = relationship(UserTrack, backref="track")
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):

@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
+from resources.models.CollectionRelease import CollectionRelease
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.UserRelease import UserRelease
@@ -52,6 +53,7 @@ class Release(Base):
     media = relationship(ReleaseMedia, backref="release")
     images = relationship(Image)
     userRatings = relationship(UserRelease, backref="release")
+    collections = relationship(CollectionRelease, backref="release")
 
     def isLiveOrCompilation(self):
         """

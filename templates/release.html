@@ -3,9 +3,9 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="release-detail-container" data-release-id="{{ release.id }}">
+    <div class="release-detail-container" data-release-id="{{ release.roadieId }}">
         <div class="release-counts-container pull-right" data-disc-count="{{ release|calculate_release_discs }}">
-            <span data-track-count="{{ release.Tracks|length }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.Tracks|length }}</span></span>
+            <span data-track-count="{{ release.Tracks|length }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % release.tracks|length }}</span></span>
             <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ release|calculate_release_tracks_Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
@@ -43,48 +43,48 @@
                 {% endif %}
              </div>
             {% endif %}
-            {% if release.Artist.IsLocked %}
+            {% if release.artist.isLocked %}
                 <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
             {% endif %}
         </div>
         <div class="row title bordered">
-            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.id }}" alt="{{ release.Title }}" />
+            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
             <div class="release-rating-container pull-left">
                 <input type="hidden" class="rating" data-readonly value="{{ release.Rating }}" />
             </div>
             <div class="artist-info">
-                <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.Artist.id }}" alt="{{ release.Artist.Name }}" />
-                <h5><a title="View Artist" href="/artist/{{ release.Artist.id }}"><span class="release-artist-name label label-info">{{ release.Artist.Name }}</span></a></h5>
+                <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
+                <h5><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span class="release-artist-name label label-info">{{ release.artist.name }}</span></a></h5>
             </div>
             <h2>
-                <span class="release-title label label-default">{{ release.Title }}</span>
+                <span class="release-title label label-default">{{ release.title }}</span>
                 {% if current_user.is_editor() %}
                     <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i></button>
                 {% endif %}
             </h2>
             <div class="user-rating-container">
-                <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                <input type="hidden" class="user-rating rating" value="{{ userRelease.Rating }}" />
-                <a href="#" class="favorite" title="Toggle Favorite Release"><i class="fa {{'fa-heart' if userRelease.IsFavorite else 'fa-heart-o'}}"></i></a>
+                <input type="hidden" class="user-rating rating" value="{{ userRelease.rating }}" />
+                <a href="#" class="favorite" title="Toggle Favorite Release"><i class="fa {{'fa-heart' if userRelease.isFavorite else 'fa-heart-o'}}"></i></a>
             </div>
         </div>
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Profile</span></h4>
-                <div>{{ release.Profile|safe }}</div>
+                <div>{{ release.profile|safe }}</div>
             </div>
             <div class="col-md-6">
-                {% for image in release.Images %}
+                {% for image in release.images %}
                     <div class="col-md-3">
                         <a href="javascript:void(0);"
                            data-title="{{ image.element.filename }}"
-                           data-url="/images/release/{{ release.id}}/{{ image.element.grid_id }}/2048/2048"
+                           data-url="/images/{{ image.roadieId }}/2048/2048"
                            target="_blank" class="thumbnail">
-                            <img data-image-id="{{ image.element.grid_id }}" data-toggle="context" data-target="#context-menu-{{ image.element.grid_id }}" src="/images/release/{{ release.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
+                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/{{ image.roadieId }}/512/512" alt="Image" />
                         </a>
                     </div>
-                    <div id="context-menu-{{ image.element.grid_id }}" data-image-id="{{ image.element.grid_id }}" class="context-menu">
+                    <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
                         <ul class="dropdown-menu" role="menu">
                         <li><a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a></li>
                         </ul>
@@ -96,12 +96,12 @@
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Release Date</span></h4>
-                    <span class="label label-default">{{ release.ReleaseDate }}</span>
+                    <span class="label label-default">{{ release.releaseDate }}</span>
                 </div>
                 <div>
                     <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    {% if release.MusicBrainzId %}
-                    <a href="https://musicbrainz.org/release/{{ release.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ release.MusicBrainzId }}</span></a>
+                    {% if release.musicBrainzId %}
+                    <a href="https://musicbrainz.org/release/{{ release.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ release.musicBrainzId }}</span></a>
                     {% else %}
                     <span class="label label-default">None</span>
                     {% endif %}
@@ -110,29 +110,21 @@
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Track Count</span></h4>
-                    <span id="releaseTrackCount" class="label label-default">{{ release.TrackCount }}</span>
+                    <span id="releaseTrackCount" class="label label-default">{{ release.trackCount }}</span>
                 </div>
                 <div>
                     <h4><span class="label label-primary">Disc Count</span></h4>
-                    <span id="releaseDiscCount" class="label label-default">{{ release.DiscCount }}</span>
+                    <span id="releaseDiscCount" class="label label-default">{{ release.discCount }}</span>
                 </div>
             </div>
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Labels</span></h4>
                     <ul>
-                        {% for label in release.Labels %}
-                        <li><span class="label label-default">{{ label.Label.Name }}</span></li>
+                        {% for label in release.labels %}
+                        <li><span class="label label-default">{{ label.name }}</span></li>
                         {% endfor %}
                     </ul>
-                </div>
-            </div>
-            <div class="col-md-3">
-               <div>
-                    {% if release.Quality %}
-                    <h4><span class="label label-primary">Quality</span></h4>
-                    <span class="label label-default">{{ release.Quality.Name }}</span>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -142,21 +134,21 @@
                 <div>
                     <h4><span class="label label-primary">Collections</span></h4>
                     <ul class="no-list-style">
-                        {% for collectionRelease in collectionReleases|sort(attribute='ListNumber') %}
+                        {% for collectionRelease in collectionReleases|sort(attribute='listNumber') %}
                         <li>
-                            <a href="/collection/{{ collectionRelease.CollectionId }}">
-                                <span class="label label-{{ 'success' if collectionRelease.ListNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.ListNumber  }}</span> <span class="label label-default">{{ collectionRelease.CollectionName }}</span>
+                            <a href="/collection/{{ collectionRelease.roadieId }}">
+                                <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span> <span class="label label-default">{{ collectionRelease.name }}</span>
                             </a>
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
                 {% endif %}
-                {% if release.AlternateNames %}
+                {% if release.alternateNames %}
                 <div>
                     <h4><span class="label label-primary">Alternate Names</span></h4>
                     <ul>
-                        {% for alternateName in release.AlternateNames %}
+                        {% for alternateName in release.alternateNames %}
                         <li><span class="label label-default">{{ alternateName }}</span></li>
                         {% endfor %}
                     </ul>
@@ -165,24 +157,26 @@
             </div>
             <div class="col-md-3">
                 <div>
-                    {% if release.Genres %}
+                    {% if release.genres %}
                     <h4><span class="label label-primary">Genres</span></h4>
                     <ul>
-                        {% for genre in release.Genres %}
-                        <li><span class="label label-default">{{ genre.Name }}</span></li>
+                        {% for genre in release.genres %}
+                        <li><span class="label label-default">{{ genre.name }}</span></li>
                         {% endfor %}
                     </ul>
                     {% endif %}
                 </div>
             </div>
+            {% if release.tags %}
             <div class="col-md-3">
                 <h4><span class="label label-primary">Tags</span></h4>
                 <ul>
-                    {% for tag in release.Tags %}
+                    {% for tag in release.tags %}
                     <li><span class="label label-default">{{ tag }}</span></li>
                     {% endfor %}
                 </ul>
             </div>
+            {% endif %}
             <div class="col-md-3">
                 <div>
                     {% if current_user.has_role("Admin") %}
@@ -196,18 +190,20 @@
                     </ul>
                     {% endif %}
                 </div>
+                {% if release.urls %}
                 <div>
                     <h4><span class="label label-primary">Urls</span></h4>
                     <ul>
-                        {% for url in release.Urls %}
-                        <li><a href="{{ url.Url }}" target="_blank"><span class="label label-default">{{ url.Title }}</span></a></li>
+                        {% for url in release.urls %}
+                        <li><a href="{{ url.url }}" target="_blank"><span class="label label-default">{{ url.title }}</span></a></li>
                         {% endfor %}
                     </ul>
                 </div>
+                {% endif %}
             </div>
         </div>
         <div class="row tracks bordered">
-            {% if current_user.is_editor() and release.Artist.IsLocked == False %}
+            {% if current_user.is_editor() and release.artist.isLocked == False %}
             <div class="row insane-quick-edit">
             <div class="btn-group">
                 <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -223,23 +219,24 @@
             </div>
             </div>
             {% endif %}
-            {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
-                {% if group.grouper > 0 %}
-                <div class="release-cd-container">
-                    <h5 class="release-cd pull-right"><span class="label label-success">CD {{ group.grouper }}</span></h5>
+            {% for media in release.media %}
+                <div class="release-cd-container" data-releasemedianumber="{{ media.roadieId }}" >
+                    <h5 class="release-cd pull-right"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
+                    {% if media.releaseSubTitle %}
+                        <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span></h5>
+                    {% endif %}
                 </div>
-                {% endif %}
-                {% for track in group.list %}
-                    <div class="row track" data-releasemedianumber="{{ track.ReleaseMediaNumber }}" data-track-id="{{ track.Track.id }}">
+                {% for track in media.tracks %}
+                    <div class="row track" data-track-id="{{ track.roadieId }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
                             <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1" /></span>
                         </div>
                         <div class="col-xs-7 col-sm-7 col-md-7">
-                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
-                            {% if track.Track.PartTitles|count > 0 %}
+                            <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}" class="title label label-default">{{ track.title }}</span>
+                            {% if track.partTitles|count > 0 %}
                                 <ul class="part-titles">
-                                {% for parttitle in track.Track.PartTitles %}
+                                {% for parttitle in track.partTitles %}
                                     <li><span class="label label-default part-title">{{ parttitle }}</span></li>
                                 {% endfor %}
                                 </ul>
@@ -268,10 +265,10 @@
                             </div>
                         </div>
                         <div class="col-xs-3 col-sm-3 col-md-3">
-                            <span data-track-length="{{ track.Track.Length }}" class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
+                            <span data-track-length="{{ track.length }}" class="length label label-info">{{ track.length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                             <span class="user-rating-container">
                                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                                <input type="hidden" class="track-rating user-rating rating" value="{{ track.UserRating }}" />
+                                <input type="hidden" class="track-rating user-rating rating" value="{{ track.userRating.rating }}" />
                             </span>
                         </div>
                     </div>
@@ -279,13 +276,14 @@
             {% endfor %}
         </div>
         <div class="meta pull-right">
-            <p><span class="label label-info">Last Modified: {{ release.LastUpdated }}</span></p>
+            <p><span class="label label-info">Last Modified: {{ release.lastUpdated }}</span></p>
         </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
-    var releaseId = '{{ release.id }}';
+    var artistId = '{{ release.artist.roadieId }}';
+    var releaseId = '{{ release.roadieId }}';
     var selectedCoverUrl = null;
 
     var doTrackDelete = function(trackId, flag) {
@@ -421,7 +419,7 @@
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
-                        window.location.href = '/artist/{{ release.Artist.id }}';
+                        window.location.href = '/artist/' + artistId;
                     }
                 },
                 error:function(jq, st, error){

@@ -106,6 +106,8 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
+userCache = dict()
+
 # TODO
 # app.session_interface = MongoEngineSessionInterface(db)
 
@@ -115,6 +117,19 @@ api = Api(app)
 
 logger = Logger()
 
+
+def getUser():
+    """
+    Cache the user to reduce DB hits
+    :return:
+    """
+    userId = current_user.id
+    if userId not in userCache:
+        userCache[userId] = session.query(User).filter(User.id == current_user.id).first()
+    return userCache[userId]
+
+def getArtist(artistId):
+    return session.query(Artist).filter(Artist.roadieId == artistId).first();
 
 @app.before_request
 def before_request():
@@ -126,7 +141,7 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    #for ut in session.query(UserTrack).orderby(desc(UserTrack.lastPlayed))[:35]:
+    # for ut in session.query(UserTrack).orderby(desc(UserTrack.lastPlayed))[:35]:
     # info = {
     #     'TrackId': str(ut.trackId),
     #     'TrackTitle': ut.track.title,
@@ -186,7 +201,8 @@ def randomRelease(count):
         randomSeed1 = random.randint(1, 1000000)
         randomSeed2 = random.randint(randomSeed1, 1000000)
         releases = []
-        for release in session.query(Release).filder(Release.random >= randomSeed1).filter(Release.random <= randomSeed2).order_by(Release.random)[:int(count)]:
+        for release in session.query(Release).filder(Release.random >= randomSeed1).filter(
+                        Release.random <= randomSeed2).order_by(Release.random)[:int(count)]:
             releaseInfo = {
                 'id': str(release.roadieId),
                 'ArtistName': release.artist.name,
@@ -219,14 +235,17 @@ def randomizer(type):
     randomSeed2 = random.randint(randomSeed1, 1000000)
     user = session.query(User).filter(User.id == current_user.id).first()
     if type == "artist":
-        artist = session.query(Artist).filter(Artist.random >= randomSeed1).filter(Artist.random <= randomSeed2).order_by(Release.random).first()
+        artist = session.query(Artist).filter(Artist.random >= randomSeed1).filter(
+            Artist.random <= randomSeed2).order_by(Release.random).first()
         return playArtist(artist.id, "0")
     elif type == "release":
-        release = session.query(Release).filter(Release.random >= randomSeed1).filter(Release.random <= randomSeed2).order_by(Release.random).first()
+        release = session.query(Release).filter(Release.random >= randomSeed1).filter(
+            Release.random <= randomSeed2).order_by(Release.random).first()
         return playRelease(release.id)
     elif type == "tracks":
         tracks = []
-        for track in session.query(Track).filter(Track.random >= randomSeed1).filter(Track.random <= randomSeed2).order_by(Track.Release)[:35]:
+        for track in session.query(Track).filter(Track.random >= randomSeed1).filter(
+                        Track.random <= randomSeed2).order_by(Track.Release)[:35]:
             t = M3U.makeTrackInfo(user, track.release, track)
             if t:
                 tracks.append(t)
@@ -284,7 +303,8 @@ def artist(artist_id):
         return render_template('404.html'), 404
     releases = Release.objects(Artist=artist)
     user = session.query(User).filter(User.id == current_user.id).first()
-    userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(UserArtist.artistId == artist.id).first()
+    userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(
+        UserArtist.artistId == artist.id).first()
     count = 0
     return render_template('artist.html', artist=artist, releases=releases, counts=counts, userArtist=userArtist)
 
@@ -298,7 +318,8 @@ def setUserArtistRating(artist_id, rating):
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userArtist = session.query(UserArtist).filter(UserArtist.id == user.id).filter(UserArtist.artistId == artist.id).first()
+        userArtist = session.query(UserArtist).filter(UserArtist.id == user.id).filter(
+            UserArtist.artistId == artist.id).first()
         if not userArtist:
             userArtist = UserArtist()
             userArtist.userId = user.id
@@ -309,11 +330,11 @@ def setUserArtistRating(artist_id, rating):
         session.commit()
         # Update artist average rating
         # TODO
-        #artistAverage = session.query(UserArtist).filter(UserArtist.id == artist.id).aggregate_average('Rating')
+        # artistAverage = session.query(UserArtist).filter(UserArtist.id == artist.id).aggregate_average('Rating')
         artistAverage = 0
-        #artist.Rating = artistAverage
-        #artist.LastUpdated = now
-        #Artist.save(artist)
+        # artist.Rating = artistAverage
+        # artist.LastUpdated = now
+        # Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Rating")
@@ -329,7 +350,8 @@ def toggleUserArtistDislike(artist_id, toggle):
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(UserArtist.artistId == artist.id).first()
+        userArtist = session.query(UserArtist).filter(UserArtist.userId == user.id).filter(
+            UserArtist.artistId == artist.id).first()
         if not userArtist:
             userArtist = UserArtist()
             userArtist.userId = user.id
@@ -341,13 +363,13 @@ def toggleUserArtistDislike(artist_id, toggle):
         session.add(userArtist)
         session.commit()
         # TODO
-        #artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
+        # artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
         artistAverage = 0
-       # if userArtist.IsDisliked:
-       #     # Update artist average rating
-      #      artist.Rating = artistAverage
-      #      artist.LastUpdated = now
-      #      Artist.save(artist)
+        # if userArtist.IsDisliked:
+        #     # Update artist average rating
+        #      artist.Rating = artistAverage
+        #      artist.LastUpdated = now
+        #      Artist.save(artist)
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Dislike")
@@ -752,23 +774,28 @@ def release(roadieId):
     release = session.query(Release).filter(Release.roadieId == roadieId).first()
     if not release:
         return render_template('404.html'), 404
-    user = session.query(User).filter(User.id == current_user.id).first()
-    userRelease = session.query(UserRelease).filter(UserRelease.userId == user.id).filter(UserRelease.releaseId == release.id).first()
-    collections = session.query(CollectionRelease).filter(CollectionRelease.releaseId == release.id).all()
-    collectionReleases = []
-    if collections:
-        for collection in collections:
-            for crt in collection.Releases:
-                if crt.release.id == release.id:
-                    crt.collectionId = collection.id
-                    crt.collectionName = collection.Name
-                    collectionReleases.append(crt)
-    for track in release.tracks:
-        userTrack = session.query(UserTrack).filter(UserTrack.userId == user.id).filter(UserTrack.trackId == track.id).first()
-        if userTrack:
-            track.userRating = userTrack.rating
-    return render_template('release.html', release=release, collectionReleases=collectionReleases,
-                           userRelease=userRelease)
+    #user = getUser()
+
+    # TODO
+    #userRelease = UserRelease()
+
+
+    # collections = session.query(CollectionRelease).filter(CollectionRelease.releaseId == release.id).all()
+    # collectionReleases = []
+    # if collections:
+    #     for collection in collections:
+    #         for crt in collection.Releases:
+    #             if crt.release.id == release.id:
+    #                 crt.collectionId = collection.id
+    #                 crt.collectionName = collection.Name
+    #                 collectionReleases.append(crt)
+    # for track in release.tracks:
+    #     userTrack = session.query(UserTrack).filter(UserTrack.userId == user.id).filter(UserTrack.trackId == track.id).first()
+    #     if userTrack:
+    #         track.userRating = userTrack.rating
+
+    return render_template('release.html', release=release, collectionReleases=release.collections,
+                           userRelease=release.userRatings)
 
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
@@ -1135,16 +1162,13 @@ def getCollectionThumbnailImage(collection_id):
                          mimetype='image/gif')
 
 
-@app.route("/images/artist/thumbnail/<artist_id>")
-def getArtistThumbnailImage(artist_id):
-    artist = Artist.objects(id=artist_id).first()
+@app.route("/images/artist/thumbnail/<artistId>")
+def getArtistThumbnailImage(artistId):
+    artist = getArtist(artistId)
     try:
         if artist:
-            image = artist.Thumbnail.read()
-            if not image or len(image) == 0:
-                raise RuntimeError("Bad Image Thumbnail")
-            etag = hashlib.sha1(('%s%s' % (artist.id, artist.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(image, artist.LastUpdated, "a_tn_" + str(artist.id) + ".jpg", etag)
+            etag = hashlib.sha1(('%s%s' % (artist.roadieId, artist.lastUpdated)).encode('utf-8')).hexdigest()
+            return makeImageResponse(artist.thumbnail, artist.LastUpdated, "a_tn_" + str(artist.id) + ".jpg", etag)
 
     except:
         return send_file("static/img/artist.gif",
@@ -1290,6 +1314,8 @@ def editProfile():
     user.email = email
     user.doUseHTMLPlayer = doUseHTMLPlayerSet
     user.lastUpdated = arrow.utcnow().datetime
+    if user.id in userCache:
+        userCache[user.id] = user
     session.commit()
     flash('Profile Edited successfully')
     return redirect(url_for("index"))
@@ -1599,7 +1625,7 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Label, session))
     admin.add_view(RoadiePlaylistModelView(Playlist, session))
     admin.add_view(RoadieReleaseModelView(Release, session))
-    #admin.add_view(RoadieTrackModelView(Track, session))
+    # admin.add_view(RoadieTrackModelView(Track, session))
     admin.add_view(RoadieModelAdminRequiredView(User, category='User', session=session))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User', session=session))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User', session=session))

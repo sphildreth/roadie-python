@@ -24,7 +24,7 @@
             <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
             {% if current_user.is_editor() %}
               <div class="btn-group">
-                <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.id }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <a href="/admin/artist/edit/?id={{ artist.roadieId }}&amp;url=/artist/{{ artist.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 {% if artist.IsLocked == False %}
                     <div class="btn-group">
                         <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -39,41 +39,46 @@
                 {% endif %}
              </div>
             {% endif %}
-            {% if artist.IsLocked %}
+            {% if artist.isLocked %}
                 <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
             {% endif %}
         </div>
         <div class="row title bordered">
             <div class="thumbnail-container pull-left">
-                <img class="thumb " src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.Name }}" />
             </div>
             <div class="rating-container">
-                <input type="hidden" class="rating" data-readonly value="{{ artist.Rating }}" />
+                <input type="hidden" class="rating" data-readonly value="{{ artist.rating }}" />
             </div>
             <h2><span class="artist-name label label-default">{{ artist.Name }}</span></h2>
             <div class="user-rating-container">
-                <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.IsDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                <input type="hidden" class="user-rating rating" value="{{ userArtist.Rating }}" />
-                <a href="#" class="favorite" title="Toggle Favorite Artist"><i class="fa {{'fa-heart' if userArtist.IsFavorite else 'fa-heart-o'}}"></i></a>
+                <input type="hidden" class="user-rating rating" value="{{ userArtist.rating }}" />
+                <a href="#" class="favorite" title="Toggle Favorite Artist"><i class="fa {{'fa-heart' if userArtist.isFavorite else 'fa-heart-o'}}"></i></a>
             </div>
         </div>
         <div class="row bordered">
             <div class="col-md-6">
                 <h4><span class="label label-primary">Profile</span></h4>
-                <p>{{ artist.Profile|safe }}</p>
+                <p>{{ artist.profile|safe }}</p>
             </div>
+            <div class="col-md-6">
+                <h4><span class="label label-primary">Bio</span></h4>
+                <p>{{ artist.bioContext|safe }}</p>
+            </div>
+
             <div class="col-md-6">
                 {% for image in artist.Images %}
                     <div class="col-xs-4 col-sm-3 col-md-3">
                         <a href="javascript:void(0);"
                            data-title="{{ image.element.filename }}"
-                           data-url="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/2048/2048"
+                           data-url="/images/{{ image.roadieId }}/2048/2048"
                            target="_blank" class="thumbnail">
-                            <img data-image-id="{{ image.element.grid_id }}" data-toggle="context" data-target="#context-menu-{{ image.element.grid_id }}" src="/images/artist/{{ artist.id}}/{{ image.element.grid_id }}/512/512" alt="Image" />
+                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/{{ image.roadieId }}/512/512" alt="Image" />
                         </a>
                     </div>
-                    <div id="context-menu-{{ image.element.grid_id }}" data-image-id="{{ image.element.grid_id }}" class="context-menu">
+                    <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
                         <ul class="dropdown-menu" role="menu">
                         <li><a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist Image</a></li>
                         </ul>
@@ -86,61 +91,61 @@
                 {% if artist.SortName %}
                 <div>
                     <h4><span class="label label-primary">Sort Name</span></h4>
-                    <span class="label label-default">{{ artist.SortName }}</span>
+                    <span class="label label-default">{{ artist.sortName }}</span>
                 </div>
                 {% endif %}
-                {% if artist.RealName %}
+                {% if artist.realName %}
                 <div>
                     <h4><span class="label label-primary">Real Name</span></h4>
-                    <span class="label label-default">{{ artist.RealName }}</span>
+                    <span class="label label-default">{{ artist.realName }}</span>
                 </div>
                 {% endif %}
             </div>
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Artist Type</span></h4>
-                    <span class="label label-default">{{ artist.ArtistType.Name }}</span>
+                    <span class="label label-default">{{ artist.artistType }}</span>
                 </div>
                 <div>
                     <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    {% if artist.MusicBrainzId %}
-                    <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ artist.MusicBrainzId }}</span></a>
+                    {% if artist.musicBrainzId %}
+                    <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ artist.musicBrainzId }}</span></a>
                     {% else %}
                     <span class="label label-default">None</span>
                     {% endif %}
                 </div>
             </div>
             <div class="col-md-3">
-                {% if artist.BirthDate %}
+                {% if artist.birthDate %}
                 <div>
                     <h4><span class="label label-primary">BirthDate</span></h4>
-                    <span class="label label-default">{{ artist.BirthDate|format_age_from_date }}</span>
+                    <span class="label label-default">{{ artist.birthDate|format_age_from_date }}</span>
                 </div>
                 {% endif %}
-                {% if artist.BeginDate %}
+                {% if artist.beginDate %}
                 <div>
                     <h4><span class="label label-primary">Begin Date</span></h4>
-                    <span class="label label-default">{{ artist.BeginDate|format_age_from_date }}</span>
+                    <span class="label label-default">{{ artist.beginDate|format_age_from_date }}</span>
                 </div>
                 {% endif %}
-                {% if artist.EndDate %}
+                {% if artist.endDate %}
                 <div>
                     <h4><span class="label label-primary">End Date</span></h4>
-                    <span class="label label-default">{{ artist.EndDate }}</span>
+                    <span class="label label-default">{{ artist.endDate }}</span>
                 </div>
                 {% endif %}
             </div>
             <div class="col-md-3 associated-artists">
-                {% if artist.AssociatedArtists %}
+                {% if artist.associatedArtists %}
                 <h4><span class="label label-primary">Associated Artists</span></h4>
                 <ul>
-                    {% for artist in artist.AssociatedArtists|sort(attribute='Name') %}
+                    {% for artist in artist.associatedArtists|sort(attribute='name') %}
                     <li>
-                        <a href="/artist/{{ artist.id }}">
+                        <a href="/artist/{{ artist.roadieId }}">
                         <div class="thumbnail-container pull-left">
-                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.id }}" alt="{{ artist.Name }}" />
+                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
                         </div>
-                        <h3><span class="label label-default">{{ artist.Name }}</span></h3>
+                        <h3><span class="label label-default">{{ artist.name }}</span></h3>
                         </a>
                     </li>
                     {% endfor %}
@@ -148,34 +153,34 @@
                 {% endif %}
             </div>
         </div>
-        {% if artist.AlternateNames or artist.Tags or artist.Urls %}
+        {% if artist.alternateNames or artist.tags or artist.urls %}
         <div class="row lists bordered">
             <div class="col-md-4">
-                {% if artist.AlternateNames %}
+                {% if artist.alternateNames %}
                 <h4><span class="label label-primary">Alternate Names</span></h4>
                 <ul>
-                    {% for alternateName in artist.AlternateNames|sort %}
+                    {% for alternateName in artist.alternateNames|sort %}
                     <li><span class="label label-default">{{ alternateName }}</span></li>
                     {% endfor %}
                 </ul>
                 {% endif %}
             </div>
             <div class="col-md-4">
-                {% if artist.Tags %}
+                {% if artist.tags %}
                 <h4><span class="label label-primary">Tags</span></h4>
                 <ul>
-                    {% for tag in artist.Tags|sort %}
+                    {% for tag in artist.tags|sort %}
                     <li><span class="label label-default">{{ tag }}</span></li>
                     {% endfor %}
                 </ul>
                 {% endif %}
             </div>
             <div class="col-md-4">
-                {% if artist.Urls %}
+                {% if artist.urls %}
                 <h4><span class="label label-primary">Urls</span></h4>
                 <ul>
                     {% for url in artist.Urls %}
-                    <li><a href="{{ url.Url }}" target="_blank"><span class="label label-default">{{ url.Title }}</span></a></li>
+                    <li><a href="{{ url.url }}" target="_blank"><span class="label label-default">{{ url.title }}</span></a></li>
                     {% endfor %}
                 </ul>
                 {% endif %}
@@ -184,25 +189,25 @@
         {% endif %}
         <div class="release-info-container">
             <div class="row bordered">
-            {% for release in releases|sort(attribute='ReleaseDate') %}
-                <div class="release pull-left" data-release-id="{{ release.id }}">
+            {% for release in releases|sort(attribute='releaseDate') %}
+                <div class="release pull-left" data-release-id="{{ release.roadieId }}">
                     <div>
-                        <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.id}}" alt="{{ release.Title }}" />
+                        <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}" alt="{{ release.title }}" />
                         <a href="/release/{{ release.id }}">
-                        <h4><span class="label label-info releasedate">{{ release.ReleaseDate[:4] }}</span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="release-title label {{ 'label-danger' if (release.TrackCount == 0) or (release.TrackCount != release.Tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.Title }}</span></h4>
+                        <h4><span class="label label-info releasedate">{{ release.releaseDate[:4] }}</span>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="release-title label {{ 'label-danger' if (release.trackCount == 0) or (release.trackCount != release.tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.title }}</span></h4>
                         </a>
                     </div>
-                    {% for group in release.Tracks|sort(attribute='TrackNumber')|groupby('ReleaseMediaNumber') %}
+                    {% for group in release.tracks|sort(attribute='trackNumber')|groupby('releaseMediaNumber') %}
                     {% if group.grouper > 0 %}
                     <h5 class="release-cd"><span class="label label-success pull-right">CD {{ group.grouper }}</span></h5>
                     {% endif %}
                     <ul class="tracks no-list-style">
                         {% for track in group.list %}
                         <li>
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }} </span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Track.Title }}" class="title label label-default">{{ track.Track.Title }}</span>
-                            <span class="length label label-info">{{ track.Track.Length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }} </span>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ track.track.Title }}" class="title label label-default">{{ track.track.title }}</span>
+                            <span class="length label label-info">{{ track.track.length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
                         </li>
                         {% endfor %}
                     </ul>
@@ -212,13 +217,13 @@
             </div>
         </div>
         <div class="meta pull-right">
-            <p><span class="label label-info">Last Modified: {{ artist.LastUpdated }}</span></p>
+            <p><span class="label label-info">Last Modified: {{ artist.lastUpdated }}</span></p>
         </div>
     </div>
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
-        var artistId = '{{ artist.id }}';
+        var artistId = '{{ artist.roadieId }}';
 
         var doArtistSanityChecks = function() {
             var $c = $("div.release-counts-container");
