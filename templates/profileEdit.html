@@ -11,13 +11,13 @@
         <div class="controls">
             <label for="email">Email:</label>
           <input type="email" id="email" name="email" class="input-xlarge"
-            placeholder="Enter Email" value="{{ user.Email }}"
+            placeholder="Enter Email" value="{{ user.email }}"
             required />
         </div>
         <div class="controls">
             <label for="useHTMLPlayer">Use HTML Player:</label>
           <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="input-xlarge"
-            placeholder="Enter Email" value="true" {{ "checked" if user.DoUseHTMLPlayer else "" }} />
+            placeholder="Enter Email" value="true" {{ "checked" if user.doUseHTMLPlayer else "" }} />
         </div>
         <div class="controls">
             <label for="avatar">Avatar:</label>

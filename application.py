@@ -1060,30 +1060,31 @@ def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/
 
 @app.route("/images/release/<release_id>/<grid_id>/<height>/<width>")
 def getReleaseImage(release_id, grid_id, height, width):
-    try:
-        release = Release.objects(id=release_id).first()
-        releaseImage = None
-
-        if release:
-            for ri in release.Images:
-                if ri.element.grid_id == objectid.ObjectId(grid_id):
-                    releaseImage = ri
-                    break
-
-        if releaseImage:
-            image = releaseImage.element.read()
-            h = int(height)
-            w = int(width)
-            img = Image.open(io.BytesIO(image)).convert('RGB')
-            size = h, w
-            img.thumbnail(size)
-            b = io.BytesIO()
-            img.save(b, "JPEG")
-            ba = b.getvalue()
-            etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(ba, release.LastUpdated, releaseImage.element.filename, etag)
-    except:
-        return send_file("static/img/release.gif")
+    # TODO
+    # try:
+    #     release = session.query(Release).filter(Release.roadieId == release_id).first()
+    #     releaseImage = None
+    #
+    #     if release:
+    #         for ri in release.Images:
+    #             if ri.element.grid_id == objectid.ObjectId(grid_id):
+    #                 releaseImage = ri
+    #                 break
+    #
+    #     if releaseImage:
+    #         image = releaseImage.element.read()
+    #         h = int(height)
+    #         w = int(width)
+    #         img = Image.open(io.BytesIO(image)).convert('RGB')
+    #         size = h, w
+    #         img.thumbnail(size)
+    #         b = io.BytesIO()
+    #         img.save(b, "JPEG")
+    #         ba = b.getvalue()
+    #         etag = hashlib.sha1(('%s%s' % (release.id, release.LastUpdated)).encode('utf-8')).hexdigest()
+    #         return makeImageResponse(ba, release.LastUpdated, releaseImage.element.filename, etag)
+    # except:
+    return send_file("static/img/release.gif")
 
 
 @app.route('/images/artist/<artist_id>/<grid_id>/<height>/<width>')
@@ -1112,25 +1113,6 @@ def getArtistImage(artist_id, grid_id, height, width):
             return makeImageResponse(ba, artist.LastUpdated, artistImage.element.filename, etag)
     except:
         return send_file("static/img/artist.gif")
-
-
-@app.route("/images/user/avatar/<user_id>")
-def getUserAvatarThumbnailImage(user_id):
-    user = session.query(User).filter(User.id == user_id).first()
-    try:
-        if user:
-            image = user.avatar.read()
-            img = Image.open(io.BytesIO(image))
-            img.thumbnail(avatarSize)
-            b = io.BytesIO()
-            img.save(b, "PNG")
-            ba = b.getvalue()
-            etag = hashlib.sha1(str(user.LastUpdated).encode('utf-8')).hexdigest()
-            return makeImageResponse(ba, user.lastUpdated, 'avatar.png', etag, "image/png")
-    except:
-        return send_file("static/img/user.png",
-                         attachment_filename='avatar.png',
-                         mimetype='image/png')
 
 
 @app.route("/images/collection/thumbnail/<collection_id>")
@@ -1175,7 +1157,7 @@ def getReleaseThumbnailImage(roadieId):
     release = session.query(Release).filter(Release.roadieId == roadieId).first()
     try:
         if release:
-            image = release.thumbnail.read()
+            image = release.thumbnail
             if not image or len(image) == 0:
                 raise RuntimeError("Bad Image Thumbnail")
             etag = hashlib.sha1(('%s%s' % (release.id, release.lastUpdated)).encode('utf-8')).hexdigest()
@@ -1297,14 +1279,12 @@ def editProfile():
         return redirect(url_for('profile/edit'))
     file = request.files['avatar'];
     if file:
-        content = io.BytesIO(file.stream.read())
-        img = Image.open(content)
+        img = Image.open(io.BytesIO(file.stream.read()))
         img.thumbnail(thumbnailSize)
         b = io.BytesIO()
         img.save(b, "PNG")
-        user.avatar.new_file()
-        user.avatar.write(b.getvalue())
-        user.avatar.close()
+        user.avatar = b.getvalue()
+
     if encryptedPassword:
         user.password = encryptedPassword
     user.email = email
@@ -1313,6 +1293,19 @@ def editProfile():
     session.commit()
     flash('Profile Edited successfully')
     return redirect(url_for("index"))
+
+
+@app.route("/images/user/avatar/<user_id>")
+def getUserAvatarThumbnailImage(user_id):
+    user = session.query(User).filter(User.id == user_id).first()
+    try:
+        if user:
+            etag = hashlib.sha1(str(user.lastUpdated).encode('utf-8')).hexdigest()
+            return makeImageResponse(user.avatar, user.lastUpdated, 'avatar.png', etag, "image/png")
+    except:
+        return send_file("static/img/user.png",
+                         attachment_filename='avatar.png',
+                         mimetype='image/png')
 
 
 @app.route('/login', methods=['GET', 'POST'])
