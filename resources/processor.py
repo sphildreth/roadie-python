@@ -145,9 +145,13 @@ class Processor(ProcessorBase):
         lastID3Album = None
         artist = None
         release = None
+        maximumNumberOfFoldersToProcess = 1
         mp3FoldersProcessed = []
         # Get all the folder in the InboundFolder
         for mp3Folder in self.allDirectoriesInDirectory(inboundFolder):
+            if len(mp3FoldersProcessed) >= maximumNumberOfFoldersToProcess:
+                break
+
             foundMp3Files = 0
 
             # Do any conversions
@@ -167,7 +171,6 @@ class Processor(ProcessorBase):
             # Get all the MP3 files in the Folder and process
             for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
                 if mp3Folder not in mp3FoldersProcessed:
-                    mp3FoldersProcessed.append(mp3Folder)
                     pathInfo = self.infoFromPath(os.path.basename(mp3))
                     self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] File [" + mp3 + "]...")
                     id3 = ID3(mp3, self.processingOptions)
@@ -198,6 +201,7 @@ class Processor(ProcessorBase):
                                 release = self.releaseFactory.get(artist, id3.album)
                                 if not release:
                                     # Was not found in any Searcher create and add
+                                    self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
                                     release = self.releaseFactory.create(artist,
                                                                          string.capwords(id3.album),
                                                                          1,

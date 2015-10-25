@@ -1,4 +1,6 @@
+import hashlib
 import io
+import photohash
 import random
 import uuid
 
@@ -76,17 +78,25 @@ class ArtistSearcher(object):
                             image.image = imageSearcher.getImageBytesForUrl(image.url)
                         if image.image:
                             firstImageInImages = firstImageInImages or image.image
+                            image.signature = image.averageHash()
                             images.append(image)
-                    artist.images = images
-                    if not artist.thumbnail:
-                        try:
-                            img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
-                            img.thumbnail(self.artistThumbnailSize)
-                            b = io.BytesIO()
-                            img.save(b, "JPEG")
-                            artist.thumbnail = b.getvalue()
-                        except:
-                            pass
+                    if images:
+                        dedupedImages = []
+                        imageSignatures = []
+                        for image in images:
+                            if image.signature not in imageSignatures:
+                                imageSignatures.append(image.signature)
+                                dedupedImages.append(image)
+                        artist.images = dedupedImages
+                        if not artist.thumbnail and firstImageInImages:
+                            try:
+                                img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                                img.thumbnail(self.artistThumbnailSize)
+                                b = io.BytesIO()
+                                img.save(b, "JPEG")
+                                artist.thumbnail = b.getvalue()
+                            except:
+                                pass
                 # Add special search names to alternate names
                 if not artist.alternateNames:
                     artist.alternateNames = []
@@ -177,17 +187,25 @@ class ArtistSearcher(object):
                                 image.image = imageSearcher.getImageBytesForUrl(image.url)
                             if image.image:
                                 firstImageInImages = firstImageInImages or image.image
+                                image.signature = image.averageHash()
                                 images.append(image)
-                        release.images = images
-                        if not release.thumbnail:
-                            try:
-                                img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
-                                img.thumbnail(self.releaseThumbnailSize)
-                                b = io.BytesIO()
-                                img.save(b, "JPEG")
-                                release.thumbnail = b.getvalue()
-                            except:
-                                pass
+                        if images:
+                            dedupedImages = []
+                            imageSignatures = []
+                            for image in images:
+                                if image.signature not in imageSignatures:
+                                    imageSignatures.append(image.signature)
+                                    dedupedImages.append(image)
+                            release.images = dedupedImages
+                            if not release.thumbnail and firstImageInImages:
+                                try:
+                                    img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
+                                    img.thumbnail(self.releaseThumbnailSize)
+                                    b = io.BytesIO()
+                                    img.save(b, "JPEG")
+                                    release.thumbnail = b.getvalue()
+                                except:
+                                    pass
             if titleFilter and releases:
                 filteredReleases = []
                 cleanedTitleFilter = createCleanedName(titleFilter)

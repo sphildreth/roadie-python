@@ -18,7 +18,7 @@ releaseGenreTable = Table('releaseGenreTable', Base.metadata,
 
 
 class Release(Base):
-
+    # This is set to true to indicate the tracks on this Release are physically on other releases
     isVirtual = Column(Boolean(), default=False)
     title = Column(String(500), nullable=False, index=True)
     alternateNames = Column(ScalarListType(separator="|"))

@@ -158,12 +158,14 @@ class ArtistFactory(object):
                     if sa.images:
                         artist.images = []
                         for image in sa.images:
-                            i = Image()
-                            i.url = image.url
-                            i.roadieId = image.roadieId
-                            i.caption = image.caption
-                            i.image = image.image
-                            artist.images.append(i)
+                            if image.image:
+                                i = Image()
+                                i.url = image.url
+                                i.roadieId = image.roadieId
+                                i.caption = image.caption
+                                i.signature = image.signature
+                                i.image = image.image
+                                artist.images.append(i)
                         if not artist.thumbnail and artist.images:
                             artist.thumbnail = artist.images[0].image
                     # TODO
@@ -191,6 +193,6 @@ class ArtistFactory(object):
                     self.session.commit()
             return artist
         except:
-            self.logger.exception("MusicBrainz: Error In LookupArtist")
+            self.logger.exception("ArtistFactory: Error In get()")
             pass
         return None

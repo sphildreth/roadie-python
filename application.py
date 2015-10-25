@@ -1334,15 +1334,15 @@ def editProfile():
 
 @app.route("/images/user/avatar/<user_id>")
 def getUserAvatarThumbnailImage(user_id):
-    user = dbSession.query(User).filter(User.id == user_id).first()
+    user = getUser(user_id)
     try:
         if user:
+            if not user.avatar:
+                return send_file("static/img/user.png")
             etag = hashlib.sha1(str(user.lastUpdated).encode('utf-8')).hexdigest()
             return makeImageResponse(user.avatar, user.lastUpdated, 'avatar.png', etag, "image/png")
     except:
-        return send_file("static/img/user.png",
-                         attachment_filename='avatar.png',
-                         mimetype='image/png')
+        return send_file("static/img/user.png")
 
 
 @app.route('/login', methods=['GET', 'POST'])

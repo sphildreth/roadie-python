@@ -107,12 +107,14 @@ class Artist(ModelBase):
         result.endDate = result.endDate or right.endDate
         if not result.artistType or result.artistType == ArtistType.Unknown and right.artistType:
             result.artistType = right.artistType
+
         if not result.images and right.images:
             result.images = right.images
         elif result.images and right.images:
             for image in right.images:
-                if not image in result.images:
+                if image not in result.images:
                     result.images.append(image)
+
         result.bioContext = result.bioContext or right.bioContext
         if not result.tags and right.tags:
             result.tags = right.tags

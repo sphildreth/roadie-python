@@ -81,7 +81,7 @@ def isEqual(s1, s2):
         on if they are equal, regardless of case."""
     c1 = s1 or ''
     c2 = s2 or ''
-    return c1.lower().strip() == c2.lower().strip()
+    return str(c1).lower().strip() == str(c2).lower().strip()
 
 
 def isInList(list, s1):

@@ -87,7 +87,7 @@ class ReleaseFactory(object):
                 self.session.commit()
             return release
         except:
-            self.logger.exception("MusicBrainz: Error In LookupArtist")
+            self.logger.exception("ReleaseFactory: Error In get()")
             pass
         return None
 
@@ -143,12 +143,14 @@ class ReleaseFactory(object):
         if sr.images:
             release.images = []
             for image in sr.images:
-                i = Image()
-                i.roadieId = image.roadieId
-                i.url = image.url
-                i.caption = image.caption
-                i.image = image.image
-                release.images.append(i)
+                if image.image:
+                    i = Image()
+                    i.roadieId = image.roadieId
+                    i.url = image.url
+                    i.caption = image.caption
+                    i.image = image.image
+                    i.signature = image.signature
+                    release.images.append(i)
 
         # TODO
         # See if cover file found in Release Folder
@@ -211,7 +213,7 @@ class ReleaseFactory(object):
             for srMedia in sr.media:
                 media = ReleaseMedia()
                 media.roadieId = srMedia.roadieId
-                media.releaseMediaNumber = srMedia.releaseMediaNumber
+                media.releaseMediaNumber = int(srMedia.releaseMediaNumber)
                 # The first media is release 1 not release 0
                 if media.releaseMediaNumber < 1:
                     media.releaseMediaNumber = 1
