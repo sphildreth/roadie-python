@@ -36,7 +36,7 @@ var roadieLibrary = (function(window, undefined) {
     function playLoader(url, html) {
         var width = 750;
         var height = 265;
-        if (window.user.doUseHTMLPlayer) {
+        if (window.user.doUseHtmlPlayer) {
             var win = window.open(url, 'roadiePlayer',
                 'toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=' +
                 width + ',height=' + height);

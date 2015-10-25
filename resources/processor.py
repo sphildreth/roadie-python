@@ -101,15 +101,7 @@ class Processor(ProcessorBase):
             self.logger.exception("shouldMoveToLibrary: Id3 [" + str(id3) + "]")
             return False
 
-    def readImageThumbnailBytesFromFile(self, path):
-        try:
-            img = Image.open(path).convert('RGB')
-            img.thumbnail(self.thumbnailSize)
-            b = io.BytesIO()
-            img.save(b, "JPEG")
-            return b.getvalue()
-        except:
-            return None
+
 
     # If should be moved then move over and return new filename
     def moveToLibrary(self, artist, id3, mp3):

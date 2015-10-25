@@ -1,3 +1,4 @@
+import os
 from enum import IntEnum
 
 from sqlalchemy import Column, ForeignKey, Table, Index, Integer, SmallInteger, String, DateTime
@@ -44,7 +45,7 @@ class Track(Base):
 
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable, backref="track")
-    userRating = relationship(UserTrack, backref="track")
+    userRatings = relationship(UserTrack, backref="track")
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -62,6 +63,14 @@ class Track(Base):
             self.musicBrainzId) \
                + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber) \
                + "], Duration [" + str(self.duration) + "]"
+
+    def fullPath(self):
+        # path = track.FilePath
+        # if trackPathReplace:
+        #     for rpl in trackPathReplace:
+        #         for key, val in rpl.items():
+        #             path = path.replace(key, val)
+        return os.path.join(self.filePath, self.fileName)
 
 
 Index("idx_track_unique_to_eleasemedia", Track.releaseMediaId, Track.trackNumber, unique=True)

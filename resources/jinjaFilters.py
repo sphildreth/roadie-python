@@ -10,44 +10,53 @@ def format_age_from_date(value):
     age = dateutil.relativedelta.relativedelta(now, value)
     return value.strftime("%Y-%m-%d") + " (" + str(age.years) + ")"
 
+
 def group_release_tracks_filepaths(value):
     try:
         groups = []
-        for track in value.Tracks:
-            if 'FilePath' in track.Track and track.Track.FilePath not in groups:
-                groups.append(track.Track.FilePath)
+        for media in value:
+            for track in media.tracks:
+                if 'filePath' in track and track.filePath not in groups:
+                    groups.append(track.filePath)
         return groups
     except:
         return groups
         pass
+
 
 def count_new_lines(value):
     if not value:
         return 0
     return len(re.findall("\\r", value))
 
+
 def calculate_release_discs(value):
     try:
         discs = []
-        for track in value.Tracks:
-            if track.ReleaseMediaNumber not in discs:
-                discs.append(track.ReleaseMediaNumber)
+        for media in value:
+            for track in media.tracks:
+                if track.releaseMediaNumber not in discs:
+                    discs.append(track.releaseMediaNumber)
         return len(discs)
     except:
         pass
 
+
 def calculate_release_tracks_Length(value):
     try:
         result = 0
-        for track in value.Tracks:
-            if 'Length' in track.Track:
-                result += track.Track.Length
+        for media in value.media:
+            for track in media.tracks:
+                if 'length' in track:
+                    result += track.length
         return result
     except:
         pass
 
+
 def format_tracktime(value):
-    return datetime.timedelta(seconds=value)
+    return format_timedelta(datetime.timedelta(seconds=int(floor(value / 1000))), "{hours2}:{minutes2}:{seconds2}")
+
 
 def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
     try:

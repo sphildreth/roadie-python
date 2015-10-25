@@ -1,9 +1,79 @@
 import datetime
+import io
 import unicodedata
 import string
 import arrow
+
+from PIL import Image
+
 from string import ascii_letters, digits
 import sys
+from math import floor
+
+
+def readImageThumbnailBytesFromFile(self, path, saveAs="JPEG"):
+    try:
+        img = Image.open(path).convert('RGB')
+        img.thumbnail(self.thumbnailSize)
+        b = io.BytesIO()
+        img.save(b, saveAs)
+        return b.getvalue()
+    except:
+        return None
+
+
+def sizeof_fmt(num, suffix='B'):
+    if not num:
+        return "0"
+    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+        if abs(num) < 1024.0:
+            return "%3.1f%s%s" % (num, unit, suffix)
+        num /= 1024.0
+    return "%.1f%s%s" % (num, 'Yi', suffix)
+
+
+def formatTimeMillisecondsNoDays(value):
+    return formatTimeMilliseconds(value, "{hours2}:{minutes2}:{seconds2}")
+
+
+def formatTimeMilliseconds(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
+    try:
+        seconds = int(floor(value / 1000))
+        seconds_total = seconds
+
+        minutes = int(floor(seconds / 60))
+        minutes_total = minutes
+        seconds -= minutes * 60
+
+        hours = int(floor(minutes / 60))
+        hours_total = hours
+        minutes -= hours * 60
+
+        days = int(floor(hours / 24))
+        days_total = days
+        hours -= days * 24
+
+        years = int(floor(days / 365))
+        years_total = years
+        days -= years * 365
+
+        return time_format.format(**{
+            'seconds': seconds,
+            'seconds2': str(seconds).zfill(2),
+            'minutes': minutes,
+            'minutes2': str(minutes).zfill(2),
+            'hours': hours,
+            'hours2': str(hours).zfill(2),
+            'days': days,
+            'years': years,
+            'seconds_total': seconds_total,
+            'minutes_total': minutes_total,
+            'hours_total': hours_total,
+            'days_total': days_total,
+            'years_total': years_total,
+        })
+    except:
+        pass
 
 
 def isEqual(s1, s2):

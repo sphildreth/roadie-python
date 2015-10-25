@@ -1,5 +1,6 @@
 {
     "SECRET_KEY": "a9kf^!y@rd-ci0&7l#da6ko$(l@_$9(y^r^a@2j+8!7zpk!zw88wi069",
+    "SESSION_TYPE": "filesystem",
     "MONGODB_SETTINGS": {
         "DB": "roadie",
         "host": "192.168.2.254"

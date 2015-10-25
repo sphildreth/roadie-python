@@ -164,7 +164,8 @@ class ArtistFactory(object):
                             i.caption = image.caption
                             i.image = image.image
                             artist.images.append(i)
-
+                        if not artist.thumbnail and artist.images:
+                            artist.thumbnail = artist.images[0].image
                     # TODO
                     # # See if a file exists to use for the Artist thumbnail
                     # artistFile = os.path.join(mp3Folder, "artist.jpg")

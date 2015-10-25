@@ -19,6 +19,7 @@ Flask-Mail==0.9.1
 Flask-Principal==0.4.0
 Flask-RESTful==0.3.4
 Flask-Security==1.7.4
+Flask-Session==0.2.2
 Flask-SQLAlchemy==2.0
 Flask-WTF==0.12
 goldfinch==0.4

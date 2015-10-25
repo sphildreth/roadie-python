@@ -17,7 +17,6 @@ releaseGenreTable = Table('releaseGenreTable', Base.metadata,
                           )
 
 
-
 class Release(Base):
 
     isVirtual = Column(Boolean(), default=False)
@@ -51,7 +50,7 @@ class Release(Base):
     genres = relationship(Genre, secondary=releaseGenreTable)
     releaseLabels = relationship(ReleaseLabel, backref="release")
     media = relationship(ReleaseMedia, backref="release")
-    images = relationship(Image)
+    images = relationship(Image, backref="release")
     userRatings = relationship(UserRelease, backref="release")
     collections = relationship(CollectionRelease, backref="release")
 

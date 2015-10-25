@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}{{ artist.Name }}{% endblock %}
+{% block title %}{{ artist.name }}{% endblock %}
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
@@ -60,22 +60,24 @@
         </div>
         <div class="row bordered">
             <div class="col-md-6">
-                <h4><span class="label label-primary">Profile</span></h4>
-                <p>{{ artist.profile|safe }}</p>
-            </div>
-            <div class="col-md-6">
-                <h4><span class="label label-primary">Bio</span></h4>
-                <p>{{ artist.bioContext|safe }}</p>
+                <div>
+                    <h4><span class="label label-primary">Profile</span></h4>
+                    <p>{{ artist.profile|safe }}</p>
+                </div>
+                <div>
+                    <h4><span class="label label-primary">Bio</span></h4>
+                    <p>{{ artist.bioContext|safe }}</p>
+                </div>
             </div>
 
             <div class="col-md-6">
-                {% for image in artist.Images %}
+                {% for image in artist.images %}
                     <div class="col-xs-4 col-sm-3 col-md-3">
                         <a href="javascript:void(0);"
-                           data-title="{{ image.element.filename }}"
-                           data-url="/images/{{ image.roadieId }}/2048/2048"
+                           data-title="{{ image.caption }}"
+                           data-url="/images/artist/{{ image.roadieId }}/2048/2048"
                            target="_blank" class="thumbnail">
-                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/{{ image.roadieId }}/512/512" alt="Image" />
+                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/artist/{{ image.roadieId }}/512/512" alt="Image" />
                         </a>
                     </div>
                     <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
@@ -88,7 +90,7 @@
         </div>
         <div class="row details bordered">
             <div class="col-md-3">
-                {% if artist.SortName %}
+                {% if artist.sortName %}
                 <div>
                     <h4><span class="label label-primary">Sort Name</span></h4>
                     <span class="label label-default">{{ artist.sortName }}</span>
@@ -180,7 +182,7 @@
                 <h4><span class="label label-primary">Urls</span></h4>
                 <ul>
                     {% for url in artist.Urls %}
-                    <li><a href="{{ url.url }}" target="_blank"><span class="label label-default">{{ url.title }}</span></a></li>
+                    <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
                     {% endfor %}
                 </ul>
                 {% endif %}
@@ -193,24 +195,27 @@
                 <div class="release pull-left" data-release-id="{{ release.roadieId }}">
                     <div>
                         <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}" alt="{{ release.title }}" />
-                        <a href="/release/{{ release.id }}">
-                        <h4><span class="label label-info releasedate">{{ release.releaseDate[:4] }}</span>
+                        <a href="/release/{{ release.roadieId }}">
+                        <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
                             <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="release-title label {{ 'label-danger' if (release.trackCount == 0) or (release.trackCount != release.tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.title }}</span></h4>
                         </a>
                     </div>
-                    {% for group in release.tracks|sort(attribute='trackNumber')|groupby('releaseMediaNumber') %}
-                    {% if group.grouper > 0 %}
-                    <h5 class="release-cd"><span class="label label-success pull-right">CD {{ group.grouper }}</span></h5>
-                    {% endif %}
-                    <ul class="tracks no-list-style">
-                        {% for track in group.list %}
-                        <li>
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }} </span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ track.track.Title }}" class="title label label-default">{{ track.track.title }}</span>
-                            <span class="length label label-info">{{ track.track.length|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                    {% for media in release.media %}
+                    <div class="release-media">
+                        {% if media.releaseSubTitle %}
+                            <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span></h5>
+                        {% endif %}
+                        <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span></h5>
+                        <ul class="tracks no-list-style">
+                            {% for track in media.tracks %}
+                            <li>
+                                <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }} </span>
+                                <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}" class="title label label-default">{{ track.title }}</span>
+                                <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
                     {% endfor %}
                 </div>
             {% endfor %}

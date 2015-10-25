@@ -10,6 +10,9 @@ from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, COMM, USLT, TCOM, TCON, TDR
 from resources.logger import Logger
 from hsaudiotag import mpeg
 
+from resources.models.Release import Release
+from resources.models.Track import Track
+
 
 class ID3:
     filename = None
@@ -40,19 +43,24 @@ class ID3:
         return self.artist + "." + str(self.year) + "." + self.album + "." + str(self.track) \
                + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
 
-
-    def updateFromRelease(self, Release, TrackRelease):
+    def updateFromRelease(self, release, track):
+        """
+        Update the given Track with loaded values
+        :param release: Release
+        :param track: Track
+        :return:
+        """
         try:
             tags = mutagenID3(self.filename)
         except ID3NoHeaderError:
             tags = mutagenID3()
-        tags["TIT2"] = TIT2(encoding=3, text= TrackRelease.Track.Title)
-        tags["TALB"] = TALB(encoding=3, text=Release.Title)
-        tags["TPE2"] = TPE2(encoding=3, text=Release.Artist.Name)
-        tags["TPE1"] = TPE1(encoding=3, text=Release.Artist.Name)
-        tags["TRCK"] = TRCK(encoding=3, text=str(TrackRelease.TrackNumber))
-        if Release.ReleaseDate:
-            year = Release.ReleaseDate[:4]
+        tags["TIT2"] = TIT2(encoding=3, text=track.title)
+        tags["TALB"] = TALB(encoding=3, text=release.title)
+        tags["TPE2"] = TPE2(encoding=3, text=release.artist.name)
+        tags["TPE1"] = TPE1(encoding=3, text=release.artist.name)
+        tags["TRCK"] = TRCK(encoding=3, text=str(track.TrackNumber))
+        if release.releaseDate:
+            year = release.releaseDate[:4]
             if year:
                 tags["TDRC"] = TDRC(encoding=3, text=year)
         if self.config:

@@ -169,6 +169,14 @@ img.thumb {
   padding: 2px;
 }
 
+.release-info-container .release-media {
+  display:inline-block;
+}
+
+.release-info-container .release-media h5 {
+  display:inline;
+}
+
 div.bordered {
     border: 1px solid;
     border-radius: 15px;

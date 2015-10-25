@@ -212,6 +212,9 @@ class ReleaseFactory(object):
                 media = ReleaseMedia()
                 media.roadieId = srMedia.roadieId
                 media.releaseMediaNumber = srMedia.releaseMediaNumber
+                # The first media is release 1 not release 0
+                if media.releaseMediaNumber < 1:
+                    media.releaseMediaNumber = 1
                 media.releaseSubTitle = srMedia.releaseSubTitle
                 media.trackCount = srMedia.trackCount
                 if srMedia.tracks:
@@ -234,6 +237,7 @@ class ReleaseFactory(object):
                             track.alternateNames.append(cleanedTitle)
                         media.tracks.append(track)
                 release.media.append(media)
+            release.mediaCount = len(release.media)
         return release
 
     def _getAllFromDatabaseForArtist(self, artist):

@@ -145,7 +145,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/searchEngine.js') }}"></script>
 <script>
     window.user = { username: '{{ current_user }}' };
-    window.user.doUseHTMLPlayer = {{ "true" if current_user.DoUseHTMLPlayer else "false" }};
+    window.user.doUseHtmlPlayer = {{ "true" if current_user.doUseHtmlPlayer else "false" }};
     $(function() {
 
         {% with messages = get_flashed_messages() %}

@@ -28,7 +28,7 @@ class User(Base):
     playlistUser = relationship(Playlist, backref="user")
 
     def get_id(self):
-        return self.id
+        return self.roadieId
 
     def is_authenticated(self):
         return True
