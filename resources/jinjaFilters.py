@@ -11,12 +11,12 @@ def format_age_from_date(value):
     return value.strftime("%Y-%m-%d") + " (" + str(age.years) + ")"
 
 
-def group_release_tracks_filepaths(value):
+def group_release_tracks_filepaths(release):
+    groups = []
     try:
-        groups = []
-        for media in value:
+        for media in release.media:
             for track in media.tracks:
-                if 'filePath' in track and track.filePath not in groups:
+                if track.filePath and track.filePath not in groups:
                     groups.append(track.filePath)
         return groups
     except:

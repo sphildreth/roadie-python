@@ -188,7 +188,7 @@ div.bordered {
     margin-bottom: 15px;
 }
 .title img {
-    margin-right: 5px;
+    margin-right: 10px;
 }
 
 .btn-toolbar .edit-locked {
@@ -283,6 +283,10 @@ ul.no-list-style {
 
 .release-detail-container .tracks {
     font-size: 18px;
+}
+
+.release-detail-container .tracks .missing span.trackNumber {
+    color: red;
 }
 
 .release-detail-container .lists span.label {

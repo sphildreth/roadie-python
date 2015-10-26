@@ -145,13 +145,9 @@ class Processor(ProcessorBase):
         lastID3Album = None
         artist = None
         release = None
-        maximumNumberOfFoldersToProcess = 1
         mp3FoldersProcessed = []
         # Get all the folder in the InboundFolder
         for mp3Folder in self.allDirectoriesInDirectory(inboundFolder):
-            if len(mp3FoldersProcessed) >= maximumNumberOfFoldersToProcess:
-                break
-
             foundMp3Files = 0
 
             # Do any conversions

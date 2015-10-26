@@ -74,7 +74,11 @@ class ReleaseFactory(object):
                 else:
                     self.logger.info("Refreshing Release [" + printableTitle + "] For Artist [" + printableArtistName)
                 release = Release()
-                srList = self.searcher.searchForArtistReleases(artist, title)
+                artistReleaseImages = self.session.query(Image)\
+                                                  .add_column(Image.signature)\
+                                                  .join(Release)\
+                                                  .filter(Release.artistId == artist.id).all()
+                srList = self.searcher.searchForArtistReleases(artist, artistReleaseImages, title)
                 if not srList:
                     if not srList:
                         self.logger.info("Release For Artist [" + printableArtistName +

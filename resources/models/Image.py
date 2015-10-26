@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, BLOB, String
+from sqlalchemy import Column, ForeignKey, Index, Integer, BLOB, String
 from resources.models.ModelBase import Base
 
 

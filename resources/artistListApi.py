@@ -2,6 +2,8 @@ import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
 
+from resources.models.Artist import Artist
+
 
 class ArtistListApi(Resource):
 
@@ -30,7 +32,7 @@ class ArtistListApi(Resource):
             order = ""
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
-        connect()
+
         if args.filter:
             artists = Artist.objects(__raw__= {'$or' : [
                 { 'Name' : { '$regex' : args.filter, '$options': 'mi' }},

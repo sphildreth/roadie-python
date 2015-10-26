@@ -123,8 +123,17 @@
                 <div>
                     <h4><span class="label label-primary">Labels</span></h4>
                     <ul>
-                        {% for label in release.labels %}
-                        <li><span class="label label-default">{{ label.name }}</span></li>
+                        {% for releaseLabel in release.releaseLabels %}
+                        <li>
+                            <span class="label label-default">{{ releaseLabel.label.name }}</span>
+                            <span class="label label-default">{{ releaseLabel.catalogNumber }}</span>
+                            {% if releaseLabel.beginDate %}
+                            <span class="label label-default">{{ releaseLabel.beginDate }}</span>
+                            {% endif %}
+                            {% if releaseLabel.endDate %}
+                            <span class="label label-default">{{ releaseLabel.endDate }}</span>
+                            {% endif %}
+                        </li>
                         {% endfor %}
                     </ul>
                 </div>
@@ -229,7 +238,7 @@
                     {% endif %}
                 </div>
                 {% for track in media.tracks %}
-                    <div class="row track" data-track-id="{{ track.roadieId }}">
+                    <div class="row track {{ "" if track.fileName else "missing" }}" data-track-id="{{ track.roadieId }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
                             <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
                             <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1" /></span>

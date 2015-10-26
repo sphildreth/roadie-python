@@ -112,7 +112,7 @@ class ArtistSearcher(object):
 
                 self.cache[name] = artist
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
-            self.logger.debug("searchForArtist Name [" + printableName + "] Found [" \
+            self.logger.debug("searchForArtist Name [" + printableName + "] Found ["
                               + (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
             return artist
         except:
@@ -141,12 +141,14 @@ class ArtistSearcher(object):
                     mergedReleases.append(rRelease)
             return mergedReleases
 
-    def searchForArtistReleases(self, artist, titleFilter=None):
+    def searchForArtistReleases(self, artist, artistReleaseImages, titleFilter=None):
         """
         Using the given populated Artist find all releases, with an optional filter
 
         :param artist: Artist
                        Artist to find releases for
+        :param artistReleaseImages: list
+                                    Collection if image signatures for Artist for deduping
         :param titleFilter: String
                             Optional filter of release Title to only include in results
         :return: iterable Release
@@ -186,14 +188,14 @@ class ArtistSearcher(object):
                             if not image.image and image.url:
                                 image.image = imageSearcher.getImageBytesForUrl(image.url)
                             if image.image:
-                                firstImageInImages = firstImageInImages or image.image
                                 image.signature = image.averageHash()
                                 images.append(image)
                         if images:
                             dedupedImages = []
-                            imageSignatures = []
+                            imageSignatures = artistReleaseImages
                             for image in images:
                                 if image.signature not in imageSignatures:
+                                    firstImageInImages = firstImageInImages or image.image
                                     imageSignatures.append(image.signature)
                                     dedupedImages.append(image)
                             release.images = dedupedImages
