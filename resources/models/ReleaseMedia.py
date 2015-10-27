@@ -27,3 +27,5 @@ class ReleaseMedia(Base):
     def __unicode__(self):
         return self.release.title + " " + self.releaseMediaNumber
 
+    def __str__(self):
+        return self.release.title + " " + str(self.releaseMediaNumber)

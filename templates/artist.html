@@ -5,9 +5,11 @@
 {% block body_content %}
     <div class="artist-detail-container" data-artist-id="{{ artist.id }}">
         <div class="release-counts-container pull-right">
-            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases of Artist">{{ counts.releases }}</span></span>
-            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Artist">{{ counts.tracks }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
+            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases of Artist">{{ '%02d' % counts.releases }}</span></span>
+            <span class="release-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Artist">{{ '%03d' % counts.releaseMedia }}</span></span>
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Artist">{{ '%03d' % counts.tracks }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length }}</span></span>
+            <span class="length-total">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.fileSize }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
@@ -24,7 +26,7 @@
             <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
             {% if current_user.is_editor() %}
               <div class="btn-group">
-                <a href="/admin/artist/edit/?id={{ artist.roadieId }}&amp;url=/artist/{{ artist.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 {% if artist.IsLocked == False %}
                     <div class="btn-group">
                         <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -197,11 +199,14 @@
                         <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}" alt="{{ release.title }}" />
                         <a href="/release/{{ release.roadieId }}">
                         <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ release.Title }}" class="release-title label {{ 'label-danger' if (release.trackCount == 0) or (release.trackCount != release.tracks|default('')|length) else 'label-default' }} releasetitle">{{ release.title }}</span></h4>
+                            <span data-toggle="tooltip"
+                                  data-placement="top"
+                                  title="{{ release.Title }}"
+                                  class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span></h4>
                         </a>
                     </div>
                     {% for media in release.media %}
-                    <div class="release-media">
+                    <div class="release-media" data-track-count="{{ media.trackCount }}">
                         {% if media.releaseSubTitle %}
                             <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span></h5>
                         {% endif %}
@@ -209,7 +214,7 @@
                         <ul class="tracks no-list-style">
                             {% for track in media.tracks %}
                             <li>
-                                <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }} </span>
+                                <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
                                 <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}" class="title label label-default">{{ track.title }}</span>
                                 <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
                             </li>
@@ -231,14 +236,36 @@
         var artistId = '{{ artist.roadieId }}';
 
         var doArtistSanityChecks = function() {
+            checkReleaseMediaTrackCount();
+
             var $c = $("div.release-counts-container");
             $c.find(".release-sane-indicator").remove();
             var isSane = areNoInvalidReleasesFound();
+            isSane = isSane && noTracksAreMissing();
             if(isSane) {
                 $c.append("<span class='release-sane-indicator release-sane label label-success' title='Artist Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
             } else {
                 $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Artist Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
             }
+        };
+
+        var noTracksAreMissing = function() {
+            return $(".artist-detail-container span.trackNumber.missing").length === 0;
+        };
+
+        var checkReleaseMediaTrackCount = function() {
+            $.each($(".release-media"), function(i, d) {
+                var $t = $(this);
+                var tracksFound = $t.find("li").length;
+                var trackCount = parseInt($t.data('track-count'));
+                var hasMissingTracks = $t.find("span.trackNumber.missing").length;
+                if (tracksFound !== trackCount || hasMissingTracks > 0) {
+                    var $r = $t.closest("div.release").find(".release-title")
+                    var releaseName = $r.text();
+                    console.log("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
+                    $r.addClass("label-danger").removeClass("label-default");
+                }
+            });
         };
 
         var areNoInvalidReleasesFound = function() {

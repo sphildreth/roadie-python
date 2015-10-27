@@ -3,9 +3,12 @@ from sqlalchemy import Column, ForeignKey, Table, Integer, Boolean, BLOB, String
 from sqlalchemy.orm import relationship
 
 from resources.models.ModelBase import Base
-from resources.models.UserRole import UserRole
 from resources.models.Collection import Collection
 from resources.models.Playlist import Playlist
+from resources.models.UserArtist import UserArtist
+from resources.models.UserRelease import UserRelease
+from resources.models.UserRole import UserRole
+from resources.models.UserTrack import UserTrack
 
 usersInRolesTable = Table('usersInRoles', Base.metadata,
                           Column('userId', Integer, ForeignKey('user.id'), index=True),
@@ -26,6 +29,10 @@ class User(Base):
 
     collectionMaintainer = relationship(Collection, backref="user")
     playlistUser = relationship(Playlist, backref="user")
+
+    artists = relationship(UserArtist, backref="user")
+    releases = relationship(UserRelease, backref="user")
+    tracks = relationship(UserTrack, backref="user")
 
     def get_id(self):
         return self.roadieId

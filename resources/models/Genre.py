@@ -8,3 +8,6 @@ class Genre(Base):
 
     def __unicode__(self):
         return self.name
+
+    def __str__(self):
+        return self.name

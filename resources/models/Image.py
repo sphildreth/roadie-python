@@ -17,3 +17,6 @@ class Image(Base):
 
     def __unicode__(self):
         return self.caption
+
+    def __str__(self):
+        return self.caption or self.signature

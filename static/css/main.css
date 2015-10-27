@@ -285,7 +285,7 @@ ul.no-list-style {
     font-size: 18px;
 }
 
-.release-detail-container .tracks .missing span.trackNumber {
+.release-detail-container .tracks .missing span.trackNumber, .artist-detail-container .tracks .missing {
     color: red;
 }
 
@@ -605,4 +605,16 @@ form.profile input {
 
 .singletrackrelease-container .row.selected {
     background-color: #FA5882;
+}
+
+#lastPlayedTracks tbody tr td {
+    height: 55px;
+}
+
+#lastPlayedTracks td.track, #lastPlayedTracks td.release, #lastPlayedTracks td.artist, #lastPlayedTracks td.username {
+    width: 22%
+}
+
+#lastPlayedTracks img.release-thumb, #lastPlayedTracks img.artist-thumb {
+    height: 45px;
 }

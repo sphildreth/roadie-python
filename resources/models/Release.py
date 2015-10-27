@@ -54,6 +54,9 @@ class Release(Base):
     userRatings = relationship(UserRelease, backref="release")
     collections = relationship(CollectionRelease, backref="release")
 
+    def get_id(self):
+        return self.roadieId
+
     def isLiveOrCompilation(self):
         """
         Determine if the release is a Live or Compilation album
@@ -73,6 +76,9 @@ class Release(Base):
         return False
 
     def __unicode__(self):
+        return self.title
+
+    def __str__(self):
         return self.title
 
     def info(self):

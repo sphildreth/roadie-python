@@ -42,7 +42,6 @@
                         <li><a href="/admin"><i class="fa fa-cog"></i> Admin</a></li>
                         <li><a href="/dupfinder"><i class="fa fa-files-o"></i> Duplicate Finder</a></li>
                         <li><a href="/singletrackreleasefinder"><i class="fa fa-files-o"></i> Single Track Release Finder</a></li>
-                        <li><a href="javascript:void(0);" id="reseed"><i class="fa fa-puzzle-piece"></i> ReSeed Random Values</a></li>
                         <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
                     </ul>
                 </li>
@@ -167,29 +166,7 @@
             searchTrackThumbNailUrl: "{{ url_for('static', filename='img/track.png') }}"
         });
 
-        $("#reseed").on("click", function(e) {
-                bootbox.confirm("Continue To ReSeed Random Values?", function(result) {
-                    if(result) {
-                        $(".loader").fadeIn("slow", function() {
-                            $.ajax({
-                                type: 'POST',
-                                url: '/db/reseed',
-                                contentType: "application/javascript",
-                                success: function(data) {
-                                    if(data.message == "OK") {
-                                        location.reload(true);
-                                    } else {
-                                        roadieLibrary.showErrorMessage("An Error Occurred");
-                                    }
-                                },
-                                error:function(jq, st, error){
-                                    roadieLibrary.showErrorMessage(error);
-                                }
-                            });
-                        });
-                    }
-                });
-        });
+
     });
 
 </script>
