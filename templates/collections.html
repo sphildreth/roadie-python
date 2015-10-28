@@ -13,13 +13,13 @@
         <h4><span class="label label-primary">Collections</span></h4>
         {% for collection in collections %}
         <div class="row collection">
-            <a href="/collection/{{ collection.id }}">
+            <a href="/collection/{{ collection.roadieId }}">
                 <div class="thumbnail-container pull-left">
-                    <img class="thumb" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Name }}" />
+                    <img class="thumb" src="/images/collection/thumbnail/{{ collection.roadieId }}" alt="{{ collection.name }}" />
                 </div>
                 <h4>
-                    <span title="Found Releases In Library" class="label label-info">{{ collection.ReleaseCount }}</span>
-                    <span class="label label-default">{{ collection.Name }}</span>
+                    <span title="Found Releases In Library" class="label label-info">{{ collection.releaseCount }}</span>
+                    <span class="label label-default">{{ collection.name }}</span>
                 </h4>
             </a>
         </div>

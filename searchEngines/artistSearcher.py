@@ -24,11 +24,18 @@ class ArtistSearcher(object):
     Query Enabled Search Engines and Find Artist Information and aggregate results.
     """
     allMusicSearcher = None
+    spotifySearcher = None
+    mbSearcher = None
+    lastFMSearcher = None
+    imageSearcher = None
+    iTunesSearcher = None
 
     artistThumbnailSize = 160, 160
     releaseThumbnailSize = 80, 80
 
     cache = dict()
+
+    imageCache = dict()
 
     def __init__(self, referer=None):
         self.referer = referer
@@ -36,6 +43,11 @@ class ArtistSearcher(object):
             self.referer = "http://github.com/sphildreth/roadie"
         self.logger = Logger()
         self.allMusicSearcher = AllMusicGuide(self.referer)
+        self.spotifySearcher = Spotify(self.referer)
+        self.mbSearcher = MusicBrainz(self.referer)
+        self.lastFMSearcher = LastFM(self.referer)
+        self.imageSearcher = ImageSearcher()
+        self.iTunesSearcher = iTunes(self.referer)
 
     def searchForArtist(self, name):
         """
@@ -53,18 +65,14 @@ class ArtistSearcher(object):
             artist = Artist(name=name)
             artist.random = random.randint(1, 9999999)
             artist.roadieId = str(uuid.uuid4())
-            iTunesSearcher = iTunes(self.referer)
-            if iTunesSearcher.IsActive:
-                artist = artist.mergeWithArtist(iTunesSearcher.lookupArtist(name))
-            mbSearcher = MusicBrainz(self.referer)
-            if mbSearcher.IsActive:
-                artist = artist.mergeWithArtist(mbSearcher.lookupArtist(name))
-            lastFMSearcher = LastFM(self.referer)
-            if lastFMSearcher.IsActive:
-                artist = artist.mergeWithArtist(lastFMSearcher.lookupArtist(name))
-            spotifySearcher = Spotify(self.referer)
-            if spotifySearcher.IsActive:
-                artist = artist.mergeWithArtist(spotifySearcher.lookupArtist(name))
+            if self.iTunesSearcher.IsActive:
+                artist = artist.mergeWithArtist(self.iTunesSearcher.lookupArtist(name))
+            if self.mbSearcher.IsActive:
+                artist = artist.mergeWithArtist(self.mbSearcher.lookupArtist(name))
+            if self.lastFMSearcher.IsActive:
+                artist = artist.mergeWithArtist(self.lastFMSearcher.lookupArtist(name))
+            if self.spotifySearcher.IsActive:
+                artist = artist.mergeWithArtist(self.spotifySearcher.lookupArtist(name))
             if self.allMusicSearcher.IsActive:
                 artist = artist.mergeWithArtist(self.allMusicSearcher.lookupArtist(name))
             if artist:
@@ -119,8 +127,7 @@ class ArtistSearcher(object):
             self.logger.exception("Error In searchForArtist")
         return None
 
-    @staticmethod
-    def _mergeReleaseLists(left, right):
+    def _mergeReleaseLists(self, left, right):
         if left and not right:
             return left
         elif not left and right:
@@ -128,6 +135,7 @@ class ArtistSearcher(object):
         elif not left and not right:
             return []
         else:
+            mergeReleaseListsStart = arrow.utcnow()
             mergedReleases = left
             # Merge the right to the result
             for rRelease in right:
@@ -139,6 +147,9 @@ class ArtistSearcher(object):
                         break
                 if not foundRightInMerged:
                     mergedReleases.append(rRelease)
+            mergedReleaseElapsed = arrow.utcnow() - mergeReleaseListsStart
+            self.logger.debug("= MergeReleaseLists left size [" + str(len(left)) + "], right size [" + str(
+                len(right)) + "] Elapsed Time [" + str(mergedReleaseElapsed) + "]")
             return mergedReleases
 
     def searchForArtistReleases(self, artist, artistReleaseImages, titleFilter=None):
@@ -158,23 +169,21 @@ class ArtistSearcher(object):
             return None
         try:
             releases = []
-            iTunesSearcher = iTunes(self.referer)
-            if iTunesSearcher.IsActive:
-                releases = self._mergeReleaseLists(releases, iTunesSearcher.searchForRelease(artist, titleFilter))
-            mbSearcher = MusicBrainz(self.referer)
-            if mbSearcher.IsActive:
-                releases = self._mergeReleaseLists(releases, mbSearcher.searchForRelease(artist, titleFilter))
-            lastFMSearcher = LastFM(self.referer)
-            if lastFMSearcher.IsActive and releases:
+            if self.iTunesSearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, self.iTunesSearcher.searchForRelease(artist, titleFilter))
+            if self.mbSearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, self.mbSearcher.searchForRelease(artist, titleFilter))
+            if self.lastFMSearcher.IsActive and releases:
                 mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
                 if mbIdList:
                     releases = self._mergeReleaseLists(releases,
-                                                       lastFMSearcher.lookupReleasesForMusicBrainzIdList(mbIdList))
-            spotifySearcher = Spotify(self.referer)
-            if spotifySearcher.IsActive:
-                releases = self._mergeReleaseLists(releases, spotifySearcher.searchForRelease(artist, titleFilter))
+                                                       self.lastFMSearcher.lookupReleasesForMusicBrainzIdList(artist,
+                                                                                                              mbIdList))
+            if self.spotifySearcher.IsActive:
+                releases = self._mergeReleaseLists(releases, self.spotifySearcher.searchForRelease(artist, titleFilter))
             if releases:
-                imageSearcher = ImageSearcher()
+                self.logger.debug(
+                    "searchForArtistReleases Found [" + str(len(releases)) + "] For title [" + str(titleFilter) + "]")
                 for release in releases:
                     if release.coverUrl:
                         coverImage = ArtistImage(release.coverUrl)
@@ -186,7 +195,7 @@ class ArtistSearcher(object):
                         firstImageInImages = None
                         for image in release.images:
                             if not image.image and image.url:
-                                image.image = imageSearcher.getImageBytesForUrl(image.url)
+                                image.image = self.getImageForUrl(image.url)
                             if image.image:
                                 image.signature = image.averageHash()
                                 images.append(image)
@@ -220,3 +229,9 @@ class ArtistSearcher(object):
             self.logger.exception("Error In searchForArtistReleases")
             pass
         return None
+
+    def getImageForUrl(self, url):
+        if url not in self.imageCache:
+            self.imageCache[url] = self.imageSearcher.getImageBytesForUrl(url)
+            self.logger.debug("= Downloading Image [" + str(url) + "]")
+        return self.imageCache[url]

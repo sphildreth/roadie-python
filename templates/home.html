@@ -198,7 +198,7 @@
             var releaseId = $(this).closest("td").siblings("td.release").data("release-id");
             $.ajax({
                 type: 'POST',
-                url: '/user/track/setrating/' + releaseId + "/" + $(this).closest("td").data("track-id") + '/' + $(this).rating('rate'),
+                url: '/user/track/setrating/' + $(this).closest("td").data("track-id") + '/' + $(this).rating('rate'),
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {

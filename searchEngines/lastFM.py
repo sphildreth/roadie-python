@@ -1,5 +1,7 @@
 import json
 import threading
+import hashlib
+
 from queue import Queue
 from io import StringIO
 from urllib import request, parse
@@ -22,6 +24,8 @@ class LastFM(SearchEngineBase):
     threadDataType = "lastFm"
     lock = threading.Lock()
     que = Queue()
+
+    cache = dict()
 
     artistReleasesThreaded = []
 
@@ -99,27 +103,31 @@ class LastFM(SearchEngineBase):
                 else:
                     self.artistReleasesThreaded.append(release)
 
-    def lookupReleasesForMusicBrainzIdList(self, mbIdList):
+    def lookupReleasesForMusicBrainzIdList(self, artist, mbIdList):
         """
         This is because there is no way to ge all the releases from an Artist via LastFM and their top albums query
         contains releases not by the given artist.
         :param mbIdList:
         :return:
         """
-        for x in range(self.threadCount):
-            t = threading.Thread(target=self.threader)
-            t.daemon = True
-            t.start()
+        if artist.roadieId not in self.cache:
+            for x in range(self.threadCount):
+                t = threading.Thread(target=self.threader)
+                t.daemon = True
+                t.start()
 
-        for musicBrainzId in mbIdList:
-            url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
-            self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
+            for musicBrainzId in mbIdList:
+                url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
+                self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
 
-            self.que.put(ThreadData(self.threadDataType, url))
+                self.que.put(ThreadData(self.threadDataType, url))
 
-        self.que.join()
-
-        return self.artistReleasesThreaded
+            self.que.join()
+            self.cache[artist.roadieId] = self.artistReleasesThreaded
+        else:
+            self.logger.debug(
+                "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in LastFM Cache.")
+        return self.cache[artist.roadieId]
 
     def _fetchFromUrl(self, url):
         if not url:
@@ -188,7 +196,6 @@ class LastFM(SearchEngineBase):
             self.logger.exception("LastFM: Error In SearchForRelease")
             pass
         return None
-
 
 # a = LastFM()
 # artist = a.lookupArtist('Men At Work')

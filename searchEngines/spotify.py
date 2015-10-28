@@ -20,6 +20,8 @@ class Spotify(SearchEngineBase):
     lock = threading.Lock()
     que = Queue()
 
+    cache = dict()
+
     artistReleasesThreaded = []
 
     def __init__(self, referer=None):
@@ -67,6 +69,10 @@ class Spotify(SearchEngineBase):
 
     def searchForRelease(self, artist, title):
         try:
+            if artist.roadieId in self.cache:
+                self.logger.debug(
+                    "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in Spotify Cache.")
+                return self.cache[artist.roadieId]
             url = "https://api.spotify.com/v1/artists/" + str(
                 artist.spotifyId) + "/albums?offset=0&limit=20&album_type=album&market=US"
             rq = request.Request(url=url)
@@ -90,7 +96,8 @@ class Spotify(SearchEngineBase):
                 if r:
                     self.artistReleasesThreaded = []
                     self.artistReleasesThreaded.append(r[0])
-            return self.artistReleasesThreaded
+            self.cache[artist.roadieId] = self.artistReleasesThreaded
+            return self.cache[artist.roadieId]
         except HTTPError:
             print("Spotify: Http Error")
         except:
@@ -148,7 +155,7 @@ class Spotify(SearchEngineBase):
                             tags.append("upc:" + o['external_ids']['upc'])
                         if 'external_urls' in o and 'spotify' in o['external_urls']:
                             urls.append(o['external_urls']['spotify'])
-                        release = Release(title=o['name'], releaseDate= parseDate(o['release_date']))
+                        release = Release(title=o['name'], releaseDate=parseDate(o['release_date']))
                         release.trackCount = len(media.tracks)
                         release.spotifyId = o['id']
                         release.tags = tags

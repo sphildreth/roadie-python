@@ -6,10 +6,10 @@
     <div class="playlist-container">
         <div class="row">
         {% for userPlaylist in userPlaylists %}
-            <h4><span class="label label-default">{{ userPlaylist.Name }}</span></h4>
-            <ul class="playlist" data-playlist-id="{{ userPlaylist.id }}">
-                {%for track in userPlaylist.Tracks %}
-                <li data-track-id="{{ track.id }}">{{ track.Title }}</li>
+            <h4><span class="label label-default">{{ userPlaylist.name }}</span></h4>
+            <ul class="playlist" data-playlist-id="{{ userPlaylist.roadieId }}">
+                {%for track in userPlaylist.tracks %}
+                <li data-track-id="{{ track.roadieId }}">{{ track.title }}</li>
                 {% endfor %}
             </ul>
         {% endfor %}

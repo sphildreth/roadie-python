@@ -96,6 +96,7 @@ class Scanner(ProcessorBase):
 
         # For each file found in folder get ID3 info and insert record into Track DB
         scannedMp3Files = 0
+        releaseMediaTrackCount = 0
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 is not None:
@@ -112,6 +113,7 @@ class Scanner(ProcessorBase):
                         for releaseTrack in releaseMedia.tracks:
                             if isEqual(str(releaseTrack.trackNumber), str(id3.track)):
                                 track = releaseTrack
+                                releaseMediaTrackCount = releaseMedia.trackCount
                                 break
                             else:
                                 continue
@@ -184,13 +186,14 @@ class Scanner(ProcessorBase):
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
-        matches = scannedMp3Files == (createdReleaseTracks + foundReleaseTracks)
+        matches = releaseMediaTrackCount == (createdReleaseTracks + foundReleaseTracks)
         if matches:
             release.libraryStatus = 'Complete'
-        elif (createdReleaseTracks + foundReleaseTracks) > 0:
-            release.libraryStatus = 'Incomplete'
-        else:
+        elif scannedMp3Files == 0:
             release.libraryStatus = 'Missing'
+        else:
+            release.libraryStatus = 'Incomplete'
+
         self.logger.info(("Scanning Folder [" + folder + "] Complete, Scanned [" +
                           ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +
                           "] Release Tracks, Found [" + str(foundReleaseTracks) +

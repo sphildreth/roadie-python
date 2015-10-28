@@ -101,10 +101,14 @@ class Processor(ProcessorBase):
             self.logger.exception("shouldMoveToLibrary: Id3 [" + str(id3) + "]")
             return False
 
-
-
-    # If should be moved then move over and return new filename
     def moveToLibrary(self, artist, id3, mp3):
+        """
+        If should be moved then move over and return new filename
+        :param artist: Artist
+        :param id3: ID3
+        :param mp3: str
+        :return:
+        """
         try:
             newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album),
                                        self.trackName(id3.track, id3.title))
@@ -114,17 +118,19 @@ class Processor(ProcessorBase):
             # the file should be overwritten or not
             if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
                 try:
-                    os.remove(newFilename)
                     self.logger.warn("x Deleting Existing [" + newFilename + "]")
+                    os.remove(newFilename)
                 except OSError:
                     pass
 
-            if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
-                try:
-                    move(mp3, newFilename)
-                    self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
-                except OSError:
-                    pass
+            isNewFilenameFile = os.path.isfile(newFilename)
+            if isMp3File:
+                if (isNewFilenameFile and not os.path.samefile(mp3, newFilename)) or not isNewFilenameFile:
+                    try:
+                        self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
+                        move(mp3, newFilename)
+                    except OSError:
+                        pass
 
             return newFilename
         except:

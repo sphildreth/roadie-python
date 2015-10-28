@@ -24,6 +24,8 @@ class MusicBrainz(SearchEngineBase):
     lock = threading.Lock()
     que = Queue()
 
+    cache = dict()
+
     artistReleasesThreaded = []
 
     def __init__(self, referer=None):
@@ -102,24 +104,29 @@ class MusicBrainz(SearchEngineBase):
 
     def searchForRelease(self, artist, title):
         try:
+            if artist.roadieId in self.cache and not title:
+                self.logger.debug(
+                    "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in MusicBrainz Cache.")
+                return self.cache[artist.roadieId]
             if not artist.musicBrainzId:
                 artist = self.lookupArtist(artist.name)
                 if not artist or not artist.musicBrainzId:
                     return None
-            if title:
-                result = musicbrainzngs.search_releases(limit=1, arid=artist.musicBrainzId, release=title, format='CD',
-                                                        country='US')
-                if result and 'release-list' in result:
-                    releases = []
-                    if title:
-                        mbReleaseId = result['release-list'][0]['id']
-                        releases.append(self.lookupReleaseByMusicBrainzId(mbReleaseId))
-                    else:
-                        for release in result['release-list']:
-                            releases.append(self.lookupReleaseByMusicBrainzId(release['id']))
-                    return releases
+            if artist.roadieId not in self.cache:
+                self.cache[artist.roadieId] = self.lookupAllArtistsReleases(artist)
             else:
-                return self.lookupAllArtistsReleases(artist)
+                self.logger.debug(
+                    "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in MusicBrainz Cache.")
+            if title:
+                foundRelease = None
+                for release in self.cache[artist.roadieId]:
+                    if isEqual(release.title, title):
+                        foundRelease = release
+                        break
+                if foundRelease:
+                    releases = [foundRelease]
+                    return releases
+            return self.cache[artist.roadieId]
         except:
             self.logger.exception("MusicBrainz: Error In LookupArtist")
             pass

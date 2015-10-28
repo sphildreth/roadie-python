@@ -1,4 +1,3 @@
-import io
 import os
 import hashlib
 import json
@@ -6,7 +5,7 @@ import random
 import zipfile
 import uuid
 from time import time
-from operator import itemgetter
+
 from re import findall
 
 from urllib.parse import urlparse, urljoin
@@ -36,7 +35,6 @@ from resources.models.Collection import Collection
 from resources.models.Image import Image
 from resources.models.Label import Label
 from resources.models.Release import Release
-from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Playlist import Playlist
 from resources.models.Track import Track
@@ -54,9 +52,9 @@ from resources.logger import Logger
 from resources.id3 import ID3
 from resources.m3u import M3U
 from resources.validator import Validator
-from flask.ext.login import LoginManager, login_user, logout_user, \
+from flask_login import LoginManager, login_user, logout_user, \
     current_user, login_required
-from flask.ext.bcrypt import Bcrypt
+from flask_bcrypt import Bcrypt
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
@@ -70,6 +68,9 @@ from viewModels.RoadieArtistModelView import RoadieArtistModelView
 from viewModels.RoadiePlaylistModelView import RoadiePlaylistModelView
 
 clients = []
+logger = Logger()
+avatarSize = 30, 30
+userCache = dict()
 
 app = Flask(__name__)
 
@@ -90,7 +91,6 @@ siteName = config['ROADIE_SITE_NAME']
 trackPathReplace = None
 if 'ROADIE_TRACK_PATH_REPLACE' in config:
     trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
-avatarSize = 30, 30
 
 engine = create_engine(config['ROADIE_DATABASE_URL'])
 conn = engine.connect()
@@ -99,15 +99,11 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 dbSession = DBSession()
 
-userCache = dict()
-
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
 
 FlaskSession(app)
-
-logger = Logger()
 
 
 def getUser(userId=None):
@@ -164,6 +160,34 @@ def getTrack(trackId):
         .first()
 
 
+def getUserArtistRating(artistId):
+    user = getUser()
+    userArtist = dbSession.query(UserArtist) \
+        .filter(UserArtist.id == user.id) \
+        .filter(UserArtist.artistId == artistId).first()
+    if not userArtist:
+        userArtist = UserArtist()
+        userArtist.roadieId = str(uuid.uuid4())
+        userArtist.userId = user.id
+        userArtist.artistId = artistId
+        dbSession.add(userArtist)
+    return userArtist
+
+
+def getUserReleaseRating(releaseId):
+    user = getUser()
+    userRelease = dbSession.query(UserRelease) \
+        .filter(UserRelease.userId == user.id) \
+        .filter(UserRelease.releaseId == releaseId).first()
+    if not userRelease:
+        userRelease = UserRelease()
+        userRelease.roadieId = str(uuid.uuid4())
+        userRelease.releaseId = release.id
+        userRelease.userId = user.id
+        dbSession.add(userRelease)
+    return userRelease
+
+
 def pathToTrack(track):
     """
     Adjust the path to a track with any OS or config substitutions
@@ -218,22 +242,22 @@ def index():
 
 @app.route("/release/setTitle/<roadieId>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
 def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name):
-    release = getRelease(roadieId)
+    setReleaseTitleRelease = getRelease(roadieId)
     user = getUser()
     now = arrow.utcnow().datetime
-    if not release or not user or not new_title:
+    if not setReleaseTitleRelease or not user or not new_title:
         return jsonify(message="ERROR")
-    oldTitle = release.Title
-    release.Title = new_title
-    release.LastUpdated = now
-    if create_alternate_name == "true" and new_title not in release.alternateNames:
-        release.alternateNames.append(oldTitle)
+    oldTitle = setReleaseTitleRelease.Title
+    setReleaseTitleRelease.Title = new_title
+    setReleaseTitleRelease.LastUpdated = now
+    if create_alternate_name == "true" and new_title not in setReleaseTitleRelease.alternateNames:
+        setReleaseTitleRelease.alternateNames.append(oldTitle)
     dbSession.commit()
     if set_tracks_title == "true":
-        for track in release.Tracks:
+        for track in setReleaseTitleRelease.Tracks:
             trackPath = pathToTrack(track)
             id3 = ID3(trackPath, config)
-            id3.updateFromRelease(release, track)
+            id3.updateFromRelease(setReleaseTitleRelease, track)
     return jsonify(message="OK")
 
 
@@ -266,17 +290,17 @@ def browseReleases():
     return render_template('browseReleases.html')
 
 
-@app.route("/randomizer/<type>")
+@app.route("/randomizer/<random_type>")
 @login_required
-def randomizer(type):
+def randomizer(random_type):
     user = getUser()
-    if type == "artist":
+    if random_type == "artist":
         artist = dbSession.query(Artist).order_by(func.random()).first()
         return playArtist(artist.id, "0")
-    elif type == "release":
-        release = dbSession.query(Release).order_by(func.random()).first()
-        return playRelease(release.id)
-    elif type == "tracks":
+    elif random_type == "release":
+        randomizerRelease = dbSession.query(Release).order_by(func.random()).first()
+        return playRelease(randomizerRelease.id)
+    elif random_type == "tracks":
         tracks = []
         for track in dbSession.query(Track).order_by(func.random())[:35]:
             t = M3U.makeTrackInfo(user, track.releasemedia.release, track)
@@ -326,15 +350,7 @@ def setUserArtistRating(artist_id, rating):
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userArtist = dbSession.query(UserArtist) \
-            .filter(UserArtist.id == user.id) \
-            .filter(UserArtist.artistId == artist.id).first()
-        if not userArtist:
-            userArtist = UserArtist()
-            userArtist.roadieId = str(uuid.uuid4())
-            userArtist.userId = user.id
-            userArtist.artistId = artist.id
-            dbSession.add(userArtist)
+        userArtist = getUserArtistRating(artist.id)
         userArtist.rating = rating
         userArtist.lastUpdated = now
         dbSession.commit()
@@ -358,24 +374,17 @@ def toggleUserArtistDislike(artist_id, toggle):
         if not artist or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        if not artist.userRatings:
-            artist.userRatings = UserArtist()
-            artist.userRatings.userId = user.id
-            artist.userRatings.artistId = artist.id
-        artist.userRatings.IsDisliked = toggle.lower() == "true"
-        artist.userRatings.LastUpdated = now
-        if artist.userRatings.IsDisliked:
-            artist.userRatings.Rating = 0
+        userArtist = getUserArtistRating(artist.id)
+        userArtist.isDisliked = toggle.lower() == "true"
+        userArtist.lastUpdated = now
+        if userArtist.isDisliked:
+            userArtist.rating = 0
         dbSession.commit()
-        # TODO
-        # artistAverage = UserArtist.objects(Artist=artist).aggregate_average('Rating')
-        # session.query(func.avg(Rating.field2).label('average')).filter(Rating.url==url_string.netloc)
-        artistAverage = 0
-        # if userArtist.IsDisliked:
-        #     # Update artist average rating
-        #      artist.Rating = artistAverage
-        #      artist.LastUpdated = now
-        #      Artist.save(artist)
+        # Update artist average rating
+        artistAverage = dbSession.query(func.avg(UserArtist.rating)).filter(UserArtist.artistId == artist.id).scalar()
+        artist.rating = artistAverage
+        artist.lastUpdated = now
+        dbSession.commit()
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Dislike")
@@ -386,18 +395,12 @@ def toggleUserArtistDislike(artist_id, toggle):
 @login_required
 def toggleUserArtistFavorite(artist_id, toggle):
     try:
-        # TODO
-        # artist = getArtist(artist_id)
-        # user = getUser()
-        # if not artist or not user:
-        #     return jsonify(message="ERROR")
-        # if not artist.userRatings:
-        #     artist.userRatings = UserArtist()
-        #     artist.userRatings.artistId = artist.id
-        #     artist.userRatings.userId = user.id
-        # artist.userRatings.IsFavorite = toggle.lower() == "true"
-        # artist.userRatings.LastUpdated = arrow.utcnow().datetime
-        # dbSession.commit()
+        artist = getArtist(artist_id)
+        now = arrow.utcnow().datetime
+        userArtist = getUserArtistRating(artist.id)
+        userArtist.isDisliked = toggle.lower() == "true"
+        userArtist.lastUpdated = now
+        dbSession.commit()
         return jsonify(message="OK")
     except:
         logger.exception("Error Toggling Favorite")
@@ -407,22 +410,33 @@ def toggleUserArtistFavorite(artist_id, toggle):
 @app.route("/release/movetrackstocd/<release_id>/<selected_to_cd>", methods=['POST'])
 @login_required
 def moveTracksToCd(release_id, selected_to_cd):
-    release = getRelease(release_id)
+    moveTracksToCdRelease = getRelease(release_id)
     user = getUser()
-    if not release or not user:
+    tracksToMove = request.form['tracksToMove']
+    if not moveTracksToCdRelease or not user or not tracksToMove:
         return jsonify(message="ERROR")
     releaseMediaNumber = int(selected_to_cd)
-    tracksToMove = request.form['tracksToMove']
+    tracksToMove = tracksToMove.split(',')
     now = arrow.utcnow().datetime
-    # TODO
-    # for trackToMove in tracksToMove.split(','):
-    #     for track in release.Tracks:
-    #         if str(track.Track.id) == trackToMove:
-    #             track.ReleaseMediaNumber = releaseMediaNumber
-    #             release.LastUpdated = now
-    #             continue
-    if release.LastUpdated == now:
-        dbSession.commit()
+    # Ensure that a release media exists for the release for the given releaseMediaNumber
+    releaseMedia = dbSession.query(ReleaseMedia) \
+        .filter(ReleaseMedia.releaseId == moveTracksToCdRelease.id). \
+        filter(ReleaseMedia.releaseMediaNumber == releaseMediaNumber).first()
+    if not releaseMedia:
+        releaseMedia = ReleaseMedia()
+        releaseMedia.releaseId = moveTracksToCdRelease.id
+        releaseMedia.roadieId = str(uuid.uuid4())
+        releaseMedia.releaseMediaNumber = releaseMediaNumber
+        releaseMedia.trackCount = len(tracksToMove)
+        dbSession.add(releaseMedia)
+    releaseMedia.lastUpdated = now
+    dbSession.commit()
+    for trackToMove in tracksToMove:
+        track = getTrack(trackToMove)
+        if track:
+            track.releaseMediaId = releaseMedia.id
+            track.lastUpdated = now
+            dbSession.commit()
     return jsonify(message="OK")
 
 
@@ -430,29 +444,23 @@ def moveTracksToCd(release_id, selected_to_cd):
 @login_required
 def setUserReleaseRating(release_id, rating):
     try:
-        release = getRelease(release_id)
+        settUserReleaseRatingRelease = getRelease(release_id)
         user = getUser()
-        if not release or not user:
+        if not settUserReleaseRatingRelease or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userRelease = dbSession.query(UserRelease).filter(UserRelease.userId == user.id).filter(UserRelease.releaseId == release.id).first()
-        if not userRelease:
-            userRelease = UserRelease()
-            userRelease.roadieId = str(uuid.uuid4())
-            userRelease.releaseId = release.id
-            userRelease.userId = user.id
-            dbSession.add(userRelease)
+        userRelease = getUserReleaseRating(settUserReleaseRatingRelease.id)
         userRelease.rating = rating
         userRelease.lastUpdated = now
         dbSession.commit()
-        releaseAverage = dbSession.query(func.avg(UserRelease.rating)).\
-            filter(UserRelease.releaseId == release.id).scalar()
-        release.rating = releaseAverage
-        release.lastUpdated = now
+        releaseAverage = dbSession.query(func.avg(UserRelease.rating)). \
+            filter(UserRelease.releaseId == settUserReleaseRatingRelease.id).scalar()
+        settUserReleaseRatingRelease.rating = releaseAverage
+        settUserReleaseRatingRelease.lastUpdated = now
         dbSession.commit()
         return jsonify(message="OK", average=releaseAverage)
     except:
-        logger.exception("Error Settings Release Reating")
+        logger.exception("Error Settings Release Rating")
         return jsonify(message="ERROR")
 
 
@@ -460,28 +468,22 @@ def setUserReleaseRating(release_id, rating):
 @login_required
 def toggleUserReleaseDislike(release_id, toggle):
     try:
-        release = getRelease(release_id)
+        toggleUserReleaseDislikeRelease = getRelease(release_id)
         user = getUser()
-        if not release or not user:
+        if not toggleUserReleaseDislikeRelease or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        if not release.userRatings:
-            release.userRatings = UserRelease()
-            release.userRatings.releaseId = release.id
-            release.userRatings.userId = user.id
-        release.userRatings.IsDisliked = toggle.lower() == "true"
-        release.userRatings.LastUpdated = now
-        if release.userRatings.IsDisliked:
-            release.userRatings.Rating = 0
+        userRelease = getUserReleaseRating(toggleUserReleaseDislikeRelease.id)
+        userRelease.isDisliked = toggle.lower() == "true"
+        if toggleUserReleaseDislikeRelease.userRatings.isDisliked:
+            toggleUserReleaseDislikeRelease.userRatings.Rating = 0
+        userRelease.lastUpdated = now
         dbSession.commit()
-        # TODO
-        # releaseAverage = UserRelease.objects(Release=release).aggregate_average('Rating')
-        releaseAverage = 0
-        # if userRelease.IsDisliked:
-        #     # Update release average rating
-        #     release.Rating = releaseAverage
-        #     release.LastUpdated = now
-        #     Release.save(release)
+        releaseAverage = dbSession.query(func.avg(UserRelease.rating)). \
+            filter(UserRelease.releaseId == toggleUserReleaseDislikeRelease.id).scalar()
+        toggleUserReleaseDislikeRelease.rating = releaseAverage
+        toggleUserReleaseDislikeRelease.lastUpdated = now
+        dbSession.commit()
         return jsonify(message="OK", average=releaseAverage)
     except:
         logger.exception("Error Toggling Release Dislike")
@@ -492,16 +494,16 @@ def toggleUserReleaseDislike(release_id, toggle):
 @login_required
 def toggleUserReleaseFavorite(release_id, toggle):
     try:
-        release = getRelease(release_id)
+        toggleUserReleaseFavoriteRelease = getRelease(release_id)
         user = getUser()
-        if not release or not user:
+        if not toggleUserReleaseFavoriteRelease or not user:
             return jsonify(message="ERROR")
-        if not release.userRatings:
-            release.userRatings = UserRelease()
-            release.userRatings.releaseId = release.id
-            release.userRatings.userId = user.id
-        release.userRatings.IsFavorite = toggle.lower() == "true"
-        release.userRatings.LastUpdated = arrow.utcnow().datetime
+        if not toggleUserReleaseFavoriteRelease.userRatings:
+            toggleUserReleaseFavoriteRelease.userRatings = UserRelease()
+            toggleUserReleaseFavoriteRelease.userRatings.releaseId = toggleUserReleaseFavoriteRelease.id
+            toggleUserReleaseFavoriteRelease.userRatings.userId = user.id
+        toggleUserReleaseFavoriteRelease.userRatings.IsFavorite = toggle.lower() == "true"
+        toggleUserReleaseFavoriteRelease.userRatings.LastUpdated = arrow.utcnow().datetime
         dbSession.commit()
         return jsonify(message="OK")
     except:
@@ -517,10 +519,10 @@ def rescanArtist(artist_id):
         if not artist:
             return jsonify(message="ERROR")
         # Update Database with folders found in Library
-        processor = Processor(False, True, )
+        processor = Processor(config, conn, dbSession, False, True)
         artistFolder = processor.artistFolder(artist)
         processor.process(folder=artistFolder)
-        validator = Validator(False)
+        validator = Validator(config, conn, dbSession, False)
         validator.validate(artist)
         return jsonify(message="OK")
     except:
@@ -532,15 +534,17 @@ def rescanArtist(artist_id):
 @login_required
 def rescanRelease(release_id):
     try:
-        release = getRelease(release_id)
-        if not release:
+        rescanReleaseRelease = getRelease(release_id)
+        if not rescanReleaseRelease:
             return jsonify(message="ERROR")
         # Update Database with folders found in Library
-        processor = Processor(False, True)
-        releaseFolder = processor.albumFolder(release.Artist, release.ReleaseDate[:4], release.Title)
+        processor = Processor(config, conn, dbSession, False, True)
+        releaseFolder = processor.albumFolder(rescanReleaseRelease.Artist,
+                                              rescanReleaseRelease.ReleaseDate[:4],
+                                              rescanReleaseRelease.Title)
         processor.process(folder=releaseFolder)
-        validator = Validator(False)
-        validator.validate(release.Artist)
+        validator = Validator(config, conn, dbSession, False)
+        validator.validate(rescanReleaseRelease.Artist)
         return jsonify(message="OK")
     except:
         logger.exception("Error Rescanning Release")
@@ -550,17 +554,17 @@ def rescanRelease(release_id):
 @app.route("/release/download/<release_id>")
 @login_required
 def downloadRelease(release_id):
-    release = getRelease(release_id)
-    if not release:
+    downloadReleaseRelease = getRelease(release_id)
+    if not downloadReleaseRelease:
         return jsonify(message="ERROR")
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w') as zf:
-        for media in release.media:
+        for media in downloadReleaseRelease.media:
             for track in media.tracks:
                 mp3File = pathToTrack(track)
                 zf.write(mp3File, arcname=track.fileName, compress_type=zipfile.ZIP_DEFLATED)
     memory_file.seek(0)
-    zipAttachmentName = release.artist.name + " - " + release.title + ".zip"
+    zipAttachmentName = downloadReleaseRelease.artist.name + " - " + downloadReleaseRelease.title + ".zip"
     return send_file(memory_file, attachment_filename=zipAttachmentName, as_attachment=True)
 
 
@@ -572,6 +576,7 @@ def deleteArtist(artist_id):
         return jsonify(message="ERROR")
     try:
         dbSession.delete(artist)
+        dbSession.commit()
         return jsonify(message="OK")
     except:
         logger.exception("Error Deleting Artist")
@@ -585,9 +590,9 @@ def deleteArtistReleases(artist_id):
     if not artist:
         return jsonify(message="ERROR")
     try:
-        # TODO
-        # Track.objects(Artist=artist).delete()
-        # Release.objects(Artist=artist).delete()
+        for r in artist.releases:
+            dbSession.delete(r)
+        dbSession.commit()
         return jsonify(message="OK")
     except:
         logger.exception("Error Deleting Artist Releases")
@@ -597,33 +602,33 @@ def deleteArtistReleases(artist_id):
 @app.route('/release/delete/<release_id>/<delete_files>', methods=['POST'])
 @login_required
 def deleteRelease(release_id, delete_files):
-    release = getRelease(release_id)
-    if not release:
+    deleteReleaseRelease = getRelease(release_id)
+    if not deleteReleaseRelease:
         return jsonify(message="ERROR")
     try:
-        # TODO
-        # if delete_files == "true":
-        #     try:
-        #         for track in release.Tracks:
-        #             trackPath = track.Track.FilePath
-        #             trackFilename = os.path.join(track.Track.FilePath, track.Track.FileName)
-        #             os.remove(trackFilename)
-        #             # if the folder is empty then delete the folder as well
-        #             if trackPath:
-        #                 if not os.listdir(trackPath):
-        #                     os.rmdir(trackPath)
-        #     except OSError:
-        #         pass
-        dbSession.delete(release)
+        if delete_files == "true":
+            try:
+                for track in deleteReleaseRelease.tracks:
+                    trackPath = pathToTrack(track)
+                    trackFolder = os.path.dirname(trackPath)
+                    os.remove(trackPath)
+                    # if the folder is empty then delete the folder as well
+                    if trackFolder:
+                        if not os.listdir(trackFolder):
+                            os.rmdir(trackFolder)
+            except OSError:
+                pass
+        dbSession.delete(deleteReleaseRelease)
+        dbSession.commit()
         return jsonify(message="OK")
     except:
         logger.exception("Error Deleting Release")
         return jsonify(message="ERROR")
 
 
-@app.route("/user/track/setrating/<release_id>/<track_id>/<rating>", methods=['POST'])
+@app.route("/user/track/setrating/<track_id>/<rating>", methods=['POST'])
 @login_required
-def setUserTrackRating(release_id, track_id, rating):
+def setUserTrackRating(track_id, rating):
     try:
         track = getTrack(track_id)
         user = getUser()
@@ -631,8 +636,8 @@ def setUserTrackRating(release_id, track_id, rating):
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
         userTrack = dbSession.query(UserTrack) \
-                .filter(UserTrack.userId == user.id) \
-                .filter(UserTrack.trackId == track.id).first()
+            .filter(UserTrack.userId == user.id) \
+            .filter(UserTrack.trackId == track.id).first()
         if not userTrack:
             userTrack = UserTrack()
             userTrack.roadieId = str(uuid.uuid4())
@@ -654,46 +659,39 @@ def setUserTrackRating(release_id, track_id, rating):
         return jsonify(message="ERROR")
 
 
-@app.route('/releasetrack/delete/<release_id>/<release_track_id>/<flag>', methods=['POST'])
+@app.route('/releasetrack/delete/<release_id>/<track_id>/<flag>', methods=['POST'])
 @login_required
-def deleteReleaseTrack(release_id, release_track_id, flag):
+def deleteReleaseTrack(release_id, track_id, flag):
     try:
-        # TODO
-        # release = getRelease(release_id)
-        # if not release:
-        #     return jsonify(message="ERROR")
-        # rts = []
-        # for track in release.Tracks:
-        #     if track.Track.id != objectid.ObjectId(release_track_id):
-        #         rts.append(track)
-        # release.Tracks = rts
-        # session.commit()
-        #
-        # trackPath = None
-        # trackFilename = None
-        # if flag == 't' or flag == "f":
-        #     # Delete the track
-        #     track = Track.objects(id=release_track_id).first()
-        #     if track:
-        #         trackPath = track.FilePath
-        #         trackFilename = os.path.join(track.FilePath, track.FileName)
-        #         Track.delete(track)
-        #
-        # if flag == "f":
-        #     # Delete the file
-        #     try:
-        #         if trackFilename:
-        #             os.remove(trackFilename)
-        #         # if the folder is empty then delete the folder as well
-        #         if trackPath:
-        #             if not os.listdir(trackPath):
-        #                 os.rmdir(trackPath)
-        #     except OSError:
-        #         pass
+        deleteReleaseTrackRelease = getRelease(release_id)
+        if not deleteReleaseTrackRelease:
+            return jsonify(message="ERROR")
+        trackPath = None
+        trackFolder = None
+        if flag == 't' or flag == "f":
+            # Delete the track
+            track = dbSession.query(Track).filter(Track.roadieId == track_id).firstt()
+            if track:
+                dbSession.delete(track)
+                dbSession.commit()
+                trackPath = pathToTrack(track)
+                trackFolder = os.path.dirname(trackPath)
+
+        if flag == "f":
+            # Delete the file
+            try:
+                if trackPath:
+                    os.remove(trackPath)
+                # if the folder is empty then delete the folder as well
+                if trackFolder:
+                    if not os.listdir(trackFolder):
+                        os.rmdir(trackFolder)
+            except OSError:
+                pass
 
         return jsonify(message="OK")
     except:
-        logger.exception("Error Deleting Releae Track")
+        logger.exception("Error Deleting Release Track")
         return jsonify(message="ERROR")
 
 
@@ -719,8 +717,8 @@ def setArtistImage(artist_id, image_id):
 @app.route('/release/setimage/<release_id>/<image_id>', methods=['POST'])
 @login_required
 def setReleaseImage(release_id, image_id):
-    release = getRelease(release_id)
-    if not release:
+    setReleaseImageRelease = getRelease(release_id)
+    if not setReleaseImageRelease:
         return jsonify(message="ERROR")
 
     try:
@@ -730,8 +728,8 @@ def setReleaseImage(release_id, image_id):
             img.thumbnail(thumbnailSize)
             b = io.BytesIO()
             img.save(b, "JPEG")
-            release.thumbnail = b.getvalue()
-            release.lastUpdated = arrow.utcnow().datetime
+            setReleaseImageRelease.thumbnail = b.getvalue()
+            setReleaseImageRelease.lastUpdated = arrow.utcnow().datetime
             dbSession.commit()
             return jsonify(message="OK")
     except:
@@ -742,8 +740,8 @@ def setReleaseImage(release_id, image_id):
 @app.route('/release/<roadieId>')
 @login_required
 def release(roadieId):
-    release = getRelease(roadieId)
-    if not release:
+    indexRelease = getRelease(roadieId)
+    if not indexRelease:
         return render_template('404.html'), 404
     releaseSummaries = conn.execute(text(
         "SELECT count(1) as trackCount, "
@@ -758,9 +756,9 @@ def release(roadieId):
                                              releaseTrackFileSize=Integer)) \
         .fetchone()
     return render_template('release.html',
-                           release=release,
-                           collectionReleases=release.collections,
-                           userRelease=release.userRatings, trackCount=releaseSummaries[0],
+                           release=indexRelease,
+                           collectionReleases=indexRelease.collections,
+                           userRelease=indexRelease.userRatings, trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]) or "0",
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
@@ -774,10 +772,10 @@ def playArtist(artist_id, doShuffle):
         return render_template('404.html'), 404
     tracks = []
     user = getUser()
-    for release in artist.releases:
-        for media in release.media:
-            for track in sorted(media.tracks, key=lambda track: (media.releaseMediaNumber, track.trackNumber)):
-                tracks.append(M3U.makeTrackInfo(user, release, track))
+    for playArtistReleaseToDelete in artist.releases:
+        for media in playArtistReleaseToDelete.media:
+            for track in sorted(media.tracks, key=lambda tt: (media.releaseMediaNumber, tt.trackNumber)):
+                tracks.append(M3U.makeTrackInfo(user, playArtistReleaseToDelete, track))
     if doShuffle == "1":
         random.shuffle(tracks)
     if user.doUseHtmlPlayer:
@@ -791,14 +789,14 @@ def playArtist(artist_id, doShuffle):
 @app.route("/release/play/<release_id>")
 @login_required
 def playRelease(release_id):
-    release = getRelease(release_id)
-    if not release:
+    playReleaseRelease = getRelease(release_id)
+    if not playReleaseRelease:
         return render_template('404.html'), 404
     tracks = []
     user = getUser()
-    for media in release.media:
+    for media in playReleaseRelease.media:
         for track in media.tracks:
-            tracks.append(M3U.makeTrackInfo(user, release, track))
+            tracks.append(M3U.makeTrackInfo(user, playReleaseRelease, track))
     if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()
@@ -810,13 +808,13 @@ def playRelease(release_id):
 @app.route("/track/play/<release_id>/<track_id>")
 @login_required
 def playTrack(release_id, track_id):
-    release = getRelease(release_id)
+    playTrackRelease = getRelease(release_id)
     track = getTrack(track_id)
-    if not release or not track:
+    if not playTrackRelease or not track:
         return render_template('404.html'), 404
     tracks = []
     user = getUser()
-    tracks.append(M3U.makeTrackInfo(user, release, track))
+    tracks.append(M3U.makeTrackInfo(user, playTrackRelease, track))
     if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()
@@ -831,11 +829,11 @@ def playQue():
     user = getUser()
     tracks = []
     for t in request.json:
-        if (t["type"] == "track"):
-            release = getRelease(t["releaseId"])
+        if t["type"] == "track":
+            playQueRelease = getRelease(t["releaseId"])
             track = getTrack(t["trackId"])
-            if release and track:
-                tracks.append(M3U.makeTrackInfo(user, release, track))
+            if playQueRelease and track:
+                tracks.append(M3U.makeTrackInfo(user, playQueRelease, track))
     if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()
@@ -851,7 +849,7 @@ def saveQue(que_name):
         return jsonify(message="ERROR")
     tracks = []
     for t in request.json:
-        if (t["type"] == "track"):
+        if t["type"] == "track":
             track = getTrack(t["id"])
             if track:
                 tracks.append(track)
@@ -860,7 +858,7 @@ def saveQue(que_name):
     if not pl:
         # adding a new playlist
         pl = Playlist()
-        pl.userId == user.id
+        pl.userId = user.id
         pl.name = que_name
         pl.tracks = tracks
         dbSession.add(pl)
@@ -901,8 +899,8 @@ def streamTrack(user_id, track_id):
     size = size
     begin = 0
     end = size - 1
-    cachetimeout = 86400  # 24 hours
-    if request.headers.has_key("Range"):
+    cacheTimeout = 86400  # 24 hours
+    if 'Range' in request.headers:
         status = 206
         headers.add('Accept-Ranges', 'bytes')
         ranges = findall(r"\d+", request.headers["Range"])
@@ -956,15 +954,14 @@ def streamTrack(user_id, track_id):
                         client.write_message(data)
             except:
                 pass
-    data = None
     with open(mp3File, 'rb') as f:
         f.seek(begin)
         data = f.read((end - begin) + 1)
     response = Response(data, status=status, mimetype="audio/mpeg", headers=headers, direct_passthrough=True)
     response.cache_control.public = True
-    response.cache_control.max_age = cachetimeout
+    response.cache_control.max_age = cacheTimeout
     response.last_modified = int(ctime)
-    response.expires = int(time()) + cachetimeout
+    response.expires = int(time()) + cacheTimeout
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
     logger.debug(
@@ -977,78 +974,105 @@ def streamTrack(user_id, track_id):
 @login_required
 @nocache
 def stats():
-    counts = {'artists': "{0:,}".format(Artist.objects().count()),
-              'labels': "{0:,}".format(Label.objects().count()),
-              'releases': "{0:,}".format(Release.objects().count()),
-              'tracks': "{0:,}".format(Track.objects().count())
-              }
+    # counts = {'artists': "{0:,}".format(Artist.objects().count()),
+    #           'labels': "{0:,}".format(Label.objects().count()),
+    #           'releases': "{0:,}".format(Release.objects().count()),
+    #           'tracks': "{0:,}".format(Track.objects().count())
+    #           }
 
-    totalTime = Track.objects().aggregate(
-        {"$group": {"_id": "null", "total": {"$sum": "$Length"}}},
-    )
-    for t in totalTime:
-        counts['length'] = t['total']
+    counts = conn.execute(text(
+        "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
+        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
+        "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
+		"sum(t.fileSize) as trackSize "
+		"FROM track t "
+		"join releasemedia rm on rm.id = t.releaseMediaId "
+		"join release r on r.id = rm.releaseId "
+		"join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
+        "(SELECT COUNT(1) as labelCount FROM label) lc "
+        "join release r on rm.releaseId = r.id "
+        "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
+                                    .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
+                                             trackDuration=Integer, trackSize=Integer, artistCount=Integer,labelCount=Integer))
 
-    top10ArtistsByReleases = Release.objects().aggregate(
-        {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 10}
-    )
-    top10Artists = {}
-    for a in top10ArtistsByReleases:
-        artist = Artist.objects(id=a['_id']).first()
-        top10Artists[artist] = str(a['count']).zfill(3)
+# SELECT COUNT(1) as releaseCount, a.roadieId as artistRoadieId
+# FROM artist a
+# join release r on r.artistId = a.id
+# GROUP BY a.id
+# ORDER BY COUNT(1) desc
+# LIMIT 10;
 
-    top10ArtistsByTracks = Track.objects().aggregate(
-        {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
-        {"$sort": {"count": -1}},
-        {"$limit": 10}
-    )
-    top10ArtistsTracks = {}
-    for a in top10ArtistsByTracks:
-        artist = Artist.objects(id=a['_id']).first()
-        top10ArtistsTracks[artist] = str(a['count']).zfill(4)
+    # top10ArtistsByReleases = Release.objects().aggregate(
+    #     {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
+    #     {"$sort": {"count": -1}},
+    #     {"$limit": 10}
+    # )
 
-    topRatedReleases = Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]
+    # top10Artists = {}
+    # for a in top10ArtistsByReleases:
+    #     artist = Artist.objects(id=a['_id']).first()
+    #     top10Artists[artist] = str(a['count']).zfill(3)
+    #
 
-    topRatedTracks = Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]
+# SELECT COUNT(1) as trackCount, a.roadieId as artistRoadieId
+# FROM artist a
+# join release r on r.artistId = a.id
+# join releasemedia rm on rm.releaseId = r.id
+# join track t on t.releaseMediaId = rm.id
+# GROUP BY a.id
+# ORDER BY COUNT(1) desc
+# LIMIT 10;
 
-    mostRecentReleases = Release.objects().order_by('-CreatedDate', 'FilePath', 'Title')[:25]
 
-    return render_template('stats.html', top10Artists=sorted(top10Artists.items(), key=itemgetter(1), reverse=True)
-                           , top10ArtistsByTracks=sorted(top10ArtistsTracks.items(), key=itemgetter(1), reverse=True)
-                           , topRatedReleases=topRatedReleases
-                           , topRatedTracks=topRatedTracks
-                           , mostRecentReleases=mostRecentReleases
-                           , counts=counts)
+    # top10ArtistsByTracks = Track.objects().aggregate(
+    #     {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
+    #     {"$sort": {"count": -1}},
+    #     {"$limit": 10}
+    # )
+    # top10ArtistsTracks = {}
+    # for a in top10ArtistsByTracks:
+    #     artist = Artist.objects(id=a['_id']).first()
+    #     top10ArtistsTracks[artist] = str(a['count']).zfill(4)
+
+    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
+
+    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
+
+    mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
+
+    return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
+                           topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
+                           mostRecentReleases=mostRecentReleases, counts=counts)
 
 
 @app.route("/stats/play/<option>")
 @login_required
 def playStats(option):
-    user = User.objects(id=current_user.id).first()
-    tracks = []
-    if option == "top25songs":
-        for track in Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]:
-            release = Release.objects(Tracks__Track=track).first()
-            tracks.append(M3U.makeTrackInfo(user, release, track))
-        if user.doUseHtmlPlayer:
-            session['tracks'] = tracks
-            return player()
-        return send_file(M3U.generate(tracks),
-                         as_attachment=True,
-                         attachment_filename="playlist.m3u")
-    if option == "top10Albums":
-        for release in Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]:
-            user = User.objects(id=current_user.id).first()
-            for track in sorted(release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
-                tracks.append(M3U.makeTrackInfo(user, release, track.Track))
-        if user.doUseHtmlPlayer:
-            session['tracks'] = tracks
-            return player()
-        return send_file(M3U.generate(tracks),
-                         as_attachment=True,
-                         attachment_filename="playlist.m3u")
+    # TODO
+    # user = User.objects(id=current_user.id).first()
+    # tracks = []
+    # if option == "top25songs":
+    #     for track in Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]:
+    #         playStatsRelease = Release.objects(Tracks__Track=track).first()
+    #         tracks.append(M3U.makeTrackInfo(user, playStatsRelease, track))
+    #     if user.doUseHtmlPlayer:
+    #         session['tracks'] = tracks
+    #         return player()
+    #     return send_file(M3U.generate(tracks),
+    #                      as_attachment=True,
+    #                      attachment_filename="playlist.m3u")
+    # if option == "top10Albums":
+    #     for top100Release in Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]:
+    #         user = User.objects(id=current_user.id).first()
+    #         for track in sorted(top100Release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
+    #             tracks.append(M3U.makeTrackInfo(user, top100Release, track.Track))
+    #     if user.doUseHtmlPlayer:
+    #         session['tracks'] = tracks
+    #         return player()
+    #     return send_file(M3U.generate(tracks),
+    #                      as_attachment=True,
+    #                      attachment_filename="playlist.m3u")
+    return None
 
 
 def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/jpg'):
@@ -1095,12 +1119,17 @@ def getArtistImage(image_id, height, width):
 
 @app.route("/images/collection/thumbnail/<collection_id>")
 def getCollectionThumbnailImage(collection_id):
-    collection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+    getCollectionThumbnailImageCollection = dbSession.query(Collection).filter(
+        Collection.roadieId == collection_id).first()
     try:
-        if collection:
-            etag = hashlib.sha1(('%s%s' % (collection.id, collection.LastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(collection.thumbnail, collection.lastUpdated,
-                                     "a_tn_" + str(collection.id) + ".jpg", etag)
+        if getCollectionThumbnailImageCollection:
+            etag = hashlib.sha1(
+                ('%s%s' % (
+                getCollectionThumbnailImageCollection.id, getCollectionThumbnailImageCollection.LastUpdated)).encode(
+                    'utf-8')).hexdigest()
+            return makeImageResponse(getCollectionThumbnailImageCollection.thumbnail,
+                                     getCollectionThumbnailImageCollection.lastUpdated,
+                                     "a_tn_" + str(getCollectionThumbnailImageCollection.id) + ".jpg", etag)
     except:
         return send_file("static/img/collection.gif")
 
@@ -1120,13 +1149,17 @@ def getArtistThumbnailImage(artistId):
 
 @app.route("/images/release/thumbnail/<roadieId>")
 def getReleaseThumbnailImage(roadieId):
-    release = getRelease(roadieId)
+    getReleaseThumbnailImageRelease = getRelease(roadieId)
     try:
-        if not release or not release.thumbnail:
+        if not getReleaseThumbnailImageRelease or not getReleaseThumbnailImageRelease.thumbnail:
             return send_file("static/img/release.gif")
-        if release:
-            etag = hashlib.sha1(('%s%s' % (release.id, release.lastUpdated)).encode('utf-8')).hexdigest()
-            return makeImageResponse(release.thumbnail, release.lastUpdated, "r_tn_" + str(release.roadieId) + ".jpg",
+        if getReleaseThumbnailImageRelease:
+            etag = hashlib.sha1(
+                ('%s%s' % (getReleaseThumbnailImageRelease.id, getReleaseThumbnailImageRelease.lastUpdated)).encode(
+                    'utf-8')).hexdigest()
+            return makeImageResponse(getReleaseThumbnailImageRelease.thumbnail,
+                                     getReleaseThumbnailImageRelease.lastUpdated,
+                                     "r_tn_" + str(getReleaseThumbnailImageRelease.roadieId) + ".jpg",
                                      etag)
     except:
         return send_file("static/img/release.gif")
@@ -1141,12 +1174,12 @@ def jdefault(o):
 @app.route("/images/find/<type>/<type_id>", methods=['POST'])
 def findImageForType(type, type_id):
     if type == 'r':  # release
-        release = getRelease(type_id)
-        if not release:
+        findImageForTypeRelease = getRelease(type_id)
+        if not findImageForTypeRelease:
             return jsonify(message="ERROR")
         data = []
         searcher = ImageSearcher()
-        query = release.title
+        query = findImageForTypeRelease.title
         if 'query' in request.form:
             query = request.form['query']
         referer = request.url_root
@@ -1154,7 +1187,8 @@ def findImageForType(type, type_id):
         if gs:
             for g in gs:
                 data.append(g)
-        it = searcher.itunesSearchArtistAlbumImages(referer, release.artist.name, release.title)
+        it = searcher.itunesSearchArtistAlbumImages(referer, findImageForTypeRelease.artist.name,
+                                                    findImageForTypeRelease.title)
         if it:
             for i in it:
                 data.append(i)
@@ -1169,8 +1203,8 @@ def findImageForType(type, type_id):
 @app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
 def setCoverViaUrl(release_id):
     try:
-        release = getRelease(release_id)
-        if not release:
+        setCoverViaUrlRelease = getRelease(release_id)
+        if not setCoverViaUrlRelease:
             return jsonify(message="ERROR")
         url = request.form['url']
         searcher = ImageSearcher()
@@ -1180,27 +1214,13 @@ def setCoverViaUrl(release_id):
             img.thumbnail(thumbnailSize)
             b = io.BytesIO()
             img.save(b, "JPEG")
-            release.thumbnail = b.getvalue()
-            release.lastUpdated = arrow.utcnow().datetime
+            setCoverViaUrlRelease.thumbnail = b.getvalue()
+            setCoverViaUrlRelease.lastUpdated = arrow.utcnow().datetime
             dbSession.commit()
         return jsonify(message="OK")
     except:
         logger.exception("Error Setting Release Image via Url")
         return jsonify(message="ERROR")
-
-
-api.add_resource(ArtistListApi, '/api/v1.0/artists')
-api.add_resource(ReleaseListApi, '/api/v1.0/releases')
-api.add_resource(TrackListApi, '/api/v1.0/tracks')
-
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
-
-
-@login_manager.user_loader
-def load_user(id):
-    return getUser(id)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -1252,7 +1272,7 @@ def editProfile():
     if userWithDuplicateEmail:
         flash('Email Address Already Exists!', 'error')
         return redirect(url_for('profile/edit'))
-    file = request.files['avatar'];
+    file = request.files['avatar']
     if file:
         img = PILImage.open(io.BytesIO(file.stream.read()))
         img.thumbnail(thumbnailSize)
@@ -1287,9 +1307,9 @@ def getUserAvatarThumbnailImage(user_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    next = get_redirect_target()
+    loginNextUrl = get_redirect_target()
     if request.method == 'GET':
-        return render_template('login.html', next=next)
+        return render_template('login.html', next=loginNextUrl)
     username = request.form['username']
     password = request.form['password']
     remember_me = False
@@ -1321,8 +1341,7 @@ def scanStorage():
 @login_required
 def playlists():
     user = getUser()
-    userPlaylists = Playlist.objects(User=user).order_by("Name").all()
-    #  sharedPlaylists =  Playlist.objects(User__ne = user).all() #.order_by('User__Name', 'Name').all()
+    userPlaylists = dbSession.query(Playlist).filter(Playlist.userId == user.id)
     return render_template('playlist.html', userPlaylists=userPlaylists)  # , sharedPlaylists=sharedPlaylists)
 
 
@@ -1351,61 +1370,63 @@ def redirect_back(endpoint, **values):
 @app.route("/collections")
 @login_required
 def collections():
-    collections = []
-    for collection in Collection.objects().order_by("Name"):
-        collections.append({
-            'id': collection.id,
-            'Name': collection.Name,
-            'ReleaseCount': 0  # collection.Releases # This is crazy slow
+    dbCollections = []
+    for c in dbSession.query(Collection).order_by(Collection.name):
+        dbCollections.append({
+            'id': c.roadieId,
+            'Name': c.name,
+            'ReleaseCount': c.tracks.count()
         })
     notFoundEntryInfos = []
-    if 'notFoundEntryInfos' in dbSession:
-        notFoundEntryInfos = dbSession['notFoundEntryInfos']
+    if 'notFoundEntryInfos' in session:
+        notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
-    return render_template('collections.html', collections=collections, notFoundEntryInfos=notFoundEntryInfos)
+    return render_template('collections.html', collections=dbCollections, notFoundEntryInfos=notFoundEntryInfos)
 
 
 @app.route('/collection/<collection_id>')
 @login_required
 def collection(collection_id):
-    collection = Collection.objects(id=collection_id).first()
-    if not collection:
+    indexCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+    if not indexCollection:
         return render_template('404.html'), 404
     tracks = 0
     sumTime = 0
     counts = {'releases': "0",
               'tracks': "0",
               'length': 0}
-    for release in collection.Releases:
+    for collectionRelease in indexCollection.releases:
         try:
-            tracks += len(release.Release.Tracks)
-            for track in release.Release.Tracks:
-                sumTime += track.Track.Length
-            counts = {'releases': "{0:,}".format(len(collection.Releases)),
+            for media in collectionRelease.media:
+                tracks += len(media.tracks)
+                for track in media.tracks:
+                    sumTime += track.duration
+            counts = {'releases': "{0:,}".format(len(indexCollection.releases)),
                       'tracks': "{0:,}".format(tracks),
                       'length': sumTime}
         except:
             pass
     notFoundEntryInfos = []
-    if 'notFoundEntryInfos' in dbSession:
-        notFoundEntryInfos = dbSession['notFoundEntryInfos']
+    if 'notFoundEntryInfos' in session:
+        notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
-    return render_template('collection.html', collection=collection, counts=counts,
+    return render_template('collection.html', collection=indexCollection, counts=counts,
                            notFoundEntryInfos=notFoundEntryInfos)
 
 
 @app.route("/collection/play/<collection_id>")
 @login_required
 def playCollection(collection_id):
-    collection = Collection.objects(id=collection_id).first()
-    if not collection:
+    playCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+    if not playCollectionCollection:
         return render_template('404.html'), 404
     user = getUser()
     tracks = []
-    for release in collection.Releases:
-        for track in sorted(release.Release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
-            tracks.append(M3U.makeTrackInfo(user, release.Release, track.Track))
-    if user.DoUseHTMLPlayer:
+    for playCollectionRelease in playCollectionCollection.releases:
+        for media in playCollectionRelease.media:
+            for track in sorted(media.tracks, key=lambda tt: (track.ReleaseMediaNumber, tt.TrackNumber)):
+                tracks.append(M3U.makeTrackInfo(user, playCollectionRelease, track))
+    if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()
     return send_file(M3U.generate(tracks),
@@ -1417,9 +1438,10 @@ def playCollection(collection_id):
 def updateAllCollections():
     try:
         notFoundEntryInfos = []
-        for collection in Collection.objects(ListInCSVFormat__ne=None, ListInCSV__ne=None):
-            i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
-            i.importCsvData(io.StringIO(collection.ListInCSV))
+        for updateCollectionCollection in dbSession.query(Collection).filter(
+                                Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
+            i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
+            i.importCsvData(io.StringIO(collection.listInCSV))
             for i in i.notFoundEntryInfo:
                 notFoundEntryInfos.append(i)
             session['notFoundEntryInfos'] = notFoundEntryInfos
@@ -1427,17 +1449,18 @@ def updateAllCollections():
     except:
         logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
+    return None
+
+def updateCollection(collectionId):
 
 
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
     try:
         notFoundEntryInfos = []
-        collection = Collection.objects(id=collection_id).first()
-        if not collection or not collection.ListInCSVFormat or not collection.ListInCSV:
-            return jsonify(message="ERROR")
-        i = CollectionImporter(collection.id, False, collection.ListInCSVFormat, None)
-        i.importCsvData(io.StringIO(collection.ListInCSV))
+        updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id)
+        i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
+        i.importCsvData(io.StringIO(collection.listInCSV))
         for i in i.notFoundEntryInfo:
             notFoundEntryInfos.append(i)
         session['notFoundEntryInfos'] = notFoundEntryInfos
@@ -1445,6 +1468,7 @@ def updateCollection(collection_id):
     except:
         logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
+    return None
 
 
 @app.route('/logout')
@@ -1456,7 +1480,7 @@ def logout():
 @app.route("/singletrackreleasefinder", defaults={'count': 100})
 @app.route("/singletrackreleasefinder/<count>")
 @login_required
-def singletrackreleasefinder(count):
+def singleTrackReleaseFinder(count):
     count = int(count)
     singleTrackReleases = Release.objects(__raw__={'Tracks': {'$size': 1}}).order_by('Title', 'Artist.Name')
     return render_template('singletrackreleasefinder.html', total=singleTrackReleases.count(),
@@ -1507,44 +1531,46 @@ def dupFinder():
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
 @login_required
 def mergeArtists(merge_into_id, merge_id):
-    try:
-        artist = Artist.objects(id=merge_into_id).first()
-        artistToMerge = Artist.objects(id=merge_id).first()
-        if not artist or not artistToMerge:
-            return jsonify(message="ERROR")
-        now = arrow.utcnow().datetime
-        Track.objects(Artist=artistToMerge).update(Artist=artist)
-        Release.objects(Artist=artistToMerge).update(Artist=artist)
-        UserArtist.objects(Artist=artistToMerge).update(Artist=artist)
-        for altName in artistToMerge.AlternateNames:
-            if not altName in artist.AlternateNames:
-                artist.AlternateNames.append(altName)
-        for associated in artistToMerge.AssociatedArtists:
-            if not associated in artist.AssociatedArtists:
-                artist.AssociatedArtists.append(associated)
-        artist.BirthDate = artist.BirthDate or artistToMerge.BirthDate
-        artist.BeginDate = artist.BeginDate or artistToMerge.BeginDate
-        artist.EndDate = artist.EndDate or artistToMerge.EndDate
-        for image in artistToMerge.Images:
-            artist.Images.append(image)
-        artist.Profile = artist.Profile or artistToMerge.Profile
-        artist.MusicBrainzId = artist.MusicBrainzId or artistToMerge.MusicBrainzId
-        artist.RealName = artist.RealName or artistToMerge.RealName
-        artist.Thumbnail = artist.Thumbnail or artistToMerge.Thumbnail
-        artist.Rating = artist.Rating or artistToMerge.Rating
-        for tag in artistToMerge.Tags:
-            if not tag in artist.Tags:
-                artist.Tags.append(tag)
-        for url in artistToMerge.Urls:
-            if not url in artist.Urls:
-                artist.Urls.append(url)
-        Artist.save(artist)
-        Artist.delete(artistToMerge)
-        return jsonify(message="OK")
-
-    except:
-        logger.exception("Error Merging Artists")
-        return jsonify(message="ERROR")
+    # TODO
+    # try:
+    #     artist = Artist.objects(id=merge_into_id).first()
+    #     artistToMerge = Artist.objects(id=merge_id).first()
+    #     if not artist or not artistToMerge:
+    #         return jsonify(message="ERROR")
+    #     now = arrow.utcnow().datetime
+    #     Track.objects(Artist=artistToMerge).update(Artist=artist)
+    #     Release.objects(Artist=artistToMerge).update(Artist=artist)
+    #     UserArtist.objects(Artist=artistToMerge).update(Artist=artist)
+    #     for altName in artistToMerge.AlternateNames:
+    #         if not altName in artist.AlternateNames:
+    #             artist.AlternateNames.append(altName)
+    #     for associated in artistToMerge.AssociatedArtists:
+    #         if not associated in artist.AssociatedArtists:
+    #             artist.AssociatedArtists.append(associated)
+    #     artist.BirthDate = artist.BirthDate or artistToMerge.BirthDate
+    #     artist.BeginDate = artist.BeginDate or artistToMerge.BeginDate
+    #     artist.EndDate = artist.EndDate or artistToMerge.EndDate
+    #     for image in artistToMerge.Images:
+    #         artist.Images.append(image)
+    #     artist.Profile = artist.Profile or artistToMerge.Profile
+    #     artist.MusicBrainzId = artist.MusicBrainzId or artistToMerge.MusicBrainzId
+    #     artist.RealName = artist.RealName or artistToMerge.RealName
+    #     artist.Thumbnail = artist.Thumbnail or artistToMerge.Thumbnail
+    #     artist.Rating = artist.Rating or artistToMerge.Rating
+    #     for tag in artistToMerge.Tags:
+    #         if tag not in artist.Tags:
+    #             artist.Tags.append(tag)
+    #     for url in artistToMerge.Urls:
+    #         if not url in artist.Urls:
+    #             artist.Urls.append(url)
+    #     Artist.save(artist)
+    #     Artist.delete(artistToMerge)
+    #     return jsonify(message="OK")
+    #
+    # except:
+    #     logger.exception("Error Merging Artists")
+    #     return jsonify(message="ERROR")
+    return None
 
 
 @app.route("/player")
@@ -1566,6 +1592,20 @@ class WebSocket(WebSocketHandler):
 
     def on_close(self):
         clients.remove(self)
+
+
+api.add_resource(ArtistListApi, '/api/v1.0/artists')
+api.add_resource(ReleaseListApi, '/api/v1.0/releases')
+api.add_resource(TrackListApi, '/api/v1.0/tracks')
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+
+@login_manager.user_loader
+def load_user(id):
+    return getUser(id)
 
 
 if __name__ == '__main__':
