@@ -258,5 +258,5 @@ class Processor(ProcessorBase):
             gc.collect()
         elapsedTime = arrow.utcnow().datetime - startTime
         self.session.commit()
-        self.logger.debug("-> MP3 Folders Processed [" + ",".join([x for x in mp3FoldersProcessed]) + "]")
+        self.logger.debug("-> MP3 Folders Processed [" + str(len(mp3FoldersProcessed)) + "]")
         self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")

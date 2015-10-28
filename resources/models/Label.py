@@ -22,6 +22,7 @@ class Label(Base):
         return self.name
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) + "], Name [" + self.name + \
-               "AlternateNames [" + str(len(self.alternateNames or [])) + "], Tags [" + str(len(self.tags or [])) + "]"
+        return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+            self.musicBrainzId) + "], Name [" + self.name +
+                "AlternateNames [" + str(len(self.alternateNames or [])) + "], Tags [" + str(
+            len(self.tags or [])) + "]").encode('ascii', 'ignore').decode('utf-8')

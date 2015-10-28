@@ -96,6 +96,8 @@ class Spotify(SearchEngineBase):
                 if r:
                     self.artistReleasesThreaded = []
                     self.artistReleasesThreaded.append(r[0])
+                else:
+                    return None
             self.cache[artist.roadieId] = self.artistReleasesThreaded
             return self.cache[artist.roadieId]
         except HTTPError:

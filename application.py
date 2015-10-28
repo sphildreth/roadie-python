@@ -974,76 +974,53 @@ def streamTrack(user_id, track_id):
 @login_required
 @nocache
 def stats():
-    # counts = {'artists': "{0:,}".format(Artist.objects().count()),
-    #           'labels': "{0:,}".format(Label.objects().count()),
-    #           'releases': "{0:,}".format(Release.objects().count()),
-    #           'tracks': "{0:,}".format(Track.objects().count())
-    #           }
-
-    counts = conn.execute(text(
-        "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
-        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
-        "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
-		"sum(t.fileSize) as trackSize "
-		"FROM track t "
-		"join releasemedia rm on rm.id = t.releaseMediaId "
-		"join release r on r.id = rm.releaseId "
-		"join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
-        "(SELECT COUNT(1) as labelCount FROM label) lc "
-        "join release r on rm.releaseId = r.id "
-        "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
-                                    .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
-                                             trackDuration=Integer, trackSize=Integer, artistCount=Integer,labelCount=Integer))
-
-# SELECT COUNT(1) as releaseCount, a.roadieId as artistRoadieId
-# FROM artist a
-# join release r on r.artistId = a.id
-# GROUP BY a.id
-# ORDER BY COUNT(1) desc
-# LIMIT 10;
-
-    # top10ArtistsByReleases = Release.objects().aggregate(
-    #     {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
-    #     {"$sort": {"count": -1}},
-    #     {"$limit": 10}
-    # )
-
-    # top10Artists = {}
-    # for a in top10ArtistsByReleases:
-    #     artist = Artist.objects(id=a['_id']).first()
-    #     top10Artists[artist] = str(a['count']).zfill(3)
-    #
-
-# SELECT COUNT(1) as trackCount, a.roadieId as artistRoadieId
-# FROM artist a
-# join release r on r.artistId = a.id
-# join releasemedia rm on rm.releaseId = r.id
-# join track t on t.releaseMediaId = rm.id
-# GROUP BY a.id
-# ORDER BY COUNT(1) desc
-# LIMIT 10;
-
-
-    # top10ArtistsByTracks = Track.objects().aggregate(
-    #     {"$group": {"_id": "$Artist", "count": {"$sum": 1}}},
-    #     {"$sort": {"count": -1}},
-    #     {"$limit": 10}
-    # )
-    # top10ArtistsTracks = {}
-    # for a in top10ArtistsByTracks:
-    #     artist = Artist.objects(id=a['_id']).first()
-    #     top10ArtistsTracks[artist] = str(a['count']).zfill(4)
-
-    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
-
-    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
-
-    mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
-
-    return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
-                           topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
-                           mostRecentReleases=mostRecentReleases, counts=counts)
-
+    #TODO
+#     # counts = {'artists': "{0:,}".format(Artist.objects().count()),
+#     #           'labels': "{0:,}".format(Label.objects().count()),
+#     #           'releases': "{0:,}".format(Release.objects().count()),
+#     #           'tracks': "{0:,}".format(Track.objects().count())
+#     #           }
+#
+#     counts = conn.execute(text(
+#         "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
+#         "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
+#         "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
+# 		"sum(t.fileSize) as trackSize "
+# 		"FROM track t "
+# 		"join releasemedia rm on rm.id = t.releaseMediaId "
+# 		"join release r on r.id = rm.releaseId "
+# 		"join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
+#         "(SELECT COUNT(1) as labelCount FROM label) lc "
+#         "join release r on rm.releaseId = r.id "
+#         "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
+#                                     .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
+#                                              trackDuration=Integer, trackSize=Integer, artistCount=Integer,labelCount=Integer))
+#
+# # SELECT a.roadieId as artistRoadieId
+# # FROM artist a
+# # join release r on r.artistId = a.id
+# # GROUP BY a.id
+# # ORDER BY COUNT(1) desc
+#
+#
+# # SELECT a.roadieId as artistRoadieId
+# # FROM artist a
+# # join release r on r.artistId = a.id
+# # join releasemedia rm on rm.releaseId = r.id
+# # join track t on t.releaseMediaId = rm.id
+# # GROUP BY a.id
+# # ORDER BY COUNT(1) desc
+#
+#     topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
+#
+#     topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
+#
+#     mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
+#
+#     return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
+#                            topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
+#                            mostRecentReleases=mostRecentReleases, counts=counts)
+    return None
 
 @app.route("/stats/play/<option>")
 @login_required
@@ -1450,8 +1427,6 @@ def updateAllCollections():
         logger.exception("Error Updating Collection")
         return jsonify(message="ERROR")
     return None
-
-def updateCollection(collectionId):
 
 
 @app.route("/collection/update/<collection_id>", methods=['POST'])

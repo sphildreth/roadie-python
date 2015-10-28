@@ -59,10 +59,10 @@ class Track(Base):
         return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) \
-               + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber) \
-               + "], Duration [" + str(self.duration) + "]"
+        return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+            self.musicBrainzId)
+               + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber)
+               + "], Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 
     def fullPath(self):
         # path = track.FilePath

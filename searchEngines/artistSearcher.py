@@ -62,6 +62,7 @@ class ArtistSearcher(object):
         if name in self.cache:
             return self.cache[name]
         try:
+            startTime = arrow.utcnow().datetime
             artist = Artist(name=name)
             artist.random = random.randint(1, 9999999)
             artist.roadieId = str(uuid.uuid4())
@@ -110,7 +111,8 @@ class ArtistSearcher(object):
                     artist.alternateNames = []
                 if artist.name not in artist.alternateNames:
                     cleanedArtistName = createCleanedName(artist.name)
-                    if cleanedArtistName != artist.name.lower().strip() and cleanedArtistName not in artist.alternateNames:
+                    if cleanedArtistName != artist.name.lower().strip() and \
+                            cleanedArtistName not in artist.alternateNames:
                         artist.alternateNames.append(cleanedArtistName)
                 if not artist.bioContext:
                     try:
@@ -119,9 +121,11 @@ class ArtistSearcher(object):
                         pass
 
                 self.cache[name] = artist
+            elapsedTime = arrow.utcnow().datetime - startTime
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
-            self.logger.debug("searchForArtist Name [" + printableName + "] Found ["
-                              + (artist.name if artist else "").encode('ascii', 'ignore').decode('utf-8') + "]")
+            self.logger.debug("searchForArtist Elapsed Time [" + str(elapsedTime) + "] Name [" + printableName
+                              + "] Found [" + (artist.name if artist else "")
+                              .encode('ascii', 'ignore').decode('utf-8') + "]")
             return artist
         except:
             self.logger.exception("Error In searchForArtist")
@@ -168,6 +172,7 @@ class ArtistSearcher(object):
         if not artist:
             return None
         try:
+            startTime = arrow.utcnow().datetime
             releases = []
             if self.iTunesSearcher.IsActive:
                 releases = self._mergeReleaseLists(releases, self.iTunesSearcher.searchForRelease(artist, titleFilter))
@@ -224,6 +229,8 @@ class ArtistSearcher(object):
                     if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
                         filteredReleases.append(release)
                 releases = filteredReleases
+            elapsedTime = arrow.utcnow().datetime - startTime
+            self.logger.debug("searchForArtistReleases ElapseTime [" + str(elapsedTime) + "]")
             return releases
         except:
             self.logger.exception("Error In searchForArtistReleases")

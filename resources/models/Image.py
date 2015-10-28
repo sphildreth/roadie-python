@@ -5,7 +5,7 @@ from resources.models.ModelBase import Base
 class Image(Base):
 
     # If this is used then the image is stored in the database
-    image = Column(BLOB, nullable=False)
+    image = Column(BLOB)
     # If this is used then the image is remote and this is the url
     url = Column(String(500))
     caption = Column(String(100))

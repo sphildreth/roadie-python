@@ -82,13 +82,13 @@ class Release(Base):
         return self.title
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +\
-                "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
-               "], MusicBrainzId [" + str(self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) + \
-               "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId) \
-               + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" + \
-               str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +\
-               "], Title [" + str(self.title) + "]"
+        return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +
+                "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) +
+               "], MusicBrainzId [" + str(self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) +
+               "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId)
+               + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" +
+               str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +
+               "], Title [" + str(self.title) + "]").encode('ascii', 'ignore').decode('utf-8')
 
 Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)
 

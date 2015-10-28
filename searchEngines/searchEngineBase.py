@@ -19,7 +19,7 @@ class SearchEngineBase:
 
     __metaclass__ = ABCMeta
 
-    threadCount = 16
+    threadCount = 8
 
 
     def __init__(self, referer):

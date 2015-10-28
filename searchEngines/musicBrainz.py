@@ -126,6 +126,8 @@ class MusicBrainz(SearchEngineBase):
                 if foundRelease:
                     releases = [foundRelease]
                     return releases
+                else:
+                    return None
             return self.cache[artist.roadieId]
         except:
             self.logger.exception("MusicBrainz: Error In LookupArtist")

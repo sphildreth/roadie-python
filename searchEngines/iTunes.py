@@ -12,6 +12,8 @@ from searchEngines.models.Release import Release
 class iTunes(SearchEngineBase):
     IsActive = True
 
+    cache = dict()
+
     def __init__(self, referer=None):
         SearchEngineBase.__init__(self, referer)
 
@@ -53,40 +55,56 @@ class iTunes(SearchEngineBase):
             if not artist or not artist.iTunesId:
                 return None
         try:
+            if artist.roadieId in self.cache and not title:
+                self.logger.debug(
+                    "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in iTunes Cache.")
+                return self.cache[artist.roadieId]
             url = "https://itunes.apple.com/lookup?id=" + str(artist.iTunesId) + "&entity=album"
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             releases = []
-            self.logger.debug("Performing iTunes Lookup For Album(s)")
-            with request.urlopen(rq) as f:
-                try:
-                    s = StringIO((f.read().decode('utf-8')))
-                    o = json.load(s)
-                    for r in o['results']:
-                        try:
-                            if 'collectionType' in r and isEqual(r["collectionType"], "Album"):
-                                a = Release(title=r['collectionName'], releaseDate=r['releaseDate'])
-                                a.trackCount = r['trackCount']
-                                a.iTunesId = r['collectionId']
-                                if 'primaryGenreName' in r and r['primaryGenreName']:
-                                    a.genres.append(Genre(name=r['primaryGenreName']))
-                                if 'artistViewUrl' in r and r['artistViewUrl']:
-                                    a.urls.append(r['artistViewUrl'])
-                                if 'collectionViewUrl' in r and r['collectionViewUrl']:
-                                    a.urls.append(r['collectionViewUrl'])
-                                if not a.alternateNames:
-                                    a.alternateNames = []
-                                cleanedTitle = createCleanedName(a.title)
-                                if cleanedTitle not in a.alternateNames and cleanedTitle != a.title:
-                                    a.alternateNames.append(cleanedTitle)
-                                releases.append(a)
-                        except:
-                            self.logger.exception("iTunes: Error In SearchForRelease")
-                            pass
-                except:
-                    pass
-            releases = sorted(releases, key=lambda x: (x.weight(), x.releaseDate, x.title))
-            return releases
+            if artist.roadieId not in self.cache:
+                self.logger.debug("Performing iTunes Lookup For Album(s)")
+                with request.urlopen(rq) as f:
+                    try:
+                        s = StringIO((f.read().decode('utf-8')))
+                        o = json.load(s)
+                        for r in o['results']:
+                            try:
+                                if 'collectionType' in r and isEqual(r["collectionType"], "Album"):
+                                    a = Release(title=r['collectionName'], releaseDate=r['releaseDate'])
+                                    a.trackCount = r['trackCount']
+                                    a.iTunesId = r['collectionId']
+                                    if 'primaryGenreName' in r and r['primaryGenreName']:
+                                        a.genres.append(Genre(name=r['primaryGenreName']))
+                                    if 'artistViewUrl' in r and r['artistViewUrl']:
+                                        a.urls.append(r['artistViewUrl'])
+                                    if 'collectionViewUrl' in r and r['collectionViewUrl']:
+                                        a.urls.append(r['collectionViewUrl'])
+                                    if not a.alternateNames:
+                                        a.alternateNames = []
+                                    cleanedTitle = createCleanedName(a.title)
+                                    if cleanedTitle not in a.alternateNames and cleanedTitle != a.title:
+                                        a.alternateNames.append(cleanedTitle)
+                                    releases.append(a)
+                            except:
+                                self.logger.exception("iTunes: Error In SearchForRelease")
+                                pass
+                    except:
+                        pass
+                self.cache[artist.roadieId] = sorted(releases, key=lambda x: (x.weight(), x.releaseDate, x.title))
+                if title:
+                    foundRelease = None
+                    for release in self.cache[artist.roadieId]:
+                        if isEqual(release.title, title):
+                            foundRelease = release
+                            break
+                    if foundRelease:
+                        releases = [foundRelease]
+                        return releases
+                    else:
+                        return None
+            return self.cache[artist.roadieId]
         except:
             self.logger.exception("iTunes: Error In SearchForRelease")
             pass

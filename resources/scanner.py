@@ -181,8 +181,6 @@ class Scanner(ProcessorBase):
                             if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
                                 track.alternateNames.append(cleanedTitle)
                             releaseMedia.tracks.append(track)
-                            self.logger.debug(
-                                "Update Release [" + str(release.info()) + "] Track [" + str(track.info()) + "]")
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime

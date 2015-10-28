@@ -19,10 +19,10 @@ class ReleaseMedia(Base):
     releaseId = Column(Integer, ForeignKey("release.id"), index=True)
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +\
-                "], ReleaseMediaNumber [" + str(self.releaseMediaNumber) +\
-               "], ReleaseSubTitle [" + str(self.releaseSubTitle) + "], trackCount [" + str(self.trackCount) + \
-               "]"
+        return ( "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +
+                "], ReleaseMediaNumber [" + str(self.releaseMediaNumber) +
+               "], ReleaseSubTitle [" + str(self.releaseSubTitle) + "], trackCount [" + str(self.trackCount) +
+               "]").encode('ascii', 'ignore').decode('utf-8')
 
     def __unicode__(self):
         return self.release.title + " " + self.releaseMediaNumber

@@ -78,14 +78,14 @@ class Artist(Base):
                     for media in release.media:
                         trackCount += len(media.tracks)
                         mediaCount += 1
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) + "], " + \
-               "AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) + \
-               "], ITunesId [" + str(self.iTunesId) + "], AmgId [" + str(self.amgId) + "], SpotifyId [" + str(
-            self.spotifyId) + "], Name [" + str(self.name) + "], SortName [" + str(self.sortName) + \
-               "] Releases [" + str(len(self.releases or [])) + "] Labels [" + "|".join(labelNames) + "] Media [" + str(
+        return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
+            self.musicBrainzId) + "], " +
+                "AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) +
+                "], ITunesId [" + str(self.iTunesId) + "], AmgId [" + str(self.amgId) + "], SpotifyId [" + str(
+            self.spotifyId) + "], Name [" + str(self.name) + "], SortName [" + str(self.sortName) +
+                "] Releases [" + str(len(self.releases or [])) + "] Labels [" + "|".join(
+            labelNames) + "] Media [" + str(
             mediaCount) + "] Tracks [" + str(trackCount) + "] Images [" + str(
-            len(self.images or [])) + "] Genres [" + \
-               "|".join(map(lambda x: x.name, self.genres or [])) + "] Associated Artist [" + str(
-            len(self.associatedArtists or [])) + "]"
-
+            len(self.images or [])) + "] Genres [" +
+                "|".join(map(lambda x: x.name, self.genres or [])) + "] Associated Artist [" + str(
+            len(self.associatedArtists or [])) + "]").encode('ascii', 'ignore').decode('utf-8')
