@@ -24,7 +24,7 @@ from werkzeug.datastructures import Headers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy import create_engine, Integer, desc
+from sqlalchemy import create_engine, Integer, desc, String
 from sqlalchemy.sql import text, func
 
 from importers.collectionImporter import CollectionImporter
@@ -974,53 +974,54 @@ def streamTrack(user_id, track_id):
 @login_required
 @nocache
 def stats():
-    #TODO
-#     # counts = {'artists': "{0:,}".format(Artist.objects().count()),
-#     #           'labels': "{0:,}".format(Label.objects().count()),
-#     #           'releases': "{0:,}".format(Release.objects().count()),
-#     #           'tracks': "{0:,}".format(Track.objects().count())
-#     #           }
-#
-#     counts = conn.execute(text(
-#         "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
-#         "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
-#         "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
-# 		"sum(t.fileSize) as trackSize "
-# 		"FROM track t "
-# 		"join releasemedia rm on rm.id = t.releaseMediaId "
-# 		"join release r on r.id = rm.releaseId "
-# 		"join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
-#         "(SELECT COUNT(1) as labelCount FROM label) lc "
-#         "join release r on rm.releaseId = r.id "
-#         "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
-#                                     .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
-#                                              trackDuration=Integer, trackSize=Integer, artistCount=Integer,labelCount=Integer))
-#
-# # SELECT a.roadieId as artistRoadieId
-# # FROM artist a
-# # join release r on r.artistId = a.id
-# # GROUP BY a.id
-# # ORDER BY COUNT(1) desc
-#
-#
-# # SELECT a.roadieId as artistRoadieId
-# # FROM artist a
-# # join release r on r.artistId = a.id
-# # join releasemedia rm on rm.releaseId = r.id
-# # join track t on t.releaseMediaId = rm.id
-# # GROUP BY a.id
-# # ORDER BY COUNT(1) desc
-#
-#     topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
-#
-#     topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
-#
-#     mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
-#
-#     return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
-#                            topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
-#                            mostRecentReleases=mostRecentReleases, counts=counts)
+    counts = conn.execute(text(
+        "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
+        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
+        "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
+        "sum(t.fileSize) as trackSize "
+        "FROM track t "
+        "join releasemedia rm on rm.id = t.releaseMediaId "
+        "join release r on r.id = rm.releaseId "
+        "join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
+        "(SELECT COUNT(1) as labelCount FROM label) lc "
+        "join release r on rm.releaseId = r.id "
+        "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
+                          .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
+                                   trackDuration=Integer, trackSize=Integer, artistCount=Integer,
+                                   labelCount=Integer)).first()
+
+
+    top10Artists = conn.execute(text(
+        "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
+        "FROM artist a " +
+        "join release r on r.artistId = a.id " +
+        "GROUP BY a.id " +
+        "ORDER BY COUNT(1) desc " +
+        "LIMIT 10;", autocommit=True)
+                                .columns(roadieId=String, name=String, count=Integer))
+
+    top10ArtistsTracks = conn.execute(text(
+        "SELECT a.roadieId as roadieId, a.name, count(t.roadieId) as count " +
+        "FROM artist a " +
+        "join release r on r.artistId = a.id " +
+        "join releasemedia rm on rm.releaseId = r.id " +
+        "join track t on t.releaseMediaId = rm.id " +
+        "GROUP BY a.id " +
+        "ORDER BY COUNT(1) desc " +
+        "LIMIT 10;", autocommit=True)
+                                      .columns(roadieId=String, name=String, count=Integer))
+
+    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
+
+    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
+
+    mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
+
+    return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
+                           topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
+                           mostRecentReleases=mostRecentReleases, counts=counts, formattedLibrarySize=sizeof_fmt(counts[4]))
     return None
+
 
 @app.route("/stats/play/<option>")
 @login_required
@@ -1102,7 +1103,8 @@ def getCollectionThumbnailImage(collection_id):
         if getCollectionThumbnailImageCollection:
             etag = hashlib.sha1(
                 ('%s%s' % (
-                getCollectionThumbnailImageCollection.id, getCollectionThumbnailImageCollection.LastUpdated)).encode(
+                    getCollectionThumbnailImageCollection.id,
+                    getCollectionThumbnailImageCollection.LastUpdated)).encode(
                     'utf-8')).hexdigest()
             return makeImageResponse(getCollectionThumbnailImageCollection.thumbnail,
                                      getCollectionThumbnailImageCollection.lastUpdated,
@@ -1417,7 +1419,8 @@ def updateAllCollections():
         notFoundEntryInfos = []
         for updateCollectionCollection in dbSession.query(Collection).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
-            i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
+            i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat,
+                                   None)
             i.importCsvData(io.StringIO(collection.listInCSV))
             for i in i.notFoundEntryInfo:
                 notFoundEntryInfos.append(i)

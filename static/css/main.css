@@ -307,7 +307,7 @@ ul.no-list-style {
 
 .recent-releases-container {
     display: inline-block;
-    margin: 0;
+    margin: 5px 0;
     padding: 0;
     width: 100%;
 }
@@ -617,4 +617,8 @@ form.profile input {
 
 #lastPlayedTracks img.release-thumb, #lastPlayedTracks img.artist-thumb {
     height: 45px;
+}
+
+img.artist-thumb, img.release-thumb {
+    height: 80px;
 }
