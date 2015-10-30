@@ -1578,10 +1578,9 @@ class WebSocket(WebSocketHandler):
     def on_close(self):
         clients.remove(self)
 
-
-api.add_resource(ArtistListApi, '/api/v1.0/artists')
-api.add_resource(ReleaseListApi, '/api/v1.0/releases')
-api.add_resource(TrackListApi, '/api/v1.0/tracks')
+api.add_resource(ArtistListApi, '/api/v1.0/artists', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 
 login_manager = LoginManager()
 login_manager.init_app(app)

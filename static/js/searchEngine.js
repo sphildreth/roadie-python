@@ -40,8 +40,8 @@ var searchEngine = ( function( window, undefined ) {
                         result.push({
                             id: d.id,
                             type: 'artist',
-                            tn: d.ThumbnailUrl,
-                            value: d.Name
+                            tn: d.thumbnailUrl,
+                            value: d.name
                         });
                     });
                     return result;
@@ -59,10 +59,10 @@ var searchEngine = ( function( window, undefined ) {
                     result = [];
                     $.each(x.rows, function(i,d) {
                         result.push({
-                            id: d.ReleaseId,
+                            id: d.id,
                             type: 'release',
-                            tn: d.ThumbnailUrl,
-                            value: d.Title + " (" + d.Year + ")"
+                            tn: d.thumbnailUrl,
+                            value: d.title + " (" + d.releaseYear + ")"
                         });
                     });
                     return result;
@@ -80,10 +80,10 @@ var searchEngine = ( function( window, undefined ) {
                     result = [];
                     $.each(x.rows, function(i,d) {
                         result.push({
-                            id: d.ReleaseId,
+                            id: d.releaseId,
                             type: 'track',
                             tn: searchEngine.searchTrackThumbNailUrl,
-                            value: d.Title
+                            value: d.title
                         });
                     });
                     return result;

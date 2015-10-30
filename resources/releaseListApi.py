@@ -2,11 +2,21 @@ import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
 
+from resources.models.Track import Track
+from resources.models.Release import Release
+from resources.models.ReleaseMedia import ReleaseMedia
+
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+from sqlalchemy import create_engine, Integer, desc, String, update
+from sqlalchemy.sql import text, func
 
 
 class ReleaseListApi(Resource):
-
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.dbConn = kwargs['dbConn']
+        self.dbSession = kwargs['dbSession']
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('current', type=int)
         self.reqparse.add_argument('limit', type=int)
@@ -23,11 +33,7 @@ class ReleaseListApi(Resource):
         get_limit = args.limit or 10
         get_skip = args.skip or 0
         includes = args.inc or 'tracks'
-        sort = args.sort or 'ReleasedDate'
-        if sort == "Year":
-            sort = "ReleaseDate"
-        if sort == "ArtistName":
-            sort = "Artist__Name"
+        sort = args.sort or 'releaseDate'
         order = args.order or 'asc'
         if order != 'asc':
             order = "-"
@@ -35,43 +41,44 @@ class ReleaseListApi(Resource):
             order = ""
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
-        connect()
         if args.filter:
-            releases = Release.objects(__raw__= {'$or' : [
-                { 'Title' : { '$regex' : args.filter, '$options': 'mi' }},
-                { 'AlternateNames': { '$regex' : args.filter, '$options': 'mi' } }
-            ]}).order_by(order + sort)[get_skip:get_limit]
+            releases = self.dbSession.query(Release).filter(Release.title.like("%" + args.filter + "%")) \
+                           .order_by(order + sort)[get_skip:get_limit]
         else:
-            releases = Release.objects().order_by(order + sort)[:get_limit]
-
+            releases = self.dbSession.query(Release).order_by(order + sort)[:get_limit]
         rows = []
         if releases:
             for release in releases:
+                trackCount = 0
                 trackInfo = []
                 if 'tracks' in includes:
-                    for track in release.Tracks:
-                        trackLength = 0
-                        if track:
-                            trackLength = datetime.timedelta(seconds=track.Track.Length);
-                        trackInfo.append({
-                            "TrackId": str(track.Track.id),
-                            "TrackNumber": track.TrackNumber,
-                            "ReleaseMediaNumber": track.ReleaseMediaNumber,
-                            "Length": ":".join(str(trackLength).split(":")[1:3]),
-                            "Title": track.Track.Title
-                        })
+                    for media in release.media:
+                        for track in media.tracks:
+                            trackLength = datetime.timedelta(seconds=track.duration)
+                            trackInfo.append({
+                                "trackId": str(track.roadieId),
+                                "trackNumber": track.trackNumber,
+                                "releaseMediaNumber": media.releaseMediaNumber,
+                                "length": ":".join(str(trackLength).split(":")[1:3]),
+                                "duration": track.duration,
+                                "title": track.title
+                            })
+                else:
+                    trackCount = self.dbSession.query(func.sum(ReleaseMedia.trackCount)).filter(
+                        ReleaseMedia.releaseId == release.id).scalar()
                 rows.append({
-                    "ReleaseId": str(release.id),
-                    "ArtistId" : str(release.Artist.id),
-                    "Year": release.ReleaseDate,
-                    "ArtistName": release.Artist.Name,
-                    "Title": release.Title,
-                    "Tracks": trackInfo,
-                    "TrackCount": release.TrackCount,
-                    "ReleasePlayedCount": 0,
-                    "LastUpdated": release.LastUpdated.strftime("%Y-%m-%d %H:%M"),
-                    "Rating": release.Rating or 0,
-                    "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
+                    "id": release.roadieId,
+                    "artistId": release.artist.roadieId,
+                    "releaseDate": release.releaseDate.isoformat(),
+                    "releaseYear": release.releaseDate.strftime('%Y'),
+                    "artistName": release.artist.name,
+                    "title": release.title,
+                    "tracks": trackInfo,
+                    "trackCount": len(trackInfo) if trackInfo else trackCount,
+                    "releasePlayedCount": 0,
+                    "lastUpdated": "" if not release.lastUpdated else release.lastUpdated.isoformat(),
+                    "rating": release.rating or 0,
+                    "thumbnailUrl": "/images/release/thumbnail/" + release.roadieId
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=releases.count(), message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=len(releases), message="OK")

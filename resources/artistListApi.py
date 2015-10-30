@@ -4,10 +4,18 @@ from flask import jsonify
 
 from resources.models.Artist import Artist
 
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+
+from sqlalchemy import create_engine, Integer, desc, String, update
+from sqlalchemy.sql import text, func
+
 
 class ArtistListApi(Resource):
 
-    def __init__(self):
+    def __init__(self, **kwargs):
+        self.dbConn = kwargs['dbConn']
+        self.dbSession = kwargs['dbSession']
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('current', type=int)
         self.reqparse.add_argument('limit', type=int)
@@ -16,7 +24,6 @@ class ArtistListApi(Resource):
         self.reqparse.add_argument('inc', type=str)
         self.reqparse.add_argument('sort', type=str)
         self.reqparse.add_argument('order', type=str)
-        super(ArtistListApi, self).__init__()
 
     def get(self):
         args = self.reqparse.parse_args()
@@ -24,7 +31,7 @@ class ArtistListApi(Resource):
         get_limit = args.limit or 10
         get_skip = args.skip or 0
         includes = args.inc or 'releases,tracks'
-        sort = args.sort or 'SortName'
+        sort = args.sort or 'sortName'
         order = args.order or 'asc'
         if order != 'asc':
             order = "-"
@@ -34,52 +41,54 @@ class ArtistListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
 
         if args.filter:
-            artists = Artist.objects(__raw__= {'$or' : [
-                { 'Name' : { '$regex' : args.filter, '$options': 'mi' }},
-                { 'SortName': { '$regex' : args.filter, '$options': 'mi' } },
-                { 'AlternateNames': { '$regex' : args.filter, '$options': 'mi' } }
-            ]}).order_by(order + sort)[get_skip:get_limit]
+            artists = self.dbSession.query(Artist).filter(Artist.name.like("%" + args.filter + "%")) \
+                .order_by(order + sort)[get_skip:get_limit]
         else:
-            artists = Artist.objects().order_by(order + sort)[:get_limit]
+            artists = self.dbSession.query(Artist).order_by(order + sort)[get_skip:get_limit]
 
         rows = []
         if artists:
             for artist in artists:
                 releaseInfo = []
                 if 'releases' in includes:
-                    releases = Release.objects(Artist=artist).order_by('-ReleasedDate')
-                    for release in releases:
+                    for release in artist.releases:
                         trackInfo = []
                         if 'tracks' in includes:
-                            for track in release.Tracks:
-                                trackLength = 0
-                                if track:
-                                    trackLength = datetime.timedelta(seconds=track.Track.Length)
-                                trackInfo.append({
-                                    "TrackId": str(track.Track.id),
-                                    "TrackNumber": track.TrackNumber,
-                                    "ReleaseMediaNumber": track.ReleaseMediaNumber,
-                                    "Length": ":".join(str(trackLength).split(":")[1:3]),
-                                    "Title": track.Track.Title
-                                })
+                            for media in release.media:
+                                for track in media.tracks:
+                                    trackLength = datetime.timedelta(seconds=track.duration)
+                                    trackInfo.append({
+                                        "trackId": str(track.roadieId),
+                                        "trackNumber": track.trackNumber,
+                                        "releaseMediaNumber": media.releaseMediaNumber,
+                                        "length": ":".join(str(trackLength).split(":")[1:3]),
+                                        "duration": track.duration,
+                                        "title": track.title
+                                    })
                         releaseInfo.append({
-                            "ReleaseId": str(release.id),
-                            "Year": release.ReleaseDate,
-                            "Title": release.Title,
-                            "Tracks": trackInfo,
-                            "ThumbnailUrl": "/images/release/thumbnail/" + str(release.id)
+                            "releaseId": str(release.roadieId),
+                            "releaseDate": release.releaseDate.isoformat(),
+                            "releaseYear": release.releaseDate.strftime('%Y'),
+                            "title": release.title,
+                            "tracks": trackInfo,
+                            "thumbnailUrl": "/images/release/thumbnail/" + str(release.roadieId)
                         })
+                artistTrackCount = self.dbConn.execute(text(
+                    "select COUNT(t.id) as trackCount " +
+                    "from artist a " +
+                    "join release r on r.artistId = a.id " +
+                    "join releaseMedia rm on rm.releaseId  = r.id " +
+                    "join track t on t.releaseMediaId = rm.id " +
+                    "where a.id =" + str(artist.id) + ";", autocommit=True).columns(trackCount=Integer)).fetchone()
                 rows.append({
-                    "Name": artist.Name,
-                    "id": str(artist.id),
-                    "Rating": str(artist.Rating or 0),
-                    "ArtistReleaseCount": Release.objects(Artist=artist).count(),
-                    "ArtistTrackCount": Track.objects(Artist=artist).count(),
-                    # TODO: I could not figure this out
-                    #     playedCount = UserTrack.objects(Track__Artist=artist).aggregate_sum("Played")
-                    "ArtistPlayedCount": 0,
-                    "Releases": releaseInfo,
-                    "ThumbnailUrl": "/images/artist/thumbnail/" + str(artist.id)
+                    "name": artist.name,
+                    "id": str(artist.roadieId),
+                    "rating": str(artist.rating or 0),
+                    "artistReleaseCount": len(artist.releases),
+                    "artistTrackCount": artistTrackCount[0],
+                    "artistPlayedCount": 0,
+                    "releases": releaseInfo,
+                    "thumbnailUrl": "/images/artist/thumbnail/" + str(artist.roadieId)
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=artists.count(), message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=len(artists), message="OK")

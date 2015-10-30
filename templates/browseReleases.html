@@ -48,22 +48,22 @@
             sortOrder: "desc",
             columns: [
                 { field: 'ReleaseId', visible: false },
-                { field: 'Title', title: 'Title', sortable: true, formatter: function(value,row,index) {
-                    var releaseId = row.ReleaseId;
-                    var title = row.Title;
-                    var rating = row.Rating;
-                    var thumbnail = row.ThumbnailUrl;
+                { field: 'title', title: 'Title', sortable: true, formatter: function(value,row,index) {
+                    var releaseId = row.id;
+                    var title = row.title;
+                    var rating = row.rating;
+                    var thumbnail = row.thumbnailUrl;
                     return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
                 }},
-                { field: 'Rating', sortable: true, title: 'Rating' },
-                { field: 'Year', sortable: true, title: 'Year' },
-                { field: 'LastUpdated', sortable: true, title: 'LastUpdated' },
-                { field: 'TrackCount', sortable: true, title: '# Tracks' },
-                { field: 'ArtistName', sortable: true, title: 'Artist', formatter: function(value,row, index) {
-                    var thumbnail = "/images/artist/thumbnail/" + row.ArtistId;
-                    return '<a href="/artist/' + row.ArtistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.ArtistName  + '" /></div><span class="label label-default">' + row.ArtistName + '</span></a>';
+                { field: 'rating', sortable: true, title: 'Rating' },
+                { field: 'releaseYear', sortable: true, title: 'Year' },
+                { field: 'lastUpdated', sortable: true, title: 'LastUpdated' },
+                { field: 'trackCount', sortable: true, title: '# Tracks' },
+                { field: 'artistName', sortable: true, title: 'Artist', formatter: function(value,row, index) {
+                    var thumbnail = "/images/artist/thumbnail/" + row.artistId;
+                    return '<a href="/artist/' + row.artistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.artistName  + '" /></div><span class="label label-default">' + row.artistName + '</span></a>';
                 }},
-                { field: 'PlayedCount', title: '# Plays' }
+                { field: 'playedCount', title: '# Plays' }
             ]
         });
     });
