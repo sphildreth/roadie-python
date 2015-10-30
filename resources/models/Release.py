@@ -47,12 +47,12 @@ class Release(Base):
     urls = Column(ScalarListType(separator="|"))
 
     artistId = Column(Integer, ForeignKey("artist.id"))
-    genres = relationship(Genre, secondary=releaseGenreTable)
-    releaseLabels = relationship(ReleaseLabel, backref="release")
-    media = relationship(ReleaseMedia, backref="release")
-    images = relationship(Image, backref="release")
-    userRatings = relationship(UserRelease, backref="release")
-    collections = relationship(CollectionRelease, backref="release")
+    genres = relationship(Genre, cascade="all", secondary=releaseGenreTable)
+    releaseLabels = relationship(ReleaseLabel, cascade="all, delete-orphan", backref="release")
+    media = relationship(ReleaseMedia, cascade="all, delete-orphan", backref="release")
+    images = relationship(Image, cascade="all, delete-orphan", backref="release")
+    userRatings = relationship(UserRelease, cascade="all, delete-orphan", backref="release")
+    collections = relationship(CollectionRelease, cascade="all, delete-orphan", backref="release")
 
     def get_id(self):
         return self.roadieId

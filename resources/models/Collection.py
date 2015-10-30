@@ -19,7 +19,7 @@ class Collection(Base):
     urls = Column(ScalarListType(separator="|"))
 
     maintainerId = Column(Integer, ForeignKey("user.id"))
-    collectionReleases = relationship(CollectionRelease, backref="collectionReleases")
+    collectionReleases = relationship(CollectionRelease, cascade="all, delete-orphan", backref="collectionReleases")
 
     def __unicode__(self):
         return self.name

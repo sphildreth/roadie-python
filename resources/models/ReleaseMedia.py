@@ -14,7 +14,7 @@ class ReleaseMedia(Base):
     # Number of Tracks that should be on the Release Media
     trackCount = Column(SmallInteger(), nullable=False)
     # Tracks For The Release Media
-    tracks = relationship(Track, backref="releasemedia")
+    tracks = relationship(Track, cascade="all, delete-orphan", backref="releasemedia")
     # The Release for the Release Media
     releaseId = Column(Integer, ForeignKey("release.id"), index=True)
 

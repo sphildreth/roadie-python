@@ -47,11 +47,11 @@ class Artist(Base):
     urls = Column(ScalarListType(separator="|"))
     isniList = Column(ScalarListType(separator="|"))
 
-    releases = relationship(Release, backref="artist")
-    images = relationship(Image)
+    releases = relationship(Release, cascade="all, delete-orphan", backref="artist")
+    images = relationship(Image, cascade="all, delete-orphan", backref="artist")
     genres = relationship(Genre, secondary=artistGenreTable, backref="artist")
 
-    userRatings = relationship(UserArtist, backref="artist")
+    userRatings = relationship(UserArtist, cascade="all, delete-orphan", backref="artist")
 
     associated_artists = relationship("Artist",
                                       secondary="artistAssociation",

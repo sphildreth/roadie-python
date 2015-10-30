@@ -30,9 +30,9 @@ class User(Base):
     collectionMaintainer = relationship(Collection, backref="user")
     playlistUser = relationship(Playlist, backref="user")
 
-    artists = relationship(UserArtist, backref="user")
-    releases = relationship(UserRelease, backref="user")
-    tracks = relationship(UserTrack, backref="user")
+    artists = relationship(UserArtist, cascade="all, delete-orphan", backref="user")
+    releases = relationship(UserRelease, cascade="all, delete-orphan", backref="user")
+    tracks = relationship(UserTrack, cascade="all, delete-orphan", backref="user")
 
     def get_id(self):
         return self.roadieId

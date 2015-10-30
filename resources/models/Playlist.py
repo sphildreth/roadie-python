@@ -8,7 +8,6 @@ from resources.models.PlaylistTrack import PlaylistTrack
 
 class Playlist(Base):
 
-
     isPublic = Column(Boolean(), default=False)
     name = Column(String(100), nullable=False, unique=True, index=True)
     description = Column(String(1000))
@@ -16,7 +15,7 @@ class Playlist(Base):
     urls = Column(ScalarListType(separator="|"))
 
     userId = Column(Integer, ForeignKey("user.id"), index=True)
-    tracks = relationship(PlaylistTrack, backref="playlist")
+    tracks = relationship(PlaylistTrack, cascade="all, delete-orphan", backref="playlist")
 
     def __unicode__(self):
         return self.user.name + "::" + self.name

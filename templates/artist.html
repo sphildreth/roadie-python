@@ -27,7 +27,7 @@
             {% if current_user.is_editor() %}
               <div class="btn-group">
                 <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                {% if artist.IsLocked == False %}
+                {% if artist.isLocked == False %}
                     <div class="btn-group">
                         <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
