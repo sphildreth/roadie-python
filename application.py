@@ -24,7 +24,7 @@ from werkzeug.datastructures import Headers
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy import create_engine, Integer, desc, String
+from sqlalchemy import create_engine, Integer, desc, String, update
 from sqlalchemy.sql import text, func
 
 from importers.collectionImporter import CollectionImporter
@@ -990,7 +990,6 @@ def stats():
                                    trackDuration=Integer, trackSize=Integer, artistCount=Integer,
                                    labelCount=Integer)).first()
 
-
     top10Artists = conn.execute(text(
         "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
         "FROM artist a " +
@@ -1019,38 +1018,34 @@ def stats():
 
     return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
                            topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
-                           mostRecentReleases=mostRecentReleases, counts=counts, formattedLibrarySize=sizeof_fmt(counts[4]))
+                           mostRecentReleases=mostRecentReleases, counts=counts,
+                           formattedLibrarySize=sizeof_fmt(counts[4]))
     return None
 
 
 @app.route("/stats/play/<option>")
 @login_required
 def playStats(option):
-    # TODO
-    # user = User.objects(id=current_user.id).first()
-    # tracks = []
-    # if option == "top25songs":
-    #     for track in Track.objects(Rating__gt=0).order_by('-Rating', 'FilePath', 'Title')[:25]:
-    #         playStatsRelease = Release.objects(Tracks__Track=track).first()
-    #         tracks.append(M3U.makeTrackInfo(user, playStatsRelease, track))
-    #     if user.doUseHtmlPlayer:
-    #         session['tracks'] = tracks
-    #         return player()
-    #     return send_file(M3U.generate(tracks),
-    #                      as_attachment=True,
-    #                      attachment_filename="playlist.m3u")
-    # if option == "top10Albums":
-    #     for top100Release in Release.objects().order_by('-Rating', 'FilePath', 'Title')[:10]:
-    #         user = User.objects(id=current_user.id).first()
-    #         for track in sorted(top100Release.Tracks, key=lambda track: (track.ReleaseMediaNumber, track.TrackNumber)):
-    #             tracks.append(M3U.makeTrackInfo(user, top100Release, track.Track))
-    #     if user.doUseHtmlPlayer:
-    #         session['tracks'] = tracks
-    #         return player()
-    #     return send_file(M3U.generate(tracks),
-    #                      as_attachment=True,
-    #                      attachment_filename="playlist.m3u")
-    return None
+    user = getUser()
+    tracks = []
+    if option == "top25songs":
+        for track in dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]:
+            tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
+        if user.doUseHtmlPlayer:
+            session['tracks'] = tracks
+            return player()
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
+    if option == "top10Albums":
+        for track in dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]:
+            tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
+        if user.doUseHtmlPlayer:
+            session['tracks'] = tracks
+            return player()
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
 
 
 def makeImageResponse(imageBytes, lastUpdated, imageName, etag, mimetype='image/jpg'):
@@ -1509,46 +1504,58 @@ def dupFinder():
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
 @login_required
 def mergeArtists(merge_into_id, merge_id):
-    # TODO
-    # try:
-    #     artist = Artist.objects(id=merge_into_id).first()
-    #     artistToMerge = Artist.objects(id=merge_id).first()
-    #     if not artist or not artistToMerge:
-    #         return jsonify(message="ERROR")
-    #     now = arrow.utcnow().datetime
-    #     Track.objects(Artist=artistToMerge).update(Artist=artist)
-    #     Release.objects(Artist=artistToMerge).update(Artist=artist)
-    #     UserArtist.objects(Artist=artistToMerge).update(Artist=artist)
-    #     for altName in artistToMerge.AlternateNames:
-    #         if not altName in artist.AlternateNames:
-    #             artist.AlternateNames.append(altName)
-    #     for associated in artistToMerge.AssociatedArtists:
-    #         if not associated in artist.AssociatedArtists:
-    #             artist.AssociatedArtists.append(associated)
-    #     artist.BirthDate = artist.BirthDate or artistToMerge.BirthDate
-    #     artist.BeginDate = artist.BeginDate or artistToMerge.BeginDate
-    #     artist.EndDate = artist.EndDate or artistToMerge.EndDate
-    #     for image in artistToMerge.Images:
-    #         artist.Images.append(image)
-    #     artist.Profile = artist.Profile or artistToMerge.Profile
-    #     artist.MusicBrainzId = artist.MusicBrainzId or artistToMerge.MusicBrainzId
-    #     artist.RealName = artist.RealName or artistToMerge.RealName
-    #     artist.Thumbnail = artist.Thumbnail or artistToMerge.Thumbnail
-    #     artist.Rating = artist.Rating or artistToMerge.Rating
-    #     for tag in artistToMerge.Tags:
-    #         if tag not in artist.Tags:
-    #             artist.Tags.append(tag)
-    #     for url in artistToMerge.Urls:
-    #         if not url in artist.Urls:
-    #             artist.Urls.append(url)
-    #     Artist.save(artist)
-    #     Artist.delete(artistToMerge)
-    #     return jsonify(message="OK")
-    #
-    # except:
-    #     logger.exception("Error Merging Artists")
-    #     return jsonify(message="ERROR")
-    return None
+    try:
+        artist = getArtist(merge_into_id)
+        artistToMerge = getArtist(merge_id)
+        if not artist or not artistToMerge:
+            return jsonify(message="ERROR")
+        now = arrow.utcnow().datetime
+
+        dbSession.query(Release).filter(Release.artistId == artistToMerge.id).update(
+            {Release.artistId: artist.id, Release.lastUpdated: now},
+            syncronize_session=False)
+        dbSession.query(UserArtist).filter(UserArtist == artistToMerge.id).update(
+            {UserArtist.artistId: artist.id, UserArtist.lastUpdated: now},
+            syncronize_session=False)
+        for altName in artistToMerge.alternateNames:
+            if altName not in artist.alternateNames:
+                artist.alternateNames.append(altName)
+        for associated in artistToMerge.associated_artists:
+            if associated not in artist.associated_artists:
+                artist.associated_artists.append(associated)
+        artist.birthDate = artist.birthDate or artistToMerge.birthDate
+        artist.beginDate = artist.beginDate or artistToMerge.beginDate
+        artist.endDate = artist.endDate or artistToMerge.endDate
+        for image in artistToMerge.images:
+            add = False
+            for ai in artist.images:
+                if ai.signature == image.signature:
+                    add = False
+                    break
+            if add:
+                image.artistId = artist.id
+                image.lastUpdated = now
+                artist.images.append(image)
+            artist.Images.append(image)
+        artist.profile = artist.profile or artistToMerge.profile
+        artist.musicBrainzId = artist.musicBrainzId or artistToMerge.musicBrainzId
+        artist.realName = artist.realName or artistToMerge.realName
+        artist.thumbnail = artist.thumbnail or artistToMerge.thumbnail
+        artist.rating = artist.rating or artistToMerge.rating
+        for tag in artistToMerge.tags:
+            if tag not in artist.tags:
+                artist.tags.append(tag)
+        for url in artistToMerge.urls:
+            if url not in artist.urls:
+                artist.Urls.append(url)
+        artist.lastUpdated = now
+        dbSession.delete(artistToMerge)
+        dbSession.commit()
+        return jsonify(message="OK")
+
+    except:
+        logger.exception("Error Merging Artists")
+        return jsonify(message="ERROR")
 
 
 @app.route("/player")
