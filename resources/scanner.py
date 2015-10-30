@@ -148,7 +148,6 @@ class Scanner(ProcessorBase):
                             release.media.append(releaseMedia)
                             self.logger.info("+ Added ReleaseMedia [" + str(releaseMedia.info()) + "] To Release")
                         track = Track()
-                        track.random = random.randint(1, 9999999)
                         track.fileName = tail
                         track.filePath = headNoLibrary
                         track.hash = trackHash

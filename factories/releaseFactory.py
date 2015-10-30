@@ -127,7 +127,6 @@ class ReleaseFactory(object):
         release.roadieId = sr.roadieId
         release.title = title
         release.releaseDate = parseDate(sr.releaseDate)
-        release.random = sr.random
         release.trackCount = sr.trackCount
         release.mediaCount = sr.mediaCount
         release.thumbnail = sr.thumbnail
@@ -229,7 +228,6 @@ class ReleaseFactory(object):
                         track = Track()
                         track.roadieId = srTrack.roadieId
                         track.partTitles = srTrack.partTitles
-                        track.random = srTrack.random
                         track.musicBrainzId = srTrack.musicBrainzId
                         track.amgId = srTrack.amgId
                         track.spotifyId = srTrack.spotifyId
@@ -295,7 +293,6 @@ class ReleaseFactory(object):
         if not artist or not title or not trackCount or not releaseDate:
             return None
         release = Release()
-        release.random = random.randint(1, 9999999)
         release.title = title
         release.releaseDate = parseDate(releaseDate)
         release.trackCount = trackCount

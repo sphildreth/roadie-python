@@ -64,7 +64,6 @@ class ArtistSearcher(object):
         try:
             startTime = arrow.utcnow().datetime
             artist = Artist(name=name)
-            artist.random = random.randint(1, 9999999)
             artist.roadieId = str(uuid.uuid4())
             if self.iTunesSearcher.IsActive:
                 artist = artist.mergeWithArtist(self.iTunesSearcher.lookupArtist(name))

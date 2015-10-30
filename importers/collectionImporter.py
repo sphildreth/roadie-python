@@ -1,20 +1,25 @@
 import csv
 import os
-import re
+import uuid
 
 import arrow
 
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
+from resources.models.Collection import Collection
+from resources.models.CollectionRelease import CollectionRelease
+from factories.artistFactory import ArtistFactory
+from factories.releaseFactory import ReleaseFactory
 
 
 class CollectionImporter(ProcessorBase):
-    def __init__(self, collectionId, readOnly, format, filename):
+    def __init__(self, dbConn, dbSession, collectionId, readOnly, format, filename):
         self.logger = Logger()
-        config = self.getConfig()
+        self.dbConn = dbConn
+        self.dbSession = dbSession
         self.collectionId = collectionId
-        self.dbName = config['MONGODB_SETTINGS']['DB']
-        self.host = config['MONGODB_SETTINGS']['host']
+        self.artistFactory = ArtistFactory(dbConn, dbSession)
+        self.releaseFactory = ReleaseFactory(dbConn, dbSession)
         self.notFoundEntryInfo = []
         self.readOnly = readOnly
         self.format = format
@@ -48,56 +53,33 @@ class CollectionImporter(ProcessorBase):
             return self.importCsvData(open(self.filename))
 
     def importCsvData(self, csvData):
-        connect(self.dbName, host=self.host)
-        col = Collection.objects(id=self.collectionId).first()
+        col = self.dbSession.query(Collection).filter(Collection.id == self.collectionId).first()
         if not col:
             self.logger.critical("Unable to Find Collection Id [" + self.collectionId + "]")
             return False
         reader = csv.reader(csvData)
-        col.Releases = []
+        col.collectionReleases = []
         for row in reader:
             csvPosition = int(row[self.position].strip())
             csvArtist = row[self.artist].strip()
             csvRelease = row[self.release].strip()
-            artist = Artist.objects(Name__iexact=csvArtist).first()
+            artist = self.artistFactory.get(csvArtist)
             if not artist:
-                artist = Artist.objects(AlternateNames__iexact=csvArtist).first()
-                if not artist:
-                    artist = Artist.objects(__raw__={'$or': [
-                        {'Name': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
-                        {'AlternateNames': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
-                    ]}).first()
-                    if not artist:
-                        self.notFoundEntryInfo.append({
-                            'collection': col.Name,
-                            'artist' : csvArtist,
-                            'release': csvRelease,
-                            'position': csvPosition
-                        })
-                        self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
-                        continue
-            release = Release.objects(Title__iexact= csvRelease, Artist=artist).first()
+                self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
+                continue
+            release = self.releaseFactory.get(artist, csvRelease)
             if not release:
-                release = Release.objects(AlternateNames__iexact=csvRelease, Artist=artist).first()
-                if not release:
-                    release = Release.objects(__raw__={'$or': [
-                        {'Title': {'$regex': csvRelease.replace("'", "\'"), '$options': 'mi'}},
-                        {'AlternateNames': {'$regex': re.escape(csvRelease), '$options': 'mi'}},
-                    ]}).filter(Artist=artist).first()
-                    if not release:
-                        self.notFoundEntryInfo.append({
-                            'collection': col.Name,
-                            'artist' : csvArtist,
-                            'release': csvRelease,
-                            'position': csvPosition
-                        })
-                        self.logger.warn(
-                            ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
-                                'utf-8'))
-                        continue
-            colRelease = CollectionRelease(Release=release, ListNumber=csvPosition)
-            col.Releases.append(colRelease)
+                self.logger.warn(
+                    ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
+                        'utf-8'))
+                continue
+            colRelease = CollectionRelease()
+            colRelease.releaseId = release.id
+            colRelease.listNumber = csvPosition
+            colRelease.createdDate = arrow.utcnow().datetime
+            colRelease.roadieId = str(uuid.uuid4())
+            col.collectionReleases.append(colRelease)
             self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
-        col.LastUpdated = arrow.utcnow().datetime
-        Collection.save(col)
+        col.lastUpdated = arrow.utcnow().datetime
+        self.dbSession.commit()
         return True

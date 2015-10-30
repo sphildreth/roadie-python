@@ -28,8 +28,6 @@ class Artist(Base):
     sortName = Column(String(500))
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
     rating = Column(SmallInteger(), nullable=False, default=0)
-    # This is a random number generated at generation and then used to select random releases
-    random = Column(Integer, nullable=False, default=0, index=True)
     realName = Column(String(500))
     musicBrainzId = Column(String(100))
     iTunesId = Column(String(100))

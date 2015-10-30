@@ -25,8 +25,6 @@ class Release(Base):
     releaseDate = Column(Date())
     # Calculated when a user rates an artist based on average User Ratings and stored here for performance
     rating = Column(SmallInteger(), nullable=False, default=0)
-    # A random number generated at generation and then used to select random releases
-    random = Column(Integer, nullable=False, default=0, index=True)
     # Number of Tracks that should be for all Release Media for this Release
     trackCount = Column(SmallInteger(), nullable=False)
     # Number of Release Media (CDs or LPs) for this Release

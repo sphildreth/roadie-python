@@ -296,10 +296,10 @@ def randomizer(random_type):
     user = getUser()
     if random_type == "artist":
         artist = dbSession.query(Artist).order_by(func.random()).first()
-        return playArtist(artist.id, "0")
+        return playArtist(artist.roadieId, "0")
     elif random_type == "release":
         randomizerRelease = dbSession.query(Release).order_by(func.random()).first()
-        return playRelease(randomizerRelease.id)
+        return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
         for track in dbSession.query(Track).order_by(func.random())[:35]:
@@ -1414,7 +1414,7 @@ def updateAllCollections():
         notFoundEntryInfos = []
         for updateCollectionCollection in dbSession.query(Collection).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
-            i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat,
+            i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat,
                                    None)
             i.importCsvData(io.StringIO(collection.listInCSV))
             for i in i.notFoundEntryInfo:
@@ -1432,7 +1432,7 @@ def updateCollection(collection_id):
     try:
         notFoundEntryInfos = []
         updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id)
-        i = CollectionImporter(updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
+        i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
         i.importCsvData(io.StringIO(collection.listInCSV))
         for i in i.notFoundEntryInfo:
             notFoundEntryInfos.append(i)

@@ -91,7 +91,6 @@ class ArtistFactory(object):
                 sa = self.searcher.searchForArtist(name)
                 if not sa:
                     artist.name = name
-                    artist.random = random.randint(1, 9999999)
                     artist.createdDate = arrow.utcnow().datetime
                     artist.roadieId = str(uuid.uuid4())
                     artist.alternateNames = []
@@ -117,7 +116,6 @@ class ArtistFactory(object):
                     artist.roadieId = sa.roadieId
                     artist.sortName = sa.sortName
                     artist.rating = sa.rating
-                    artist.random = sa.random
                     artist.realName = sa.realName
                     artist.musicBrainzId = sa.musicBrainzId
                     artist.iTunesId = sa.iTunesId
