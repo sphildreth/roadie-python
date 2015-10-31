@@ -1347,9 +1347,9 @@ def collections():
     dbCollections = []
     for c in dbSession.query(Collection).order_by(Collection.name):
         dbCollections.append({
-            'id': c.roadieId,
-            'Name': c.name,
-            'ReleaseCount': c.tracks.count()
+            'roadieId': c.roadieId,
+            'name': c.name,
+            'releaseCount': len(c.collectionReleases)
         })
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:
@@ -1369,7 +1369,7 @@ def collection(collection_id):
     counts = {'releases': "0",
               'tracks': "0",
               'length': 0}
-    for collectionRelease in indexCollection.releases:
+    for collectionRelease in indexCollection.collectionReleases:
         try:
             for media in collectionRelease.media:
                 tracks += len(media.tracks)
@@ -1414,9 +1414,10 @@ def updateAllCollections():
         notFoundEntryInfos = []
         for updateCollectionCollection in dbSession.query(Collection).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
-            i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat,
+            i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
+                                   updateCollectionCollection.listInCSVFormat,
                                    None)
-            i.importCsvData(io.StringIO(collection.listInCSV))
+            i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
             for i in i.notFoundEntryInfo:
                 notFoundEntryInfos.append(i)
             session['notFoundEntryInfos'] = notFoundEntryInfos
@@ -1431,9 +1432,10 @@ def updateAllCollections():
 def updateCollection(collection_id):
     try:
         notFoundEntryInfos = []
-        updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id)
-        i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False, updateCollectionCollection.listInCSVFormat, None)
-        i.importCsvData(io.StringIO(collection.listInCSV))
+        updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+        i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
+                               updateCollectionCollection.listInCSVFormat, None)
+        i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
         for i in i.notFoundEntryInfo:
             notFoundEntryInfos.append(i)
         session['notFoundEntryInfos'] = notFoundEntryInfos
@@ -1577,6 +1579,7 @@ class WebSocket(WebSocketHandler):
 
     def on_close(self):
         clients.remove(self)
+
 
 api.add_resource(ArtistListApi, '/api/v1.0/artists', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})

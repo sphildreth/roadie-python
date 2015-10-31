@@ -55,7 +55,7 @@ class ReleaseFactory(object):
             self.session.commit()
         return releases
 
-    def get(self, artist, title, forceRefresh=False):
+    def get(self, artist, title, doFindIfNotInDB=True, forceRefresh=False):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
         :type artist: Artist
@@ -67,7 +67,7 @@ class ReleaseFactory(object):
             printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
             printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
             release = self._getFromDatabaseByTitle(artist, title)
-            if not release or forceRefresh:
+            if not release and doFindIfNotInDB or forceRefresh:
                 if not release:
                     self.logger.info("Release For Artist [" + printableArtistName +
                                      "] Not Found By Title [" + printableTitle + "]")

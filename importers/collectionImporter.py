@@ -63,11 +63,11 @@ class CollectionImporter(ProcessorBase):
             csvPosition = int(row[self.position].strip())
             csvArtist = row[self.artist].strip()
             csvRelease = row[self.release].strip()
-            artist = self.artistFactory.get(csvArtist)
+            artist = self.artistFactory.get(csvArtist, False)
             if not artist:
-                self.logger.warn(("Not able to find Artist [" + csvArtist + "]").encode('utf-8'))
+                self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
                 continue
-            release = self.releaseFactory.get(artist, csvRelease)
+            release = self.releaseFactory.get(artist, csvRelease, False)
             if not release:
                 self.logger.warn(
                     ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(

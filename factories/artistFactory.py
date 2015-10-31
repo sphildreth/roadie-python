@@ -74,9 +74,10 @@ class ArtistFactory(object):
         artist.lastUpdated = arrow.utcnow().datetime
         self.session.commit()
 
-    def get(self, name):
+    def get(self, name, doFindIfNotInDB=True):
         """
         Query Database for an artist with the given name, if not found search and if found save and return results
+        :type doFindIfNotInDB: bool
         :type name: str
         """
         if not name:
@@ -85,7 +86,7 @@ class ArtistFactory(object):
             name = deriveArtistFromName(name)
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
             artist = self._getFromDatabaseByName(name)
-            if not artist:
+            if not artist and doFindIfNotInDB:
                 self.logger.info("Artist Not Found By Name [" + printableName + "]")
                 artist = Artist()
                 sa = self.searcher.searchForArtist(name)

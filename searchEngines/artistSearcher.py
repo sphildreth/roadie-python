@@ -196,7 +196,6 @@ class ArtistSearcher(object):
                     # Fetch images with only urls, remove any with neither URL or BLOB
                     if release.images:
                         images = []
-                        firstImageInImages = None
                         for image in release.images:
                             if not image.image and image.url:
                                 image.image = self.getImageForUrl(image.url)
@@ -208,12 +207,16 @@ class ArtistSearcher(object):
                             imageSignatures = artistReleaseImages
                             for image in images:
                                 if image.signature not in imageSignatures:
-                                    firstImageInImages = firstImageInImages or image.image
                                     imageSignatures.append(image.signature)
                                     dedupedImages.append(image)
                             release.images = dedupedImages
-                            if not release.thumbnail and firstImageInImages:
+                            if not release.thumbnail:
                                 try:
+                                    firstImageInImages = None
+                                    for image in release.images:
+                                        firstImageInImages = firstImageInImages or image.image
+                                        if firstImageInImages:
+                                            break
                                     img = Image.open(io.BytesIO(firstImageInImages)).convert('RGB')
                                     img.thumbnail(self.releaseThumbnailSize)
                                     b = io.BytesIO()

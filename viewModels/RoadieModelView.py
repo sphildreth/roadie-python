@@ -1,4 +1,5 @@
-import datetime
+import arrow
+import uuid
 from flask_admin.contrib.sqla import ModelView
 from flask.ext.login import LoginManager, login_user, logout_user, \
     current_user, login_required
@@ -14,8 +15,9 @@ class RoadieModelView(ModelView):
     edit_template = 'ckeditor.html'
 
     def on_model_change(self, form, model, is_created):
-        if 'lastUpdated' in model:
-            model.LastUpdated = datetime.datetime.now()
+        model.lastUpdated = arrow.utcnow().datetime
+        if not model.roadieId:
+            model.roadieId = str(uuid.uuid4())
 
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:

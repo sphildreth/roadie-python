@@ -17,37 +17,37 @@
             </div>
             {% if current_user.is_editor() %}
               <div class="btn-group">
-                <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.id }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+                <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.roadieId }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
                 <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
-                {% if collection.ListInCSVFormat and collection.ListInCSV %}
+                {% if collection.listInCSVFormat and collection.listInCSV %}
                 <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
                 {% endif %}
              </div>
             {% endif %}
         </div>
         <div class="row title bordered">
-            <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Title }}" />
-            {% if collection.Urls %}
-            <a class="external-link pull-left" target="_blank" href="{{ collection.Urls[0].Url }}"><span class="fa fa-external-link fa-2x"></span></a>
+            <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.roadieId }}" alt="{{ collection.title }}" />
+            {% if collection.urls %}
+            <a class="external-link pull-left" target="_blank" href="{{ collection.urls[0] }}"><span class="fa fa-external-link fa-2x"></span></a>
             {% endif %}
-            <h2><span class="label label-default">{{ collection.Name }}</span></h2>
+            <h2><span class="label label-default">{{ collection.name }}</span></h2>
         </div>
-        {%for collectionRelease in collection.Releases|sort(attribute='ListNumber') %}
-        {% if collectionRelease.Release and collectionRelease.Release.Artist %}
-        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.Release.id }}" data-listnumber="{{ collectionRelease.ListNumber }}">
-           <a href="/release/{{ collectionRelease.Release.id }}">
+        {%for collectionRelease in collection.collectionReleases|sort(attribute='listNumber') %}
+        {% if collectionRelease.release and collectionRelease.release.artist %}
+        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.release.roadieId }}" data-listnumber="{{ collectionRelease.listNumber }}">
+           <a href="/release/{{ collectionRelease.release.roadieId }}">
                 <div class="thumbnail-container pull-left">
-                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.Release.id }}" alt="{{ collectionRelease.Release.Title }}" />
+                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.release.roadieId }}" alt="{{ collectionRelease.release.title }}" />
                 </div>
-                <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.ListNumber  }}</span></h4>
+                <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber  }}</span></h4>
                 <div class="artist-info">
-                    <img class="thumb pull-left" src="/images/artist/thumbnail/{{ collectionRelease.Release.Artist.id }}" alt="{{ collectionRelease.Release.Artist.Name }}" />
-                    <h5><a title="View Artist" href="/artist/{{ collectionRelease.Release.Artist.id }}"><span class="label label-info">{{ collectionRelease.Release.Artist.Name }}</span></a></h5>
+                    <img class="thumb pull-left" src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}" alt="{{ collectionRelease.release.artist.name }}" />
+                    <h5><a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}"><span class="label label-info">{{ collectionRelease.release.artist.name }}</span></a></h5>
                 </div>
                 <div class="release-rating-container">
-                    <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.Release.Rating }}" />
+                    <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}" />
                 </div>
-                <h3 class="album-title"><span class="label label-default">{{ collectionRelease.Release.Title }}</span></h3>
+                <h3 class="album-title"><span class="label label-default">{{ collectionRelease.release.title }}</span></h3>
             </a>
         </div>
         {% endif %}
@@ -76,8 +76,8 @@
 {% endblock %}
 {% block script_content %}
     <script type="text/javascript">
-    var collectionId = '{{ collection.id }}';
-    var collectionCountShouldBe = {{ collection.ListInCSV|count_new_lines + 1 }};
+    var collectionId = '{{ collection.roadieId }}';
+    var collectionCountShouldBe = {{ collection.listInCSV|count_new_lines + 1 }};
     var missing = [];
 
     var showCollectionSane = function(isSane) {
@@ -100,9 +100,6 @@
                 missing.push(i);
            }
         };
-        console.log(collectionCountShouldBe);
-        console.log(JSON.stringify(myNumbers));
-        console.log(JSON.stringify(missing));
         if(missing.length > 0) {
             var html = '<div><h4>Missing</h4></div>';
             $.each(missing, function(i,d) {

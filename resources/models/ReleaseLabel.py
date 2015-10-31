@@ -13,4 +13,11 @@ class ReleaseLabel(Base):
     labelId = Column(Integer, ForeignKey('label.id'))
 
     def __unicode__(self):
-        return self.label.name + " (" + self.beginDate.strfttime('%Y') + ")"
+        if not self.label:
+            return "---"
+        return self.label.name + " (" + self.beginDate.strfttime('%Y') + ")" if self.beginDate else "---"
+
+    def __str__(self):
+        if not self.label:
+            return "---"
+        return self.label.name + " (" + self.beginDate.strfttime('%Y') + ")" if self.beginDate else "---"
