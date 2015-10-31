@@ -225,6 +225,7 @@ class Processor(ProcessorBase):
                                         release.status = 1
                                         self.releaseFactory.add(release)
                                         self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
+                                        self.session.commit()
                             if self.shouldMoveToLibrary(artist, id3, mp3):
                                 newMp3 = self.moveToLibrary(artist, id3, mp3)
                                 head, tail = os.path.split(newMp3)
@@ -246,6 +247,7 @@ class Processor(ProcessorBase):
                 elif mp3Folder not in mp3FoldersProcessed:
                     scanner.scan(mp3Folder, artist, release)
                     mp3FoldersProcessed.append(mp3Folder)
+                self.session.commit()
 
             if not self.readOnly and artist and release:
                 if self.shouldDeleteFolder(mp3Folder):
@@ -254,7 +256,6 @@ class Processor(ProcessorBase):
                         self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                     except OSError:
                         pass
-            self.session.commit()
             gc.collect()
         elapsedTime = arrow.utcnow().datetime - startTime
         self.session.commit()

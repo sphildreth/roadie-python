@@ -186,7 +186,14 @@ class ArtistSearcher(object):
             if self.mbSearcher.IsActive:
                 releases = self._mergeReleaseLists(releases, self.mbSearcher.searchForRelease(artist, titleFilter))
             if self.lastFMSearcher.IsActive and releases:
-                mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
+                mbIdList = []
+                if not titleFilter:
+                    mbIdList = [x.musicBrainzId for x in releases if x.musicBrainzId]
+                else:
+                    for x in releases:
+                        if isEqual(x.title, titleFilter):
+                            mbIdList.append(x.musicBrainzId)
+                            break
                 if mbIdList:
                     releases = self._mergeReleaseLists(releases,
                                                        self.lastFMSearcher.lookupReleasesForMusicBrainzIdList(artist,
@@ -199,8 +206,7 @@ class ArtistSearcher(object):
                 for release in releases:
                     if release.coverUrl:
                         coverImage = ArtistImage(release.coverUrl)
-                        if coverImage not in release.images:
-                            release.images.append(coverImage)
+                        release.images.append(coverImage)
                     # Fetch images with only urls, remove any with neither URL or BLOB
                     if release.images:
                         images = []
@@ -218,7 +224,9 @@ class ArtistSearcher(object):
                                 image.signature = image.averageHash()
                                 if image.signature:
                                     images.append(image)
-                        if images:
+                        if not images:
+                            release.images = []
+                        else:
                             dedupedImages = []
                             imageSignatures = artistReleaseImages or []
                             for image in images:

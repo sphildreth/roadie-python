@@ -80,10 +80,9 @@ class ReleaseFactory(object):
                                                   .filter(Release.artistId == artist.id).all()
                 srList = self.searcher.searchForArtistReleases(artist, artistReleaseImages, title)
                 if not srList:
-                    if not srList:
-                        self.logger.info("Release For Artist [" + printableArtistName +
-                                         "] Not Found By Title [" + printableTitle + "]")
-                        return None
+                    self.logger.info("Release For Artist [" + printableArtistName +
+                                     "] Not Found By Title [" + printableTitle + "]")
+                    return None
                 sr = srList[0]
                 if sr:
                     release = self._createDatabaseModelFromSearchModel(artist, title, sr)
@@ -154,6 +153,7 @@ class ReleaseFactory(object):
                     i.image = image.image
                     i.signature = image.signature
                     release.images.append(i)
+            self.logger.debug("= Added [" + str(len(release.images)) + "] Images to Release")
 
         # TODO
         # See if cover file found in Release Folder

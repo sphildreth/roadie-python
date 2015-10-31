@@ -97,6 +97,7 @@ class Scanner(ProcessorBase):
         # For each file found in folder get ID3 info and insert record into Track DB
         scannedMp3Files = 0
         releaseMediaTrackCount = 0
+        releaseMedia = None
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 is not None:
@@ -109,11 +110,11 @@ class Scanner(ProcessorBase):
                     headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
                     trackHash = self._makeTrackHash(artist.roadieId, str(id3))
                     track = None
-                    for releaseMedia in release.media:
-                        for releaseTrack in releaseMedia.tracks:
+                    for releaseMediaFind in release.media:
+                        for releaseTrack in releaseMediaFind.tracks:
                             if isEqual(str(releaseTrack.trackNumber), str(id3.track)):
                                 track = releaseTrack
-                                releaseMediaTrackCount = releaseMedia.trackCount
+                                releaseMediaTrackCount = releaseMediaFind.trackCount
                                 break
                             else:
                                 continue
@@ -122,10 +123,13 @@ class Scanner(ProcessorBase):
                             continue
                         break
                     mp3FileSize = os.path.getsize(mp3)
-                    if not track:
-                        createdReleaseTracks += 1
-                        releaseMediaNumber = id3.disc
+                    releaseMediaNumber = id3.disc
+                    # The first media is release 1 not release 0
+                    if releaseMediaNumber < 1:
+                        releaseMediaNumber = 1
+                    if releaseMedia and releaseMedia.releaseMediaNumber != releaseMediaNumber:
                         releaseMedia = None
+                    if not releaseMedia:
                         firstReleaseMedia = None
                         for rm in self.session \
                                 .query(ReleaseMedia) \
@@ -134,17 +138,16 @@ class Scanner(ProcessorBase):
                             if rm.releaseMediaNumber == releaseMediaNumber:
                                 releaseMedia = rm
                                 break
-                        if not releaseMedia:
-                            releaseMedia = firstReleaseMedia
+                    if not releaseMedia:
+                        releaseMedia = firstReleaseMedia
+                    if not track:
+                        createdReleaseTracks += 1
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()
                             releaseMedia.tracks = []
                             releaseMedia.status = 1
                             releaseMedia.trackCount = 1
                             releaseMedia.releaseMediaNumber = releaseMediaNumber
-                            # The first media is release 1 not release 0
-                            if releaseMedia.releaseMediaNumber < 1:
-                                releaseMedia.releaseMediaNumber = 1
                             releaseMedia.roadieId = str(uuid.uuid4())
                             if not release.media:
                                 release.media = []

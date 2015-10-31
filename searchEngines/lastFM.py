@@ -19,7 +19,7 @@ class LastFM(SearchEngineBase):
     API_KEY = "a31dd32179375f9e332b89f8b9e38fc5"
     API_SECRET = "35b3684601b2ecf9c0c0c1cfda28159e"
 
-    IsActive = True
+    IsActive = False
 
     threadDataType = "lastFm"
     lock = threading.Lock()
@@ -112,6 +112,7 @@ class LastFM(SearchEngineBase):
         """
         cacheKey = hashlib.sha1((artist.roadieId + str(mbIdList)).encode('utf-8')).hexdigest()
         if cacheKey not in self.cache:
+            self.artistReleasesThreaded = []
             for x in range(self.threadCount):
                 t = threading.Thread(target=self.threader)
                 t.daemon = True
@@ -201,5 +202,5 @@ class LastFM(SearchEngineBase):
 
 # a = LastFM()
 # artist = a.lookupArtist('Men At Work')
-# release = a.searchForRelease(artist, None)
+# release = a.searchForRelease(artist, "Cargo")
 # print(artist.info())
