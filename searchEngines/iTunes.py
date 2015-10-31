@@ -4,17 +4,23 @@ from urllib import request, parse
 
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
+from searchEngines.imageSearcher import ImageSearcher
 from searchEngines.models.Artist import Artist
 from searchEngines.models.Genre import Genre
+from searchEngines.models.Image import Image
 from searchEngines.models.Release import Release
+
 
 
 class iTunes(SearchEngineBase):
     IsActive = True
 
+    imageSearcher = None
+
     cache = dict()
 
     def __init__(self, referer=None):
+        self.imageSearcher = ImageSearcher(referer)
         SearchEngineBase.__init__(self, referer)
 
     def lookupArtist(self, name):
@@ -86,7 +92,12 @@ class iTunes(SearchEngineBase):
                                     cleanedTitle = createCleanedName(a.title)
                                     if cleanedTitle not in a.alternateNames and cleanedTitle != a.title:
                                         a.alternateNames.append(cleanedTitle)
-                                    releases.append(a)
+                                    images = self.imageSearcher.itunesSearchArtistAlbumImages(artist.name, a.title)
+                                    if images:
+                                        a.images = []
+                                        for i in images:
+                                            a.images.append(Image(i.url))
+                                            releases.append(a)
                             except:
                                 self.logger.exception("iTunes: Error In SearchForRelease")
                                 pass

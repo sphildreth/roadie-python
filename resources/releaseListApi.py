@@ -43,9 +43,9 @@ class ReleaseListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
         if args.filter:
             releases = self.dbSession.query(Release).filter(Release.title.like("%" + args.filter + "%")) \
-                           .order_by(order + sort)[get_skip:get_limit]
+                           .order_by(order + sort).slice(get_skip, get_limit)
         else:
-            releases = self.dbSession.query(Release).order_by(order + sort)[:get_limit]
+            releases = self.dbSession.query(Release).order_by(order + sort).limit(get_limit)
         rows = []
         if releases:
             for release in releases:
@@ -74,11 +74,11 @@ class ReleaseListApi(Resource):
                     "artistName": release.artist.name,
                     "title": release.title,
                     "tracks": trackInfo,
-                    "trackCount": len(trackInfo) if trackInfo else trackCount,
+                    "trackCount": len(trackInfo) if trackInfo else int(trackCount or 0),
                     "releasePlayedCount": 0,
                     "lastUpdated": "" if not release.lastUpdated else release.lastUpdated.isoformat(),
                     "rating": release.rating or 0,
                     "thumbnailUrl": "/images/release/thumbnail/" + release.roadieId
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=len(releases), message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=0, message="OK")

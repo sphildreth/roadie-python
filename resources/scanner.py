@@ -7,7 +7,7 @@ from sqlalchemy import update
 
 from resources.common import *
 from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track, TrackStatus
+from resources.models.Track import Track
 from resources.id3 import ID3
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
@@ -139,13 +139,17 @@ class Scanner(ProcessorBase):
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()
                             releaseMedia.tracks = []
-                            releaseMedia.status = TrackStatus.ProcessorAdded
+                            releaseMedia.status = 1
                             releaseMedia.trackCount = 1
                             releaseMedia.releaseMediaNumber = releaseMediaNumber
+                            # The first media is release 1 not release 0
+                            if releaseMedia.releaseMediaNumber < 1:
+                                releaseMedia.releaseMediaNumber = 1
                             releaseMedia.roadieId = str(uuid.uuid4())
                             if not release.media:
                                 release.media = []
                             release.media.append(releaseMedia)
+                            release.mediaCount = len(release.media)
                             self.logger.info("+ Added ReleaseMedia [" + str(releaseMedia.info()) + "] To Release")
                         track = Track()
                         track.fileName = tail
@@ -157,7 +161,7 @@ class Scanner(ProcessorBase):
                         track.title = id3.title
                         track.trackNumber = id3.track
                         track.duration = int(id3.length) * 1000
-                        track.status = TrackStatus.ProcessorAdded
+                        track.status = 1
                         track.tags = []
                         track.partTitles = []
                         track.alternateNames = []

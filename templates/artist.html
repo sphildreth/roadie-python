@@ -47,12 +47,12 @@
         </div>
         <div class="row title bordered">
             <div class="thumbnail-container pull-left">
-                <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.Name }}" />
+                <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
             </div>
             <div class="rating-container">
                 <input type="hidden" class="rating" data-readonly value="{{ artist.rating }}" />
             </div>
-            <h2><span class="artist-name label label-default">{{ artist.Name }}</span></h2>
+            <h2><span class="artist-name label label-default">{{ artist.name }}</span></h2>
             <div class="user-rating-container">
                 <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>

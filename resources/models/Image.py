@@ -1,11 +1,11 @@
-from sqlalchemy import Column, ForeignKey, Index, Integer, BLOB, String
+from sqlalchemy import Column, ForeignKey, LargeBinary, Index, Integer, String
 from resources.models.ModelBase import Base
 
 
 class Image(Base):
 
     # If this is used then the image is stored in the database
-    image = Column(BLOB)
+    image = Column(LargeBinary(length=16777215), default=None)
     # If this is used then the image is remote and this is the url
     url = Column(String(500))
     caption = Column(String(100))

@@ -18,7 +18,7 @@ from resources.models.Label import Label
 from resources.models.Release import Release
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track, TrackStatus
+from resources.models.Track import Track
 
 from factories.artistFactory import ArtistFactory
 from factories.releaseFactory import ReleaseFactory

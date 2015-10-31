@@ -53,8 +53,8 @@ class ArtistFactory(object):
         name = name.lower().strip().replace("'", "''")
         stmt = or_(func.lower(Artist.name) == name,
                    func.lower(Artist.sortName) == name,
-                   text("(lower(alternateNames) == '" + name + "'" + ""
-                                                                     " OR alternateNames like '" + name + "|%'" +
+                   text("(lower(alternateNames) = '" + name + "'" + ""
+                                                                    " OR alternateNames like '" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "')"))
         return self.session.query(Artist).filter(stmt).first()

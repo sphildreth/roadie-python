@@ -7,14 +7,14 @@ from resources.models.ReleaseLabel import ReleaseLabel
 
 
 class Label(Base):
-    name = Column(String(500), nullable=False, index=True, unique=True)
+    name = Column(String(250), nullable=False, index=True, unique=True)
     sortName = Column(String(500))
     musicBrainzId = Column(String(100))
     beginDate = Column(Date())
     endDate = Column(Date())
     imageUrl = Column(String(500))
     tags = Column(ScalarListType(separator="|"))
-    alternateNames = Column(ScalarListType(separator="|"), index=True)
+    alternateNames = Column(ScalarListType(separator="|"))
     urls = Column(ScalarListType(separator="|"))
     releases = relationship(ReleaseLabel, backref="label")
 

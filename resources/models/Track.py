@@ -14,11 +14,6 @@ trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
                                 Column('playlisttrackId', Integer, ForeignKey('playlisttrack.id'), index=True))
 
 
-class TrackStatus(IntEnum):
-    Standard = 0
-    ProcessorAdded = 1
-
-
 class Track(Base):
 
     filePath = Column(String(1000))
@@ -34,7 +29,7 @@ class Track(Base):
     musicBrainzId = Column(String(100))
     amgId = Column(String(100))
     spotifyId = Column(String(100))
-    title = Column(String(500), nullable=False, index=True)
+    title = Column(String(250), nullable=False, index=True)
     alternateNames = Column(ScalarListType(separator="|"))
     trackNumber = Column(SmallInteger(), nullable=False)
     # Seconds long

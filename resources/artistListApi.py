@@ -12,7 +12,6 @@ from sqlalchemy.sql import text, func
 
 
 class ArtistListApi(Resource):
-
     def __init__(self, **kwargs):
         self.dbConn = kwargs['dbConn']
         self.dbSession = kwargs['dbSession']
@@ -33,18 +32,16 @@ class ArtistListApi(Resource):
         includes = args.inc or 'releases,tracks'
         sort = args.sort or 'sortName'
         order = args.order or 'asc'
-        if order != 'asc':
-            order = "-"
-        else:
-            order = ""
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
 
+        column_sorted = getattr(Artist.sortName, order)()
+
         if args.filter:
             artists = self.dbSession.query(Artist).filter(Artist.name.like("%" + args.filter + "%")) \
-                .order_by(order + sort)[get_skip:get_limit]
+                .order_by(column_sorted).slice(get_skip, get_limit)
         else:
-            artists = self.dbSession.query(Artist).order_by(order + sort)[get_skip:get_limit]
+            artists = self.dbSession.query(Artist).order_by(column_sorted).slice(get_skip, get_limit)
 
         rows = []
         if artists:
@@ -75,10 +72,10 @@ class ArtistListApi(Resource):
                         })
                 artistTrackCount = self.dbConn.execute(text(
                     "select COUNT(t.id) as trackCount " +
-                    "from artist a " +
-                    "join release r on r.artistId = a.id " +
-                    "join releaseMedia rm on rm.releaseId  = r.id " +
-                    "join track t on t.releaseMediaId = rm.id " +
+                    "from `artist` a " +
+                    "join `release` r on r.artistId = a.id " +
+                    "join `releasemedia` rm on rm.releaseId  = r.id " +
+                    "join `track` t on t.releaseMediaId = rm.id " +
                     "where a.id =" + str(artist.id) + ";", autocommit=True).columns(trackCount=Integer)).fetchone()
                 rows.append({
                     "name": artist.name,
@@ -91,4 +88,4 @@ class ArtistListApi(Resource):
                     "thumbnailUrl": "/images/artist/thumbnail/" + str(artist.roadieId)
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=len(artists), message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=0, message="OK")

@@ -29,9 +29,11 @@ class ArtistSearcher(object):
     lastFMSearcher = None
     imageSearcher = None
     iTunesSearcher = None
+    imageSearcher = None
 
     artistThumbnailSize = 160, 160
     releaseThumbnailSize = 80, 80
+    imageMaximumSize = 500, 500
 
     cache = dict()
 
@@ -48,6 +50,7 @@ class ArtistSearcher(object):
         self.lastFMSearcher = LastFM(self.referer)
         self.imageSearcher = ImageSearcher()
         self.iTunesSearcher = iTunes(self.referer)
+        self.imageSearcher = ImageSearcher(self.referer)
 
     def searchForArtist(self, name):
         """
@@ -79,12 +82,17 @@ class ArtistSearcher(object):
                 # Fetch images with only urls, remove any with neither URL or BLOB
                 if artist.images:
                     images = []
-                    imageSearcher = ImageSearcher()
                     firstImageInImages = None
                     for image in artist.images:
                         if not image.image and image.url:
-                            image.image = imageSearcher.getImageBytesForUrl(image.url)
+                            image.image = self.imageSearcher.getImageBytesForUrl(image.url)
                         if image.image:
+                            # Resize to maximum image size and convert to JPEG
+                            img = Image.open(io.BytesIO(image.image)).convert('RGB')
+                            img.resize(self.imageMaximumSize)
+                            b = io.BytesIO()
+                            img.save(b, "JPEG")
+                            image.image = b.getvalue()
                             firstImageInImages = firstImageInImages or image.image
                             image.signature = image.averageHash()
                             images.append(image)
@@ -200,11 +208,19 @@ class ArtistSearcher(object):
                             if not image.image and image.url:
                                 image.image = self.getImageForUrl(image.url)
                             if image.image:
+                                # Resize to maximum image size and convert to JPEG
+                                img = Image.open(io.BytesIO(image.image)).convert('RGB')
+                                img.resize(self.imageMaximumSize)
+                                b = io.BytesIO()
+                                img.save(b, "JPEG")
+                                image.image = b.getvalue()
+                                # Hash image for deduping
                                 image.signature = image.averageHash()
-                                images.append(image)
+                                if image.signature:
+                                    images.append(image)
                         if images:
                             dedupedImages = []
-                            imageSignatures = artistReleaseImages
+                            imageSignatures = artistReleaseImages or []
                             for image in images:
                                 if image.signature not in imageSignatures:
                                     imageSignatures.append(image.signature)
@@ -244,3 +260,7 @@ class ArtistSearcher(object):
             self.imageCache[url] = self.imageSearcher.getImageBytesForUrl(url)
             self.logger.debug("= Downloading Image [" + str(url) + "]")
         return self.imageCache[url]
+
+# s = ArtistSearcher()
+# artist = s.searchForArtist("Men At Work")
+# release = s.searchForArtistReleases(artist, [], "Cargo")

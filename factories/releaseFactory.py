@@ -255,11 +255,11 @@ class ReleaseFactory(object):
         title = title.lower().strip().replace("'", "''")
         cleanedTitle = createCleanedName(title)
         stmt = or_(func.lower(Release.title) == title,
-                   text("(lower(alternateNames) == '" + title + "'" + ""
+                   text("(lower(alternateNames) = '" + title + "'" + ""
                                                                       " OR alternateNames like '" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "')"),
-                   text("(alternateNames == '" + cleanedTitle + "'" + ""
+                   text("(alternateNames = '" + cleanedTitle + "'" + ""
                                                                       " OR alternateNames like '" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "')")
@@ -271,7 +271,7 @@ class ReleaseFactory(object):
             return None
         name = name.lower().strip().replace("'", "''")
         stmt = or_(func.lower(Label.name) == name,
-                   text("(lower(alternateNames) == '" + name + "'" + ""
+                   text("(lower(alternateNames) = '" + name + "'" + ""
                                                                      " OR alternateNames like '" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "')"))

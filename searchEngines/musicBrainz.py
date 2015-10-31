@@ -240,6 +240,7 @@ class MusicBrainz(SearchEngineBase):
                 release.coverUrl = coverUrl
                 release.musicBrainzId = musicBrainzId
                 release.media = releaseMedia
+                release.mediaCount = len(releaseMedia)
                 release.releaseLabels = releaseLabels
                 if not release.alternateNames:
                     release.alternateNames = []

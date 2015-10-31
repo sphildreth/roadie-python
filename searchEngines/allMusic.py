@@ -202,6 +202,7 @@ class AllMusicGuide(SearchEngineBase):
                                         trackCount += len(media.tracks)
                                         releaseMedia.append(media)
                                     release.media = releaseMedia
+                                    release.mediaCount = len(releaseMedia)
                                 if not release.alternateNames:
                                     release.alternateNames = []
                                 cleanedTitle = createCleanedName(release.title)

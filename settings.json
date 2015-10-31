@@ -1,18 +1,14 @@
 {
     "SECRET_KEY": "a9kf^!y@rd-ci0&7l#da6ko$(l@_$9(y^r^a@2j+8!7zpk!zw88wi069",
     "SESSION_TYPE": "filesystem",
-    "MONGODB_SETTINGS": {
-        "DB": "roadie",
-        "host": "192.168.2.254"
-    },
     "ROADIE_SITE_NAME": "Roadie",
-    "ROADIE_INBOUND_FOLDER": "Z:/library/Men At Work/",
+    "ROADIE_INBOUND_FOLDER": "Z:/library/",
     "ROADIE_LIBRARY_FOLDER": "Z:/library/",
     "ROADIE_THUMBNAILS" : {
         "Height": 80,
         "Width": 80
     },
-    "ROADIE_DATABASE_URL": "sqlite:///roadie.db",
+    "ROADIE_DATABASE_URL": "mysql+pymysql://roadie:MenAtW0rk668@mserver.sphildreth.local/roadie?charset=utf8",
     "ROADIE_CONVERTING": {
         "DoDeleteAfter": "True"
     },

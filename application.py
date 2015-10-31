@@ -212,7 +212,7 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    for ut in dbSession.query(UserTrack).order_by(desc(UserTrack.lastPlayed))[:35]:
+    for ut in dbSession.query(UserTrack).order_by(desc(UserTrack.lastPlayed)).limit(35):
         lastPlayedInfos.append({
             'TrackId': str(ut.track.roadieId),
             'TrackTitle': ut.track.title,
@@ -230,13 +230,14 @@ def index():
         })
     wsRoot = request.url_root.replace("http://", "ws://")
     releases = []
-    for r in dbSession.query(Release).order_by(func.random())[:12]:
-        releases.append({
-            'id': r.roadieId,
-            'ArtistName': r.artist.name,
-            'Title': r.title,
-            'UserRating': 0
-        })
+    for r in dbSession.query(Release).order_by(func.random()).limit(12):
+        if r and r.artist:
+            releases.append({
+                'id': r.roadieId,
+                'ArtistName': r.artist.name,
+                'Title': r.title,
+                'UserRating': 0
+            })
     return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
 
 
@@ -265,7 +266,7 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
 def randomRelease(count):
     try:
         releases = []
-        for r in dbSession.query(Release).order_by(func.random())[:count]:
+        for r in dbSession.query(Release).order_by(func.random()).limit(count):
             releases.append({
                 'id': r.roadieId,
                 'ArtistName': r.artist.name,
@@ -302,7 +303,7 @@ def randomizer(random_type):
         return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
-        for track in dbSession.query(Track).order_by(func.random())[:35]:
+        for track in dbSession.query(Track).order_by(func.random()).limit(35):
             t = M3U.makeTrackInfo(user, track.releasemedia.release, track)
             if t:
                 tracks.append(t)
@@ -324,15 +325,20 @@ def artistDetail(artist_id):
     userArtist = dbSession.query(UserArtist).filter(UserArtist.userId == user.id).filter(
         UserArtist.artistId == artist.id).first()
     artistSummaries = conn.execute(text(
-        "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount, "
-        "ts.count, ts.duration, ts.size FROM artist a, (SELECT COUNT(1) as count, sum(t.duration) as duration, "
-        "sum(t.fileSize) as size FROM track t join releasemedia rm on rm.id = t.releaseMediaId "
-        "join release r on r.id = rm.releaseId "
-        "join artist a on a.id = r.artistId "
-        "WHERE a.roadieId = '" + artist_id + "') ts "
-                                             "join release r on rm.releaseId = r.id "
-                                             "join releasemedia rm on rm.releaseId = r.id "
-                                             "where a.roadieId = '" + artist_id + "'", autocommit=True)
+        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
+        "ts.trackCount, ts.duration, ts.size " +
+        "FROM `artist` a " +
+        "INNER JOIN " +
+        "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
+        "SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
+        "	FROM `track` t " +
+        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "	GROUP BY r.artistId " +
+        ") AS ts ON ts.artistId = a.id " +
+        "JOIN `release` r ON r.artistId = a.id " +
+        "JOIN `releasemedia` rm ON rm.releaseId = r.id " +
+        "WHERE a.roadieId = '" + artist_id + "'", autocommit=True)
                                    .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
                                             releaseTrackTime=Integer, releaseTrackFileSize=Integer)) \
         .fetchone()
@@ -748,10 +754,11 @@ def release(roadieId):
         "max(rm.releaseMediaNumber) as releaseMediaCount, "
         "sum(t.duration) as releaseTrackTime, "
         "sum(t.fileSize) as releaseTrackFileSize "
-        "FROM track t "
-        "join releasemedia rm on t.releaseMediaId = rm.id "
-        "join release r on rm.releaseId = r.id "
-        "where r.roadieId = '" + roadieId + "'", autocommit=True)
+        "FROM `track` t "
+        "join `releasemedia` rm on t.releaseMediaId = rm.id "
+        "join `release` r on rm.releaseId = r.id "
+        "where r.roadieId = '" + roadieId + "' "
+        "and t.fileName is not null;", autocommit=True)
                                     .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
                                              releaseTrackFileSize=Integer)) \
         .fetchone()
@@ -975,25 +982,32 @@ def streamTrack(user_id, track_id):
 @nocache
 def stats():
     counts = conn.execute(text(
-        "SELECT count(rm.releaseMediaNumber) as releaseMediaCount, count(r.roadieId) as releaseCount,"
-        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount "
-        "FROM artist a, (SELECT COUNT(1) as trackCount, sum(t.duration) as trackDuration,"
-        "sum(t.fileSize) as trackSize "
-        "FROM track t "
-        "join releasemedia rm on rm.id = t.releaseMediaId "
-        "join release r on r.id = rm.releaseId "
-        "join artist a on a.id = r.artistId) ts, (SELECT COUNT(1) as artistCount FROM artist) ac, "
-        "(SELECT COUNT(1) as labelCount FROM label) lc "
-        "join release r on rm.releaseId = r.id "
-        "join releasemedia rm on rm.releaseId = r.id", autocommit=True)
+        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
+        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount " +
+        "FROM `artist` a " +
+        "inner join ( " +
+        "	SELECT COUNT(1) AS trackCount, SUM(t.duration) AS trackDuration, SUM(t.fileSize) AS trackSize " +
+        "	FROM `track` t " +
+        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "	JOIN `artist` a ON a.id = r.artistId " +
+        "   WHERE t.fileName is not null) ts " +
+        "inner join ( " +
+        "		SELECT COUNT(1) AS artistCount " +
+        "		FROM `artist`) ac " +
+        "inner join ( " +
+        "		SELECT COUNT(1) AS labelCount " +
+        "		FROM `label`) lc " +
+        "JOIN `release` r ON r.artistId = a.id " +
+        "JOIN `releasemedia` rm ON rm.releaseId = r.id", autocommit=True)
                           .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
                                    trackDuration=Integer, trackSize=Integer, artistCount=Integer,
                                    labelCount=Integer)).first()
 
     top10Artists = conn.execute(text(
         "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
-        "FROM artist a " +
-        "join release r on r.artistId = a.id " +
+        "FROM `artist` a " +
+        "join `release` r on r.artistId = a.id " +
         "GROUP BY a.id " +
         "ORDER BY COUNT(1) desc " +
         "LIMIT 10;", autocommit=True)
@@ -1001,20 +1015,21 @@ def stats():
 
     top10ArtistsTracks = conn.execute(text(
         "SELECT a.roadieId as roadieId, a.name, count(t.roadieId) as count " +
-        "FROM artist a " +
-        "join release r on r.artistId = a.id " +
-        "join releasemedia rm on rm.releaseId = r.id " +
-        "join track t on t.releaseMediaId = rm.id " +
+        "FROM `artist` a " +
+        "join `release` r on r.artistId = a.id " +
+        "join `releasemedia` rm on rm.releaseId = r.id " +
+        "join `track` t on t.releaseMediaId = rm.id " +
+        "where t.fileName is not null " +
         "GROUP BY a.id " +
         "ORDER BY COUNT(1) desc " +
         "LIMIT 10;", autocommit=True)
                                       .columns(roadieId=String, name=String, count=Integer))
 
-    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]
+    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title).limit(10)
 
-    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]
+    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title).limit(25)
 
-    mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title)[:25]
+    mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title).limit(25)
 
     return render_template('stats.html', top10Artists=top10Artists, top10ArtistsByTracks=top10ArtistsTracks,
                            topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
@@ -1029,7 +1044,7 @@ def playStats(option):
     user = getUser()
     tracks = []
     if option == "top25songs":
-        for track in dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title)[:25]:
+        for track in dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title).limit(25):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks
@@ -1038,7 +1053,7 @@ def playStats(option):
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
     if option == "top10Albums":
-        for track in dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title)[:10]:
+        for track in dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title).limit(10):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks
@@ -1112,11 +1127,12 @@ def getCollectionThumbnailImage(collection_id):
 def getArtistThumbnailImage(artistId):
     artist = getArtist(artistId)
     try:
-        if artist:
+        if artist and artist.thumbnail:
             etag = hashlib.sha1(('%s%s' % (artist.roadieId, artist.lastUpdated)).encode('utf-8')).hexdigest()
             return makeImageResponse(artist.thumbnail, artist.lastUpdated, "a_tn_" + str(artist.roadieId) + ".jpg",
                                      etag)
-
+        else:
+            return send_file("static/img/artist.gif")
     except:
         return send_file("static/img/artist.gif")
 
@@ -1152,16 +1168,15 @@ def findImageForType(type, type_id):
         if not findImageForTypeRelease:
             return jsonify(message="ERROR")
         data = []
-        searcher = ImageSearcher()
+        searcher = ImageSearcher(request.url_root)
         query = findImageForTypeRelease.title
         if 'query' in request.form:
             query = request.form['query']
-        referer = request.url_root
-        gs = searcher.googleSearchImages(referer, request.remote_addr, query)
+        gs = searcher.googleSearchImages(request.remote_addr, query)
         if gs:
             for g in gs:
                 data.append(g)
-        it = searcher.itunesSearchArtistAlbumImages(referer, findImageForTypeRelease.artist.name,
+        it = searcher.itunesSearchArtistAlbumImages(findImageForTypeRelease.artist.name,
                                                     findImageForTypeRelease.title)
         if it:
             for i in it:
@@ -1181,7 +1196,7 @@ def setCoverViaUrl(release_id):
         if not setCoverViaUrlRelease:
             return jsonify(message="ERROR")
         url = request.form['url']
-        searcher = ImageSearcher()
+        searcher = ImageSearcher(request.url_root)
         imageBytes = searcher.getImageBytesForUrl(url)
         if imageBytes:
             img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
@@ -1457,9 +1472,10 @@ def logout():
 @login_required
 def singleTrackReleaseFinder(count):
     count = int(count)
+    # TODO
     singleTrackReleases = Release.objects(__raw__={'Tracks': {'$size': 1}}).order_by('Title', 'Artist.Name')
     return render_template('singletrackreleasefinder.html', total=singleTrackReleases.count(),
-                           singleTrackReleases=singleTrackReleases[:count])
+                           singleTrackReleases=singleTrackReleases.limit(count))
 
 
 @app.route('/dupfinder')

@@ -42,9 +42,9 @@ class TrackListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
         if args.filter:
             tracks = self.dbSession.query(Track).filter(Track.title.like("%" + args.filter + "%")) \
-                .order_by(order + sort)[get_skip:get_limit]
+                .order_by(order + sort).slice(get_skip,get_limit)
         else:
-            tracks = self.dbSession.query(Track).order_by(order + sort)[:get_limit]
+            tracks = self.dbSession.query(Track).order_by(order + sort).limit(get_limit)
 
         rows = []
         if tracks:
@@ -59,4 +59,4 @@ class TrackListApi(Resource):
                     "thumbnailUrl": "/images/release/thumbnail/" + release.roadieId
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=len(tracks), message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=0, message="OK")

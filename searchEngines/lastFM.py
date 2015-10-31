@@ -110,7 +110,8 @@ class LastFM(SearchEngineBase):
         :param mbIdList:
         :return:
         """
-        if artist.roadieId not in self.cache:
+        cacheKey = hashlib.sha1((artist.roadieId + str(mbIdList)).encode('utf-8')).hexdigest()
+        if cacheKey not in self.cache:
             for x in range(self.threadCount):
                 t = threading.Thread(target=self.threader)
                 t.daemon = True
@@ -123,11 +124,11 @@ class LastFM(SearchEngineBase):
                 self.que.put(ThreadData(self.threadDataType, url))
 
             self.que.join()
-            self.cache[artist.roadieId] = self.artistReleasesThreaded
+            self.cache[cacheKey] = self.artistReleasesThreaded
         else:
             self.logger.debug(
                 "Found Artist: roadieId [" + artist.roadieId + "] name [" + artist.name + "] in LastFM Cache.")
-        return self.cache[artist.roadieId]
+        return self.cache[cacheKey]
 
     def _fetchFromUrl(self, url):
         if not url:
@@ -175,6 +176,7 @@ class LastFM(SearchEngineBase):
                                 mediaTrackCount += 1
                         release.media = []
                         release.media.append(media)
+                        release.mediaCount = 1
                         release.trackCount = len(media.tracks)
                     if 'wiki' in r and r['wiki']:
                         if 'summary' in r['wiki'] and r['wiki']['summary']:
