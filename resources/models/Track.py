@@ -48,7 +48,7 @@ class Track(Base):
     def __unicode__(self):
         return self.title
 
-    def __str(self):
+    def __str__(self):
         return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self):
@@ -63,6 +63,14 @@ class Track(Base):
         #     for rpl in trackPathReplace:
         #         for key, val in rpl.items():
         #             path = path.replace(key, val)
+
+        # if not self.trackPathReplace:
+        #     self.trackPathReplace = self.getTrackPathReplace()
+        # if self.trackPathReplace:
+        #     for rpl in self.trackPathReplace:
+        #         for key, val in rpl.items():
+        #             path = path.replace(key, val)
+        # return path
         return os.path.join(self.filePath, self.fileName)
 
 

@@ -7,31 +7,18 @@ from resources.pathInfo import PathInfo
 
 
 class ProcessorBase(object):
-    trackPathReplace = None
     libraryFolder = None
     config = None
 
-    def getTrackPathReplace(self):
-        if 'ROADIE_TRACK_PATH_REPLACE' in self.config:
-            return self.config['ROADIE_TRACK_PATH_REPLACE']
-        return []
-
-    def fixPath(self, path):
-        if not self.trackPathReplace:
-            self.trackPathReplace = self.getTrackPathReplace()
-        if self.trackPathReplace:
-            for rpl in self.trackPathReplace:
-                for key, val in rpl.items():
-                    path = path.replace(key, val)
-        return path
-
     @staticmethod
-    def allDirectoriesInDirectory(directory):
+    def allDirectoriesInDirectory(directory, isReleaseFolder=False):
+        if isReleaseFolder:
+            yield directory
         for root, dirs, files in os.walk(directory):
             if not dirs:
                 yield root
-            for dir in dirs:
-                yield os.path.join(root, dir)
+            for d in dirs:
+                yield os.path.join(root, d)
 
     @staticmethod
     def folderMp3Files(folder):
@@ -48,11 +35,11 @@ class ProcessorBase(object):
         if not self.libraryFolder:
             self.libraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
         artistFolder = artist.sortName or artist.name
-        return self.fixPath(os.path.join(self.libraryFolder, self.makeFileFriendly(artistFolder)))
+        return os.path.join(self.libraryFolder, self.makeFileFriendly(artistFolder))
 
     def albumFolder(self, artist, year, albumTitle):
-        return self.fixPath(os.path.join(self.artistFolder(artist),
-                                         "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(albumTitle)))
+        return os.path.join(self.artistFolder(artist),
+                            "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(albumTitle))
 
     def trackName(self, trackNumber, trackTitle):
         return str(trackNumber).zfill(2) + " " + self.makeFileFriendly(trackTitle) + ".mp3"

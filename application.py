@@ -88,9 +88,6 @@ app.config.update(config)
 
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
-trackPathReplace = None
-if 'ROADIE_TRACK_PATH_REPLACE' in config:
-    trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
 
 engine = create_engine(config['ROADIE_DATABASE_URL'])
 conn = engine.connect()
@@ -194,12 +191,7 @@ def pathToTrack(track):
     :param track: Track
     :return: str
     """
-    path = os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath)
-    if trackPathReplace:
-        for rpl in trackPathReplace:
-            for key, val in rpl.items():
-                path = path.replace(key, val)
-    return os.path.join(path, track.fileName)
+    return os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath, track.fileName)
 
 
 @app.before_request
@@ -545,12 +537,12 @@ def rescanRelease(release_id):
             return jsonify(message="ERROR")
         # Update Database with folders found in Library
         processor = Processor(config, conn, dbSession, False, True)
-        releaseFolder = processor.albumFolder(rescanReleaseRelease.Artist,
-                                              rescanReleaseRelease.ReleaseDate[:4],
-                                              rescanReleaseRelease.Title)
-        processor.process(folder=releaseFolder)
+        releaseFolder = processor.albumFolder(rescanReleaseRelease.artist,
+                                              rescanReleaseRelease.releaseDate.strftime('%Y'),
+                                              rescanReleaseRelease.title)
+        processor.process(folder=releaseFolder, isReleaseFolder=True)
         validator = Validator(config, conn, dbSession, False)
-        validator.validate(rescanReleaseRelease.Artist)
+        validator.validate(rescanReleaseRelease.artist)
         return jsonify(message="OK")
     except:
         logger.exception("Error Rescanning Release")
@@ -676,7 +668,7 @@ def deleteReleaseTrack(release_id, track_id, flag):
         trackFolder = None
         if flag == 't' or flag == "f":
             # Delete the track
-            track = dbSession.query(Track).filter(Track.roadieId == track_id).firstt()
+            track = dbSession.query(Track).filter(Track.roadieId == track_id).first()
             if track:
                 dbSession.delete(track)
                 dbSession.commit()
@@ -803,7 +795,8 @@ def playRelease(release_id):
     user = getUser()
     for media in playReleaseRelease.media:
         for track in media.tracks:
-            tracks.append(M3U.makeTrackInfo(user, playReleaseRelease, track))
+            if track.fileName and track.filePath:
+                tracks.append(M3U.makeTrackInfo(user, playReleaseRelease, track))
     if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()
@@ -887,7 +880,7 @@ def streamTrack(user_id, track_id):
     if track_id.endswith(".mp3"):
         track_id = track_id[:-4]
     track = getTrack(track_id)
-    if not track:
+    if not track or not track.filePath or not track.fileName:
         return render_template('404.html'), 404
     track.playedCount += 1
     dbSession.commit()

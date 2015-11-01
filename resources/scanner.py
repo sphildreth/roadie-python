@@ -23,7 +23,7 @@ class Scanner(ProcessorBase):
         self.session = dbSession
 
     def inboundMp3Files(self, folder):
-        for root, dirs, files in os.walk(self.fixPath(folder)):
+        for root, dirs, files in os.walk(folder):
             for filename in files:
                 if os.path.splitext(filename)[1] == ".mp3":
                     yield os.path.join(root, filename)
@@ -68,7 +68,7 @@ class Scanner(ProcessorBase):
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             for track in self.session.query(Track).filter(Track.filePath == folder).all():
-                filename = self.fixPath(os.path.join(track.filePath, track.fileName))
+                filename = track.fullPath()
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     if not self.readOnly:
@@ -180,13 +180,13 @@ class Scanner(ProcessorBase):
                             track.fileName = tail
                             track.filePath = headNoLibrary
                             track.fileSize = mp3FileSize
-                            track.lastUpdated = arrow.utcnow().datetime
                             track.hash = trackHash
+                            track.lastUpdated = arrow.utcnow().datetime
                             if not track.alternateNames:
                                 track.alternateNames = []
                             if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
                                 track.alternateNames.append(cleanedTitle)
-                            releaseMedia.tracks.append(track)
+                            self.logger.info("| Updated Track [" + str(track.info()) + "]")
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime

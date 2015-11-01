@@ -48,29 +48,33 @@ class Validator(ProcessorBase):
         """
         if not artist:
             raise RuntimeError("Invalid Artist")
-        for release in artist.releases:
-            self.logger.info("Validating Artist [" + str(artist) + "], Release [" + str(release) + "]")
-            releaseFolder = self.albumFolder(artist, release.ReleaseDate[:4], release.Title)
-            if not os.path.exists(releaseFolder):
-                if not self.readOnly:
-                    self.session.delete(release)
-                self.logger.warn("X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
-                continue
-            goodTracks = []
-            for releaseMedia in release.media:
-                for track in releaseMedia:
-                    try:
-                        trackFilename = self.fixPath(os.path.join(track.Track.FilePath, track.Track.FileName))
-                        if not os.path.exists(trackFilename):
-                            if not self.readOnly:
-                                self.session.delete(track)
-                            self.logger.warn("X Deleting Track [" + str(track.Track) + "] File [" + trackFilename + "] not found")
-                        elif track not in goodTracks:
-                            goodTracks.append(track)
-                    except:
-                        pass
+        try:
+            for release in artist.releases:
+                self.logger.info("Validating Artist [" + str(artist) + "], Release [" + str(release) + "]")
+                releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
+                if not os.path.exists(releaseFolder):
+                    if not self.readOnly:
+                        self.session.delete(release)
+                    self.logger.warn("X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
+                    continue
+                for releaseMedia in release.media:
+                    for track in releaseMedia.tracks:
+                        try:
+                            trackFilename = os.path.join(self.config['ROADIE_LIBRARY_FOLDER'], track.fullPath())
+                            if not os.path.exists(trackFilename):
+                                if not self.readOnly:
+                                    self.session.delete(track)
+                                self.logger.warn(
+                                    "X Deleting Track [" + str(track) + "] File [" + trackFilename + "] not found")
+                        except:
+                            pass
+                    if not self.readOnly:
+                        releaseMedia.trackCount = len(releaseMedia.tracks)
+                        release.mediaCount = len(release.media)
+                        release.trackCount = releaseMedia.trackCount
+                        release.lastUpdated = arrow.utcnow().datetime
             if not self.readOnly:
-                release.tracks = goodTracks
-                release.lastUpdated = arrow.utcnow().datetime
-        self.session.commit()
-
+                self.session.commit()
+        except:
+            self.logger.exception("Validating Artist, Rolling Back Session Transactions")
+            self.session.rollback()

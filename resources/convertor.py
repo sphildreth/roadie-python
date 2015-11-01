@@ -3,33 +3,34 @@ import json
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 
-class Convertor(ProcessorBase):
 
+class Convertor(ProcessorBase):
     config = None
 
-    def __init__(self,folder):
+    def __init__(self, folder):
         self.logger = Logger()
         d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
         path = os.path.join(os.sep.join(d[:-1]), "settings.json")
         with open(path, "r") as rf:
             self.config = json.load(rf)
-        for root, dirs, files in os.walk(self.fixPath(folder)):
+        for root, dirs, files in os.walk(folder):
             for filename in files:
-                    self._convert(os.path.join(root, filename))
+                self._convert(os.path.join(root, filename))
 
-    def _convert(self,file):
+    def _convert(self, file):
         exitValue = 1
         fileExtension = os.path.splitext(file)[1].lower()
-        outputFilename = os.path.splitext(file)[0]+".mp3"
+        outputFilename = os.path.splitext(file)[0] + ".mp3"
         if fileExtension == ".flac" or \
-           fileExtension == ".wav":
+                        fileExtension == ".wav":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
-            exitValue = os.system("ffmpeg -y -loglevel error -i \"" +  file + "\" -q:a 0 \"" + outputFilename + "\"")
+            exitValue = os.system("ffmpeg -y -loglevel error -i \"" + file + "\" -q:a 0 \"" + outputFilename + "\"")
 
         elif fileExtension == ".m4a" or \
-           fileExtension == ".ogg":
+                        fileExtension == ".ogg":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
-            exitValue = os.system("ffmpeg -y -loglevel error -i \"" +  file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
+            exitValue = os.system(
+                "ffmpeg -y -loglevel error -i \"" + file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
 
         if exitValue == 0:
             if 'ROADIE_CONVERTING' in self.config and 'DoDeleteAfter' in self.config['ROADIE_CONVERTING']:
