@@ -53,7 +53,7 @@ class Track(Base):
 
     def info(self):
         return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId)
+            self.musicBrainzId) + ", Hash [" + self.hash + "] " +
                + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber)
                + "], Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 

@@ -52,9 +52,13 @@ class Validator(ProcessorBase):
             for release in artist.releases:
                 self.logger.info("Validating Artist [" + str(artist) + "], Release [" + str(release) + "]")
                 releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
-                if not os.path.exists(releaseFolder):
-                    if not self.readOnly:
-                        self.session.delete(release)
+                try:
+                    folderExists = os.path.exists(releaseFolder)
+                except:
+                    folderExists = False
+                if not folderExists:
+                  #  if not self.readOnly:
+                 #       self.session.delete(release)
                     self.logger.warn("X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
                     continue
                 for releaseMedia in release.media:

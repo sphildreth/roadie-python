@@ -179,7 +179,6 @@ class Processor(ProcessorBase):
                         self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] File [" + mp3 + "]...")
                         id3 = ID3(mp3, self.processingOptions)
                         if id3 is not None:
-                            self.logger.debug("ID3 Info [" + id3.info() + "]")
                             if not id3.isValid():
                                 self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                             else:
@@ -259,7 +258,6 @@ class Processor(ProcessorBase):
                             media.trackCount = len(media.tracks)
                             release.trackCount = len(media.tracks)
                     self.session.commit()
-
                 if not self.readOnly and artist and release:
                     if self.shouldDeleteFolder(mp3Folder):
                         try:

@@ -112,7 +112,8 @@ class Scanner(ProcessorBase):
                     track = None
                     for releaseMediaFind in release.media:
                         for releaseTrack in releaseMediaFind.tracks:
-                            if isEqual(str(releaseTrack.trackNumber), str(id3.track)):
+                            if isEqual(str(releaseTrack.trackNumber), str(id3.track)) or isEqual(trackHash,
+                                                                                                 releaseTrack.hash):
                                 track = releaseTrack
                                 releaseMediaTrackCount = releaseMediaFind.trackCount
                                 break
@@ -131,9 +132,7 @@ class Scanner(ProcessorBase):
                         releaseMedia = None
                     if not releaseMedia:
                         firstReleaseMedia = None
-                        for rm in self.session \
-                                .query(ReleaseMedia) \
-                                .filter(ReleaseMedia.releaseId == release.id).all():
+                        for rm in release.media:
                             firstReleaseMedia = firstReleaseMedia or rm
                             if rm.releaseMediaNumber == releaseMediaNumber:
                                 releaseMedia = rm
@@ -141,6 +140,7 @@ class Scanner(ProcessorBase):
                     if not releaseMedia:
                         releaseMedia = firstReleaseMedia
                     if not track:
+                        self.logger.debug("Not Able To Find Track [" + str(id3.track) + "] Hash [" + str(trackHash) + "]")
                         createdReleaseTracks += 1
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()

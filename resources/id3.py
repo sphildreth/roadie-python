@@ -58,9 +58,9 @@ class ID3:
         tags["TALB"] = TALB(encoding=3, text=release.title)
         tags["TPE2"] = TPE2(encoding=3, text=release.artist.name)
         tags["TPE1"] = TPE1(encoding=3, text=release.artist.name)
-        tags["TRCK"] = TRCK(encoding=3, text=str(track.TrackNumber))
+        tags["TRCK"] = TRCK(encoding=3, text=str(track.trackNumber))
         if release.releaseDate:
-            year = release.releaseDate[:4]
+            year = release.releaseDate.strftime('%Y')
             if year:
                 tags["TDRC"] = TDRC(encoding=3, text=year)
         if self.config:

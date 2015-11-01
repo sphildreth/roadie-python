@@ -233,6 +233,25 @@ def index():
     return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
 
 
+@app.route("/release/setReleaseDate/<roadieId>/<new_release_date>/<set_tracks_year>", methods=['POST'])
+def setReleaseDate(roadieId, new_release_date, set_tracks_year):
+    setReleaseYearRelease = getRelease(roadieId)
+    user = getUser()
+    now = arrow.utcnow().datetime
+    if not setReleaseYearRelease or not user or not new_release_date:
+        return jsonify(message="ERROR")
+    setReleaseYearRelease.releaseDate = parseDate(new_release_date)
+    setReleaseYearRelease.lastUpdated = now
+    dbSession.commit()
+    if set_tracks_year == "true":
+        for media in setReleaseYearRelease.media:
+            for track in media.tracks:
+                trackPath = pathToTrack(track)
+                id3 = ID3(trackPath, config)
+                id3.updateFromRelease(setReleaseYearRelease, track)
+    return jsonify(message="OK")
+
+
 @app.route("/release/setTitle/<roadieId>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
 def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name):
     setReleaseTitleRelease = getRelease(roadieId)
@@ -240,17 +259,18 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
     now = arrow.utcnow().datetime
     if not setReleaseTitleRelease or not user or not new_title:
         return jsonify(message="ERROR")
-    oldTitle = setReleaseTitleRelease.Title
-    setReleaseTitleRelease.Title = new_title
-    setReleaseTitleRelease.LastUpdated = now
+    oldTitle = setReleaseTitleRelease.title
+    setReleaseTitleRelease.title = new_title
+    setReleaseTitleRelease.lastUpdated = now
     if create_alternate_name == "true" and new_title not in setReleaseTitleRelease.alternateNames:
         setReleaseTitleRelease.alternateNames.append(oldTitle)
     dbSession.commit()
     if set_tracks_title == "true":
-        for track in setReleaseTitleRelease.Tracks:
-            trackPath = pathToTrack(track)
-            id3 = ID3(trackPath, config)
-            id3.updateFromRelease(setReleaseTitleRelease, track)
+        for media in setReleaseTitleRelease.media:
+            for track in media.tracks:
+                trackPath = pathToTrack(track)
+                id3 = ID3(trackPath, config)
+                id3.updateFromRelease(setReleaseTitleRelease, track)
     return jsonify(message="OK")
 
 

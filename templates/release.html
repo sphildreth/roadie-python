@@ -98,7 +98,10 @@
             <div class="col-md-3">
                 <div>
                     <h4><span class="label label-primary">Release Date</span></h4>
-                    <span class="label label-default">{{ release.releaseDate }}</span>
+                    <span class="release-date label label-default">{{ release.releaseDate }}</span>
+                    {% if current_user.is_editor() %}
+                    <button id="setReleaseDate" class="btn btn-warning btn-sm" title="Set Release Date"><i class="fa fa-edit"></i></button>
+                    {% endif %}
                 </div>
                 <div>
                     <h4><span class="label label-primary">MusicBrainz Id</span></h4>
@@ -755,6 +758,59 @@
 
         $("#searchInternetArtistAndTitle").on("click", function() {
             roadieLibrary.doInternetSearch($("span.release-artist-name").text() + " " + $("span.release-title").text());
+        });
+
+        $("#setReleaseDate").on("click", function(e) {
+            var currentDate = $("span.release-date").text();
+            bootbox.dialog({
+                title: "Set Release Date",
+                message: '<div class="row">  ' +
+                    '<div class="col-md-12"> ' +
+                    '<form class="form-horizontal"> ' +
+                    '<div class="form-group"> ' +
+                    '<label class="col-md-5 control-label" for="date">Date</label> ' +
+                    '<div class="col-md-7"> ' +
+                    '<input id="newDate" name="newDate" type="text" placeholder="Release Date" class="form-control input-md" value="' + currentDate + '" /> ' +
+                    '</div></div> ' +
+                    '<div class="form-group"><label class="col-md-5 control-label" for="set_tracks_year">Set Track(s) Year?</label> ' +
+                    '<div class="col-md-7 checkbox"><label><input type="checkbox" name="set_tracks_year" id="set_tracks_year" value="True" checked="checked">Yes</label>' +
+                    '</div></div>' +
+                    '</div>' +
+                    '</form> </div></div>',
+                buttons: {
+                    cancel: {
+                        label: "Cancel",
+                        className: "btn-default"
+                    },
+                    success: {
+                        label: "Save",
+                        className: "btn-success",
+                        callback: function () {
+                            var newReleaeDate = $('#newDate').val();
+                            var doSetTracksYear = $("input[name='set_tracks_year']:checked").val();
+                            if (typeof doSetTracksYear === "undefined") {
+                                doSetTracksYear = false;
+                            } else {
+                                doSetTracksYear = true;
+                            }
+                            $(".loader").fadeIn("slow", function() {
+                                $.ajax({
+                                    type: 'POST',
+                                    url: '/release/setReleaseDate/' + releaseId + '/' + encodeURIComponent(newReleaeDate) + '/' + doSetTracksYear,
+                                    success: function(data) {
+                                        if(data.message == "OK") {
+                                            location.reload(true);
+                                        }
+                                    },
+                                    error:function(jq, st, error){
+                                        roadieLibrary.showErrorMessage(error);
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            })
         });
 
         $("#setAlbumTitle").on("click", function(e) {
