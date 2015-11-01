@@ -7,7 +7,7 @@
         <div class="release-counts-container pull-right">
             <span data-media-count="{{ releaseMediaCount }}" class="media-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Release">{{ '%02d' % releaseMediaCount }}</span></span>
             <span data-track-count="{{ trackCount }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % trackCount }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ releaseTrackTime }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ releaseTrackTime or '--:--' }}</span></span>
             <span class="file-size">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total FileSize of Release">{{ releaseTrackFileSize }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">

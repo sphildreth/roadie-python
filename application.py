@@ -21,10 +21,14 @@ from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from werkzeug.datastructures import Headers
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy import create_engine, Integer, desc, String, update
+#from sqlalchemy.orm import sessionmaker
+#from sqlalchemy.ext.declarative import declarative_base
+#from sqlalchemy import create_engine, Integer, desc, String, update
+
+from flask_sqlalchemy import SQLAlchemy
+
+from sqlalchemy import Integer, desc, String, update
 from sqlalchemy.sql import text, func
 
 from importers.collectionImporter import CollectionImporter
@@ -89,18 +93,24 @@ app.config.update(config)
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
 
-engine = create_engine(config['ROADIE_DATABASE_URL'])
-conn = engine.connect()
-Base = declarative_base()
-Base.metadata.bind = engine
-DBSession = sessionmaker(bind=engine)
-dbSession = DBSession()
+# engine = create_engine(config['ROADIE_DATABASE_URL'])
+# conn = engine.connect()
+# Base = declarative_base()
+# Base.metadata.bind = engine
+# DBSession = sessionmaker(bind=engine)
+# dbSession = DBSession()
+
+app.config['SQLALCHEMY_DATABASE_URI'] = config['ROADIE_DATABASE_URL']
+sa = SQLAlchemy(app)
+dbSession = sa.session()
+conn = sa.engine
 
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
 
 FlaskSession(app)
+
 
 
 def getUser(userId=None):
@@ -199,11 +209,9 @@ def before_request():
     g.siteName = siteName
     g.user = current_user
 
-
-@app.teardown_appcontext
-def shutdown_session(response, exception=None):
-    dbSession.remove()
-    return response
+# @app.teardown_appcontext
+# def shutdown_session(exception=None):
+#     dbSession.remove()
 
 
 @app.route('/')
@@ -558,6 +566,7 @@ def rescanArtist(artist_id):
         validator.validate(artist)
         return jsonify(message="OK")
     except:
+        dbSession.rollback()
         logger.exception("Error Rescanning Artist")
         return jsonify(message="ERROR")
 
@@ -580,6 +589,7 @@ def rescanRelease(release_id):
         return jsonify(message="OK")
     except:
         logger.exception("Error Rescanning Release")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -624,6 +634,8 @@ def deleteArtistReleases(artist_id):
         return jsonify(message="ERROR")
     try:
         for r in artist.releases:
+            r.genres = []
+            dbSession.commit()
             dbSession.delete(r)
         dbSession.commit()
         return jsonify(message="OK")
@@ -652,6 +664,8 @@ def deleteRelease(release_id, delete_files):
                             os.rmdir(trackFolder)
             except OSError:
                 pass
+        deleteReleaseRelease.genres = []
+        dbSession.commit()
         dbSession.delete(deleteReleaseRelease)
         dbSession.commit()
         return jsonify(message="OK")
@@ -797,7 +811,7 @@ def release(roadieId):
                            collectionReleases=indexRelease.collections,
                            userRelease=indexRelease.userRatings, trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
-                           releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]) or "0",
+                           releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
 
 
@@ -1012,6 +1026,7 @@ def streamTrack(user_id, track_id):
 @login_required
 @nocache
 def stats():
+    dbSession.expire_all()
     counts = conn.execute(text(
         "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
         "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount " +

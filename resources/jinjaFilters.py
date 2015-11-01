@@ -55,12 +55,13 @@ def calculate_release_tracks_Length(value):
 
 
 def format_tracktime(value):
+    value = int(floor(value / 1000))
     return format_timedelta(datetime.timedelta(seconds=value), "{hours2}:{minutes2}:{seconds2}")
 
 
 def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):
     try:
-        value = int(floor(value / 1000))
+
         if hasattr(value, 'seconds'):
             seconds = value.seconds + value.days * 24 * 3600
         else:

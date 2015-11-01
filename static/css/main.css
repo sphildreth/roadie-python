@@ -26,18 +26,6 @@ body.roadie .navbar-default {
 	background: url('/static/img/loading.gif') 50% 50% no-repeat #262626;
 }
 
-.thumbnail-container {
-    min-width: 60px;
-    min-height: 60px;
-    display:inline-block;
-    margin: 2px 5px;
-}
-
-.thumbnail-container img.thumb {
-    display: block;
-    margin: auto;
-}
-
 .context-menu li {
     cursor: pointer;
 }
@@ -88,13 +76,6 @@ div.collection-container .collection-release h3.album-title {
     text-overflow: ellipsis;
 }
 
-div.collection-container .collection-release img.release-thumb {
-    margin-top: 11px;
-}
-
-div.collection-container .collection-release .artist-info img.thumb {
-    margin: 0 5px;
-}
 
 div.collection-container .artist {
   border-bottom: 1px solid #F2F2F2;
@@ -105,9 +86,7 @@ div.collection-container a.external-link {
     margin: 27px 5px 0 5px;
 }
 
-div.collection-container .artist .thumbnail {
-  padding-right: 5px;
-}
+
 
 div.collection-container ul {
   overflow: auto;
@@ -131,10 +110,6 @@ div.collection-container h3.missing-number {
     marign-right: 5px;
 }
 
-.release-detail-container .artist-info img.thumb {
-    margin: 2px 4px;
-}
-
 .release-detail-container .row.track {
     display:block;
 }
@@ -143,14 +118,6 @@ div.collection-container h3.missing-number {
     text-align: right;
 }
 
-
-img.thumb {
-    margin: 5px 5px 4px 2px;
-}
-
-.releases .thumb {
-  margin-right: 8px;
-}
 
 .release-detail-container span.track-count-indicator,
 .artist-detail-container span.release-sane-indicator,
@@ -364,9 +331,7 @@ ul.no-list-style {
 .random-releases-container button {
     width: 100%;
 }
-.random-releases-container .release .thumbnail-container {
-    display: inherit;
-}
+
 .random-releases-container img {
     display:block;
     padding-bottom: 5px;
@@ -540,6 +505,61 @@ ul.no-list-style {
 
 }
 
+/* Thumbnail Related */
+
+.release-detail-container .artist-info img.thumb {
+    margin: 2px 4px;
+}
+
+div.collection-container .collection-release img.release-thumb {
+    margin-top: 11px;
+}
+
+div.collection-container .collection-release .artist-info img.thumb {
+    margin: 0 5px;
+}
+
+div.collection-container .artist .thumbnail {
+  padding-right: 5px;
+}
+
+.thumbnail-container {
+    min-width: 60px;
+    min-height: 60px;
+    display:inline-block;
+    margin: 2px 5px;
+}
+
+.thumbnail-container img.thumb {
+    display: block;
+    margin: auto;
+}
+
+img.thumb {
+    margin: 5px 5px 4px 2px;
+}
+
+.releases .thumb {
+  margin-right: 8px;
+}
+
+.random-releases-container .release .thumbnail-container {
+    display: inherit;
+}
+
+#lastPlayedTracks img.release-thumb, #lastPlayedTracks img.artist-thumb, #lastPlayedTracks img.user-thumb {
+    max-height: 45px;
+}
+
+img.artist-thumb, img.release-thumb {
+    height: 80px;
+}
+
+.stats-container img.artist-thumb .thumb {
+    max-width: 125px;
+    height: auto;
+}
+
 .home-container .recently-played-container .user-rating-container {
     margin-left: 5px;
     display: block;
@@ -618,10 +638,3 @@ form.profile input {
     width: 22%
 }
 
-#lastPlayedTracks img.release-thumb, #lastPlayedTracks img.artist-thumb {
-    height: 45px;
-}
-
-img.artist-thumb, img.release-thumb {
-    height: 80px;
-}

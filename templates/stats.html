@@ -59,7 +59,7 @@
                                  <td data-release-id="{{ release.roadieId }}">
                                     <a href="/release/{{ release.roadieId }}">
                                         <div class="thumbnail-container pull-left">
-                                        <img class="release-thumb" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
+                                        <img class="release-thumb thumb" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
                                         </div>
                                         <span class="label label-default">{{ release.title }}</span>
                                     </a>
@@ -70,7 +70,7 @@
                                 <td data-artist-id="{{ release.artist.roadieId }}">
                                     <a href="/artist/{{ release.artist.roadieId }}">
                                         <div class="thumbnail-container pull-left">
-                                            <img class="artist-thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
+                                            <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
                                         </div>
                                         <span class="label label-default">{{ release.artist.name }}</span>
                                     </a>
@@ -112,7 +112,7 @@
                 {% for artist in top10Artists %}
                 <div class="col-md-9">
                     <div class="thumbnail-container pull-left">
-                        <img class="artist-thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
+                        <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
                     </div>
                     <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span></h4></a>
                 </div>
@@ -126,7 +126,7 @@
                 {% for artist in top10ArtistsByTracks %}
                 <div class="col-md-9">
                     <div class="thumbnail-container pull-left">
-                        <img class="artist-thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
+                        <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
                     </div>
                     <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span></h4></a>
                 </div>

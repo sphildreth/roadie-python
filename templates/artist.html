@@ -8,8 +8,8 @@
             <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases of Artist">{{ '%02d' % counts.releases }}</span></span>
             <span class="release-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Artist">{{ '%03d' % counts.releaseMedia }}</span></span>
             <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Artist">{{ '%03d' % (counts.tracks or 0) }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length }}</span></span>
-            <span class="length-total">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.fileSize }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length or '--:--' }}</span></span>
+            <span class="filesize-total">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.fileSize }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
