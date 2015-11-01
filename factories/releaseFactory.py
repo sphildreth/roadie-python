@@ -58,6 +58,7 @@ class ReleaseFactory(object):
     def get(self, artist, title, doFindIfNotInDB=True, forceRefresh=False):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
+        :rtype : Release
         :type artist: Artist
         :type title: str
         """

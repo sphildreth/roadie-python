@@ -10,12 +10,16 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 
-if sys.stdout.encoding != 'cp850':
-  sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
-if sys.stderr.encoding != 'cp850':
-  sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
+# if sys.stdout.encoding != 'cp850':
+#   sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
+# if sys.stderr.encoding != 'cp850':
+#   sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
 
-p = argparse.ArgumentParser(description='Process Inbound and Library Folders For Updates.')
+
+
+
+p = argparse.ArgumentParser(description='Process Inbound Folders For Updates.')
+p.add_argument('--folder', '-f', help='Override library setting in config')
 p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
                help='Dont Delete Any Processed Inbound Folders')
 p.add_argument('--dontValidate', '-dv', action='store_true',
@@ -27,6 +31,9 @@ d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
 path = os.path.join(os.sep.join(d), "settings.json")
 with open(path, "r") as rf:
     config = json.load(rf)
+
+if args.folder:
+    config['ROADIE_INBOUND_FOLDER'] = args.folder
 
 engine = create_engine(config['ROADIE_DATABASE_URL'])
 conn = engine.connect()

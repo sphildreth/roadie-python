@@ -200,6 +200,12 @@ def before_request():
     g.user = current_user
 
 
+@app.teardown_appcontext
+def shutdown_session(response, exception=None):
+    dbSession.remove()
+    return response
+
+
 @app.route('/')
 @login_required
 def index():
@@ -249,6 +255,14 @@ def setReleaseDate(roadieId, new_release_date, set_tracks_year):
                 trackPath = pathToTrack(track)
                 id3 = ID3(trackPath, config)
                 id3.updateFromRelease(setReleaseYearRelease, track)
+    # Update Database with folders found in Library as folder structure is bound to release year
+    processor = Processor(config, conn, dbSession, False, True)
+    releaseFolder = processor.albumFolder(setReleaseYearRelease.artist,
+                                          setReleaseYearRelease.releaseDate.strftime('%Y'),
+                                          setReleaseYearRelease.title)
+    processor.process(folder=releaseFolder, isReleaseFolder=True)
+    validator = Validator(config, conn, dbSession, False)
+    validator.validate(setReleaseYearRelease.artist, setReleaseYearRelease)
     return jsonify(message="OK")
 
 
@@ -562,7 +576,7 @@ def rescanRelease(release_id):
                                               rescanReleaseRelease.title)
         processor.process(folder=releaseFolder, isReleaseFolder=True)
         validator = Validator(config, conn, dbSession, False)
-        validator.validate(rescanReleaseRelease.artist)
+        validator.validate(rescanReleaseRelease.artist, rescanReleaseRelease)
         return jsonify(message="OK")
     except:
         logger.exception("Error Rescanning Release")
@@ -597,6 +611,7 @@ def deleteArtist(artist_id):
         dbSession.commit()
         return jsonify(message="OK")
     except:
+        dbSession.rollback()
         logger.exception("Error Deleting Artist")
         return jsonify(message="ERROR")
 
@@ -613,6 +628,7 @@ def deleteArtistReleases(artist_id):
         dbSession.commit()
         return jsonify(message="OK")
     except:
+        dbSession.rollback()
         logger.exception("Error Deleting Artist Releases")
         return jsonify(message="ERROR")
 
@@ -640,6 +656,7 @@ def deleteRelease(release_id, delete_files):
         dbSession.commit()
         return jsonify(message="OK")
     except:
+        dbSession.rollback()
         logger.exception("Error Deleting Release")
         return jsonify(message="ERROR")
 
@@ -709,6 +726,7 @@ def deleteReleaseTrack(release_id, track_id, flag):
 
         return jsonify(message="OK")
     except:
+        dbSession.rollback()
         logger.exception("Error Deleting Release Track")
         return jsonify(message="ERROR")
 
@@ -1585,6 +1603,7 @@ def mergeArtists(merge_into_id, merge_id):
         return jsonify(message="OK")
 
     except:
+        dbSession.rollback()
         logger.exception("Error Merging Artists")
         return jsonify(message="ERROR")
 

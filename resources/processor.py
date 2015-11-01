@@ -174,13 +174,15 @@ class Processor(ProcessorBase):
 
                 # Get all the MP3 files in the Folder and process
                 for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                    printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
                     if mp3Folder not in mp3FoldersProcessed:
                         pathInfo = self.infoFromPath(os.path.basename(mp3))
-                        self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] File [" + mp3 + "]...")
+                        self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] " +
+                                          "File [" + printableMp3 + "]...")
                         id3 = ID3(mp3, self.processingOptions)
                         if id3 is not None:
                             if not id3.isValid():
-                                self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
+                                self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
                             else:
                                 foundMp3Files += 1
                                 # Get Artist
@@ -191,12 +193,12 @@ class Processor(ProcessorBase):
                                     artist = self.artistFactory.get(id3.artist)
                                 if artist and artist.isLocked:
                                     self.logger.debug(
-                                        "Skipping Processing Track [" + mp3 + "], Artist [" + str(
+                                        "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
                                             artist) + "] Is Locked")
                                     continue
                                 if not artist:
                                     self.logger.warn(
-                                        "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + mp3 + "]")
+                                        "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
                                     continue
                                 # Get the Release
                                 if lastID3Album != id3.album:
@@ -204,7 +206,12 @@ class Processor(ProcessorBase):
                                 if not release:
                                     lastID3Album = id3.album
                                     release = self.releaseFactory.get(artist, id3.album)
-                                    if not release:
+                                    if release:
+                                        # Was found now see if needs update based on id3 tag info
+                                        id3ReleaseDate = parseDate(id3.year)
+                                        if not release.releaseDate == parseDate(id3ReleaseDate):
+                                            release.releaseDate = id3ReleaseDate
+                                    else:
                                         # Was not found in any Searcher create and add
                                         self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
                                         release = self.releaseFactory.create(artist,
@@ -213,7 +220,7 @@ class Processor(ProcessorBase):
                                                                              id3.year)
                                         if not release:
                                             self.logger.warn("! Unable to Create Album [" + id3.album +
-                                                             "] For Track [" + mp3 + "]")
+                                                             "] For Track [" + printableMp3 + "]")
                                             continue
                                         if release:
                                             if id3.imageBytes:
@@ -257,7 +264,6 @@ class Processor(ProcessorBase):
                         for media in release.media:
                             media.trackCount = len(media.tracks)
                             release.trackCount = len(media.tracks)
-                    self.session.commit()
                 if not self.readOnly and artist and release:
                     if self.shouldDeleteFolder(mp3Folder):
                         try:
@@ -265,6 +271,7 @@ class Processor(ProcessorBase):
                             self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                         except OSError:
                             pass
+                self.session.commit()
                 gc.collect()
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()

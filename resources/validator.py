@@ -40,7 +40,7 @@ class Validator(ProcessorBase):
         for artist in self.session.query(Artist).all():
             self.validate(artist)
 
-    def validate(self, artist):
+    def validate(self, artist, onlyValidateRelease=None):
         """
         Do sanity checks on given Artist
         :param artist: Artist
@@ -50,19 +50,30 @@ class Validator(ProcessorBase):
             raise RuntimeError("Invalid Artist")
         try:
             for release in artist.releases:
-                self.logger.info("Validating Artist [" + str(artist) + "], Release [" + str(release) + "]")
+                issuesFound = False
+                if onlyValidateRelease and release.roadieId != onlyValidateRelease.roadieId:
+                    continue
                 releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
                 try:
                     folderExists = os.path.exists(releaseFolder)
                 except:
                     folderExists = False
                 if not folderExists:
-                  #  if not self.readOnly:
-                 #       self.session.delete(release)
-                    self.logger.warn("X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
+                    #  if not self.readOnly:
+                    #       self.session.delete(release)
+                    issuesFound = True
+                    self.logger.warn(
+                        "X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
                     continue
+                releaseTrackCount = 0
+                releaseMediaCount = 0
+                # Set this to complete unless its found otherwise
+                if release.libraryStatus != 'Complete':
+                    release.libraryStatus = 'Complete'
                 for releaseMedia in release.media:
-                    for track in releaseMedia.tracks:
+                    releaseMediaCount += 1
+                    releaseMediaTrackCount = 0
+                    for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
                             trackFilename = os.path.join(self.config['ROADIE_LIBRARY_FOLDER'], track.fullPath())
                             if not os.path.exists(trackFilename):
@@ -70,13 +81,27 @@ class Validator(ProcessorBase):
                                     self.session.delete(track)
                                 self.logger.warn(
                                     "X Deleting Track [" + str(track) + "] File [" + trackFilename + "] not found")
+                                issuesFound = True
+                            else:
+                                releaseMediaTrackCount += 1
+                                releaseTrackCount += 1
+                                if not isEqual(track.trackNumber, releaseMediaTrackCount):
+                                    self.logger.warn("! Track Number Sequence InCorrect Is [" +
+                                                     str(releaseMediaTrackCount) + "] Expected [" +
+                                                     str(track.trackNumber) + "]")
+                                    release.libraryStatus = 'Incomplete'
+                                    issuesFound = True
                         except:
                             pass
                     if not self.readOnly:
-                        releaseMedia.trackCount = len(releaseMedia.tracks)
-                        release.mediaCount = len(release.media)
-                        release.trackCount = releaseMedia.trackCount
-                        release.lastUpdated = arrow.utcnow().datetime
+                        releaseMedia.trackCount = releaseMediaTrackCount
+                if not self.readOnly:
+                    release.mediaCount = releaseMediaCount
+                    release.trackCount = releaseTrackCount
+                    release.lastUpdated = arrow.utcnow().datetime
+                self.logger.info("Validated Artist [" + str(artist) + "], " +
+                                 "Release [" + str(release) + "], " +
+                                 "IssuesFound [" + str(issuesFound) + "]")
             if not self.readOnly:
                 self.session.commit()
         except:

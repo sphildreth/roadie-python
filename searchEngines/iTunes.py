@@ -122,8 +122,8 @@ class iTunes(SearchEngineBase):
         return None
 
 # s = iTunes()
-# artist = s.lookupArtist("Men At Work")
-# release = s.searchForRelease(artist, "Cargo")
+# artist = s.lookupArtist("Iron Maiden")
+# release = s.searchForRelease(artist, "A Matter Of Life And Death")
 # uprint(release.info())
 
 

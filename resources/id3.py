@@ -26,7 +26,13 @@ class ID3:
 
     def isValid(self):
         try:
-            if self.artist and self.year and self.album and self.track and self.title and self.bitrate and self.length > 0:
+            if self.artist and \
+                    self.year and \
+                    self.album and \
+                    self.track and \
+                    self.title and \
+                    self.bitrate and \
+                    self.length > 0:
                 return True
             else:
                 return False
@@ -40,8 +46,13 @@ class ID3:
                str(self.bitrate) + "bps::" + str(self.length) + ")"
 
     def __str__(self):
-        return self.artist + "." + str(self.year) + "." + self.album + "." + str(self.track) \
-               + "." + self.title + "." + str(self.bitrate) + "." + str(self.length)
+        return str(self.artist) + "." + \
+               str(self.year) + "." + \
+               str(self.album) + "." + \
+               str(self.track) + "." + \
+               str(self.title) + "." + \
+               str(self.bitrate) + "." + \
+               str(self.length)
 
     def updateFromRelease(self, release, track):
         """

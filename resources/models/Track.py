@@ -15,7 +15,6 @@ trackPlaylistTrackTable = Table('trackPlaylistTrack', Base.metadata,
 
 
 class Track(Base):
-
     filePath = Column(String(1000))
     fileName = Column(String(500))
     # File size of the track in bytes
@@ -52,10 +51,12 @@ class Track(Base):
         return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self):
-        return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) + ", Hash [" + self.hash + "] " +
-               + "], Title [" + str(self.title) + "],TrackNumber [" + str(self.trackNumber)
-               + "], Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
+        return ("Id [" + str(self.id) + "], " +
+                "RoadieId [" + str(self.roadieId) + "], " +
+                "Hash [" + str(self.hash) + "], " +
+                "Title [" + str(self.title) + "], " +
+                "TrackNumber [" + str(self.trackNumber) + "], " +
+                "Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 
     def fullPath(self):
         # path = track.FilePath

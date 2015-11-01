@@ -135,9 +135,12 @@ div.collection-container h3.missing-number {
     margin: 2px 4px;
 }
 
-.release-detail-container .row.tracks .release-cd-container {
-    display: block;
-    height: 15px;
+.release-detail-container .row.track {
+    display:block;
+}
+
+.release-detail-container .release-media-container .release-cd {
+    text-align: right;
 }
 
 

@@ -1,6 +1,5 @@
 import os
 import hashlib
-import random
 import uuid
 
 from sqlalchemy import update
@@ -22,7 +21,8 @@ class Scanner(ProcessorBase):
         self.conn = dbConn
         self.session = dbSession
 
-    def inboundMp3Files(self, folder):
+    @staticmethod
+    def inboundMp3Files(folder):
         for root, dirs, files in os.walk(folder):
             for filename in files:
                 if os.path.splitext(filename)[1] == ".mp3":
@@ -40,7 +40,8 @@ class Scanner(ProcessorBase):
             self.conn.execute(stmt)
         self.logger.warn("x Marked Track Missing [" + title + "]: File [" + fileName + "] Not Found.")
 
-    def _makeTrackHash(self, artistId, id3String):
+    @staticmethod
+    def _makeTrackHash(artistId, id3String):
         return hashlib.md5((str(artistId) + str(id3String)).encode('utf-8')).hexdigest()
 
     def scan(self, folder, artist, release):
@@ -61,10 +62,8 @@ class Scanner(ProcessorBase):
         if not folder:
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
-        foundReleaseTracks = 0
-        createdReleaseTracks = 0
         startTime = arrow.utcnow().datetime
-        self.logger.info("Scanning Folder [" + folder + "]")
+        self.logger.info("-> Scanning Folder [" + folder + "]")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             for track in self.session.query(Track).filter(Track.filePath == folder).all():
@@ -77,7 +76,7 @@ class Scanner(ProcessorBase):
                     id3 = ID3(filename)
                     # File has invalid ID3 tags now
                     if not id3.isValid():
-                        self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + filename + "]")
+                        self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + filename + "]")
                         if not self.readOnly:
                             try:
                                 os.remove(filename)
@@ -95,6 +94,8 @@ class Scanner(ProcessorBase):
                             pass
 
         # For each file found in folder get ID3 info and insert record into Track DB
+        foundReleaseTracks = 0
+        createdReleaseTracks = 0
         scannedMp3Files = 0
         releaseMediaTrackCount = 0
         releaseMedia = None
@@ -103,7 +104,7 @@ class Scanner(ProcessorBase):
             if id3 is not None:
                 cleanedTitle = createCleanedName(id3.title)
                 if not id3.isValid():
-                    self.logger.warn("Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
+                    self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
                     foundGoodMp3s = True
                     head, tail = os.path.split(mp3)
@@ -140,7 +141,6 @@ class Scanner(ProcessorBase):
                     if not releaseMedia:
                         releaseMedia = firstReleaseMedia
                     if not track:
-                        self.logger.debug("Not Able To Find Track [" + str(id3.track) + "] Hash [" + str(trackHash) + "]")
                         createdReleaseTracks += 1
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()
@@ -171,6 +171,8 @@ class Scanner(ProcessorBase):
                         if cleanedTitle != id3.title.lower().strip():
                             track.alternateNames.append(cleanedTitle)
                         releaseMedia.tracks.append(track)
+                        releaseMedia.trackCount += 1
+                        releaseMediaTrackCount = releaseMedia.trackCount
                         self.logger.info("+ Added Track [" + str(track.info()) + "] To ReleaseMedia")
 
                     elif not self.readOnly:
@@ -186,7 +188,7 @@ class Scanner(ProcessorBase):
                                 track.alternateNames = []
                             if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
                                 track.alternateNames.append(cleanedTitle)
-                            self.logger.info("| Updated Track [" + str(track.info()) + "]")
+                            self.logger.info("* Updated Track [" + str(track.info()) + "]")
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
@@ -198,9 +200,10 @@ class Scanner(ProcessorBase):
         else:
             release.libraryStatus = 'Incomplete'
 
-        self.logger.info(("Scanning Folder [" + folder + "] Complete, Scanned [" +
-                          ('%02d' % scannedMp3Files) + "] Mp3 Files: Created [" + str(createdReleaseTracks) +
-                          "] Release Tracks, Found [" + str(foundReleaseTracks) +
-                          "] Release Tracks. Sane Counts [" + str(matches) + "] Elapsed Time [" + str(elapsedTime) +
-                          "]").encode('utf-8'))
+        self.logger.info("<- Scanning Folder [" + str(folder.encode('utf-8')) + "] " +
+                          "Complete, Scanned [" + ('%02d' % scannedMp3Files) + "] " +
+                          "Mp3 Files: Created [" + str(createdReleaseTracks) + "] Release Tracks, " +
+                          "Found [" + str(foundReleaseTracks) + "] Release Tracks. " +
+                          "Sane Counts [" + str(matches) + "] " +
+                          "Elapsed Time [" + str(elapsedTime) + "]")
         return foundGoodMp3s

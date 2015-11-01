@@ -3,7 +3,7 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="release-detail-container" data-release-id="{{ release.roadieId }}">
+    <div class="release-detail-container releasetype_{{ release.releaseType|lower }} librarystatus_{{ release.libraryStatus|lower }}" data-release-id="{{ release.roadieId }}" data-release-db-id="{{ release.id }}">
         <div class="release-counts-container pull-right">
             <span data-media-count="{{ releaseMediaCount }}" class="media-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Release">{{ '%02d' % releaseMediaCount }}</span></span>
             <span data-track-count="{{ trackCount }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % trackCount }}</span></span>
@@ -232,12 +232,11 @@
             </div>
             {% endif %}
             {% for media in release.media %}
-                <div class="release-cd-container" data-releasemedianumber="{{ media.roadieId }}" >
-                    <h5 class="release-cd pull-right"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
+                <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" >
+                    <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
                     {% if media.releaseSubTitle %}
                         <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span></h5>
                     {% endif %}
-                </div>
                 {% for track in media.tracks %}
                     <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
@@ -284,6 +283,7 @@
                         </div>
                     </div>
                 {% endfor %}
+                </div>
             {% endfor %}
         </div>
         <div class="meta pull-right">
@@ -331,7 +331,12 @@
         var r2 = areNoTracksOfZeroLength();
         var r3 = doReleaseMediaCountsMatch();
         var r4 = areTracksNumberedSequentially();
-        return  r1 && r2 && r3 && r4;
+        var r5 = isReleaseMarkedComplete();
+        return  r1 && r2 && r3 && r4 && r5;
+    };
+
+    var isReleaseMarkedComplete = function() {
+        return $(".release-detail-container").hasClass("librarystatus_complete");
     };
 
     var areNoTracksOfZeroLength = function() {
@@ -372,9 +377,9 @@
     var areTracksNumberedSequentially = function() {
         var sane = true;
         var firstTrackOnDisc = null;
-        var discCount = parseInt($(".release-counts-container").data("media-count"));
-        for(var disc = 0; disc <= discCount; disc++) {
-            $.each($(".track[data-releasemedianumber='" + disc + "'] span.trackNumber "), function(i,d) {
+        var discCount = parseInt($(".media-count").data("media-count"));
+        for(var disc = 1; disc <= discCount; disc++) {
+            $.each($(".release-media-container[data-releasemedianumber='" + disc + "'] .track span.trackNumber "), function(i,d) {
                 if(i === 0) {
                     firstTrackOnDisc = parseInt($(d).text())-1;
                 }
@@ -383,6 +388,7 @@
                 var isTrackNumberRight = firstTrackOnDisc === parseInt($this.text());
                 if (!isTrackNumberRight) {
                     $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
+                    console.log("Track Number Sequence is Insane, Expected [" + firstTrackOnDisc + "], Found [" + parseInt($this.text()) + "]");
                 }
                 sane = sane && isTrackNumberRight;
             });

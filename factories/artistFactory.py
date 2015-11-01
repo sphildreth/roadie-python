@@ -77,6 +77,7 @@ class ArtistFactory(object):
     def get(self, name, doFindIfNotInDB=True):
         """
         Query Database for an artist with the given name, if not found search and if found save and return results
+        :rtype : Artist
         :type doFindIfNotInDB: bool
         :type name: str
         """
