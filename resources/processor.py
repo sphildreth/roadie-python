@@ -156,123 +156,127 @@ class Processor(ProcessorBase):
             mp3FoldersProcessed = []
             # Get all the folder in the InboundFolder
             for mp3Folder in self.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
-                foundMp3Files = 0
+                try:
+                    foundMp3Files = 0
 
-                # Do any conversions
-                if not self.readOnly:
-                    Convertor(mp3Folder)
+                    # Do any conversions
+                    if not self.readOnly:
+                        Convertor(mp3Folder)
 
-                # Delete any empty folder if enabled
-                if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
-                    try:
-                        self.logger.warn("X Deleted Empty Folder [" + mp3Folder + "]")
-                        if not self.readOnly:
-                            os.rmdir(mp3Folder)
-                    except OSError:
-                        self.logger.error("Error Deleting [" + mp3Folder + "]")
-                    continue
-
-                # Get all the MP3 files in the Folder and process
-                for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
-                    printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
-                    if mp3Folder not in mp3FoldersProcessed:
-                        pathInfo = self.infoFromPath(os.path.basename(mp3))
-                        self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] " +
-                                          "File [" + printableMp3 + "]...")
-                        id3 = ID3(mp3, self.processingOptions)
-                        if id3 is not None:
-                            if not id3.isValid():
-                                self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
-                            else:
-                                foundMp3Files += 1
-                                # Get Artist
-                                if lastID3Artist != id3.artist:
-                                    artist = None
-                                if not artist:
-                                    lastID3Artist = id3.artist
-                                    artist = self.artistFactory.get(id3.artist)
-                                if artist and artist.isLocked:
-                                    self.logger.debug(
-                                        "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
-                                            artist) + "] Is Locked")
-                                    continue
-                                if not artist:
-                                    self.logger.warn(
-                                        "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
-                                    continue
-                                # Get the Release
-                                if lastID3Album != id3.album:
-                                    release = None
-                                if not release:
-                                    lastID3Album = id3.album
-                                    release = self.releaseFactory.get(artist, id3.album)
-                                    if release:
-                                        # Was found now see if needs update based on id3 tag info
-                                        id3ReleaseDate = parseDate(id3.year)
-                                        if not release.releaseDate == parseDate(id3ReleaseDate):
-                                            release.releaseDate = id3ReleaseDate
-                                    else:
-                                        # Was not found in any Searcher create and add
-                                        self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
-                                        release = self.releaseFactory.create(artist,
-                                                                             string.capwords(id3.album),
-                                                                             1,
-                                                                             id3.year)
-                                        if not release:
-                                            self.logger.warn("! Unable to Create Album [" + id3.album +
-                                                             "] For Track [" + printableMp3 + "]")
-                                            continue
-                                        if release:
-                                            if id3.imageBytes:
-                                                try:
-                                                    img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
-                                                    img.thumbnail(self.thumbnailSize)
-                                                    b = io.BytesIO()
-                                                    img.save(b, "JPEG")
-                                                    release.thumbnail = b.getvalue()
-                                                except:
-                                                    pass
-                                            release.status = 1
-                                            self.releaseFactory.add(release)
-                                            self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
-                                            self.session.commit()
-                                if self.shouldMoveToLibrary(artist, id3, mp3):
-                                    newMp3 = self.moveToLibrary(artist, id3, mp3)
-                                    head, tail = os.path.split(newMp3)
-                                    newMp3Folder = head
-                if artist and release:
-                    if newMp3Folder and newMp3Folder not in mp3FoldersProcessed:
-                        for coverImage in self.releaseCoverImages(mp3Folder):
-                            try:
-                                im = Image.open(coverImage).convert('RGB')
-                                newPath = os.path.join(newMp3Folder, "cover.jpg")
-                                if (not os.path.isfile(newPath) or not os.path.samefile(coverImage,
-                                                                                        newPath)) and not self.readOnly:
-                                    im.save(newPath)
-                                    self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
-                            except:
-                                self.logger.exception("Error Copying File [" + coverImage + "]")
-                                pass
-                        scanner.scan(newMp3Folder, artist, release)
-                        mp3FoldersProcessed.append(newMp3Folder)
-                    elif mp3Folder not in mp3FoldersProcessed:
-                        scanner.scan(mp3Folder, artist, release)
-                        mp3FoldersProcessed.append(mp3Folder)
-                    if release.status == 1:
-                        # Sync  the counts as some releases where added by the processor
-                        release.mediaCount = len(release.media)
-                        for media in release.media:
-                            media.trackCount = len(media.tracks)
-                            release.trackCount = len(media.tracks)
-                if not self.readOnly and artist and release:
-                    if self.shouldDeleteFolder(mp3Folder):
+                    # Delete any empty folder if enabled
+                    if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
                         try:
-                            shutil.rmtree(mp3Folder)
-                            self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
+                            self.logger.warn("X Deleted Empty Folder [" + mp3Folder + "]")
+                            if not self.readOnly:
+                                os.rmdir(mp3Folder)
                         except OSError:
-                            pass
-                self.session.commit()
-                gc.collect()
+                            self.logger.error("Error Deleting [" + mp3Folder + "]")
+                        continue
+
+                    # Get all the MP3 files in the Folder and process
+                    for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                        printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
+                        if mp3Folder not in mp3FoldersProcessed:
+                            pathInfo = self.infoFromPath(os.path.basename(mp3))
+                            self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] " +
+                                              "File [" + printableMp3 + "]...")
+                            id3 = ID3(mp3, self.processingOptions)
+                            if id3 is not None:
+                                if not id3.isValid():
+                                    self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
+                                else:
+                                    foundMp3Files += 1
+                                    # Get Artist
+                                    if lastID3Artist != id3.artist:
+                                        artist = None
+                                    if not artist:
+                                        lastID3Artist = id3.artist
+                                        artist = self.artistFactory.get(id3.artist)
+                                    if artist and artist.isLocked:
+                                        self.logger.debug(
+                                            "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
+                                                artist) + "] Is Locked")
+                                        continue
+                                    if not artist:
+                                        self.logger.warn(
+                                            "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
+                                        continue
+                                    # Get the Release
+                                    if lastID3Album != id3.album:
+                                        release = None
+                                    if not release:
+                                        lastID3Album = id3.album
+                                        release = self.releaseFactory.get(artist, id3.album)
+                                        if release:
+                                            # Was found now see if needs update based on id3 tag info
+                                            id3ReleaseDate = parseDate(id3.year)
+                                            if not release.releaseDate == parseDate(id3ReleaseDate):
+                                                release.releaseDate = id3ReleaseDate
+                                        else:
+                                            # Was not found in any Searcher create and add
+                                            self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
+                                            release = self.releaseFactory.create(artist,
+                                                                                 string.capwords(id3.album),
+                                                                                 1,
+                                                                                 id3.year)
+                                            if not release:
+                                                self.logger.warn("! Unable to Create Album [" + id3.album +
+                                                                 "] For Track [" + printableMp3 + "]")
+                                                continue
+                                            if release:
+                                                if id3.imageBytes:
+                                                    try:
+                                                        img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                                        img.thumbnail(self.thumbnailSize)
+                                                        b = io.BytesIO()
+                                                        img.save(b, "JPEG")
+                                                        release.thumbnail = b.getvalue()
+                                                    except:
+                                                        pass
+                                                release.status = 1
+                                                self.releaseFactory.add(release)
+                                                self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
+                                                self.session.commit()
+                                    if self.shouldMoveToLibrary(artist, id3, mp3):
+                                        newMp3 = self.moveToLibrary(artist, id3, mp3)
+                                        head, tail = os.path.split(newMp3)
+                                        newMp3Folder = head
+                    if artist and release:
+                        if newMp3Folder and newMp3Folder not in mp3FoldersProcessed:
+                            for coverImage in self.releaseCoverImages(mp3Folder):
+                                try:
+                                    im = Image.open(coverImage).convert('RGB')
+                                    newPath = os.path.join(newMp3Folder, "cover.jpg")
+                                    if (not os.path.isfile(newPath) or not os.path.samefile(coverImage,
+                                                                                            newPath)) and not self.readOnly:
+                                        im.save(newPath)
+                                        self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                                except:
+                                    self.logger.exception("Error Copying File [" + coverImage + "]")
+                                    pass
+                            scanner.scan(newMp3Folder, artist, release)
+                            mp3FoldersProcessed.append(newMp3Folder)
+                        elif mp3Folder not in mp3FoldersProcessed:
+                            scanner.scan(mp3Folder, artist, release)
+                            mp3FoldersProcessed.append(mp3Folder)
+                        if release.status == 1:
+                            # Sync  the counts as some releases where added by the processor
+                            release.mediaCount = len(release.media)
+                            for media in release.media:
+                                media.trackCount = len(media.tracks)
+                                release.trackCount = len(media.tracks)
+                    if not self.readOnly and artist and release:
+                        if self.shouldDeleteFolder(mp3Folder):
+                            try:
+                                shutil.rmtree(mp3Folder)
+                                self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
+                            except OSError:
+                                pass
+                    self.session.commit()
+                    gc.collect()
+                except:
+                    self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")
+                    self.session.rollback()
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
             self.logger.debug("-> MP3 Folders Processed [" + str(len(mp3FoldersProcessed)) + "]")

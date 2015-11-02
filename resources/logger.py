@@ -31,7 +31,7 @@ class Logger(object):
         Get last exception and print message to logger including any optional message
 
         """
-        logging.exception()
+        logging.exception(message)
 
     def critical(self, message):
         self.logger.critical(message)
