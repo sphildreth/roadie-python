@@ -702,7 +702,7 @@ def setUserTrackRating(track_id, rating):
         track.rating = trackAverage
         track.lastUpdated = now
         dbSession.commit()
-        return jsonify(message="OK", average=trackAverage)
+        return jsonify(message="OK", average=str(trackAverage))
     except:
         logger.exception("Error Setting Track Rating")
         return jsonify(message="ERROR")
@@ -1045,7 +1045,7 @@ def stats():
         "		SELECT COUNT(1) AS labelCount " +
         "		FROM `label`) lc " +
         "JOIN `release` r ON r.artistId = a.id " +
-        "JOIN `releasemedia` rm ON rm.releaseId = r.id", autocommit=True)
+        "left JOIN `releasemedia` rm ON rm.releaseId = r.id", autocommit=True)
                           .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
                                    trackDuration=Integer, trackSize=Integer, artistCount=Integer,
                                    labelCount=Integer)).first()
@@ -1063,8 +1063,8 @@ def stats():
         "SELECT a.roadieId as roadieId, a.name, count(t.roadieId) as count " +
         "FROM `artist` a " +
         "join `release` r on r.artistId = a.id " +
-        "join `releasemedia` rm on rm.releaseId = r.id " +
-        "join `track` t on t.releaseMediaId = rm.id " +
+        "left join `releasemedia` rm on rm.releaseId = r.id " +
+        "left join `track` t on t.releaseMediaId = rm.id " +
         "where t.fileName is not null " +
         "GROUP BY a.id " +
         "ORDER BY COUNT(1) desc " +
@@ -1081,7 +1081,6 @@ def stats():
                            topRatedReleases=topRatedReleases, topRatedTracks=topRatedTracks,
                            mostRecentReleases=mostRecentReleases, counts=counts,
                            formattedLibrarySize=sizeof_fmt(counts[4]))
-    return None
 
 
 @app.route("/stats/play/<option>")
