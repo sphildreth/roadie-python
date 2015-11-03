@@ -103,14 +103,6 @@
                     <button id="setReleaseDate" class="btn btn-warning btn-sm" title="Set Release Date"><i class="fa fa-edit"></i></button>
                     {% endif %}
                 </div>
-                <div>
-                    <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    {% if release.musicBrainzId %}
-                    <a href="https://musicbrainz.org/release/{{ release.musicBrainzId }}" target="_blank"><span class="label label-default">{{ release.musicBrainzId }}</span></a>
-                    {% else %}
-                    <span class="label label-default">None</span>
-                    {% endif %}
-                </div>
             </div>
             <div class="col-md-3">
                 <div>
@@ -129,7 +121,9 @@
                         {% for releaseLabel in release.releaseLabels %}
                         <li>
                             <span class="label label-default">{{ releaseLabel.label.name }}</span>
+                            {% if releaseLabel.catalogNumber %}
                             <span class="label label-default">{{ releaseLabel.catalogNumber }}</span>
+                            {% endif %}
                             {% if releaseLabel.beginDate %}
                             <span class="label label-default">{{ releaseLabel.beginDate }}</span>
                             {% endif %}
@@ -142,6 +136,40 @@
                 </div>
             </div>
         </div>
+        {% if release.musicBrainzId or release.iTunesId or release.amgId or release.lastFMId or release.spotifyId %}
+        <div class="row details bordered">
+            {% if release.musicBrainzId %}
+            <div class="col-md-2">
+                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+                <a href="https://musicbrainz.org/release/{{ release.musicBrainzId }}" target="_blank"><span class="label label-default">{{ release.musicBrainzId }}</span></a>
+            </div>
+            {% endif %}
+            {% if release.iTunesId %}
+            <div class="col-md-2">
+                <h4><span class="label label-primary">iTunes Id</span></h4>
+                <a href="https://itunes.apple.com/us/album/{{ release.iTunesId }}" target="_blank"><span class="label label-default">{{ release.iTunesId }}</span></a>
+            </div>
+            {% endif %}
+            {% if release.amgId %}
+            <div class="col-md-2">
+                <h4><span class="label label-primary">All Music Guide Id</span></h4>
+                <a href="https://itunes.apple.com/us/album/{{ release.amgId }}" target="_blank"><span class="label label-default">{{ release.amgId }}</span></a>
+            </div>
+            {% endif %}
+            {% if release.lastFMId %}
+            <div class="col-md-2">
+                <h4><span class="label label-primary">Last FM Id</span></h4>
+                <a href="https://itunes.apple.com/us/album/{{ release.lastFMId }}" target="_blank"><span class="label label-default">{{ release.lastFMId }}</span></a>
+            </div>
+            {% endif %}
+            {% if release.spotifyId %}
+            <div class="col-md-2">
+                <h4><span class="label label-primary">Spotify Id</span></h4>
+                <a href="https://play.spotify.com/album/{{ release.spotifyId }}" target="_blank"><span class="label label-default">{{ release.spotifyId }}</span></a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
         <div class="row lists bordered">
             <div class="col-md-3">
                 {% if collectionReleases %}
@@ -231,13 +259,13 @@
             </div>
             </div>
             {% endif %}
-            {% for media in release.media %}
+            {% for media in release.media|sort(attribute='releaseMediaNumber') %}
                 <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" >
                     <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
                     {% if media.releaseSubTitle %}
                         <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span></h5>
                     {% endif %}
-                {% for track in media.tracks %}
+                {% for track in media.tracks|sort(attribute='trackNumber') %}
                     <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
                         <div class="col-xs-1 col-sm-1 col-md-1">
                             <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>

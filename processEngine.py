@@ -1,22 +1,13 @@
 import os
 import json
 import argparse
-import sys
-import codecs
-from resources.processor import Processor
-from resources.validator import Validator
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 
-# if sys.stdout.encoding != 'cp850':
-#   sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
-# if sys.stderr.encoding != 'cp850':
-#   sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
-
-
-
+from resources.processor import Processor
+from resources.validator import Validator
 
 p = argparse.ArgumentParser(description='Process Inbound Folders For Updates.')
 p.add_argument('--folder', '-f', help='Override library setting in config')
@@ -24,6 +15,7 @@ p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
                help='Dont Delete Any Processed Inbound Folders')
 p.add_argument('--dontValidate', '-dv', action='store_true',
                help='Dont Run Validate Command After Processing')
+p.add_argument('--flush', '-fl', action='store_true', help='Flush All Releases For Artist Before Processing')
 p.add_argument('--readOnly', '-st', action='store_true', help='Read Only Mode; Dont modify Anything')
 args = p.parse_args()
 
@@ -41,7 +33,7 @@ Base = declarative_base()
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
-pp = Processor(config, conn, session, args.readOnly, args.dontDeleteInboundFolders)
+pp = Processor(config, conn, session, args.readOnly, args.dontDeleteInboundFolders, args.flush)
 pp.process()
 
 if not args.dontValidate:

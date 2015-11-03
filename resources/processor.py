@@ -32,7 +32,7 @@ from resources.processingBase import ProcessorBase
 
 
 class Processor(ProcessorBase):
-    def __init__(self, config, dbConn, dbSession, readOnly, dontDeleteInboundFolders):
+    def __init__(self, config, dbConn, dbSession, readOnly, dontDeleteInboundFolders, flushBefore=False):
         self.config = config
         self.InboundFolder = self.config['ROADIE_INBOUND_FOLDER']
         self.LibraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
@@ -44,6 +44,7 @@ class Processor(ProcessorBase):
         self.thumbnailSize = self.config['ROADIE_THUMBNAILS']['Height'], self.config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
         self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
+        self.flushBefore = flushBefore
         self.artistFactory = ArtistFactory(dbConn, dbSession)
         self.releaseFactory = ReleaseFactory(dbConn, dbSession)
 
@@ -145,7 +146,7 @@ class Processor(ProcessorBase):
         try:
             inboundFolder = kwargs.pop('folder', self.InboundFolder)
             isReleaseFolder = kwargs.pop('isReleaseFolder', False)
-            self.logger.info("Processing Folder [" + inboundFolder + "]")
+            self.logger.info("Processing Folder [" + inboundFolder + "] Flush [" + str(self.flushBefore) + "]")
             scanner = Scanner(self.config, self.conn, self.session, self.readOnly)
             startTime = arrow.utcnow().datetime
             newMp3Folder = None
@@ -197,6 +198,17 @@ class Processor(ProcessorBase):
                                             "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
                                                 artist) + "] Is Locked")
                                         continue
+                                    if self.flushBefore:
+                                        if artist.isLocked:
+                                            self.logger.debug(
+                                                "Skipping Flushing Artist [" + printableMp3 + "], Artist [" + str(
+                                                    artist) + "] Is Locked")
+                                            continue
+                                        else:
+                                            for release in artist.releases:
+                                                release.genres = []
+                                                self.session.delete(release)
+                                            self.session.commit()
                                     if not artist:
                                         self.logger.warn(
                                             "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")

@@ -69,8 +69,8 @@ class ReleaseListApi(Resource):
                 rows.append({
                     "id": release.roadieId,
                     "artistId": release.artist.roadieId,
-                    "releaseDate": release.releaseDate.isoformat(),
-                    "releaseYear": release.releaseDate.strftime('%Y'),
+                    "releaseDate": "" if not release.releaseDate else release.releaseDate.isoformat(),
+                    "releaseYear": "----" if not release.releaseDate else release.releaseDate.strftime('%Y'),
                     "artistName": release.artist.name,
                     "title": release.title,
                     "tracks": trackInfo,

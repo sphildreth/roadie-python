@@ -104,6 +104,8 @@ class Validator(ProcessorBase):
                                  "IssuesFound [" + str(issuesFound) + "]")
             if not self.readOnly:
                 self.session.commit()
+            else:
+                self.session.rollback()
         except:
             self.logger.exception("Validating Artist, Rolling Back Session Transactions")
             self.session.rollback()

@@ -79,9 +79,12 @@ def formatTimeMilliseconds(value, time_format="{days} days, {hours2}:{minutes2}:
 def isEqual(s1, s2):
     """ Method that takes two strings and returns True or False, based
         on if they are equal, regardless of case."""
-    c1 = s1 or ''
-    c2 = s2 or ''
-    return str(c1).lower().strip() == str(c2).lower().strip()
+    try:
+        c1 = s1 or ''
+        c2 = s2 or ''
+        return str(c1).lower().strip() == str(c2).lower().strip()
+    except:
+        return False
 
 
 def isInList(list, s1):

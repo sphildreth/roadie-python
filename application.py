@@ -5,9 +5,7 @@ import random
 import zipfile
 import uuid
 from time import time
-
 from re import findall
-
 from urllib.parse import urlparse, urljoin
 
 from PIL import Image as PILImage
@@ -15,22 +13,19 @@ from flask import Flask, jsonify, render_template, send_file, Response, request,
     flash, url_for, redirect, g
 import flask_admin as admin
 from flask_restful import Api
-from flask_session import Session as FlaskSession
 from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
 from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from werkzeug.datastructures import Headers
-
-#from sqlalchemy.orm import sessionmaker
-#from sqlalchemy.ext.declarative import declarative_base
-#from sqlalchemy import create_engine, Integer, desc, String, update
-
 from flask_sqlalchemy import SQLAlchemy
-
-from sqlalchemy import Integer, desc, String, update
+from sqlalchemy import Integer, desc, String
 from sqlalchemy.sql import text, func
+from flask_login import LoginManager, login_user, logout_user, \
+    current_user, login_required
+from flask_bcrypt import Bcrypt
 
+from flask_session import Session as FlaskSession
 from importers.collectionImporter import CollectionImporter
 from resources.common import *
 from resources.models.Artist import Artist
@@ -56,9 +51,6 @@ from resources.logger import Logger
 from resources.id3 import ID3
 from resources.m3u import M3U
 from resources.validator import Validator
-from flask_login import LoginManager, login_user, logout_user, \
-    current_user, login_required
-from flask_bcrypt import Bcrypt
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
@@ -92,13 +84,6 @@ app.config.update(config)
 
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
-
-# engine = create_engine(config['ROADIE_DATABASE_URL'])
-# conn = engine.connect()
-# Base = declarative_base()
-# Base.metadata.bind = engine
-# DBSession = sessionmaker(bind=engine)
-# dbSession = DBSession()
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config['ROADIE_DATABASE_URL']
 sa = SQLAlchemy(app)
@@ -367,12 +352,13 @@ def artistDetail(artist_id):
         "SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "	JOIN `release` r ON r.id = rm.releaseId"
+        "   WHERE t.fileName IS NOT NULL  " +
         "	GROUP BY r.artistId " +
         ") AS ts ON ts.artistId = a.id " +
         "JOIN `release` r ON r.artistId = a.id " +
         "JOIN `releasemedia` rm ON rm.releaseId = r.id " +
-        "WHERE a.roadieId = '" + artist_id + "'", autocommit=True)
+        "WHERE a.roadieId = '" + artist_id + "';", autocommit=True)
                                    .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
                                             releaseTrackTime=Integer, releaseTrackFileSize=Integer)) \
         .fetchone()

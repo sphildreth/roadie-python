@@ -16,10 +16,11 @@ class Scanner(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly):
         self.config = config
         self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
+        self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn
-        self.session = dbSession
+        self.dbSession = dbSession
 
     @staticmethod
     def inboundMp3Files(folder):
@@ -66,7 +67,7 @@ class Scanner(ProcessorBase):
         self.logger.info("-> Scanning Folder [" + folder + "]")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
-            for track in self.session.query(Track).filter(Track.filePath == folder).all():
+            for track in self.dbSession.query(Track).filter(Track.filePath == folder).all():
                 filename = track.fullPath()
                 # File no longer exists for track
                 if not os.path.isfile(filename):
@@ -98,7 +99,6 @@ class Scanner(ProcessorBase):
         createdReleaseTracks = 0
         scannedMp3Files = 0
         releaseMediaTrackCount = 0
-        releaseMedia = None
         for mp3 in self.inboundMp3Files(folder):
             id3 = ID3(mp3)
             if id3 is not None:
@@ -111,43 +111,35 @@ class Scanner(ProcessorBase):
                     headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
                     trackHash = self._makeTrackHash(artist.roadieId, str(id3))
                     track = None
+                    mp3FileSize = os.path.getsize(mp3)
+                    id3MediaNumber = id3.disc
+                    # The first media is release 1 not release 0
+                    if id3MediaNumber < 1:
+                        id3MediaNumber = 1
+                    releaseMedia = None
                     for releaseMediaFind in release.media:
-                        for releaseTrack in releaseMediaFind.tracks:
-                            if isEqual(str(releaseTrack.trackNumber), str(id3.track)) or isEqual(trackHash,
-                                                                                                 releaseTrack.hash):
-                                track = releaseTrack
-                                releaseMediaTrackCount = releaseMediaFind.trackCount
+                        if releaseMediaFind.releaseMediaNumber == id3MediaNumber:
+                            releaseMedia = releaseMediaFind
+                            for releaseTrack in releaseMediaFind.tracks:
+                                if isEqual(releaseTrack.trackNumber, id3.track) or isEqual(releaseTrack.hash, trackHash):
+                                    track = releaseTrack
+                                    releaseMediaTrackCount = releaseMediaFind.trackCount
+                                    break
+                                else:
+                                    continue
                                 break
                             else:
                                 continue
                             break
-                        else:
-                            continue
-                        break
-                    mp3FileSize = os.path.getsize(mp3)
-                    releaseMediaNumber = id3.disc
-                    # The first media is release 1 not release 0
-                    if releaseMediaNumber < 1:
-                        releaseMediaNumber = 1
-                    if releaseMedia and releaseMedia.releaseMediaNumber != releaseMediaNumber:
-                        releaseMedia = None
-                    if not releaseMedia:
-                        firstReleaseMedia = None
-                        for rm in release.media:
-                            firstReleaseMedia = firstReleaseMedia or rm
-                            if rm.releaseMediaNumber == releaseMediaNumber:
-                                releaseMedia = rm
-                                break
-                    if not releaseMedia:
-                        releaseMedia = firstReleaseMedia
                     if not track:
                         createdReleaseTracks += 1
+                        self.dbSession.query(Track).filter(Track.hash == trackHash).delete(synchronize_session=False)
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()
                             releaseMedia.tracks = []
                             releaseMedia.status = 1
                             releaseMedia.trackCount = 1
-                            releaseMedia.releaseMediaNumber = releaseMediaNumber
+                            releaseMedia.releaseMediaNumber = id3MediaNumber
                             releaseMedia.roadieId = str(uuid.uuid4())
                             if not release.media:
                                 release.media = []
@@ -177,8 +169,15 @@ class Scanner(ProcessorBase):
 
                     elif not self.readOnly:
                         foundReleaseTracks += 1
-                        if track.fileName != tail or track.filePath != headNoLibrary or \
-                                        track.fileSize != mp3FileSize or track.hash != trackHash:
+                        try:
+                            trackFullPath = os.path.join(self.libraryFolder, track.fullPath())
+                            isFilePathSame = os.path.samefile(trackFullPath, mp3)
+                        except:
+                            trackFullPath = None
+                            isFilePathSame = False
+                        isFileSizeSame = isEqual(track.fileSize, mp3FileSize)
+                        isHashSame = isEqual(track.hash, trackHash)
+                        if not isFilePathSame or not isFileSizeSame or not isHashSame:
                             track.fileName = tail
                             track.filePath = headNoLibrary
                             track.fileSize = mp3FileSize
@@ -188,7 +187,13 @@ class Scanner(ProcessorBase):
                                 track.alternateNames = []
                             if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
                                 track.alternateNames.append(cleanedTitle)
-                            self.logger.info("* Updated Track [" + str(track.info()) + "]")
+                            self.logger.info("* Updated Track [" + str(track.info()) + "]: " +
+                                             "isFilePathSame [" + str(
+                                isFilePathSame) + "] (" + str(trackFullPath) + ":" + str(mp3) + ") " +
+                                             "isFileSizeSame [" + str(
+                                isFileSizeSame) + "] (" + str(track.fileSize) + ":" + str(mp3FileSize) + ") " +
+                                             "isHashSame [" + str(
+                                isHashSame) + "] (" + str(track.hash) + ":" + str(trackHash) + ") ")
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
@@ -201,9 +206,9 @@ class Scanner(ProcessorBase):
             release.libraryStatus = 'Incomplete'
 
         self.logger.info("<- Scanning Folder [" + str(folder.encode('utf-8')) + "] " +
-                          "Complete, Scanned [" + ('%02d' % scannedMp3Files) + "] " +
-                          "Mp3 Files: Created [" + str(createdReleaseTracks) + "] Release Tracks, " +
-                          "Found [" + str(foundReleaseTracks) + "] Release Tracks. " +
-                          "Sane Counts [" + str(matches) + "] " +
-                          "Elapsed Time [" + str(elapsedTime) + "]")
+                         "Complete, Scanned [" + ('%02d' % scannedMp3Files) + "] " +
+                         "Mp3 Files: Created [" + str(createdReleaseTracks) + "] Release Tracks, " +
+                         "Found [" + str(foundReleaseTracks) + "] Release Tracks. " +
+                         "Sane Counts [" + str(matches) + "] " +
+                         "Elapsed Time [" + str(elapsedTime) + "]")
         return foundGoodMp3s

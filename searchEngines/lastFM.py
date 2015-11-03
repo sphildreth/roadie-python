@@ -19,7 +19,7 @@ class LastFM(SearchEngineBase):
     API_KEY = "a31dd32179375f9e332b89f8b9e38fc5"
     API_SECRET = "35b3684601b2ecf9c0c0c1cfda28159e"
 
-    IsActive = False
+    IsActive = True
 
     threadDataType = "lastFm"
     lock = threading.Lock()

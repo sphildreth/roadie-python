@@ -11,7 +11,6 @@ from searchEngines.models.Image import Image
 from searchEngines.models.Release import Release
 
 
-
 class iTunes(SearchEngineBase):
     IsActive = True
 
@@ -125,6 +124,3 @@ class iTunes(SearchEngineBase):
 # artist = s.lookupArtist("Iron Maiden")
 # release = s.searchForRelease(artist, "A Matter Of Life And Death")
 # uprint(release.info())
-
-
-

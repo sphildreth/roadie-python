@@ -72,6 +72,8 @@ class Track(Base):
         #         for key, val in rpl.items():
         #             path = path.replace(key, val)
         # return path
+        if not self.filePath or not self.fileName:
+            return None
         return os.path.join(self.filePath, self.fileName)
 
 
