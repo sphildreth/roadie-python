@@ -64,7 +64,8 @@ class Scanner(ProcessorBase):
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
         startTime = arrow.utcnow().datetime
-        self.logger.info("-> Scanning Folder [" + folder + "]")
+        self.logger.info("-> Scanning Folder [" + folder + "] " +
+                         "Artist Folder [" + self.artistFolder(artist) + "] ")
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             for track in self.dbSession.query(Track).filter(Track.filePath == folder).all():
@@ -121,7 +122,8 @@ class Scanner(ProcessorBase):
                         if releaseMediaFind.releaseMediaNumber == id3MediaNumber:
                             releaseMedia = releaseMediaFind
                             for releaseTrack in releaseMediaFind.tracks:
-                                if isEqual(releaseTrack.trackNumber, id3.track) or isEqual(releaseTrack.hash, trackHash):
+                                if isEqual(releaseTrack.trackNumber, id3.track) or isEqual(releaseTrack.hash,
+                                                                                           trackHash):
                                     track = releaseTrack
                                     releaseMediaTrackCount = releaseMediaFind.trackCount
                                     break
@@ -131,9 +133,11 @@ class Scanner(ProcessorBase):
                             else:
                                 continue
                             break
+                    self.dbSession.query(Track).filter(
+                        Track.hash == trackHash and Track.releaseMediaId != releaseMedia.id).delete(
+                        synchronize_session=False)
                     if not track:
                         createdReleaseTracks += 1
-                        self.dbSession.query(Track).filter(Track.hash == trackHash).delete(synchronize_session=False)
                         if not releaseMedia:
                             releaseMedia = ReleaseMedia()
                             releaseMedia.tracks = []

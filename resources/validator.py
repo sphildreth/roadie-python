@@ -88,4 +88,7 @@ class Validator(ProcessorBase):
                 self.session.rollback()
         except:
             self.logger.exception("Validating Artist, Rolling Back Session Transactions")
-            self.session.rollback()
+            try:
+                self.session.rollback()
+            except:
+                pass

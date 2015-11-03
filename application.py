@@ -561,7 +561,7 @@ def rescanArtist(artist_id):
         # Update Database with folders found in Library
         processor = Processor(config, conn, dbSession, False, True)
         artistFolder = processor.artistFolder(artist)
-        processor.process(folder=artistFolder)
+        processor.process(folder=artistFolder, forceFolderScan=True)
         validator = Validator(config, conn, dbSession, False)
         validator.validate(artist)
         return jsonify(message="OK")
@@ -583,7 +583,7 @@ def rescanRelease(release_id):
         releaseFolder = processor.albumFolder(rescanReleaseRelease.artist,
                                               rescanReleaseRelease.releaseDate.strftime('%Y'),
                                               rescanReleaseRelease.title)
-        processor.process(folder=releaseFolder, isReleaseFolder=True)
+        processor.process(folder=releaseFolder, isReleaseFolder=True, forceFolderScan=True)
         validator = Validator(config, conn, dbSession, False)
         validator.validate(rescanReleaseRelease.artist, rescanReleaseRelease)
         return jsonify(message="OK")
@@ -936,7 +936,10 @@ def streamTrack(user_id, track_id):
         track_id = track_id[:-4]
     track = getTrack(track_id)
     if not track or not track.filePath or not track.fileName:
-        logger.warn("Stream Request Not Found. Track Id [" + str(track_id) + "], Full Path [" + track.fullPath() if track else "" + "]")
+        fullPath = None
+        if track:
+            fullPath = track.fullPath()
+        logger.warn("Stream Request Not Found. Track Id [" + str(track_id) + "], Full Path [" + str(fullPath) + "]")
         return render_template('404.html'), 404
     track.playedCount += 1
     dbSession.commit()

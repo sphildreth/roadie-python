@@ -1,8 +1,10 @@
 import io
+import hashlib
 import os
 import random
 import shutil
 import string
+import sqlite3
 
 import hashlib
 from shutil import move
@@ -47,6 +49,31 @@ class Processor(ProcessorBase):
         self.flushBefore = flushBefore
         self.artistFactory = ArtistFactory(dbConn, dbSession)
         self.releaseFactory = ReleaseFactory(dbConn, dbSession)
+        self.folderDB = sqlite3.connect("processorFolder.db")
+        self.folderDB.execute("CREATE TABLE IF NOT EXISTS `folder` (namehash text, mtime real);")
+        self.folderDB.execute("CREATE INDEX IF NOT EXISTS `idx_folder_namehash` on `folder`(namehash);")
+        self.folderDB.commit()
+
+    def _doProcessFolder(self, name, mtime, forceFolderScan):
+        try:
+            nameHash = hashlib.md5(name.encode('utf-8')).hexdigest()
+            folderDbRecord = self.folderDB.execute(
+                "SELECT * FROM `folder` WHERE namehash='" + nameHash + "';").fetchone()
+            if not folderDbRecord:
+                self.folderDB.execute("INSERT INTO `folder` VALUES ('" + nameHash + "', " + str(mtime) + ");")
+                self.folderDB.commit()
+                return True
+            if forceFolderScan:
+                if folderDbRecord:
+                    self.folderDB.execute(
+                        "UPDATE `folder` SET mtime = " + str(mtime) + " WHERE namehash = '" + nameHash + "';")
+                else:
+                    self.folderDB.execute("INSERT INTO `folder` VALUES ('" + nameHash + "', " + str(mtime) + ");")
+                self.folderDB.commit()
+                return True
+            return folderDbRecord[1] != mtime
+        except:
+            return True
 
     def releaseCoverImages(self, folder):
         try:
@@ -145,6 +172,7 @@ class Processor(ProcessorBase):
         """
         try:
             inboundFolder = kwargs.pop('folder', self.InboundFolder)
+            forceFolderScan = kwargs.pop('forceFolderScan', False)
             isReleaseFolder = kwargs.pop('isReleaseFolder', False)
             self.logger.info("Processing Folder [" + inboundFolder + "] Flush [" + str(self.flushBefore) + "]")
             scanner = Scanner(self.config, self.conn, self.session, self.readOnly)
@@ -158,6 +186,11 @@ class Processor(ProcessorBase):
             # Get all the folder in the InboundFolder
             for mp3Folder in self.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
                 try:
+                    mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(mp3Folder))
+                    if not self._doProcessFolder(mp3Folder, mp3FolderMtime, forceFolderScan):
+                        self.logger.info("Skipping Folder [" + mp3Folder + "] No Changes Detected")
+                        continue
+
                     foundMp3Files = 0
 
                     # Do any conversions
@@ -247,13 +280,15 @@ class Processor(ProcessorBase):
                                                         pass
                                                 release.status = 1
                                                 self.releaseFactory.add(release)
-                                                self.logger.info("+ Processor Added Release [" + str(release.info()) + "]")
+                                                self.logger.info(
+                                                    "+ Processor Added Release [" + str(release.info()) + "]")
                                                 self.session.commit()
                                     if self.shouldMoveToLibrary(artist, id3, mp3):
                                         newMp3 = self.moveToLibrary(artist, id3, mp3)
                                         head, tail = os.path.split(newMp3)
                                         newMp3Folder = head
                     if artist and release:
+                        releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
                         if newMp3Folder and newMp3Folder not in mp3FoldersProcessed:
                             for coverImage in self.releaseCoverImages(mp3Folder):
                                 try:
@@ -262,14 +297,14 @@ class Processor(ProcessorBase):
                                     if (not os.path.isfile(newPath) or not os.path.samefile(coverImage,
                                                                                             newPath)) and not self.readOnly:
                                         im.save(newPath)
-                                        self.logger.info("+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
+                                        self.logger.info(
+                                            "+ Copied Cover File [" + coverImage + "] => [" + newPath + "]")
                                 except:
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
-                            scanner.scan(newMp3Folder, artist, release)
                             mp3FoldersProcessed.append(newMp3Folder)
-                        elif mp3Folder not in mp3FoldersProcessed:
-                            scanner.scan(mp3Folder, artist, release)
+                        if releaseFolder not in mp3FoldersProcessed:
+                            scanner.scan(releaseFolder, artist, release)
                             mp3FoldersProcessed.append(mp3Folder)
                         if release.status == 1:
                             # Sync  the counts as some releases where added by the processor

@@ -6,10 +6,10 @@
     <div class="stats-container">
         <div class="row counts-header">
             <div class="release-counts-container pull-right">
-                <span class="label-count">Labels: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Labels in Library">{{ counts.labelCount }}</span></span>
-                <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Artists in Library">{{ counts.artistCount }}</span></span>
-                <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Library">{{ counts.releaseCount }}</span></span>
-                <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Tracks in Library">{{ counts.trackCount }}</span></span>
+                <span class="label-count">Labels: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Labels in Library">{{ "{:,d}".format(counts.labelCount) }}</span></span>
+                <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Artists in Library">{{ "{:,d}".format(counts.artistCount) }}</span></span>
+                <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Library">{{ "{:,d}".format(counts.releaseCount) }}</span></span>
+                <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Tracks in Library">{{ "{:,d}".format(counts.trackCount) }}</span></span>
                 <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Library">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
                 <span class="filesize-total">Library Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Library">{{ formattedLibrarySize }}</span></span>
             </div>

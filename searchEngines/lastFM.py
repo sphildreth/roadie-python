@@ -119,10 +119,10 @@ class LastFM(SearchEngineBase):
                 t.start()
 
             for musicBrainzId in mbIdList:
-                url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
-                self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
-
-                self.que.put(ThreadData(self.threadDataType, url))
+                if musicBrainzId:
+                    url = self.baseUrl + "album.getInfo&mbid=" + musicBrainzId
+                    self.logger.debug("Performing LastFM Lookup For Album MbId [" + musicBrainzId + "]")
+                    self.que.put(ThreadData(self.threadDataType, url))
 
             self.que.join()
             self.cache[cacheKey] = self.artistReleasesThreaded
