@@ -326,7 +326,7 @@ def randomizer(random_type):
         return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
-        for track in dbSession.query(Track).order_by(func.random()).limit(35):
+        for track in dbSession.query(Track).filter(Track.filePath is not None and Track.fileName is not None).order_by(func.random()).limit(35):
             t = M3U.makeTrackInfo(user, track.releasemedia.release, track)
             if t:
                 tracks.append(t)
@@ -828,7 +828,8 @@ def playArtist(artist_id, doShuffle):
     for playArtistReleaseToDelete in artist.releases:
         for media in playArtistReleaseToDelete.media:
             for track in sorted(media.tracks, key=lambda tt: (media.releaseMediaNumber, tt.trackNumber)):
-                tracks.append(M3U.makeTrackInfo(user, playArtistReleaseToDelete, track))
+                if track.fileName and track.filePath:
+                    tracks.append(M3U.makeTrackInfo(user, playArtistReleaseToDelete, track))
     if doShuffle == "1":
         random.shuffle(tracks)
     if user.doUseHtmlPlayer:
@@ -935,6 +936,7 @@ def streamTrack(user_id, track_id):
         track_id = track_id[:-4]
     track = getTrack(track_id)
     if not track or not track.filePath or not track.fileName:
+        logger.warn("Stream Request Not Found. Track Id [" + str(track_id) + "], Full Path [" + track.fullPath() if track else "" + "]")
         return render_template('404.html'), 404
     track.playedCount += 1
     dbSession.commit()
@@ -985,7 +987,7 @@ def streamTrack(user_id, track_id):
             dbSession.commit()
             try:
                 if clients:
-                    data = jsonifys({'message': "OK",
+                    wsData = json.dumps({'message': "OK",
                                         'lastPlayedInfo': {
                                             'TrackId': str(track.roadieId),
                                             'TrackTitle': track.title,
@@ -1005,7 +1007,7 @@ def streamTrack(user_id, track_id):
                                         }})
 
                     for client in clients:
-                        client.write_message(data)
+                        client.write_message(wsData)
             except:
                 pass
     with open(mp3File, 'rb') as f:
@@ -1230,7 +1232,7 @@ def findImageForType(type, type_id):
         if it:
             for i in it:
                 data.append(i)
-        return Response(jsonifys({'message': "OK", 'query': query, 'data': data}, default=jdefault),
+        return Response(jsonify({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
         return jsonify(message="ERROR")
