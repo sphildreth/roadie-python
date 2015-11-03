@@ -37,5 +37,5 @@ pp = Processor(config, conn, session, args.readOnly, args.dontDeleteInboundFolde
 pp.process()
 
 if not args.dontValidate:
-    validator = Validator(False)
+    validator = Validator(config, conn, session, False)
     validator.validateArtists()

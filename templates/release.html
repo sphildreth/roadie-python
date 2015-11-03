@@ -201,18 +201,14 @@
                 <div>
                     {% if release.genres %}
                     <h4><span class="label label-primary">Genres</span></h4>
-                    <input type="text" disabled data-tokens="{{ release.genres|sort(attribute='name')|join(',', attribute='name')}}" class="form-control tokenfield-readonly" id="genreTokenfield" value="{{ release.genres|sort(attribute='name')|join(',', attribute='name') }}" />
+                    <input type="text" disabled class="form-control tokenfield-readonly" id="genreTokenfield" value="{{ release.genres|sort(attribute='name')|join(',', attribute='name') }}" />
                     {% endif %}
                 </div>
             </div>
             {% if release.tags %}
             <div class="col-md-3">
                 <h4><span class="label label-primary">Tags</span></h4>
-                <ul>
-                    {% for tag in release.tags %}
-                    <li><span class="label label-default">{{ tag }}</span></li>
-                    {% endfor %}
-                </ul>
+                <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield" value="{{ release.tags|sort|join(',') }}" />
             </div>
             {% endif %}
             <div class="col-md-3">

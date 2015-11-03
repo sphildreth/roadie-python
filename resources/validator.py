@@ -1,29 +1,7 @@
 import os
-import json
-import hashlib
-import random
-import uuid
-import arrow
-
-from sqlalchemy.sql import func, and_, or_, text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, update
 
 from resources.common import *
 from resources.models.Artist import Artist
-from resources.models.Genre import Genre
-from resources.models.Image import Image
-from resources.models.Label import Label
-from resources.models.Release import Release
-from resources.models.ReleaseLabel import ReleaseLabel
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
-
-from factories.artistFactory import ArtistFactory
-from factories.releaseFactory import ReleaseFactory
-
-from resources.id3 import ID3
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 
@@ -97,7 +75,9 @@ class Validator(ProcessorBase):
                         releaseMedia.trackCount = releaseMediaTrackCount
                 if not self.readOnly:
                     release.mediaCount = releaseMediaCount
-                    release.trackCount = releaseTrackCount
+                    # Seems not likely that a release only has a single track; more likely missing unknown tracks
+                    if releaseTrackCount > 1:
+                        release.trackCount = releaseTrackCount
                     release.lastUpdated = arrow.utcnow().datetime
                 self.logger.info("Validated Artist [" + str(artist) + "], " +
                                  "Release [" + str(release) + "], " +

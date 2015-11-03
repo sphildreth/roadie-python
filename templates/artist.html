@@ -175,11 +175,7 @@
             <div class="col-md-4">
                 {% if artist.tags %}
                 <h4><span class="label label-primary">Tags</span></h4>
-                <ul>
-                    {% for tag in artist.tags|sort %}
-                    <li><span class="label label-default">{{ tag }}</span></li>
-                    {% endfor %}
-                </ul>
+                <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield" value="{{ artist.tags|sort|join(',') }}" />
                 {% endif %}
             </div>
             <div class="col-md-4">
@@ -276,6 +272,8 @@
         };
 
         $(function() {
+
+            $(".tokenfield-readonly").tokenfield();
 
             doArtistSanityChecks();
 

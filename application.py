@@ -1,9 +1,10 @@
 import os
+import simplejson as json
 import hashlib
-import json
 import random
 import zipfile
 import uuid
+from math import floor
 from time import time
 from re import findall
 from urllib.parse import urlparse, urljoin
@@ -174,7 +175,7 @@ def getUserReleaseRating(releaseId):
     if not userRelease:
         userRelease = UserRelease()
         userRelease.roadieId = str(uuid.uuid4())
-        userRelease.releaseId = release.id
+        userRelease.releaseId = releaseId
         userRelease.userId = user.id
         dbSession.add(userRelease)
     return userRelease
@@ -269,9 +270,11 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
         return jsonify(message="ERROR")
     oldTitle = setReleaseTitleRelease.title
     setReleaseTitleRelease.title = new_title
-    setReleaseTitleRelease.lastUpdated = now
-    if create_alternate_name == "true" and new_title not in setReleaseTitleRelease.alternateNames:
+    if not setReleaseTitleRelease.alternateNames:
+        setReleaseTitleRelease.alternateNames = []
+    if create_alternate_name == "true" and oldTitle not in setReleaseTitleRelease.alternateNames:
         setReleaseTitleRelease.alternateNames.append(oldTitle)
+    setReleaseTitleRelease.lastUpdated = now
     dbSession.commit()
     if set_tracks_title == "true":
         for media in setReleaseTitleRelease.media:
@@ -374,7 +377,7 @@ def artistDetail(artist_id):
         .fetchone()
     counts = {'tracks': artistSummaries[2], 'releaseMedia': artistSummaries[0], 'releases': artistSummaries[1],
               'length': formatTimeMillisecondsNoDays(artistSummaries[3]), 'fileSize': sizeof_fmt(artistSummaries[4]),
-              'missingTrackCount': artistSummaries[5] }
+              'missingTrackCount': artistSummaries[5]}
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
@@ -492,13 +495,13 @@ def setUserReleaseRating(release_id, rating):
         dbSession.commit()
         releaseAverage = dbSession.query(func.avg(UserRelease.rating)). \
             filter(UserRelease.releaseId == settUserReleaseRatingRelease.id).scalar()
-        settUserReleaseRatingRelease.rating = releaseAverage
+        settUserReleaseRatingRelease.rating = int(floor(releaseAverage))
         settUserReleaseRatingRelease.lastUpdated = now
         dbSession.commit()
         return jsonify(message="OK", average=releaseAverage)
     except:
         logger.exception("Error Settings Release Rating")
-        return jsonify(message="ERROR")
+        return jsonify({'message': "ERROR"})
 
 
 @app.route("/user/release/toggledislike/<release_id>/<toggle>", methods=['POST'])
@@ -788,6 +791,7 @@ def setReleaseImage(release_id, image_id):
 @login_required
 def release(roadieId):
     indexRelease = getRelease(roadieId)
+    user = getUser()
     if not indexRelease:
         return render_template('404.html'), 404
     releaseSummaries = conn.execute(text(
@@ -803,10 +807,11 @@ def release(roadieId):
                                     .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
                                              releaseTrackFileSize=Integer)) \
         .fetchone()
+    userRelease = [x for x in indexRelease.userRatings if x.userId == user.id]
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
-                           userRelease=indexRelease.userRatings, trackCount=releaseSummaries[0],
+                           userRelease= userRelease[0] if userRelease else None, trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
@@ -980,24 +985,24 @@ def streamTrack(user_id, track_id):
             dbSession.commit()
             try:
                 if clients:
-                    data = json.dumps({'message': "OK",
-                                       'lastPlayedInfo': {
-                                           'TrackId': str(track.roadieId),
-                                           'TrackTitle': track.title,
-                                           'ReleaseId': str(track.releasemedia.release.roadieId),
-                                           'ReleaseTitle': track.releasemedia.release.title,
-                                           'ReleaseThumbnail': "/images/release/thumbnail/" + str(
-                                               track.releasemedia.release.roadieId),
-                                           'ArtistId': str(track.releasemedia.release.artist.roadieId),
-                                           'ArtistName': track.releasemedia.release.artist.name,
-                                           'ArtistThumbnail': "/images/artist/thumbnail/" + str(
-                                               track.releasemedia.release.artist.roadieId),
-                                           'UserId': str(user.roadieId),
-                                           'Username': user.username,
-                                           'UserThumbnail': "/images/user/avatar/" + str(user.roadieId),
-                                           'UserRating': userRating.rating,
-                                           'LastPlayed': arrow.get(now).humanize()
-                                       }})
+                    data = jsonifys({'message': "OK",
+                                        'lastPlayedInfo': {
+                                            'TrackId': str(track.roadieId),
+                                            'TrackTitle': track.title,
+                                            'ReleaseId': str(track.releasemedia.release.roadieId),
+                                            'ReleaseTitle': track.releasemedia.release.title,
+                                            'ReleaseThumbnail': "/images/release/thumbnail/" + str(
+                                                track.releasemedia.release.roadieId),
+                                            'ArtistId': str(track.releasemedia.release.artist.roadieId),
+                                            'ArtistName': track.releasemedia.release.artist.name,
+                                            'ArtistThumbnail': "/images/artist/thumbnail/" + str(
+                                                track.releasemedia.release.artist.roadieId),
+                                            'UserId': str(user.roadieId),
+                                            'Username': user.username,
+                                            'UserThumbnail': "/images/user/avatar/" + str(user.roadieId),
+                                            'UserRating': userRating.rating,
+                                            'LastPlayed': arrow.get(now).humanize()
+                                        }})
 
                     for client in clients:
                         client.write_message(data)
@@ -1068,9 +1073,11 @@ def stats():
         "LIMIT 10;", autocommit=True)
                                       .columns(roadieId=String, name=String, count=Integer))
 
-    topRatedReleases = dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title).limit(10)
+    topRatedReleases = dbSession.query(Release).filter(Release.rating > 0).order_by(desc(Release.rating)).order_by(
+        Release.title).limit(10)
 
-    topRatedTracks = dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title).limit(25)
+    topRatedTracks = dbSession.query(Track).filter(Track.rating > 0).order_by(desc(Track.rating)).order_by(
+        Track.title).limit(25)
 
     mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title).limit(25)
 
@@ -1223,7 +1230,7 @@ def findImageForType(type, type_id):
         if it:
             for i in it:
                 data.append(i)
-        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
+        return Response(jsonifys({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
         return jsonify(message="ERROR")
