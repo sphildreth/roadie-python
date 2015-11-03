@@ -641,3 +641,7 @@ form.profile input {
 .label-as-badge {
     border-radius: 1em;
 }
+
+body.roadie .tokenfield {
+    background-color: #272b30;
+}

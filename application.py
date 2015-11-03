@@ -357,7 +357,7 @@ def artistDetail(artist_id):
         "   WHERE t.fileName IS NOT NULL " +
         "	GROUP BY r.artistId " +
         ") AS ts ON ts.artistId = a.id " +
-        "INNER JOIN " +
+        "LEFT JOIN " +
         "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +

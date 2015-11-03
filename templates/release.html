@@ -201,11 +201,7 @@
                 <div>
                     {% if release.genres %}
                     <h4><span class="label label-primary">Genres</span></h4>
-                    <ul>
-                        {% for genre in release.genres %}
-                        <li><span class="label label-default">{{ genre.name }}</span></li>
-                        {% endfor %}
-                    </ul>
+                    <input type="text" disabled data-tokens="{{ release.genres|sort(attribute='name')|join(',', attribute='name')}}" class="form-control tokenfield-readonly" id="genreTokenfield" value="{{ release.genres|sort(attribute='name')|join(',', attribute='name') }}" />
                     {% endif %}
                 </div>
             </div>
@@ -477,6 +473,8 @@
     };
 
     $(function() {
+
+        $(".tokenfield-readonly").tokenfield();
 
         doReleaseSanityChecks();
 
