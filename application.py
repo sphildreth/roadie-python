@@ -23,6 +23,7 @@ from sqlalchemy import Integer, desc, String
 from sqlalchemy.sql import text, func
 from flask_login import LoginManager, login_user, logout_user, \
     current_user, login_required
+
 from flask_bcrypt import Bcrypt
 
 from flask_session import Session as FlaskSession
@@ -95,7 +96,6 @@ bcrypt = Bcrypt()
 api = Api(app)
 
 FlaskSession(app)
-
 
 
 def getUser(userId=None):
@@ -193,6 +193,7 @@ def pathToTrack(track):
 def before_request():
     g.siteName = siteName
     g.user = current_user
+
 
 # @app.teardown_appcontext
 # def shutdown_session(exception=None):
@@ -344,26 +345,36 @@ def artistDetail(artist_id):
     userArtist = dbSession.query(UserArtist).filter(UserArtist.userId == user.id).filter(
         UserArtist.artistId == artist.id).first()
     artistSummaries = conn.execute(text(
-        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
-        "ts.trackCount, ts.duration, ts.size " +
+        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount," +
+        "ts.trackCount, ts.duration, ts.size, mts.trackCount as missingTracks " +
         "FROM `artist` a " +
         "INNER JOIN " +
         "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
         "SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId"
-        "   WHERE t.fileName IS NOT NULL  " +
+        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "   WHERE t.fileName IS NOT NULL " +
         "	GROUP BY r.artistId " +
         ") AS ts ON ts.artistId = a.id " +
+        "INNER JOIN " +
+        "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
+        "	FROM `track` t " +
+        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "   WHERE t.fileName IS NULL " +
+        "	GROUP BY r.artistId " +
+        ") AS mts ON mts.artistId = a.id " +
         "JOIN `release` r ON r.artistId = a.id " +
         "JOIN `releasemedia` rm ON rm.releaseId = r.id " +
         "WHERE a.roadieId = '" + artist_id + "';", autocommit=True)
                                    .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
-                                            releaseTrackTime=Integer, releaseTrackFileSize=Integer)) \
+                                            releaseTrackTime=Integer, releaseTrackFileSize=Integer,
+                                            missingTrackCount=Integer)) \
         .fetchone()
     counts = {'tracks': artistSummaries[2], 'releaseMedia': artistSummaries[0], 'releases': artistSummaries[1],
-              'length': formatTimeMillisecondsNoDays(artistSummaries[3]), 'fileSize': sizeof_fmt(artistSummaries[4])}
+              'length': formatTimeMillisecondsNoDays(artistSummaries[3]), 'fileSize': sizeof_fmt(artistSummaries[4]),
+              'missingTrackCount': artistSummaries[5] }
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
@@ -788,7 +799,7 @@ def release(roadieId):
         "join `releasemedia` rm on t.releaseMediaId = rm.id "
         "join `release` r on rm.releaseId = r.id "
         "where r.roadieId = '" + roadieId + "' "
-        "and t.fileName is not null;", autocommit=True)
+                                            "and t.fileName is not null;", autocommit=True)
                                     .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
                                              releaseTrackFileSize=Integer)) \
         .fetchone()

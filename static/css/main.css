@@ -638,3 +638,6 @@ form.profile input {
     width: 22%
 }
 
+.label-as-badge {
+    border-radius: 1em;
+}
