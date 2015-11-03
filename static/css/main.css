@@ -645,3 +645,15 @@ form.profile input {
 body.roadie .tokenfield {
     background-color: #272b30;
 }
+
+body.roadie .tokenfield .token-label {
+    color: #ffffff;
+    background-color: #3a3f44;
+}
+
+body.roadie .tokenfield.disabled .token-label {
+    padding-right: 6px;
+}
+body.roadie .tokenfield.disabled a.close {
+    display: none;
+}
