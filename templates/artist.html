@@ -65,10 +65,12 @@
         </div>
         <div class="row bordered">
             <div class="col-md-6">
+                {% if artist.profile %}
                 <div>
                     <h4><span class="label label-primary">Profile</span></h4>
                     <p>{{ artist.profile|safe }}</p>
                 </div>
+                {% endif %}
                 <div>
                     <h4><span class="label label-primary">Bio</span></h4>
                     <p>{{ artist.bioContext|safe }}</p>

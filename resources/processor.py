@@ -255,7 +255,7 @@ class Processor(ProcessorBase):
                                         if release:
                                             # Was found now see if needs update based on id3 tag info
                                             id3ReleaseDate = parseDate(id3.year)
-                                            if not release.releaseDate == parseDate(id3ReleaseDate):
+                                            if not release.releaseDate == id3ReleaseDate and id3ReleaseDate:
                                                 release.releaseDate = id3ReleaseDate
                                         else:
                                             # Was not found in any Searcher create and add
@@ -288,6 +288,22 @@ class Processor(ProcessorBase):
                                         head, tail = os.path.split(newMp3)
                                         newMp3Folder = head
                     if artist and release:
+                        if not release.releaseDate and release.media:
+                            for media in release.media:
+                                if media.tracks:
+                                    for track in media.tracks:
+                                        if track.filePath:
+                                            release.releaseDate = parseDate(track.filePath.split('\\')[1][1:5])
+                                            break
+                                        else:
+                                            continue
+                                        break
+                                    else:
+                                        continue
+                                    break
+                            else:
+                                continue
+                            break
                         releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
                         if newMp3Folder and newMp3Folder not in mp3FoldersProcessed:
                             for coverImage in self.releaseCoverImages(mp3Folder):

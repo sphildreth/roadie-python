@@ -133,9 +133,17 @@ class Scanner(ProcessorBase):
                             else:
                                 continue
                             break
-                    self.dbSession.query(Track).filter(
-                        Track.hash == trackHash and Track.releaseMediaId != releaseMedia.id).delete(
-                        synchronize_session=False)
+                    if not track:
+                        # If the track isn't found on the release media see if it exists on another and move it
+                        existingTrackByHash = self.dbSession.query(Track).filter(Track.hash == trackHash).first()
+                        if existingTrackByHash:
+                            track = existingTrackByHash
+                            if releaseMedia:
+                                oldMediaId = track.releaseMediaId
+                                track.releaseMediaId = releaseMedia.id
+                                self.logger.warn("=> Moved Track Id [" + str(track.id) + "] " +
+                                                 "to ReleaseMedia Id [" + str(releaseMedia.id) + "] " +
+                                                 "was on ReleaseMedia Id [" + str(oldMediaId) + "]")
                     if not track:
                         createdReleaseTracks += 1
                         if not releaseMedia:

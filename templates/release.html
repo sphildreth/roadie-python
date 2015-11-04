@@ -179,7 +179,7 @@
                         {% for collectionRelease in collectionReleases|sort(attribute='listNumber') %}
                         <li>
                             <a href="/collection/{{ collectionRelease.roadieId }}">
-                                <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span> <span class="label label-default">{{ collectionRelease.name }}</span>
+                                <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span> <span class="label label-default">{{ collectionRelease.collectionReleases.name }}</span>
                             </a>
                         </li>
                         {% endfor %}

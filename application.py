@@ -326,7 +326,8 @@ def randomizer(random_type):
         return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
-        for track in dbSession.query(Track).filter(Track.filePath is not None and Track.fileName is not None).order_by(func.random()).limit(35):
+        for track in dbSession.query(Track).filter(Track.filePath is not None and Track.fileName is not None).order_by(
+                func.random()).limit(35):
             t = M3U.makeTrackInfo(user, track.releasemedia.release, track)
             if t:
                 tracks.append(t)
@@ -811,7 +812,7 @@ def release(roadieId):
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
-                           userRelease= userRelease[0] if userRelease else None, trackCount=releaseSummaries[0],
+                           userRelease=userRelease[0] if userRelease else None, trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
@@ -991,23 +992,23 @@ def streamTrack(user_id, track_id):
             try:
                 if clients:
                     wsData = json.dumps({'message': "OK",
-                                        'lastPlayedInfo': {
-                                            'TrackId': str(track.roadieId),
-                                            'TrackTitle': track.title,
-                                            'ReleaseId': str(track.releasemedia.release.roadieId),
-                                            'ReleaseTitle': track.releasemedia.release.title,
-                                            'ReleaseThumbnail': "/images/release/thumbnail/" + str(
-                                                track.releasemedia.release.roadieId),
-                                            'ArtistId': str(track.releasemedia.release.artist.roadieId),
-                                            'ArtistName': track.releasemedia.release.artist.name,
-                                            'ArtistThumbnail': "/images/artist/thumbnail/" + str(
-                                                track.releasemedia.release.artist.roadieId),
-                                            'UserId': str(user.roadieId),
-                                            'Username': user.username,
-                                            'UserThumbnail': "/images/user/avatar/" + str(user.roadieId),
-                                            'UserRating': userRating.rating,
-                                            'LastPlayed': arrow.get(now).humanize()
-                                        }})
+                                         'lastPlayedInfo': {
+                                             'TrackId': str(track.roadieId),
+                                             'TrackTitle': track.title,
+                                             'ReleaseId': str(track.releasemedia.release.roadieId),
+                                             'ReleaseTitle': track.releasemedia.release.title,
+                                             'ReleaseThumbnail': "/images/release/thumbnail/" + str(
+                                                 track.releasemedia.release.roadieId),
+                                             'ArtistId': str(track.releasemedia.release.artist.roadieId),
+                                             'ArtistName': track.releasemedia.release.artist.name,
+                                             'ArtistThumbnail': "/images/artist/thumbnail/" + str(
+                                                 track.releasemedia.release.artist.roadieId),
+                                             'UserId': str(user.roadieId),
+                                             'Username': user.username,
+                                             'UserThumbnail': "/images/user/avatar/" + str(user.roadieId),
+                                             'UserRating': userRating.rating,
+                                             'LastPlayed': arrow.get(now).humanize()
+                                         }})
 
                     for client in clients:
                         client.write_message(wsData)
@@ -1039,7 +1040,7 @@ def stats():
         "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount " +
         "FROM `artist` a " +
         "inner join ( " +
-        "	SELECT COUNT(1) AS trackCount, SUM(t.duration) AS trackDuration, SUM(t.fileSize) AS trackSize " +
+        "	SELECT COUNT(1) AS trackCount, SUM(t.duration)/1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
         "	JOIN `release` r ON r.id = rm.releaseId " +
@@ -1433,22 +1434,27 @@ def collection(collection_id):
     indexCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
     if not indexCollection:
         return render_template('404.html'), 404
-    tracks = 0
-    sumTime = 0
-    counts = {'releases': "0",
-              'tracks': "0",
-              'length': 0}
-    for collectionRelease in indexCollection.collectionReleases:
-        try:
-            for media in collectionRelease.media:
-                tracks += len(media.tracks)
-                for track in media.tracks:
-                    sumTime += track.duration
-            counts = {'releases': "{0:,}".format(len(indexCollection.releases)),
-                      'tracks': "{0:,}".format(tracks),
-                      'length': sumTime}
-        except:
-            pass
+
+    counts = conn.execute(text(
+        "select count(r.id) as releaseCount, ts.trackCount, ts.trackDuration, ts.trackSize " +
+        "from `collection` c " +
+        "join `collectionrelease` cr on cr.collectionId = c.id " +
+        "join `release` r on r.id = cr.releaseId " +
+        "INNER JOIN ( " +
+        "	SELECT cr.collectionId as collectionId, COUNT(1) AS trackCount, " +
+        "          SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
+        "	FROM `track` t " +
+        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+        "	JOIN `release` r ON r.id = rm.releaseId " +
+        "	join `collectionrelease` cr on cr.releaseId = r.id " +
+        "	WHERE t.fileName IS NOT NULL " +
+        "   GROUP BY cr.collectionId "
+        "	) ts on ts.collectionId = c.id " +
+        "where c.roadieId = '" + collection_id + "';", autocommit=True)
+                          .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer,
+                                   releaseCount=Integer)) \
+        .fetchone()
+
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']

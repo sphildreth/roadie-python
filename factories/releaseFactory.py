@@ -75,10 +75,10 @@ class ReleaseFactory(object):
                 else:
                     self.logger.info("Refreshing Release [" + printableTitle + "] For Artist [" + printableArtistName)
                 release = Release()
-                artistReleaseImages = self.session.query(Image)\
-                                                  .add_column(Image.signature)\
-                                                  .join(Release)\
-                                                  .filter(Release.artistId == artist.id).all()
+                artistReleaseImages = self.session.query(Image) \
+                    .add_column(Image.signature) \
+                    .join(Release) \
+                    .filter(Release.artistId == artist.id).all()
                 srList = self.searcher.searchForArtistReleases(artist, artistReleaseImages, title)
                 if not srList:
                     self.logger.info("Release For Artist [" + printableArtistName +
@@ -102,7 +102,7 @@ class ReleaseFactory(object):
         :type title: str
         :type sr: searchEngines.models.Release.Release
         """
-        release = Release()
+        createDattabaseModelFromSearchModelRelease = Release()
         printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
         releaseByExternalIds = self._getFromDatabaseByExternalIds(sr.musicBrainzId,
                                                                   sr.iTunesId,
@@ -123,28 +123,29 @@ class ReleaseFactory(object):
                 releaseByExternalIds.lastUpdated = arrow.utcnow().datetime
                 self.session.commit()
             return releaseByExternalIds
-        release.artist = artist
-        release.roadieId = sr.roadieId
-        release.title = title
-        release.releaseDate = parseDate(sr.releaseDate)
-        release.trackCount = sr.trackCount
-        release.mediaCount = sr.mediaCount
-        release.thumbnail = sr.thumbnail
-        release.profile = sr.profile
+        createDattabaseModelFromSearchModelRelease.artist = artist
+        createDattabaseModelFromSearchModelRelease.roadieId = sr.roadieId
+        createDattabaseModelFromSearchModelRelease.title = title
+        createDattabaseModelFromSearchModelRelease.releaseDate = parseDate(sr.releaseDate)
+        createDattabaseModelFromSearchModelRelease.trackCount = sr.trackCount
+        createDattabaseModelFromSearchModelRelease.mediaCount = sr.mediaCount
+        createDattabaseModelFromSearchModelRelease.thumbnail = sr.thumbnail
+        createDattabaseModelFromSearchModelRelease.profile = sr.profile
         # TODO
         #        release.releaseType = sr.releaseType
-        release.iTunesId = sr.iTunesId
-        release.amgId = sr.amgId
-        release.lastFMId = sr.lastFMId
-        release.lastFMSummary = sr.lastFMSummary
-        release.musicBrainzId = sr.musicBrainzId
-        release.spotifyId = sr.spotifyId
-        release.amgId = sr.amgId
-        release.tags = sr.tags
-        release.alternateNames = sr.alternateNames
-        release.urls = sr.urls
+        createDattabaseModelFromSearchModelRelease.iTunesId = sr.iTunesId
+        createDattabaseModelFromSearchModelRelease.amgId = sr.amgId
+        createDattabaseModelFromSearchModelRelease.lastFMId = sr.lastFMId
+        createDattabaseModelFromSearchModelRelease.lastFMSummary = sr.lastFMSummary
+        createDattabaseModelFromSearchModelRelease.musicBrainzId = sr.musicBrainzId
+        createDattabaseModelFromSearchModelRelease.spotifyId = sr.spotifyId
+        createDattabaseModelFromSearchModelRelease.amgId = sr.amgId
+        createDattabaseModelFromSearchModelRelease.tags = sr.tags
+        createDattabaseModelFromSearchModelRelease.alternateNames = sr.alternateNames
+
+        createDattabaseModelFromSearchModelRelease.urls = sr.urls
         if sr.images:
-            release.images = []
+            createDattabaseModelFromSearchModelReleaseimages = []
             for image in sr.images:
                 if image.image:
                     i = Image()
@@ -153,8 +154,10 @@ class ReleaseFactory(object):
                     i.caption = image.caption
                     i.image = image.image
                     i.signature = image.signature
-                    release.images.append(i)
-            self.logger.debug("= Added [" + str(len(release.images)) + "] Images to Release")
+                    createDattabaseModelFromSearchModelReleaseimages.append(i)
+            createDattabaseModelFromSearchModelRelease.images = createDattabaseModelFromSearchModelReleaseimages
+            self.logger.debug(
+                "= Added [" + str(len(createDattabaseModelFromSearchModelRelease.images)) + "] Images to Release")
 
         # TODO
         # See if cover file found in Release Folder
@@ -178,18 +181,18 @@ class ReleaseFactory(object):
         #         except:
         #             pass
         if sr.genres:
-            release.genres = []
+            createDattabaseModelFromSearchModelRelease.genres = []
             for genre in sr.genres:
                 dbGenre = self.session.query(Genre).filter(Genre.name == genre.name).first()
                 if not dbGenre:
                     g = Genre()
                     g.name = genre.name
                     g.roadieId = genre.roadieId
-                    release.genres.append(g)
+                    createDattabaseModelFromSearchModelRelease.genres.append(g)
                 else:
-                    release.genres.append(dbGenre)
+                    createDattabaseModelFromSearchModelRelease.genres.append(dbGenre)
         if sr.releaseLabels:
-            release.releaseLabels = []
+            createDattabaseModelFromSearchModelRelease.releaseLabels = []
             for srReleaseLabel in sr.releaseLabels:
                 l = self._getLabelFromDatabase(srReleaseLabel.label.name)
                 if not l:
@@ -200,7 +203,11 @@ class ReleaseFactory(object):
                     l.end = srReleaseLabel.label.endDate
                     l.imageUrl = srReleaseLabel.label.imageUrl
                     l.tags = srReleaseLabel.label.tags
-                    l.alternateNames = srReleaseLabel.label.alternateNames
+                    if srReleaseLabel.label.alternateNames:
+                        srLabelAlternateNames = []
+                        for srLabelAn in srReleaseLabel.label.alternateNames:
+                            srLabelAlternateNames.append(srLabelAn.replace("|", ","))
+                        l.alternateNames = srLabelAlternateNames
                     l.sortName = srReleaseLabel.label.sortName
                     l.name = srReleaseLabel.label.name
                 if l:
@@ -210,10 +217,10 @@ class ReleaseFactory(object):
                     rl.beginDate = parseDate(srReleaseLabel.beginDate)
                     rl.endDate = parseDate(srReleaseLabel.endDate)
                     rl.label = l
-                    if rl not in release.releaseLabels:
-                        release.releaseLabels.append(rl)
+                    if rl not in createDattabaseModelFromSearchModelRelease.releaseLabels:
+                        createDattabaseModelFromSearchModelRelease.releaseLabels.append(rl)
         if sr.media:
-            release.media = []
+            createDattabaseModelFromSearchModelRelease.media = []
             for srMedia in sr.media:
                 media = ReleaseMedia()
                 media.roadieId = srMedia.roadieId
@@ -241,9 +248,10 @@ class ReleaseFactory(object):
                         if cleanedTitle != srTrack.title.lower().strip():
                             track.alternateNames.append(cleanedTitle)
                         media.tracks.append(track)
-                release.media.append(media)
-            release.mediaCount = len(release.media)
-        return release
+                createDattabaseModelFromSearchModelRelease.media.append(media)
+            createDattabaseModelFromSearchModelRelease.mediaCount = len(
+                createDattabaseModelFromSearchModelRelease.media)
+        return createDattabaseModelFromSearchModelRelease
 
     def _getAllFromDatabaseForArtist(self, artist):
         if not artist:
@@ -257,11 +265,11 @@ class ReleaseFactory(object):
         cleanedTitle = createCleanedName(title)
         stmt = or_(func.lower(Release.title) == title,
                    text("(lower(alternateNames) = '" + title + "'" + ""
-                                                                      " OR alternateNames like '" + title + "|%'" +
+                                                                     " OR alternateNames like '" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "|%'" +
                         " OR alternateNames like '%|" + title + "')"),
                    text("(alternateNames = '" + cleanedTitle + "'" + ""
-                                                                      " OR alternateNames like '" + cleanedTitle + "|%'" +
+                                                                     " OR alternateNames like '" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "')")
                    )
@@ -273,7 +281,7 @@ class ReleaseFactory(object):
         name = name.lower().strip().replace("'", "''")
         stmt = or_(func.lower(Label.name) == name,
                    text("(lower(alternateNames) = '" + name + "'" + ""
-                                                                     " OR alternateNames like '" + name + "|%'" +
+                                                                    " OR alternateNames like '" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "|%'" +
                         " OR alternateNames like '%|" + name + "')"))
         return self.session.query(Label).filter(stmt).first()

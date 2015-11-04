@@ -119,7 +119,7 @@ class ArtistSearcher(object):
                 if artist.name not in artist.alternateNames:
                     cleanedArtistName = createCleanedName(artist.name)
                     if cleanedArtistName != artist.name.lower().strip() and \
-                            cleanedArtistName not in artist.alternateNames:
+                                    cleanedArtistName not in artist.alternateNames:
                         artist.alternateNames.append(cleanedArtistName)
                 if not artist.bioContext:
                     try:
@@ -203,14 +203,14 @@ class ArtistSearcher(object):
             if releases:
                 self.logger.debug(
                     "searchForArtistReleases Found [" + str(len(releases)) + "] For title [" + str(titleFilter) + "]")
-                for release in releases:
-                    if release.coverUrl:
-                        coverImage = ArtistImage(release.coverUrl)
-                        release.images.append(coverImage)
+                for searchForArtistRelease in releases:
+                    if searchForArtistRelease.coverUrl:
+                        coverImage = ArtistImage(searchForArtistRelease.coverUrl)
+                        searchForArtistRelease.images.append(coverImage)
                     # Fetch images with only urls, remove any with neither URL or BLOB
-                    if release.images:
+                    if searchForArtistRelease.images:
                         images = []
-                        for image in release.images:
+                        for image in searchForArtistRelease.images:
                             if not image.image and image.url:
                                 image.image = self.getImageForUrl(image.url)
                             if image.image:
@@ -225,7 +225,7 @@ class ArtistSearcher(object):
                                 if image.signature:
                                     images.append(image)
                         if not images:
-                            release.images = []
+                            searchForArtistRelease.images = []
                         else:
                             dedupedImages = []
                             imageSignatures = artistReleaseImages or []
@@ -233,11 +233,11 @@ class ArtistSearcher(object):
                                 if image.signature not in imageSignatures:
                                     imageSignatures.append(image.signature)
                                     dedupedImages.append(image)
-                            release.images = dedupedImages
-                            if not release.thumbnail:
+                            searchForArtistRelease.images = dedupedImages
+                            if not searchForArtistRelease.thumbnail:
                                 try:
                                     firstImageInImages = None
-                                    for image in release.images:
+                                    for image in searchForArtistRelease.images:
                                         firstImageInImages = firstImageInImages or image.image
                                         if firstImageInImages:
                                             break
@@ -245,15 +245,16 @@ class ArtistSearcher(object):
                                     img.thumbnail(self.releaseThumbnailSize)
                                     b = io.BytesIO()
                                     img.save(b, "JPEG")
-                                    release.thumbnail = b.getvalue()
+                                    searchForArtistRelease.thumbnail = b.getvalue()
                                 except:
                                     pass
             if titleFilter and releases:
                 filteredReleases = []
                 cleanedTitleFilter = createCleanedName(titleFilter)
-                for release in releases:
-                    if isEqual(release.title, titleFilter) or cleanedTitleFilter in release.alternateNames:
-                        filteredReleases.append(release)
+                for searchForArtistRelease in releases:
+                    if isEqual(searchForArtistRelease.title,
+                               titleFilter) or cleanedTitleFilter in searchForArtistRelease.alternateNames:
+                        filteredReleases.append(searchForArtistRelease)
                 releases = filteredReleases
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.debug("searchForArtistReleases ElapseTime [" + str(elapsedTime) + "]")
@@ -270,5 +271,6 @@ class ArtistSearcher(object):
         return self.imageCache[url]
 
 # s = ArtistSearcher()
-# artist = s.searchForArtist("Men At Work")
-# release = s.searchForArtistReleases(artist, [], "Cargo")
+# artist = s.searchForArtist("Scott Walker")
+# release = s.searchForArtistReleases(artist, [], "Scott 2")
+# t = "now"

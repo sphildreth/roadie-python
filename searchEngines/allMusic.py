@@ -76,7 +76,9 @@ class AllMusicGuide(SearchEngineBase):
                                         for genre in amgArtist['musicGenres']:
                                             if not isInList(artist.genres, genre):
                                                 artist.genres.append(genre)
-                                bd = amgArtist['birth']['date'].replace("-??", "")
+                                bd = None
+                                if 'birth' in amgArtist and 'date' in amgArtist['birth']:
+                                    bd = amgArtist['birth']['date'].replace("-??", "")
                                 if bd:
                                     if artist.artistType == ArtistType.Person:
                                         artist.birthDate = parseDate(bd)
@@ -93,7 +95,6 @@ class AllMusicGuide(SearchEngineBase):
                                         rd = (album['year'] or '').replace("-??", "")
                                         if rd:
                                             release.releaseDate = parseDate(rd)
-                                        print(album['type'])
                                         release.releaseType = album['type']
                                         release.tags = []
                                         if 'flags' in album and album['flags']:

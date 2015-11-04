@@ -13,6 +13,8 @@ from factories.releaseFactory import ReleaseFactory
 
 p = argparse.ArgumentParser(description='Search For Artist Information.')
 p.add_argument('--name', '-n', help="Artist Name", required=True)
+p.add_argument('--forceRefresh', '-f', action='store_true', help="Force search again from Search Engines",
+               required=False)
 p.add_argument('--release', '-r', help="Release Title", required=False)
 p.add_argument('--showMissing', '-s', action='store_true', help="Show Releases Not Found In Roadie Database",
                required=False)
@@ -41,7 +43,7 @@ if artist:
     releaseName = args.release
     if releaseName:
         start = arrow.utcnow()
-        release = releaseFactory.get(artist, args.release)
+        release = releaseFactory.get(artist, args.release, False, args.forceRefresh)
         elapsed = arrow.utcnow() - start
         if release:
             uprint("Release Info [Elapsed Time: " + str(elapsed) + "]: " + str(release.info()) + "]")

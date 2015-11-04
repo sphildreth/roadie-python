@@ -5,9 +5,9 @@
 {% block body_content %}
     <div class="collection-container" data-collection-id="{{ collection.id }}">
         <div class="release-counts-container pull-right">
-            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Collection">{{ counts.releases }}</span></span>
-            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Collection">{{ counts.tracks }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
+            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Collection">{{ counts.releaseCount }}</span></span>
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Collection">{{ counts.trackCount }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Collection">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
         </div>
         <div class="btn-toolbar edit-toolbar" role="toolbar">
             <div class="btn-group">
