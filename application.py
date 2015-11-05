@@ -346,28 +346,43 @@ def artistDetail(artist_id):
     userArtist = dbSession.query(UserArtist).filter(UserArtist.userId == user.id).filter(
         UserArtist.artistId == artist.id).first()
     artistSummaries = conn.execute(text(
-        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount," +
-        "ts.trackCount, ts.duration, ts.size, mts.trackCount as missingTracks " +
+        "SELECT rm.releaseMediaCount, r.releaseCount, ts.trackCount, ts.duration, " +
+        "ts.size, mts.trackCount AS missingTracks " +
         "FROM `artist` a " +
-        "INNER JOIN " +
-        "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
-        "SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
+        "INNER JOIN  " +
+        "( " +
+        "	select a.id as artistId, count(rm.id) as releaseMediaCount " +
+        "	From `releasemedia` rm " +
+        "	join `release` r on rm.releaseId = r.id " +
+        "	join `artist` a on r.artistId = a.id " +
+        "	group by a.id " +
+        ") as rm ON rm.artistId = a.id " +
+        "INNER JOIN  " +
+        "( " +
+        "	select a.id as artistId, count(r.id) as releaseCount " +
+        "	from `release` r  " +
+        "	join `artist` a on r.artistId = a.id " +
+        "	group by a.id " +
+        ") as r ON r.artistId = a.id " +
+        "INNER JOIN  " +
+        " ( " +
+        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
+        "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
         "	JOIN `release` r ON r.id = rm.releaseId " +
-        "   WHERE t.fileName IS NOT NULL " +
-        "	GROUP BY r.artistId " +
-        ") AS ts ON ts.artistId = a.id " +
-        "LEFT JOIN " +
-        "(	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
+        "	WHERE t.fileName IS NOT NULL " +
+        "	GROUP BY r.artistId  " +
+        "	) AS ts ON ts.artistId = a.id " +
+        "LEFT JOIN  " +
+        " ( " +
+        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
         "	FROM `track` t " +
         "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
         "	JOIN `release` r ON r.id = rm.releaseId " +
-        "   WHERE t.fileName IS NULL " +
-        "	GROUP BY r.artistId " +
-        ") AS mts ON mts.artistId = a.id " +
-        "JOIN `release` r ON r.artistId = a.id " +
-        "JOIN `releasemedia` rm ON rm.releaseId = r.id " +
+        "	WHERE t.fileName IS NULL " +
+        "	GROUP BY r.artistId  " +
+        "	) AS mts ON mts.artistId = a.id " +
         "WHERE a.roadieId = '" + artist_id + "';", autocommit=True)
                                    .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
                                             releaseTrackTime=Integer, releaseTrackFileSize=Integer,
