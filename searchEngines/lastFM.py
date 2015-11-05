@@ -1,11 +1,9 @@
 import json
 import threading
 import hashlib
-
 from queue import Queue
 from io import StringIO
 from urllib import request, parse
-
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist

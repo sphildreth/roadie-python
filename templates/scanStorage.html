@@ -5,7 +5,7 @@
 <div id="scan-container" class="container"></div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     var socket = null;
     $(function() {
         socket = new WebSocket("ws://" + document.domain + ":5000/scanner/");
@@ -23,5 +23,6 @@
             $("input#message").val('');              
         };
     });
-    </script>
+
+</script>
 {% endblock %}

@@ -4,7 +4,6 @@ from queue import Queue
 from io import StringIO
 from urllib import request, parse
 from urllib.error import HTTPError
-
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist, ArtistType

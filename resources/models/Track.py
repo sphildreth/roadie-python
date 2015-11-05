@@ -1,10 +1,8 @@
 import os
 from enum import IntEnum
-
 from sqlalchemy import Column, ForeignKey, Table, Index, Integer, SmallInteger, String, DateTime
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.PlaylistTrack import PlaylistTrack
 from resources.models.UserTrack import UserTrack

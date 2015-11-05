@@ -3,7 +3,6 @@ from resources.models.ModelBase import Base
 
 
 class Image(Base):
-
     # If this is used then the image is stored in the database
     image = Column(LargeBinary(length=16777215), default=None)
     # If this is used then the image is remote and this is the url

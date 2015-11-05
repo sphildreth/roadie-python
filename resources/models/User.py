@@ -1,7 +1,6 @@
 import arrow
 from sqlalchemy import Column, ForeignKey, Table, Integer, Boolean, BLOB, String, DateTime
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.Collection import Collection
 from resources.models.Playlist import Playlist
@@ -16,7 +15,6 @@ usersInRolesTable = Table('usersInRoles', Base.metadata,
 
 
 class User(Base):
-
     username = Column(String(20), nullable=False, unique=True, index=True)
     password = Column(String(100), nullable=False)
     email = Column(String(100), nullable=False, unique=True)

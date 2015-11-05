@@ -1,5 +1,4 @@
 from sqlalchemy import Column, Index, ForeignKey, SmallInteger, Integer, Boolean
-
 from resources.models.ModelBase import Base
 
 

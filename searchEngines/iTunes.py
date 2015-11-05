@@ -1,7 +1,6 @@
 import json
 from io import StringIO
 from urllib import request, parse
-
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
 from searchEngines.imageSearcher import ImageSearcher

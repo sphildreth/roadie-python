@@ -8,7 +8,6 @@ from math import floor
 from time import time
 from re import findall
 from urllib.parse import urlparse, urljoin
-
 from PIL import Image as PILImage
 from flask import Flask, jsonify, render_template, send_file, Response, request, session, \
     flash, url_for, redirect, g
@@ -24,9 +23,7 @@ from sqlalchemy import Integer, desc, String
 from sqlalchemy.sql import text, func
 from flask_login import LoginManager, login_user, logout_user, \
     current_user, login_required
-
 from flask_bcrypt import Bcrypt
-
 from flask_session import Session as FlaskSession
 from importers.collectionImporter import CollectionImporter
 from resources.common import *

@@ -1,8 +1,6 @@
 import random
 import uuid
-
 from sqlalchemy.sql import func, and_, or_, text
-
 from resources.common import *
 from resources.models.Artist import Artist
 from resources.models.Image import Image

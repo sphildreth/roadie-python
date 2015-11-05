@@ -5,14 +5,11 @@ import random
 import shutil
 import string
 import sqlite3
-
 import hashlib
 from shutil import move
-
 import arrow
 from PIL import Image
 import gc
-
 from resources.common import *
 from resources.pathInfo import PathInfo
 from resources.models.Artist import Artist
@@ -22,10 +19,8 @@ from resources.models.Release import Release
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track
-
 from factories.artistFactory import ArtistFactory
 from factories.releaseFactory import ReleaseFactory
-
 from resources.id3 import ID3
 from resources.scanner import Scanner
 from resources.convertor import Convertor

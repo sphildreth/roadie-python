@@ -3,237 +3,263 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="artist-detail-container" data-artist-id="{{ artist.id }}">
-        <div class="release-counts-container pull-right">
-            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases of Artist">{{ '%02d' % counts.releases }}</span></span>
-            <span class="release-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Artist">{{ '%03d' % counts.releaseMedia }}</span></span>
-            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Artist">{{ '%03d' % (counts.tracks or 0) }}</span></span>
-            {% if counts.missingTrackCount %}
-            <span class="missing-track-count">Missing Tracks: <span class="label label-default label-as-badge label-danger" data-toggle="tooltip" data-placement="bottom" title="Missing Tracks of Artist">{{ '%03d' % counts.missingTrackCount }}</span></span>
-            {% endif %}
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.length or '--:--' }}</span></span>
-            <span class="filesize-total">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Artist">{{ counts.fileSize }}</span></span>
-        </div>
-        <div class="btn-toolbar edit-toolbar" role="toolbar">
-            <div class="btn-group">
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+<div class="artist-detail-container" data-artist-id="{{ artist.id }}">
+    <div class="release-counts-container pull-right">
+        <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                    title="Total Releases of Artist">{{ '%02d' % counts.releases }}</span></span>
+        <span class="release-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                 title="Total Media of Artist">{{ '%03d' % counts.releaseMedia }}</span></span>
+        <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Tracks of Artist">{{ '%03d' % (counts.tracks or 0) }}</span></span>
+        {% if counts.missingTrackCount %}
+        <span class="missing-track-count">Missing Tracks: <span class="label label-default label-as-badge label-danger"
+                                                                data-toggle="tooltip" data-placement="bottom"
+                                                                title="Missing Tracks of Artist">{{ '%03d' % counts.missingTrackCount }}</span></span>
+        {% endif %}
+        <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                               title="Total Playtime of Artist">{{ counts.length or '--:--' }}</span></span>
+        <span class="filesize-total">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                      title="Total Playtime of Artist">{{ counts.fileSize }}</span></span>
+    </div>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
                 <i class="fa fa-play"></i> Play <span class="caret"></span>
-              </button>
-              <ul class="dropdown-menu">
+            </button>
+            <ul class="dropdown-menu">
                 <li><a id="playAll" href="#">Play All</a></li>
                 <li><a id="playAllShuffle" href="#">Play All (Shuffle)</a></li>
                 <li><a id="playTopRated" href="#">Play Top Rated</a></li>
                 <li><a id="playMostPopular" href="#">Play Most Popular</a></li>
-              </ul>
+            </ul>
+        </div>
+        <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
+        {% if current_user.is_editor() %}
+        <div class="btn-group">
+            <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.roadieId }}"
+               class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            {% if artist.isLocked == False %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a id="delete-artist"><i class="fa fa-trash-o"></i> Delete Artist</a></li>
+                    <li><a id="deleteArtistReleases"><i class="fa fa-trash-o"></i> Delete All Releases</a></li>
+                </ul>
             </div>
-            <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
-            {% if current_user.is_editor() %}
-              <div class="btn-group">
-                <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                {% if artist.isLocked == False %}
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a id="delete-artist"><i class="fa fa-trash-o"></i> Delete Artist</a></li>
-                            <li><a id="deleteArtistReleases"><i class="fa fa-trash-o"></i> Delete All Releases</a></li>
-                        </ul>
-                    </div>
-                <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
-                {% endif %}
-             </div>
+            <button id="scan-artist" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</button>
             {% endif %}
-            {% if artist.isLocked %}
-                <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
-            {% endif %}
-        </div>
-        <div class="row title bordered">
-            <div class="thumbnail-container pull-left">
-                <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
-            </div>
-            <div class="rating-container">
-                <input type="hidden" class="rating" data-readonly value="{{ artist.rating }}" />
-            </div>
-            <h2><span class="artist-name label label-default">{{ artist.name }}</span></h2>
-            <div class="user-rating-container">
-                <a href="#" class="dislike" title="Toggle Dislike Artist"><i class="fa {{ 'fa-thumbs-down' if userArtist.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
-                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                <input type="hidden" class="user-rating rating" value="{{ userArtist.rating }}" />
-                <a href="#" class="favorite" title="Toggle Favorite Artist"><i class="fa {{'fa-heart' if userArtist.isFavorite else 'fa-heart-o'}}"></i></a>
-            </div>
-        </div>
-        <div class="row bordered">
-            <div class="col-md-6">
-                {% if artist.profile %}
-                <div>
-                    <h4><span class="label label-primary">Profile</span></h4>
-                    <p>{{ artist.profile|safe }}</p>
-                </div>
-                {% endif %}
-                <div>
-                    <h4><span class="label label-primary">Bio</span></h4>
-                    <p>{{ artist.bioContext|safe }}</p>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                {% for image in artist.images %}
-                    <div class="col-xs-4 col-sm-3 col-md-3">
-                        <a href="javascript:void(0);"
-                           data-title="{{ image.caption }}"
-                           data-url="/images/artist/{{ image.roadieId }}/2048/2048"
-                           target="_blank" class="thumbnail">
-                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/artist/{{ image.roadieId }}/512/512" alt="Image" />
-                        </a>
-                    </div>
-                    <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
-                        <ul class="dropdown-menu" role="menu">
-                        <li><a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist Image</a></li>
-                        </ul>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="row details bordered">
-            <div class="col-md-3">
-                {% if artist.sortName %}
-                <div>
-                    <h4><span class="label label-primary">Sort Name</span></h4>
-                    <span class="label label-default">{{ artist.sortName }}</span>
-                </div>
-                {% endif %}
-                {% if artist.realName %}
-                <div>
-                    <h4><span class="label label-primary">Real Name</span></h4>
-                    <span class="label label-default">{{ artist.realName }}</span>
-                </div>
-                {% endif %}
-            </div>
-            <div class="col-md-3">
-                <div>
-                    <h4><span class="label label-primary">Artist Type</span></h4>
-                    <span class="label label-default">{{ artist.artistType }}</span>
-                </div>
-                <div>
-                    <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                    {% if artist.musicBrainzId %}
-                    <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span class="label label-default">{{ artist.musicBrainzId }}</span></a>
-                    {% else %}
-                    <span class="label label-default">None</span>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-3">
-                {% if artist.birthDate %}
-                <div>
-                    <h4><span class="label label-primary">BirthDate</span></h4>
-                    <span class="label label-default">{{ artist.birthDate|format_age_from_date }}</span>
-                </div>
-                {% endif %}
-                {% if artist.beginDate %}
-                <div>
-                    <h4><span class="label label-primary">Begin Date</span></h4>
-                    <span class="label label-default">{{ artist.beginDate|format_age_from_date }}</span>
-                </div>
-                {% endif %}
-                {% if artist.endDate %}
-                <div>
-                    <h4><span class="label label-primary">End Date</span></h4>
-                    <span class="label label-default">{{ artist.endDate }}</span>
-                </div>
-                {% endif %}
-            </div>
-            <div class="col-md-3 associated-artists">
-                {% if artist.associatedArtists %}
-                <h4><span class="label label-primary">Associated Artists</span></h4>
-                <ul>
-                    {% for artist in artist.associatedArtists|sort(attribute='name') %}
-                    <li>
-                        <a href="/artist/{{ artist.roadieId }}">
-                        <div class="thumbnail-container pull-left">
-                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
-                        </div>
-                        <h3><span class="label label-default">{{ artist.name }}</span></h3>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-        </div>
-        {% if artist.alternateNames or artist.tags or artist.urls %}
-        <div class="row lists bordered">
-            <div class="col-md-4">
-                {% if artist.alternateNames %}
-                <h4><span class="label label-primary">Alternate Names</span></h4>
-                <ul>
-                    {% for alternateName in artist.alternateNames|sort %}
-                    <li><span class="label label-default">{{ alternateName }}</span></li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-            <div class="col-md-4">
-                {% if artist.tags %}
-                <h4><span class="label label-primary">Tags</span></h4>
-                <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield" value="{{ artist.tags|sort|join(',') }}" />
-                {% endif %}
-            </div>
-            <div class="col-md-4">
-                {% if artist.urls %}
-                <h4><span class="label label-primary">Urls</span></h4>
-                <ul>
-                    {% for url in artist.Urls %}
-                    <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
-                    {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
         </div>
         {% endif %}
-        <div class="release-info-container">
-            <div class="row bordered">
+        {% if artist.isLocked %}
+        <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
+        {% endif %}
+    </div>
+    <div class="row title bordered">
+        <div class="thumbnail-container pull-left">
+            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}"/>
+        </div>
+        <div class="rating-container">
+            <input type="hidden" class="rating" data-readonly value="{{ artist.rating }}"/>
+        </div>
+        <h2><span class="artist-name label label-default">{{ artist.name }}</span></h2>
+
+        <div class="user-rating-container">
+            <a href="#" class="dislike" title="Toggle Dislike Artist"><i
+                    class="fa {{ 'fa-thumbs-down' if userArtist.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
+            <span class="reset-rating fa fa-square" title="Remove Rating"></span>
+            <input type="hidden" class="user-rating rating" value="{{ userArtist.rating }}"/>
+            <a href="#" class="favorite" title="Toggle Favorite Artist"><i
+                    class="fa {{'fa-heart' if userArtist.isFavorite else 'fa-heart-o'}}"></i></a>
+        </div>
+    </div>
+    <div class="row bordered">
+        <div class="col-md-6">
+            {% if artist.profile %}
+            <div>
+                <h4><span class="label label-primary">Profile</span></h4>
+
+                <p>{{ artist.profile|safe }}</p>
+            </div>
+            {% endif %}
+            <div>
+                <h4><span class="label label-primary">Bio</span></h4>
+
+                <p>{{ artist.bioContext|safe }}</p>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            {% for image in artist.images %}
+            <div class="col-xs-4 col-sm-3 col-md-3">
+                <a href="javascript:void(0);"
+                   data-title="{{ image.caption }}"
+                   data-url="/images/artist/{{ image.roadieId }}/2048/2048"
+                   target="_blank" class="thumbnail">
+                    <img data-image-id="{{ image.roadieId }}" data-toggle="context"
+                         data-target="#context-menu-{{ image.roadieId }}"
+                         src="/images/artist/{{ image.roadieId }}/512/512" alt="Image"/>
+                </a>
+            </div>
+            <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
+                <ul class="dropdown-menu" role="menu">
+                    <li><a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist
+                        Image</a></li>
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row details bordered">
+        <div class="col-md-3">
+            {% if artist.sortName %}
+            <div>
+                <h4><span class="label label-primary">Sort Name</span></h4>
+                <span class="label label-default">{{ artist.sortName }}</span>
+            </div>
+            {% endif %}
+            {% if artist.realName %}
+            <div>
+                <h4><span class="label label-primary">Real Name</span></h4>
+                <span class="label label-default">{{ artist.realName }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-3">
+            <div>
+                <h4><span class="label label-primary">Artist Type</span></h4>
+                <span class="label label-default">{{ artist.artistType }}</span>
+            </div>
+            <div>
+                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+                {% if artist.musicBrainzId %}
+                <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span
+                        class="label label-default">{{ artist.musicBrainzId }}</span></a>
+                {% else %}
+                <span class="label label-default">None</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-3">
+            {% if artist.birthDate %}
+            <div>
+                <h4><span class="label label-primary">BirthDate</span></h4>
+                <span class="label label-default">{{ artist.birthDate|format_age_from_date }}</span>
+            </div>
+            {% endif %}
+            {% if artist.beginDate %}
+            <div>
+                <h4><span class="label label-primary">Begin Date</span></h4>
+                <span class="label label-default">{{ artist.beginDate|format_age_from_date }}</span>
+            </div>
+            {% endif %}
+            {% if artist.endDate %}
+            <div>
+                <h4><span class="label label-primary">End Date</span></h4>
+                <span class="label label-default">{{ artist.endDate }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-3 associated-artists">
+            {% if artist.associatedArtists %}
+            <h4><span class="label label-primary">Associated Artists</span></h4>
+            <ul>
+                {% for artist in artist.associatedArtists|sort(attribute='name') %}
+                <li>
+                    <a href="/artist/{{ artist.roadieId }}">
+                        <div class="thumbnail-container pull-left">
+                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}"
+                                 alt="{{ artist.name }}"/>
+                        </div>
+                        <h3><span class="label label-default">{{ artist.name }}</span></h3>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {% if artist.alternateNames or artist.tags or artist.urls %}
+    <div class="row lists bordered">
+        <div class="col-md-4">
+            {% if artist.alternateNames %}
+            <h4><span class="label label-primary">Alternate Names</span></h4>
+            <ul>
+                {% for alternateName in artist.alternateNames|sort %}
+                <li><span class="label label-default">{{ alternateName }}</span></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            {% if artist.tags %}
+            <h4><span class="label label-primary">Tags</span></h4>
+            <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield"
+                   value="{{ artist.tags|sort|join(',') }}"/>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            {% if artist.urls %}
+            <h4><span class="label label-primary">Urls</span></h4>
+            <ul>
+                {% for url in artist.Urls %}
+                <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    <div class="release-info-container">
+        <div class="row bordered">
             {% for release in releases|sort(attribute='releaseDate') %}
-                <div class="release pull-left" data-release-id="{{ release.roadieId }}">
-                    <div>
-                        <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}" alt="{{ release.title }}" />
-                        <a href="/release/{{ release.roadieId }}">
+            <div class="release pull-left" data-release-id="{{ release.roadieId }}">
+                <div>
+                    <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
+                         alt="{{ release.title }}"/>
+                    <a href="/release/{{ release.roadieId }}">
                         <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
                             <span data-toggle="tooltip"
                                   data-placement="top"
                                   title="{{ release.Title }}"
-                                  class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span></h4>
-                        </a>
-                    </div>
-                    {% for media in release.media|sort(attribute='releaseMediaNumber') %}
-                    <div class="release-media" data-track-count="{{ media.trackCount }}">
-                        {% if media.releaseSubTitle %}
-                            <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span></h5>
-                        {% endif %}
-                        <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span></h5>
-                        <ul class="tracks no-list-style">
-                            {% for track in media.tracks|sort(attribute='trackNumber') %}
-                            <li>
-                                <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
-                                <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}" class="title label label-default">{{ track.title }}</span>
-                                <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endfor %}
+                                  class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span>
+                        </h4>
+                    </a>
                 </div>
-            {% endfor %}
+                {% for media in release.media|sort(attribute='releaseMediaNumber') %}
+                <div class="release-media" data-track-count="{{ media.trackCount }}">
+                    {% if media.releaseSubTitle %}
+                    <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span>
+                    </h5>
+                    {% endif %}
+                    <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span>
+                    </h5>
+                    <ul class="tracks no-list-style">
+                        {% for track in media.tracks|sort(attribute='trackNumber') %}
+                        <li>
+                            <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
+                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}"
+                                  class="title label label-default">{{ track.title }}</span>
+                            <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-        <div class="meta pull-right">
-            <p><span class="label label-info">Last Modified: {{ artist.lastUpdated }}</span></p>
+            {% endfor %}
         </div>
     </div>
+    <div class="meta pull-right">
+        <p><span class="label label-info">Last Modified: {{ artist.lastUpdated }}</span></p>
+    </div>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
         var artistId = '{{ artist.roadieId }}';
 
         var doArtistSanityChecks = function() {
@@ -461,5 +487,6 @@
             });
 
         });
-    </script>
+
+</script>
 {% endblock %}

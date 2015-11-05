@@ -1,7 +1,6 @@
 from sqlalchemy import Column, String, Date
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.ReleaseLabel import ReleaseLabel
 

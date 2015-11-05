@@ -1,5 +1,4 @@
 import random
-
 from resources.common import *
 from searchEngines.models.ModelBase import ModelBase
 

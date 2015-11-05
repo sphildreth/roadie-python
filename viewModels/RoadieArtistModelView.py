@@ -1,7 +1,7 @@
 from viewModels.RoadieModelView import RoadieModelView
 
-class RoadieArtistModelView(RoadieModelView):
 
+class RoadieArtistModelView(RoadieModelView):
     form_excluded_columns = ('rating')
 
     form_ajax_refs = {

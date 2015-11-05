@@ -1,6 +1,7 @@
 from wtforms import TextAreaField
 from wtforms.widgets import TextArea
 
+
 class CKTextAreaWidget(TextArea):
     def __call__(self, field, **kwargs):
         if kwargs.get('class'):

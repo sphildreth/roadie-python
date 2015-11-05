@@ -1,5 +1,4 @@
 from sqlalchemy import Column, ForeignKey, Index, Integer
-
 from resources.models.ModelBase import Base
 
 

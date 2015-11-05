@@ -3,12 +3,12 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="browse-artist-container">
-        <table id="browseArtistsGrid"></table>
-    </div>
+<div class="browse-artist-container">
+    <table id="browseArtistsGrid"></table>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
         $('#browseArtistsGrid').bootstrapTable({
             ajax: function(params) {
@@ -62,5 +62,6 @@
             ]
         });
     });
-    </script>
+
+</script>
 {% endblock %}

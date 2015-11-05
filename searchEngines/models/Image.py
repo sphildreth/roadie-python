@@ -1,6 +1,5 @@
 import io
 from PIL import Image as PILImage
-
 from searchEngines.models.ModelBase import ModelBase
 
 
@@ -18,7 +17,8 @@ class Image(ModelBase):
         try:
             hash_size = 8
             # Open the image, resize it and convert it to black & white.
-            image = PILImage.open(io.BytesIO(self.image)).resize((hash_size, hash_size), PILImage.ANTIALIAS).convert('L')
+            image = PILImage.open(io.BytesIO(self.image)).resize((hash_size, hash_size), PILImage.ANTIALIAS).convert(
+                'L')
             pixels = list(image.getdata())
             # Compute the hash based on each pixels value compared to the average.
             avg = sum(pixels) / len(pixels)

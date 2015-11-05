@@ -1,6 +1,5 @@
 import random
 from enum import Enum
-
 from resources.common import *
 from searchEngines.models.ModelBase import ModelBase
 

@@ -1,9 +1,7 @@
 import os
 import json
 import logging
-
 from sqlalchemy import create_engine
-
 # These need to be here for SQlAlchemy to setup the DB to read MetaData
 from resources.models.ModelBase import Base
 from resources.models.Artist import Artist
@@ -23,7 +21,6 @@ from resources.models.UserArtist import UserArtist
 from resources.models.UserRelease import UserRelease
 from resources.models.UserRole import UserRole
 from resources.models.UserTrack import UserTrack
-
 
 d = os.path.dirname(os.path.realpath(__file__)).split(os.sep)
 path = os.path.join(os.sep.join(d), "settings.json")

@@ -5,18 +5,15 @@ import sys
 import codecs
 from resources.processor import Processor
 from resources.validator import Validator
-
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-
 from importers.collectionImporter import CollectionImporter
 
 if sys.stdout.encoding != 'cp850':
-  sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
+    sys.stdout = codecs.getwriter('cp850')(sys.stdout.buffer, 'strict')
 if sys.stderr.encoding != 'cp850':
-  sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
-
+    sys.stderr = codecs.getwriter('cp850')(sys.stderr.buffer, 'strict')
 
 p = argparse.ArgumentParser(description='Import Various Records.')
 p.add_argument('--readOnly', '-st', action='store_true', help='Read Only Mode; Dont modify Anything')
@@ -40,5 +37,3 @@ session = DBSession()
 
 if str(args.type).lower() == "collection":
     c = CollectionImporter(conn, session, args.id, args.readOnly, args.format, args.filename)
-
-

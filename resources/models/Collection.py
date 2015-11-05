@@ -1,13 +1,11 @@
 from sqlalchemy import Column, ForeignKey, Integer, BLOB, String, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.CollectionRelease import CollectionRelease
 
 
 class Collection(Base):
-
     name = Column(String(100), nullable=False, unique=True, index=True)
     edition = Column(String(200))
     # This is the format of the CSV (like number, artist, album)

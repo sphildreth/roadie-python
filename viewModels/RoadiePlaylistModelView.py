@@ -2,7 +2,6 @@ from viewModels.RoadieModelView import RoadieModelView
 
 
 class RoadiePlaylistModelView(RoadieModelView):
-
     form_ajax_refs = {
         'user': {
             'fields': ['username'],

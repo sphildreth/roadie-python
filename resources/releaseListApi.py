@@ -1,14 +1,11 @@
 import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
-
 from resources.models.Track import Track
 from resources.models.Release import Release
 from resources.models.ReleaseMedia import ReleaseMedia
-
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy import create_engine, Integer, desc, String, update
 from sqlalchemy.sql import text, func
 
@@ -43,7 +40,7 @@ class ReleaseListApi(Resource):
             get_skip = (get_current * get_limit) - get_limit
         if args.filter:
             releases = self.dbSession.query(Release).filter(Release.title.like("%" + args.filter + "%")) \
-                           .order_by(order + sort).slice(get_skip, get_limit)
+                .order_by(order + sort).slice(get_skip, get_limit)
         else:
             releases = self.dbSession.query(Release).order_by(order + sort).limit(get_limit)
         rows = []

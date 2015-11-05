@@ -1,9 +1,7 @@
 import os
 import hashlib
 import uuid
-
 from sqlalchemy import update
-
 from resources.common import *
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track

@@ -3,24 +3,25 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="playlist-container">
-        <div class="row">
+<div class="playlist-container">
+    <div class="row">
         {% for userPlaylist in userPlaylists %}
-            <h4><span class="label label-default">{{ userPlaylist.name }}</span></h4>
-            <ul class="playlist" data-playlist-id="{{ userPlaylist.roadieId }}">
-                {%for track in userPlaylist.tracks %}
-                <li data-track-id="{{ track.roadieId }}">{{ track.title }}</li>
-                {% endfor %}
-            </ul>
+        <h4><span class="label label-default">{{ userPlaylist.name }}</span></h4>
+        <ul class="playlist" data-playlist-id="{{ userPlaylist.roadieId }}">
+            {%for track in userPlaylist.tracks %}
+            <li data-track-id="{{ track.roadieId }}">{{ track.title }}</li>
+            {% endfor %}
+        </ul>
         {% endfor %}
-        </div>
-        <h1>WIP</h1>
     </div>
+    <h1>WIP</h1>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
 
     });
-    </script>
+
+</script>
 {% endblock %}

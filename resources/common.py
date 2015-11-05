@@ -3,9 +3,7 @@ import io
 import unicodedata
 import string
 import arrow
-
 from PIL import Image
-
 from string import ascii_letters, digits
 import sys
 from math import floor
@@ -25,7 +23,7 @@ def readImageThumbnailBytesFromFile(self, path, saveAs="JPEG"):
 def sizeof_fmt(num, suffix='B'):
     if not num:
         return "0"
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024:
             return "%3.1f%s%s" % (num, unit, suffix)
         num /= 1024

@@ -1,9 +1,7 @@
 import csv
 import os
 import uuid
-
 import arrow
-
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
 from resources.models.Collection import Collection

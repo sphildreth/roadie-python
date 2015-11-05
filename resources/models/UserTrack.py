@@ -1,6 +1,5 @@
 import arrow
 from sqlalchemy import Column, Index, ForeignKey, SmallInteger, Integer, Boolean, DateTime
-
 from resources.models.ModelBase import Base
 
 

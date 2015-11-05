@@ -3,30 +3,30 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="duplicates-container">
-        <h4><span class="label label-primary">Potential Duplicate Artists [{{ duplicateArtists|length }}]</span></h4>
-        {% for duplicateArtist in duplicateArtists %}
-        <div class="row duplicate-artists">
-            <div class="col-md-5 left" data-artist-id="{{ duplicateArtist['artist'].id }}">
-                <a href="/admin/artist/edit/?id={{ duplicateArtist['artist'].id  }}&amp;url=/artist/{{ duplicateArtist['artist'].id  }}">
-                    <div>Name: {{ duplicateArtist['artist'].Name }}</div>
-                    <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
-                </a>
-            </div>
-            <div class="col-md-2">
-                <button class="merge merge-right btn btn-default" title="Merge Right Into Left"><- Merge</button>
-                <button class="merge merge-left btn btn-default" title="Merge Left Into Right">Merge -> </button>
-            </div>
-            <div class="col-md-5 right" data-artist-id="{{ duplicateArtist['a'].id }}">
-                <div>Name: {{ duplicateArtist['a'].Name }}</div>
-                <div>SortName: {{ duplicateArtist['a'].SortName }}</div>
-            </div>
+<div class="duplicates-container">
+    <h4><span class="label label-primary">Potential Duplicate Artists [{{ duplicateArtists|length }}]</span></h4>
+    {% for duplicateArtist in duplicateArtists %}
+    <div class="row duplicate-artists">
+        <div class="col-md-5 left" data-artist-id="{{ duplicateArtist['artist'].id }}">
+            <a href="/admin/artist/edit/?id={{ duplicateArtist['artist'].id  }}&amp;url=/artist/{{ duplicateArtist['artist'].id  }}">
+                <div>Name: {{ duplicateArtist['artist'].Name }}</div>
+                <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
+            </a>
         </div>
-        {% endfor %}
+        <div class="col-md-2">
+            <button class="merge merge-right btn btn-default" title="Merge Right Into Left"><- Merge</button>
+            <button class="merge merge-left btn btn-default" title="Merge Left Into Right">Merge -></button>
+        </div>
+        <div class="col-md-5 right" data-artist-id="{{ duplicateArtist['a'].id }}">
+            <div>Name: {{ duplicateArtist['a'].Name }}</div>
+            <div>SortName: {{ duplicateArtist['a'].SortName }}</div>
+        </div>
     </div>
+    {% endfor %}
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
         $("div.duplicates-container button.merge").on("click", function(e) {
             var $this = $(this);
@@ -51,5 +51,6 @@
             });
         });
     });
-    </script>
+
+</script>
 {% endblock %}

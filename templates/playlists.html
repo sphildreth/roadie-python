@@ -3,30 +3,31 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="collections-container">
-        {% if current_user.is_editor() %}
-        <div>
-            <a class="btn btn-primary" href="/admin/playlist/new/?url=/playlists"><i class="fa fa-add"></i> Add</a>
-        </div>
-        {% endif %}
-        <h4><span class="label label-primary">Playlists</span></h4>
-        {% for playlist in playlists %}
-        <div class="row playlist">
-            <a href="/playlist/{{ playlist.id }}">
-                <div class="thumbnail-container pull-left">
-                    <img class="thumb" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Name }}" />
-                </div>
-                <h4><span class="label label-default">{{ collection.Name }}</span></h4>
-            </a>
-        </div>
-        {% endfor %}
-        <h1>WIP</h1>
+<div class="collections-container">
+    {% if current_user.is_editor() %}
+    <div>
+        <a class="btn btn-primary" href="/admin/playlist/new/?url=/playlists"><i class="fa fa-add"></i> Add</a>
     </div>
+    {% endif %}
+    <h4><span class="label label-primary">Playlists</span></h4>
+    {% for playlist in playlists %}
+    <div class="row playlist">
+        <a href="/playlist/{{ playlist.id }}">
+            <div class="thumbnail-container pull-left">
+                <img class="thumb" src="/images/collection/thumbnail/{{ collection.id }}" alt="{{ collection.Name }}"/>
+            </div>
+            <h4><span class="label label-default">{{ collection.Name }}</span></h4>
+        </a>
+    </div>
+    {% endfor %}
+    <h1>WIP</h1>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
 
     });
-    </script>
+
+</script>
 {% endblock %}

@@ -1,27 +1,35 @@
 {
-    "SECRET_KEY": "a9kf^!y@rd-ci0&7l#da6ko$(l@_$9(y^r^a@2j+8!7zpk!zw88wi069",
-    "SESSION_TYPE": "filesystem",
-    "ROADIE_SITE_NAME": "Roadie",
-    "ROADIE_INBOUND_FOLDER": "Z:/library/",
-    "ROADIE_LIBRARY_FOLDER": "Z:/library/",
-    "ROADIE_THUMBNAILS" : {
-        "Height": 80,
-        "Width": 80
-    },
-    "ROADIE_DATABASE_URL": "mysql+pymysql://roadie:MenAtW0rk668@mserver.sphildreth.local/roadie?charset=utf8",
-    "ROADIE_CONVERTING": {
-        "DoDeleteAfter": "True"
-    },
-    "ROADIE_PROCESSING": {
-        "DoAudioCleanup": "True",
-        "DoSaveEditsToTags": "True",
-        "DoClearComments": "True",
-        "TitleReplacements": [
-            { "^": "'"},
-            { "_": " "},
-            { "-": " "},
-            { "~": ","}
-        ]
-    },
-    "SQLALCHEMY_TRACK_MODIFICATIONS" : "False"
+  "SECRET_KEY": "a9kf^!y@rd-ci0&7l#da6ko$(l@_$9(y^r^a@2j+8!7zpk!zw88wi069",
+  "SESSION_TYPE": "filesystem",
+  "ROADIE_SITE_NAME": "Roadie",
+  "ROADIE_INBOUND_FOLDER": "Z:/library/",
+  "ROADIE_LIBRARY_FOLDER": "Z:/library/",
+  "ROADIE_THUMBNAILS": {
+    "Height": 80,
+    "Width": 80
+  },
+  "ROADIE_DATABASE_URL": "mysql+pymysql://roadie:MenAtW0rk668@mserver.sphildreth.local/roadie?charset=utf8",
+  "ROADIE_CONVERTING": {
+    "DoDeleteAfter": "True"
+  },
+  "ROADIE_PROCESSING": {
+    "DoAudioCleanup": "True",
+    "DoSaveEditsToTags": "True",
+    "DoClearComments": "True",
+    "TitleReplacements": [
+      {
+        "^": "'"
+      },
+      {
+        "_": " "
+      },
+      {
+        "-": " "
+      },
+      {
+        "~": ","
+      }
+    ]
+  },
+  "SQLALCHEMY_TRACK_MODIFICATIONS": "False"
 }

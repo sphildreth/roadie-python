@@ -2,8 +2,8 @@ from flask_admin.contrib.sqla import ModelView
 import os
 import json
 from resources.id3 import ID3
-
 from viewModels.RoadieModelView import RoadieModelView
+
 
 class RoadieReleaseModelView(RoadieModelView):
     form_subdocuments = {
@@ -58,4 +58,4 @@ class RoadieReleaseModelView(RoadieModelView):
         except:
             pass
         # Call the base class to update any necessary timestamps and such
-        super(RoadieReleaseModelView, self).on_model_change(form,model,is_created)
+        super(RoadieReleaseModelView, self).on_model_change(form, model, is_created)

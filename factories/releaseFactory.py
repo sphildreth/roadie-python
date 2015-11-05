@@ -1,9 +1,7 @@
 import random
 import uuid
-
 from sqlalchemy.sql import func, and_, or_, text
 from sqlalchemy.ext.declarative import declarative_base
-
 from resources.common import *
 from resources.models.Artist import Artist
 from resources.models.Genre import Genre

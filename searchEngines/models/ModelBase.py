@@ -2,7 +2,6 @@ import uuid
 
 
 class ModelBase(object):
-
     roadieId = None
     tags = None
     alternateNames = None

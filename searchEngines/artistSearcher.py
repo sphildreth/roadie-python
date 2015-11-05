@@ -3,10 +3,8 @@ import io
 import photohash
 import random
 import uuid
-
 import wikipedia
 from PIL import Image
-
 from resources.common import *
 from resources.logger import Logger
 from searchEngines.imageSearcher import ImageSearcher

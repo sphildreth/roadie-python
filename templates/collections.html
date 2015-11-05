@@ -3,29 +3,31 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="collections-container">
-        {% if current_user.is_editor()  %}
-        <div>
-            <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-plus"></i> Add</a>
-            <a id="updateAllCollections" class="btn btn-warning" href="javascript:void(0);"><i class="fa fa-bolt"></i> Update All</a>
-        </div>
-        {% endif %}
-        <h4><span class="label label-primary">Collections</span></h4>
-        {% for collection in collections %}
-        <div class="row collection">
-            <a href="/collection/{{ collection.roadieId }}">
-                <div class="thumbnail-container pull-left">
-                    <img class="thumb" src="/images/collection/thumbnail/{{ collection.roadieId }}" alt="{{ collection.name }}" />
-                </div>
-                <h4>
-                    <span title="Found Releases In Library" class="label label-info">{{ collection.releaseCount }}</span>
-                    <span class="label label-default">{{ collection.name }}</span>
-                </h4>
-            </a>
-        </div>
-        {% endfor %}
-        {% if notFoundEntryInfos %}
-        <div class="bordered">
+<div class="collections-container">
+    {% if current_user.is_editor() %}
+    <div>
+        <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-plus"></i> Add</a>
+        <a id="updateAllCollections" class="btn btn-warning" href="javascript:void(0);"><i class="fa fa-bolt"></i>
+            Update All</a>
+    </div>
+    {% endif %}
+    <h4><span class="label label-primary">Collections</span></h4>
+    {% for collection in collections %}
+    <div class="row collection">
+        <a href="/collection/{{ collection.roadieId }}">
+            <div class="thumbnail-container pull-left">
+                <img class="thumb" src="/images/collection/thumbnail/{{ collection.roadieId }}"
+                     alt="{{ collection.name }}"/>
+            </div>
+            <h4>
+                <span title="Found Releases In Library" class="label label-info">{{ collection.releaseCount }}</span>
+                <span class="label label-default">{{ collection.name }}</span>
+            </h4>
+        </a>
+    </div>
+    {% endfor %}
+    {% if notFoundEntryInfos %}
+    <div class="bordered">
         {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
         <div class="row not-found">
             <div class="col-md-4">
@@ -42,12 +44,12 @@
             </div>
         </div>
         {% endfor %}
-        </div>
-        {% endif %}
     </div>
+    {% endif %}
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
         $("#updateAllCollections").on("click",function(e) {
             bootbox.confirm("Continue to Update All Collection(s)?", function(result) {
@@ -71,5 +73,6 @@
             });
         });
     });
-    </script>
+
+</script>
 {% endblock %}

@@ -3,316 +3,363 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="release-detail-container releasetype_{{ release.releaseType|lower }} librarystatus_{{ release.libraryStatus|lower }}" data-release-id="{{ release.roadieId }}" data-release-db-id="{{ release.id }}">
-        <div class="release-counts-container pull-right">
-            <span data-media-count="{{ releaseMediaCount }}" class="media-count">Media: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Media of Release">{{ '%02d' % releaseMediaCount }}</span></span>
-            <span data-track-count="{{ trackCount }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Release">{{ '%02d' % trackCount }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Release">{{ releaseTrackTime or '--:--' }}</span></span>
-            <span class="file-size">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total FileSize of Release">{{ releaseTrackFileSize }}</span></span>
-        </div>
-        <div class="btn-toolbar edit-toolbar" role="toolbar">
+<div class="release-detail-container releasetype_{{ release.releaseType|lower }} librarystatus_{{ release.libraryStatus|lower }}"
+     data-release-id="{{ release.roadieId }}" data-release-db-id="{{ release.id }}">
+    <div class="release-counts-container pull-right">
+        <span data-media-count="{{ releaseMediaCount }}" class="media-count">Media: <span class="badge"
+                                                                                          data-toggle="tooltip"
+                                                                                          data-placement="bottom"
+                                                                                          title="Total Media of Release">{{ '%02d' % releaseMediaCount }}</span></span>
+        <span data-track-count="{{ trackCount }}" class="track-count">Tracks: <span class="badge" data-toggle="tooltip"
+                                                                                    data-placement="bottom"
+                                                                                    title="Total Tracks of Release">{{ '%02d' % trackCount }}</span></span>
+        <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                               title="Total Playtime of Release">{{ releaseTrackTime or '--:--' }}</span></span>
+        <span class="file-size">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                 title="Total FileSize of Release">{{ releaseTrackFileSize }}</span></span>
+    </div>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <div class="btn-group">
+            <a id="playAll" class="btn btn-default"><i class="fa fa-play"></i> Play</a>
+            {% if current_user.is_editor() or current_user.has_role("Download") %}
+            <a id="downloadRelease" class="btn btn-default"><i class="fa fa-download"></i> Download</a>
+            {% endif %}
             <div class="btn-group">
-                <a id="playAll" class="btn btn-default"><i class="fa fa-play"></i> Play</a>
-                {% if current_user.is_editor() or current_user.has_role("Download") %}
-                <a id="downloadRelease" class="btn btn-default"><i class="fa fa-download"></i> Download</a>
-                {% endif %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-search"></i> Search <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a id="searchInternetArtist" href="#">Internet Artist</a></li>
-                        <li><a id="searchInternetTitle" href="#">Internet Title</a></li>
-                        <li><a id="searchInternetArtistAndTitle" href="#">Internet Artist and Title</a></li>
-                    </ul>
-                </div>
-            </div>
-            {% if current_user.is_editor() %}
-              <div class="btn-group">
-                <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.roadieId }}" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
-                {% if release.artist.isLocked == False %}
-                <div class="btn-group">
-                    <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Release</a></li>
-                        <li><a id="deleteReleaseAndTracks" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Release And Track Files</a></li>
-                    </ul>
-                </div>
-                <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
-                {% endif %}
-             </div>
-            {% endif %}
-            {% if release.artist.isLocked %}
-                <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
-            {% endif %}
-        </div>
-        <div class="row title bordered">
-            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
-            <div class="release-rating-container pull-left">
-                <input type="hidden" class="rating" data-readonly value="{{ release.rating }}" />
-            </div>
-            <div class="artist-info">
-                <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
-                <h5><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span class="release-artist-name label label-info">{{ release.artist.name }}</span></a></h5>
-            </div>
-            <h2>
-                <span class="release-title label label-default">{{ release.title }}</span>
-                {% if current_user.is_editor() %}
-                    <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i></button>
-                {% endif %}
-            </h2>
-            <div class="user-rating-container">
-                <a href="#" class="dislike" title="Toggle Dislike Release"><i class="fa {{ 'fa-thumbs-down' if userRelease.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
-                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                <input type="hidden" class="user-rating rating" value="{{ userRelease.rating }}" />
-                <a href="#" class="favorite" title="Toggle Favorite Release"><i class="fa {{'fa-heart' if userRelease.isFavorite else 'fa-heart-o'}}"></i></a>
+                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown"
+                        aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-search"></i> Search <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a id="searchInternetArtist" href="#">Internet Artist</a></li>
+                    <li><a id="searchInternetTitle" href="#">Internet Title</a></li>
+                    <li><a id="searchInternetArtistAndTitle" href="#">Internet Artist and Title</a></li>
+                </ul>
             </div>
         </div>
-        <div class="row bordered">
-            <div class="col-md-6">
-                <h4><span class="label label-primary">Profile</span></h4>
-                <div>{{ release.profile|safe }}</div>
+        {% if current_user.is_editor() %}
+        <div class="btn-group">
+            <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.roadieId }}"
+               class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
+            {% if release.artist.isLocked == False %}
+            <div class="btn-group">
+                <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    <i class="fa fa-trash-o"></i> Delete <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a id="deleteRelease" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete Release</a>
+                    </li>
+                    <li><a id="deleteReleaseAndTracks" class="btn btn-danger"><i class="fa fa-trash-o"></i> Delete
+                        Release And Track Files</a></li>
+                </ul>
             </div>
-            <div class="col-md-6">
-                {% for image in release.images %}
-                    <div class="col-md-3">
-                        <a href="javascript:void(0);"
-                           data-title="{{ image.caption }}"
-                           data-url="/images/release/{{ image.roadieId }}/2048/2048"
-                           target="_blank" class="thumbnail">
-                            <img data-image-id="{{ image.roadieId }}" data-toggle="context" data-target="#context-menu-{{ image.roadieId }}" src="/images/release/{{ image.roadieId }}/512/512" alt="Image" />
-                        </a>
-                    </div>
-                    <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
-                        <ul class="dropdown-menu" role="menu">
-                        <li><a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a></li>
-                        </ul>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-        <div class="row details bordered">
-            <div class="col-md-3">
-                <div>
-                    <h4><span class="label label-primary">Release Date</span></h4>
-                    <span class="release-date label label-default">{{ release.releaseDate }}</span>
-                    {% if current_user.is_editor() %}
-                    <button id="setReleaseDate" class="btn btn-warning btn-sm" title="Set Release Date"><i class="fa fa-edit"></i></button>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div>
-                    <h4><span class="label label-primary">Track Count</span></h4>
-                    <span id="releaseTrackCount" class="label label-default">{{ release.trackCount }}</span>
-                </div>
-                <div>
-                    <h4><span class="label label-primary">Media Count</span></h4>
-                    <span id="releaseMediaCount" class="label label-default">{{ release.mediaCount }}</span>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div>
-                    <h4><span class="label label-primary">Labels</span></h4>
-                    <ul>
-                        {% for releaseLabel in release.releaseLabels %}
-                        <li>
-                            <span class="label label-default">{{ releaseLabel.label.name }}</span>
-                            {% if releaseLabel.catalogNumber %}
-                            <span class="label label-default">{{ releaseLabel.catalogNumber }}</span>
-                            {% endif %}
-                            {% if releaseLabel.beginDate %}
-                            <span class="label label-default">{{ releaseLabel.beginDate }}</span>
-                            {% endif %}
-                            {% if releaseLabel.endDate %}
-                            <span class="label label-default">{{ releaseLabel.endDate }}</span>
-                            {% endif %}
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-        {% if release.musicBrainzId or release.iTunesId or release.amgId or release.lastFMId or release.spotifyId %}
-        <div class="row details bordered">
-            {% if release.musicBrainzId %}
-            <div class="col-md-2">
-                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
-                <a href="https://musicbrainz.org/release/{{ release.musicBrainzId }}" target="_blank"><span class="label label-default">{{ release.musicBrainzId }}</span></a>
-            </div>
-            {% endif %}
-            {% if release.iTunesId %}
-            <div class="col-md-2">
-                <h4><span class="label label-primary">iTunes Id</span></h4>
-                <a href="https://itunes.apple.com/us/album/{{ release.iTunesId }}" target="_blank"><span class="label label-default">{{ release.iTunesId }}</span></a>
-            </div>
-            {% endif %}
-            {% if release.amgId %}
-            <div class="col-md-2">
-                <h4><span class="label label-primary">All Music Guide Id</span></h4>
-                <a href="https://itunes.apple.com/us/album/{{ release.amgId }}" target="_blank"><span class="label label-default">{{ release.amgId }}</span></a>
-            </div>
-            {% endif %}
-            {% if release.lastFMId %}
-            <div class="col-md-2">
-                <h4><span class="label label-primary">Last FM Id</span></h4>
-                <a href="https://itunes.apple.com/us/album/{{ release.lastFMId }}" target="_blank"><span class="label label-default">{{ release.lastFMId }}</span></a>
-            </div>
-            {% endif %}
-            {% if release.spotifyId %}
-            <div class="col-md-2">
-                <h4><span class="label label-primary">Spotify Id</span></h4>
-                <a href="https://play.spotify.com/album/{{ release.spotifyId }}" target="_blank"><span class="label label-default">{{ release.spotifyId }}</span></a>
-            </div>
+            <a id="scanRelease" class="btn btn-warning"><i class="fa fa-folder-open-o"></i> Re-Scan</a>
             {% endif %}
         </div>
         {% endif %}
-        <div class="row lists bordered">
-            <div class="col-md-3">
-                {% if collectionReleases %}
-                <div>
-                    <h4><span class="label label-primary">Collections</span></h4>
-                    <ul class="no-list-style">
-                        {% for collectionRelease in collectionReleases|sort(attribute='listNumber') %}
-                        <li>
-                            <a href="/collection/{{ collectionRelease.roadieId }}">
-                                <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span> <span class="label label-default">{{ collectionRelease.collectionReleases.name }}</span>
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-                {% if release.alternateNames %}
-                <div>
-                    <h4><span class="label label-primary">Alternate Names</span></h4>
-                    <ul>
-                        {% for alternateName in release.alternateNames %}
-                        <li><span class="label label-default">{{ alternateName }}</span></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
-            <div class="col-md-3">
-                <div>
-                    {% if release.genres %}
-                    <h4><span class="label label-primary">Genres</span></h4>
-                    <input type="text" disabled class="form-control tokenfield-readonly" id="genreTokenfield" value="{{ release.genres|sort(attribute='name')|join(',', attribute='name') }}" />
-                    {% endif %}
-                </div>
-            </div>
-            {% if release.tags %}
-            <div class="col-md-3">
-                <h4><span class="label label-primary">Tags</span></h4>
-                <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield" value="{{ release.tags|sort|join(',') }}" />
-            </div>
+        {% if release.artist.isLocked %}
+        <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Artist Is Locked"></i></span>
+        {% endif %}
+    </div>
+    <div class="row title bordered">
+        <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
+             alt="{{ release.title }}"/>
+
+        <div class="release-rating-container pull-left">
+            <input type="hidden" class="rating" data-readonly value="{{ release.rating }}"/>
+        </div>
+        <div class="artist-info">
+            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
+                 alt="{{ release.artist.name }}"/>
+            <h5><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span
+                    class="release-artist-name label label-info">{{ release.artist.name }}</span></a></h5>
+        </div>
+        <h2>
+            <span class="release-title label label-default">{{ release.title }}</span>
+            {% if current_user.is_editor() %}
+            <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i>
+            </button>
             {% endif %}
+        </h2>
+        <div class="user-rating-container">
+            <a href="#" class="dislike" title="Toggle Dislike Release"><i
+                    class="fa {{ 'fa-thumbs-down' if userRelease.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
+            <span class="reset-rating fa fa-square" title="Remove Rating"></span>
+            <input type="hidden" class="user-rating rating" value="{{ userRelease.rating }}"/>
+            <a href="#" class="favorite" title="Toggle Favorite Release"><i
+                    class="fa {{'fa-heart' if userRelease.isFavorite else 'fa-heart-o'}}"></i></a>
+        </div>
+    </div>
+    <div class="row bordered">
+        <div class="col-md-6">
+            <h4><span class="label label-primary">Profile</span></h4>
+
+            <div>{{ release.profile|safe }}</div>
+        </div>
+        <div class="col-md-6">
+            {% for image in release.images %}
             <div class="col-md-3">
-                <div>
-                    {% if current_user.has_role("Admin") %}
-                    <h4><span class="label label-primary">Library Folders</span></h4>
-                    <ul class="folders">
-                    {% for group in release|group_release_tracks_filepaths %}
-                        <li>
-                            <span class="length label label-info">{{ group }}</span>
-                        </li>
-                    {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
-                {% if release.urls %}
-                <div>
-                    <h4><span class="label label-primary">Urls</span></h4>
-                    <ul>
-                        {% for url in release.urls %}
-                        <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
-                        {% endfor %}
-                    </ul>
-                </div>
+                <a href="javascript:void(0);"
+                   data-title="{{ image.caption }}"
+                   data-url="/images/release/{{ image.roadieId }}/2048/2048"
+                   target="_blank" class="thumbnail">
+                    <img data-image-id="{{ image.roadieId }}" data-toggle="context"
+                         data-target="#context-menu-{{ image.roadieId }}"
+                         src="/images/release/{{ image.roadieId }}/512/512" alt="Image"/>
+                </a>
+            </div>
+            <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
+                <ul class="dropdown-menu" role="menu">
+                    <li><a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a>
+                    </li>
+                </ul>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row details bordered">
+        <div class="col-md-3">
+            <div>
+                <h4><span class="label label-primary">Release Date</span></h4>
+                <span class="release-date label label-default">{{ release.releaseDate }}</span>
+                {% if current_user.is_editor() %}
+                <button id="setReleaseDate" class="btn btn-warning btn-sm" title="Set Release Date"><i
+                        class="fa fa-edit"></i></button>
                 {% endif %}
             </div>
         </div>
-        <div class="row tracks bordered">
-            {% if current_user.is_editor() and release.artist.isLocked == False %}
-            <div class="row insane-quick-edit">
+        <div class="col-md-3">
+            <div>
+                <h4><span class="label label-primary">Track Count</span></h4>
+                <span id="releaseTrackCount" class="label label-default">{{ release.trackCount }}</span>
+            </div>
+            <div>
+                <h4><span class="label label-primary">Media Count</span></h4>
+                <span id="releaseMediaCount" class="label label-default">{{ release.mediaCount }}</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div>
+                <h4><span class="label label-primary">Labels</span></h4>
+                <ul>
+                    {% for releaseLabel in release.releaseLabels %}
+                    <li>
+                        <span class="label label-default">{{ releaseLabel.label.name }}</span>
+                        {% if releaseLabel.catalogNumber %}
+                        <span class="label label-default">{{ releaseLabel.catalogNumber }}</span>
+                        {% endif %}
+                        {% if releaseLabel.beginDate %}
+                        <span class="label label-default">{{ releaseLabel.beginDate }}</span>
+                        {% endif %}
+                        {% if releaseLabel.endDate %}
+                        <span class="label label-default">{{ releaseLabel.endDate }}</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% if release.musicBrainzId or release.iTunesId or release.amgId or release.lastFMId or release.spotifyId %}
+    <div class="row details bordered">
+        {% if release.musicBrainzId %}
+        <div class="col-md-2">
+            <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+            <a href="https://musicbrainz.org/release/{{ release.musicBrainzId }}" target="_blank"><span
+                    class="label label-default">{{ release.musicBrainzId }}</span></a>
+        </div>
+        {% endif %}
+        {% if release.iTunesId %}
+        <div class="col-md-2">
+            <h4><span class="label label-primary">iTunes Id</span></h4>
+            <a href="https://itunes.apple.com/us/album/{{ release.iTunesId }}" target="_blank"><span
+                    class="label label-default">{{ release.iTunesId }}</span></a>
+        </div>
+        {% endif %}
+        {% if release.amgId %}
+        <div class="col-md-2">
+            <h4><span class="label label-primary">All Music Guide Id</span></h4>
+            <a href="https://itunes.apple.com/us/album/{{ release.amgId }}" target="_blank"><span
+                    class="label label-default">{{ release.amgId }}</span></a>
+        </div>
+        {% endif %}
+        {% if release.lastFMId %}
+        <div class="col-md-2">
+            <h4><span class="label label-primary">Last FM Id</span></h4>
+            <a href="https://itunes.apple.com/us/album/{{ release.lastFMId }}" target="_blank"><span
+                    class="label label-default">{{ release.lastFMId }}</span></a>
+        </div>
+        {% endif %}
+        {% if release.spotifyId %}
+        <div class="col-md-2">
+            <h4><span class="label label-primary">Spotify Id</span></h4>
+            <a href="https://play.spotify.com/album/{{ release.spotifyId }}" target="_blank"><span
+                    class="label label-default">{{ release.spotifyId }}</span></a>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="row lists bordered">
+        <div class="col-md-3">
+            {% if collectionReleases %}
+            <div>
+                <h4><span class="label label-primary">Collections</span></h4>
+                <ul class="no-list-style">
+                    {% for collectionRelease in collectionReleases|sort(attribute='listNumber') %}
+                    <li>
+                        <a href="/collection/{{ collectionRelease.roadieId }}">
+                            <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span>
+                            <span class="label label-default">{{ collectionRelease.collectionReleases.name }}</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% if release.alternateNames %}
+            <div>
+                <h4><span class="label label-primary">Alternate Names</span></h4>
+                <ul>
+                    {% for alternateName in release.alternateNames %}
+                    <li><span class="label label-default">{{ alternateName }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-3">
+            <div>
+                {% if release.genres %}
+                <h4><span class="label label-primary">Genres</span></h4>
+                <input type="text" disabled class="form-control tokenfield-readonly" id="genreTokenfield"
+                       value="{{ release.genres|sort(attribute='name')|join(',', attribute='name') }}"/>
+                {% endif %}
+            </div>
+        </div>
+        {% if release.tags %}
+        <div class="col-md-3">
+            <h4><span class="label label-primary">Tags</span></h4>
+            <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield"
+                   value="{{ release.tags|sort|join(',') }}"/>
+        </div>
+        {% endif %}
+        <div class="col-md-3">
+            <div>
+                {% if current_user.has_role("Admin") %}
+                <h4><span class="label label-primary">Library Folders</span></h4>
+                <ul class="folders">
+                    {% for group in release|group_release_tracks_filepaths %}
+                    <li>
+                        <span class="length label label-info">{{ group }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% if release.urls %}
+            <div>
+                <h4><span class="label label-primary">Urls</span></h4>
+                <ul>
+                    {% for url in release.urls %}
+                    <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row tracks bordered">
+        {% if current_user.is_editor() and release.artist.isLocked == False %}
+        <div class="row insane-quick-edit">
             <div class="btn-group">
-                <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled"
+                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i class="fa fa-edit"></i> With Checked<span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                <li><a data-selected-cd="1" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD1</a></li>
-                <li><a data-selected-cd="2" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD2</a></li>
-                <li><a data-selected-cd="3" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To CD3</a></li>
+                    <li><a data-selected-cd="1" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
+                        CD1</a></li>
+                    <li><a data-selected-cd="2" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
+                        CD2</a></li>
+                    <li><a data-selected-cd="3" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
+                        CD3</a></li>
                 </ul>
             </div>
-            </div>
+        </div>
+        {% endif %}
+        {% for media in release.media|sort(attribute='releaseMediaNumber') %}
+        <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}">
+            <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
+            {% if media.releaseSubTitle %}
+            <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span>
+            </h5>
             {% endif %}
-            {% for media in release.media|sort(attribute='releaseMediaNumber') %}
-                <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" >
-                    <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
-                    {% if media.releaseSubTitle %}
-                        <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span></h5>
+            {% for track in media.tracks|sort(attribute='trackNumber') %}
+            <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
+                <div class="col-xs-1 col-sm-1 col-md-1">
+                    <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
+                    <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1"/></span>
+                </div>
+                <div class="col-xs-7 col-sm-7 col-md-7">
+                    <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
+                          class="title label label-default">{{ track.title }}</span>
+                    {% if track.partTitles|count > 0 %}
+                    <ul class="part-titles">
+                        {% for parttitle in track.partTitles %}
+                        <li><span class="label label-default part-title">{{ parttitle }}</span></li>
+                        {% endfor %}
+                    </ul>
                     {% endif %}
-                {% for track in media.tracks|sort(attribute='trackNumber') %}
-                    <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
-                        <div class="col-xs-1 col-sm-1 col-md-1">
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
-                            <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1" /></span>
-                        </div>
-                        <div class="col-xs-7 col-sm-7 col-md-7">
-                            <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}" class="title label label-default">{{ track.title }}</span>
-                            {% if track.partTitles|count > 0 %}
-                                <ul class="part-titles">
-                                {% for parttitle in track.partTitles %}
-                                    <li><span class="label label-default part-title">{{ parttitle }}</span></li>
-                                {% endfor %}
+                </div>
+                <div class="col-xs-1 col-sm-1 col-md-1">
+                    <div class="dropdown">
+                        <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
+                                aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-bars"></i> <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="#" class="play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
+                            <li><a href="#" class="que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
+                            {% if current_user.is_editor() %}
+                            <li><a href="#" class="edit-track btn btn-warning"><i class="fa fa-edit"></i> Edit</a></li>
+                            <li class="dropdown-submenu">
+                                <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i>
+                                    Delete</a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track"
+                                           class="delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete
+                                        Track</a></li>
+                                    <li><a href="#" data-toggle="tooltip" data-placement="left"
+                                           title="Delete the Track, and delete the File"
+                                           class="delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i>
+                                        Delete</a></li>
                                 </ul>
+                            </li>
                             {% endif %}
-                        </div>
-                        <div class="col-xs-1 col-sm-1 col-md-1">
-                            <div class="dropdown">
-                              <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa fa-bars"></i> <span class="caret"></span>
-                              </button>
-                              <ul class="dropdown-menu">
-                                <li><a href="#" class="play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
-                                <li><a href="#" class="que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
-                                {% if current_user.is_editor() %}
-                                <li><a href="#" class="edit-track btn btn-warning"><i class="fa fa-edit"></i> Edit</a></li>
-                                <li class="dropdown-submenu">
-                                    <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
-                                    <ul class="dropdown-menu">
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track" class="delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete Track</a></li>
-                                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track, and delete the File" class="delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a></li>
-                                    </ul>
-                                </li>
-                                {% endif %}
-                              </ul>
-                            </div>
-                        </div>
-                        <div class="col-xs-3 col-sm-3 col-md-3">
-                            <span data-track-duration="{{ track.duration }}" class="duration label label-info">{{ track.duration|format_tracktime() }}</span>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-xs-3 col-sm-3 col-md-3">
+                    <span data-track-duration="{{ track.duration }}" class="duration label label-info">{{ track.duration|format_tracktime() }}</span>
                             <span class="user-rating-container">
                                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-                                <input type="hidden" class="track-rating user-rating rating" value="{{ track.userRatings.rating }}" />
+                                <input type="hidden" class="track-rating user-rating rating"
+                                       value="{{ track.userRatings.rating }}"/>
                             </span>
-                        </div>
-                    </div>
-                {% endfor %}
                 </div>
+            </div>
             {% endfor %}
         </div>
-        <div class="meta pull-right">
-            <p><span class="label label-info">Last Modified: {{ release.lastUpdated }}</span></p>
-        </div>
+        {% endfor %}
     </div>
+    <div class="meta pull-right">
+        <p><span class="label label-info">Last Modified: {{ release.lastUpdated }}</span></p>
+    </div>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     var artistId = '{{ release.artist.roadieId }}';
     var releaseId = '{{ release.roadieId }}';
     var selectedCoverUrl = null;
@@ -904,5 +951,6 @@
         });
 
     });
-    </script>
+
+</script>
 {% endblock %}

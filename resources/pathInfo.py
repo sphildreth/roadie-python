@@ -1,6 +1,4 @@
-
 class PathInfo(object):
-
     def __init__(self, artistName, releaseYear, releaseTitle):
         self.artistName = artistName
         self.releaseYear = releaseYear

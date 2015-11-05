@@ -1,8 +1,6 @@
 import os
 import string
-
 from goldfinch import validFileName as vfn
-
 from resources.pathInfo import PathInfo
 
 

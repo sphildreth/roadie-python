@@ -35,7 +35,6 @@ class RoadieModelView(ModelView):
 
 
 class RoadieModelAdminRequiredView(RoadieModelView):
-
     def is_accessible(self):
         if not current_user.is_active or not current_user.is_authenticated:
             return False

@@ -3,58 +3,70 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="collection-container" data-collection-id="{{ collection.id }}">
-        <div class="release-counts-container pull-right">
-            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Collection">{{ counts.releaseCount }}</span></span>
-            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Tracks of Collection">{{ counts.trackCount }}</span></span>
-            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Collection">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
-        </div>
-        <div class="btn-toolbar edit-toolbar" role="toolbar">
-            <div class="btn-group">
-              <button id="playAll" type="button" class="btn btn-default" aria-haspopup="true" aria-expanded="false">
+<div class="collection-container" data-collection-id="{{ collection.id }}">
+    <div class="release-counts-container pull-right">
+        <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                    title="Total Releases in Collection">{{ counts.releaseCount }}</span></span>
+        <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Tracks of Collection">{{ counts.trackCount }}</span></span>
+        <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                               title="Total Playtime of Collection">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
+    </div>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <div class="btn-group">
+            <button id="playAll" type="button" class="btn btn-default" aria-haspopup="true" aria-expanded="false">
                 <i class="fa fa-play"></i> Play All
-              </button>
-            </div>
-            {% if current_user.is_editor() %}
-              <div class="btn-group">
-                <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.roadieId }}" type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-                <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
-                {% if collection.listInCSVFormat and collection.listInCSV %}
-                <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
-                {% endif %}
-             </div>
-            {% endif %}
+            </button>
         </div>
-        <div class="row title bordered">
-            <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.roadieId }}" alt="{{ collection.title }}" />
-            {% if collection.urls %}
-            <a class="external-link pull-left" target="_blank" href="{{ collection.urls[0] }}"><span class="fa fa-external-link fa-2x"></span></a>
+        {% if current_user.is_editor() %}
+        <div class="btn-group">
+            <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.roadieId }}"
+               type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+            {% if collection.listInCSVFormat and collection.listInCSV %}
+            <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
             {% endif %}
-            <h2><span class="label label-default">{{ collection.name }}</span></h2>
-        </div>
-        {%for collectionRelease in collection.collectionReleases|sort(attribute='listNumber') %}
-        {% if collectionRelease.release and collectionRelease.release.artist %}
-        <div class="collection-release pull-left" data-release-id="{{ collectionRelease.release.roadieId }}" data-listnumber="{{ collectionRelease.listNumber }}">
-           <a href="/release/{{ collectionRelease.release.roadieId }}">
-                <div class="thumbnail-container pull-left">
-                    <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.release.roadieId }}" alt="{{ collectionRelease.release.title }}" />
-                </div>
-                <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber  }}</span></h4>
-                <div class="artist-info">
-                    <img class="thumb pull-left" src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}" alt="{{ collectionRelease.release.artist.name }}" />
-                    <h5><a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}"><span class="label label-info">{{ collectionRelease.release.artist.name }}</span></a></h5>
-                </div>
-                <div class="release-rating-container">
-                    <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}" />
-                </div>
-                <h3 class="album-title"><span class="label label-default">{{ collectionRelease.release.title }}</span></h3>
-            </a>
         </div>
         {% endif %}
-        {% endfor %}
-        <div class="clearfix"></div>
-        {% if notFoundEntryInfos %}
-        <div class="bordered">
+    </div>
+    <div class="row title bordered">
+        <img class="collection-thumb thumb pull-left" src="/images/collection/thumbnail/{{ collection.roadieId }}"
+             alt="{{ collection.title }}"/>
+        {% if collection.urls %}
+        <a class="external-link pull-left" target="_blank" href="{{ collection.urls[0] }}"><span
+                class="fa fa-external-link fa-2x"></span></a>
+        {% endif %}
+        <h2><span class="label label-default">{{ collection.name }}</span></h2>
+    </div>
+    {%for collectionRelease in collection.collectionReleases|sort(attribute='listNumber') %}
+    {% if collectionRelease.release and collectionRelease.release.artist %}
+    <div class="collection-release pull-left" data-release-id="{{ collectionRelease.release.roadieId }}"
+         data-listnumber="{{ collectionRelease.listNumber }}">
+        <a href="/release/{{ collectionRelease.release.roadieId }}">
+            <div class="thumbnail-container pull-left">
+                <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.release.roadieId }}"
+                     alt="{{ collectionRelease.release.title }}"/>
+            </div>
+            <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber  }}</span></h4>
+
+            <div class="artist-info">
+                <img class="thumb pull-left"
+                     src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}"
+                     alt="{{ collectionRelease.release.artist.name }}"/>
+                <h5><a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}"><span
+                        class="label label-info">{{ collectionRelease.release.artist.name }}</span></a></h5>
+            </div>
+            <div class="release-rating-container">
+                <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}"/>
+            </div>
+            <h3 class="album-title"><span class="label label-default">{{ collectionRelease.release.title }}</span></h3>
+        </a>
+    </div>
+    {% endif %}
+    {% endfor %}
+    <div class="clearfix"></div>
+    {% if notFoundEntryInfos %}
+    <div class="bordered">
         {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
         <div class="row not-found">
             <div class="col-md-5">
@@ -68,14 +80,14 @@
             </div>
         </div>
         {% endfor %}
-        </div>
-        {% endif %}
-        <div class="row missing bordered">
-        </div>
     </div>
+    {% endif %}
+    <div class="row missing bordered">
+    </div>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     var collectionId = '{{ collection.roadieId }}';
     var collectionCountShouldBe = {{ collection.listInCSV|count_new_lines + 1 }};
     var missing = [];
@@ -137,5 +149,6 @@
             });
         });
     });
-    </script>
+
+</script>
 {% endblock %}

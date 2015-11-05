@@ -1,12 +1,9 @@
 import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
-
 from resources.models.Artist import Artist
-
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy import create_engine, Integer, desc, String, update
 from sqlalchemy.sql import text, func
 

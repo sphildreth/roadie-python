@@ -3,10 +3,8 @@ import threading
 from queue import Queue
 from io import StringIO
 from urllib import request
-
 import arrow
 import musicbrainzngs
-
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase, ThreadData
 from searchEngines.models.Artist import Artist, ArtistType
@@ -176,7 +174,8 @@ class MusicBrainz(SearchEngineBase):
             release = None
             self.logger.debug("Performing MusicBrainz Lookup For Album(s) [" + musicBrainzId + "]")
             mbReleaseById = musicbrainzngs.get_release_by_id(id=musicBrainzId,
-                                                             includes=['labels', 'aliases', 'recordings', 'release-groups', 'media', 'url-rels'])
+                                                             includes=['labels', 'aliases', 'recordings',
+                                                                       'release-groups', 'media', 'url-rels'])
             if mbReleaseById:
                 releaseLabels = []
                 releaseMedia = []
@@ -187,11 +186,13 @@ class MusicBrainz(SearchEngineBase):
                     releaseDate = None
                     releaseType = None
                     if 'release-group' in mbRelease and mbRelease['release-group']:
-                        if 'first-release-date' in mbRelease['release-group'] and mbRelease['release-group']['first-release-date']:
+                        if 'first-release-date' in mbRelease['release-group'] and mbRelease['release-group'][
+                            'first-release-date']:
                             releaseDate = parseDate(mbRelease['release-group']['first-release-date'])
                         if 'type' in mbRelease['release-group'] and mbRelease['release-group']['type']:
                             releaseType = mbRelease['release-group']['type']
-                        if not releaseType and 'primary-type' in mbRelease['release-group'] and mbRelease['release-group']['primary-type']:
+                        if not releaseType and 'primary-type' in mbRelease['release-group'] and \
+                                mbRelease['release-group']['primary-type']:
                             releaseType = mbRelease['release-group']['primary-type']
                     release = Release(title=mbRelease['title'], releaseDate=releaseDate)
                     release.releaseType = releaseType

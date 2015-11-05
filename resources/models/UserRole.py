@@ -1,10 +1,8 @@
 from sqlalchemy import Column, String
-
 from resources.models.ModelBase import Base
 
 
 class UserRole(Base):
-
     name = Column(String(80), nullable=False, unique=True)
     description = Column(String(200))
 

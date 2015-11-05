@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Enum, ForeignKey, Index, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.CollectionRelease import CollectionRelease
@@ -82,12 +81,11 @@ class Release(Base):
     def info(self):
         return ("Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) +
                 "], AlternateNames [" + "|".join(self.alternateNames or []) + "], Tags [" + "|".join(self.tags or []) +
-               "], MusicBrainzId [" + str(self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) +
-               "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId)
-               + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" +
-               str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +
-               "], Title [" + str(self.title) + "]").encode('ascii', 'ignore').decode('utf-8')
+                "], MusicBrainzId [" + str(self.musicBrainzId) + "], ITunesId [" + str(self.iTunesId) +
+                "], SpotifyId [" + str(self.spotifyId) + "], AmgId [" + str(self.amgId)
+                + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" +
+                str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +
+                "], Title [" + str(self.title) + "]").encode('ascii', 'ignore').decode('utf-8')
+
 
 Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)
-
-

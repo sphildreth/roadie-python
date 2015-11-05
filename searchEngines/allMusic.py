@@ -4,9 +4,7 @@ import json
 from urllib.error import HTTPError
 from io import StringIO
 from urllib import request, parse
-
 import arrow
-
 from resources.common import *
 from searchEngines.searchEngineBase import SearchEngineBase
 from searchEngines.models.Artist import Artist, ArtistType

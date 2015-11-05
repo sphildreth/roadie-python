@@ -2,7 +2,6 @@ import json
 from io import StringIO
 from urllib import request, parse
 from PIL import Image
-
 from searchEngines.musicBrainz import MusicBrainz
 
 

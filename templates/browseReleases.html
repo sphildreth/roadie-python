@@ -3,12 +3,12 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="browse-release-container">
-        <table id="browseReleasesGrid"></table>
-    </div>
+<div class="browse-release-container">
+    <table id="browseReleasesGrid"></table>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
         $('#browseReleasesGrid').bootstrapTable({
             ajax: function(params) {
@@ -67,5 +67,6 @@
             ]
         });
     });
-    </script>
+
+</script>
 {% endblock %}

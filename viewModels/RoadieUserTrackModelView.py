@@ -2,7 +2,6 @@ from viewModels.RoadieModelView import RoadieModelAdminRequiredView
 
 
 class RoadieUserTrackModelView(RoadieModelAdminRequiredView):
-
     form_ajax_refs = {
         # 'release': {
         #     'fields': ['title'],

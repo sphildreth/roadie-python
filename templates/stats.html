@@ -3,143 +3,171 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-    <div class="stats-container">
-        <div class="row counts-header">
-            <div class="release-counts-container pull-right">
-                <span class="label-count">Labels: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Labels in Library">{{ "{:,d}".format(counts.labelCount) }}</span></span>
-                <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Artists in Library">{{ "{:,d}".format(counts.artistCount) }}</span></span>
-                <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Releases in Library">{{ "{:,d}".format(counts.releaseCount) }}</span></span>
-                <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Unique Tracks in Library">{{ "{:,d}".format(counts.trackCount) }}</span></span>
-                <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Library">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
-                <span class="filesize-total">Library Size: <span class="badge" data-toggle="tooltip" data-placement="bottom" title="Total Playtime of Library">{{ formattedLibrarySize }}</span></span>
-            </div>
-            <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
+<div class="stats-container">
+    <div class="row counts-header">
+        <div class="release-counts-container pull-right">
+            <span class="label-count">Labels: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                    title="Total Unique Labels in Library">{{ "{:,d}".format(counts.labelCount) }}</span></span>
+            <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                      title="Total Unique Artists in Library">{{ "{:,d}".format(counts.artistCount) }}</span></span>
+            <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                        title="Total Releases in Library">{{ "{:,d}".format(counts.releaseCount) }}</span></span>
+            <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                    title="Total Unique Tracks in Library">{{ "{:,d}".format(counts.trackCount) }}</span></span>
+            <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                   title="Total Playtime of Library">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
+            <span class="filesize-total">Library Size: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                             title="Total Playtime of Library">{{ formattedLibrarySize }}</span></span>
         </div>
+        <h3><span class="label label-default">Statistics, Charts and Useless Facts</span></h3>
+    </div>
 
-        <div class="row bordered">
-            <div class="col-md-6 recent-releases">
-                <h4><span class="label label-primary">Top 25 Rated Songs</span><a href="#" title="Play" id="playTop25"> <i class="fa fa-play"></i></a></h4>
-                <div class="table-responsive">
-                    <table class="table table-striped table-condensed table-responsive">
-                        <thead>
-                            <tr>
-                                <td>Artist <i class="fa fa-ellipsis-v"></i> Title Rating</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for track in topRatedTracks %}
-                            <tr>
-                                 <td data-release-id="{{ track.roadieId }}">
-                                    <span class="label label-default"><a href="/artist/{{ track.releasemedia.release.artist.roadieId }}">{{ track.releasemedia.release.artist.name}}</a></span>
-                                    <i class="fa fa-ellipsis-v"></i>
-                                    <span class="label label-default">{{ track.title }}</span>
+    <div class="row bordered">
+        <div class="col-md-6 recent-releases">
+            <h4><span class="label label-primary">Top 25 Rated Songs</span><a href="#" title="Play" id="playTop25"> <i
+                    class="fa fa-play"></i></a></h4>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-condensed table-responsive">
+                    <thead>
+                    <tr>
+                        <td>Artist <i class="fa fa-ellipsis-v"></i> Title Rating</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for track in topRatedTracks %}
+                    <tr>
+                        <td data-release-id="{{ track.roadieId }}">
+                            <span class="label label-default"><a
+                                    href="/artist/{{ track.releasemedia.release.artist.roadieId }}">{{
+                                track.releasemedia.release.artist.name}}</a></span>
+                            <i class="fa fa-ellipsis-v"></i>
+                            <span class="label label-default">{{ track.title }}</span>
                                     <span class="track-rating-container">
-                                        <input type="hidden" class="track-rating rating" data-readonly value="{{ track.rating }}" />
+                                        <input type="hidden" class="track-rating rating" data-readonly
+                                               value="{{ track.rating }}"/>
                                     </span>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="col-md-6 recent-releases">
-                <h4><span class="label label-primary">Top 10 Rated Albums</span><a href="#" title="Play" id="playTop10Albums"> <i class="fa fa-play"></i></a></h4>
-                <div class="table-responsive">
-                    <table class="table table-striped table-condensed table-responsive">
-                        <thead>
-                            <tr>
-                                <td>Release</td>
-                                <td>Artist</td>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for release in topRatedReleases %}
-                            <tr>
-                                 <td data-release-id="{{ release.roadieId }}">
-                                    <a href="/release/{{ release.roadieId }}">
-                                        <div class="thumbnail-container pull-left">
-                                        <img class="release-thumb thumb" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
-                                        </div>
-                                        <span class="label label-default">{{ release.title }}</span>
-                                    </a>
-                                    <span class="user-rating-container">
-                                        <input type="hidden" class="release-rating rating" data-readonly value="{{ release.rating }}" />
-                                    </span>
-                                </td>
-                                <td data-artist-id="{{ release.artist.roadieId }}">
-                                    <a href="/artist/{{ release.artist.roadieId }}">
-                                        <div class="thumbnail-container pull-left">
-                                            <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
-                                        </div>
-                                        <span class="label label-default">{{ release.artist.name }}</span>
-                                    </a>
-                                    <span class="user-rating-container">
-                                        <input type="hidden" class="release-rating rating" data-readonly value="{{ release.artist.rating }}" />
-                                    </span>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        <div class="row bordered">
-            <div class="col-md-4 recent-releases">
-                <h4><span class="label label-primary">Most Recent Added Releases</span></h4>
-                {% for release in mostRecentReleases %}
-                    <div class="recent-releases-container">
-                        <div class="thumbnail-container pull-left">
-                            <img class="release-thumb" src="/images/release/thumbnail/{{ release.roadieId }}" alt="{{ release.title }}" />
-                        </div>
-                        <div class="artist-info">
-                            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}" alt="{{ release.artist.name }}" />
-                            <h4><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span class="label label-default">{{ release.artist.name }}</span></a></h4>
-                        </div>
+        <div class="col-md-6 recent-releases">
+            <h4><span class="label label-primary">Top 10 Rated Albums</span><a href="#" title="Play"
+                                                                               id="playTop10Albums"> <i
+                    class="fa fa-play"></i></a></h4>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-condensed table-responsive">
+                    <thead>
+                    <tr>
+                        <td>Release</td>
+                        <td>Artist</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for release in topRatedReleases %}
+                    <tr>
+                        <td data-release-id="{{ release.roadieId }}">
+                            <a href="/release/{{ release.roadieId }}">
+                                <div class="thumbnail-container pull-left">
+                                    <img class="release-thumb thumb"
+                                         src="/images/release/thumbnail/{{ release.roadieId }}"
+                                         alt="{{ release.title }}"/>
+                                </div>
+                                <span class="label label-default">{{ release.title }}</span>
+                            </a>
+                                    <span class="user-rating-container">
+                                        <input type="hidden" class="release-rating rating" data-readonly
+                                               value="{{ release.rating }}"/>
+                                    </span>
+                        </td>
+                        <td data-artist-id="{{ release.artist.roadieId }}">
+                            <a href="/artist/{{ release.artist.roadieId }}">
+                                <div class="thumbnail-container pull-left">
+                                    <img class="artist-thumb thumb"
+                                         src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
+                                         alt="{{ release.artist.name }}"/>
+                                </div>
+                                <span class="label label-default">{{ release.artist.name }}</span>
+                            </a>
+                                    <span class="user-rating-container">
+                                        <input type="hidden" class="release-rating rating" data-readonly
+                                               value="{{ release.artist.rating }}"/>
+                                    </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="row bordered">
+        <div class="col-md-4 recent-releases">
+            <h4><span class="label label-primary">Most Recent Added Releases</span></h4>
+            {% for release in mostRecentReleases %}
+            <div class="recent-releases-container">
+                <div class="thumbnail-container pull-left">
+                    <img class="release-thumb" src="/images/release/thumbnail/{{ release.roadieId }}"
+                         alt="{{ release.title }}"/>
+                </div>
+                <div class="artist-info">
+                    <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
+                         alt="{{ release.artist.name }}"/>
+                    <h4><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span
+                            class="label label-default">{{ release.artist.name }}</span></a></h4>
+                </div>
                         <span class="release-info">
                             <a href="/release/{{ release.roadieId }}">
-                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom" title="Release Date: {{ release.releaseDate }}<br />Added Date: {{ release.createdDate }}"></i>
+                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom"
+                                       title="Release Date: {{ release.releaseDate }}<br />Added Date: {{ release.createdDate }}"></i>
                                     <span class="label label-primary title">{{ release.title }}</span>
                                 </h3>
                             </a>
                         </span>
-                    </div>
-                {% endfor %}
             </div>
-            <div class="col-md-4">
-                <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
-                {% for artist in top10Artists %}
-                <div class="col-md-9">
-                    <div class="thumbnail-container pull-left">
-                        <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
-                    </div>
-                    <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span></h4></a>
+            {% endfor %}
+        </div>
+        <div class="col-md-4">
+            <h4><span class="label label-primary">Top 10 Artists With Most Releases</span></h4>
+            {% for artist in top10Artists %}
+            <div class="col-md-9">
+                <div class="thumbnail-container pull-left">
+                    <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}"
+                         alt="{{ artist.name }}"/>
                 </div>
-                <div class="col-md-3">
-                    <h4><span class="label label-primary">{{ artist.count }}</span></h4>
-                </div>
-                {% endfor %}
+                <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span>
+                </h4></a>
             </div>
-            <div class="col-md-4">
-                <h4><span class="label label-primary">Top 10 Artists With Most Tracks</span></h4>
-                {% for artist in top10ArtistsByTracks %}
-                <div class="col-md-9">
-                    <div class="thumbnail-container pull-left">
-                        <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}" />
-                    </div>
-                    <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span></h4></a>
-                </div>
-                <div class="col-md-3">
-                    <h4><span class="label label-primary">{{ artist.count }}</span></h4>
-                </div>
-                {% endfor %}
+            <div class="col-md-3">
+                <h4><span class="label label-primary">{{ artist.count }}</span></h4>
             </div>
+            {% endfor %}
+        </div>
+        <div class="col-md-4">
+            <h4><span class="label label-primary">Top 10 Artists With Most Tracks</span></h4>
+            {% for artist in top10ArtistsByTracks %}
+            <div class="col-md-9">
+                <div class="thumbnail-container pull-left">
+                    <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ artist.roadieId }}"
+                         alt="{{ artist.name }}"/>
+                </div>
+                <a href="/artist/{{ artist.roadieId }}"><h4><span class="label label-default">{{ artist.name }}</span>
+                </h4></a>
+            </div>
+            <div class="col-md-3">
+                <h4><span class="label label-primary">{{ artist.count }}</span></h4>
+            </div>
+            {% endfor %}
         </div>
     </div>
+</div>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
         $("#playTop25").on("click", function(e) {
             roadieLibrary.playLoader("/stats/play/top25songs");
@@ -149,5 +177,6 @@
         });
 
     });
-    </script>
+
+</script>
 {% endblock %}

@@ -1,8 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Index, Table, SmallInteger, Integer, BLOB, String, Date, Text, Enum
 from sqlalchemy_utils import ScalarListType
-
 from sqlalchemy.orm import relationship
-
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.Release import Release

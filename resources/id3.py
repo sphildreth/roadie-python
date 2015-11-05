@@ -9,7 +9,6 @@ from mutagen.id3 import ID3NoHeaderError
 from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, COMM, USLT, TCOM, TCON, TDRC, TRCK
 from resources.logger import Logger
 from hsaudiotag import mpeg
-
 from resources.models.Release import Release
 from resources.models.Track import Track
 
@@ -18,11 +17,11 @@ class ID3:
     filename = None
     config = None
 
-    def __init__(self,path,config=None):
+    def __init__(self, path, config=None):
         self.logger = Logger()
         self.filename = path
         self.config = config
-        self._load(path,config)
+        self._load(path, config)
 
     def isValid(self):
         try:
@@ -32,7 +31,7 @@ class ID3:
                     self.track and \
                     self.title and \
                     self.bitrate and \
-                    self.length > 0:
+                            self.length > 0:
                 return True
             else:
                 return False
@@ -40,9 +39,9 @@ class ID3:
             return False
 
     def info(self):
-        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" +  self.artist  + "], Year [" +\
-               str(self.year) + "], Album: [" + self.album + "], Disc: [" + str(self.disc) +\
-               "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], (" +\
+        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" + self.artist + "], Year [" + \
+               str(self.year) + "], Album: [" + self.album + "], Disc: [" + str(self.disc) + \
+               "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], (" + \
                str(self.bitrate) + "bps::" + str(self.length) + ")"
 
     def __str__(self):
@@ -96,9 +95,9 @@ class ID3:
             if isinstance(full_tags, mutagen.mp3.MP3):
                 for key in short_tags:
                     if key[0:4] == 'COMM':
-                        if(short_tags[key].desc == ''):
+                        if (short_tags[key].desc == ''):
                             comments.append(short_tags[key].text[0])
-                short_tags = mutagen.mp3.MP3(filename, ID3 = mutagen.easyid3.EasyID3)
+                short_tags = mutagen.mp3.MP3(filename, ID3=mutagen.easyid3.EasyID3)
             comments.append('')
             self.album = string.capwords(short_tags.get('album', [''])[0])
             self.artist = string.capwords(short_tags.get('artist', [''])[0])
@@ -132,7 +131,7 @@ class ID3:
             if self.title and config:
                 if 'TitleReplacements' in config:
                     for rpl in config['TitleReplacements']:
-                        for key,val in rpl.items():
+                        for key, val in rpl.items():
                             self.title = self.title.replace(key, val)
                     self.dirty = True
                 self.title = string.capwords(self.title)
@@ -157,7 +156,7 @@ class ID3:
                 self.genre = genres[0]
             self.size = os.stat(filename).st_size
             self.imageBytes = None
-            if full_tags.tags and 'APIC:' in  full_tags.tags:
+            if full_tags.tags and 'APIC:' in full_tags.tags:
                 self.imageBytes = full_tags.tags._DictProxy__dict['APIC:'].data
         except:
             self.logger.exception()

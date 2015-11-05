@@ -1,41 +1,43 @@
 {% extends "layout.html" %}
 {% block body_content %}
-  <form action="" method="post" enctype="multipart/form-data" class="form-horizontal profile">
+<form action="" method="post" enctype="multipart/form-data" class="form-horizontal profile">
     <h2>Edit Your Profile</h2>
+
     <div class="control-group">
         <div class="controls">
             <label for="password">New Password:</label>
-          <input type="password" id="password" name="password" class="input-xlarge"
-            placeholder="Enter New Password" value="" />
+            <input type="password" id="password" name="password" class="input-xlarge"
+                   placeholder="Enter New Password" value=""/>
         </div>
         <div class="controls">
             <label for="email">Email:</label>
-          <input type="email" id="email" name="email" class="input-xlarge"
-            placeholder="Enter Email" value="{{ user.email }}"
-            required />
+            <input type="email" id="email" name="email" class="input-xlarge"
+                   placeholder="Enter Email" value="{{ user.email }}"
+                   required/>
         </div>
         <div class="controls">
             <label for="useHTMLPlayer">Use HTML Player:</label>
-          <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="input-xlarge"
-            placeholder="Enter Email" value="true" {{ "checked" if user.doUseHTMLPlayer else "" }} />
+            <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="input-xlarge"
+                   placeholder="Enter Email" value="true" {{ "checked" if user.doUseHTMLPlayer else "" }} />
         </div>
         <div class="controls">
             <label for="avatar">Avatar:</label>
-            <input type="file" accept=".png" class="input" id="avatar" name="avatar" />
+            <input type="file" accept=".png" class="input" id="avatar" name="avatar"/>
         </div>
     </div>
 
     <div class="control-group">
         <div class="controls">
-          <button type="submit" class="btn btn-success">Save</button>
+            <button type="submit" class="btn btn-success">Save</button>
         </div>
     </div>
-  </form>
+</form>
 {% endblock %}
 {% block script_content %}
-    <script type="text/javascript">
+<script type="text/javascript">
     $(function() {
 
     });
-    </script>
+
+</script>
 {% endblock %}
