@@ -337,6 +337,7 @@ class Processor(ProcessorBase):
                                 pass
                     self.session.commit()
                     gc.collect()
+
                 except:
                     self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")
                     self.session.rollback()
