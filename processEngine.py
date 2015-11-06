@@ -13,6 +13,8 @@ p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
                help='Dont Delete Any Processed Inbound Folders')
 p.add_argument('--dontValidate', '-dv', action='store_true',
                help='Dont Run Validate Command After Processing')
+p.add_argument('--processArtists', '-pa', action='store_true',
+               help='Process Artist release folders in Library')
 p.add_argument('--flush', '-fl', action='store_true', help='Flush All Releases For Artist Before Processing')
 p.add_argument('--readOnly', '-st', action='store_true', help='Read Only Mode; Dont modify Anything')
 args = p.parse_args()
@@ -32,8 +34,10 @@ Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 pp = Processor(config, conn, session, args.readOnly, args.dontDeleteInboundFolders, args.flush)
-pp.process()
-
-if not args.dontValidate:
-    validator = Validator(config, conn, session, False)
-    validator.validateArtists()
+if args.processArtists:
+    pp.processArtists(args.dontValidate)
+else:
+    pp.process()
+    if not args.dontValidate:
+        validator = Validator(config, conn, session, False)
+        validator.validateArtists()

@@ -120,14 +120,15 @@
                     <h4><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span
                             class="label label-default">{{ release.artist.name }}</span></a></h4>
                 </div>
+                    <h3>
                         <span class="release-info">
-                            <a href="/release/{{ release.roadieId }}">
-                                <h3><i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom"
-                                       title="Release Date: {{ release.releaseDate }}<br />Added Date: {{ release.createdDate }}"></i>
+                                <a href="/release/{{ release.roadieId }}">
+                                    <i class="fa fa-info-circle" data-toggle="tooltip" data-placement="bottom"
+                                           title="Release Date: {{ release.releaseDate }}<br />Added Date: {{ release.createdDate }}"></i>
                                     <span class="label label-primary title">{{ release.title }}</span>
-                                </h3>
-                            </a>
+                                </a>
                         </span>
+                    </h3>
             </div>
             {% endfor %}
         </div>

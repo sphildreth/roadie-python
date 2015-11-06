@@ -26,6 +26,7 @@ from resources.scanner import Scanner
 from resources.convertor import Convertor
 from resources.logger import Logger
 from resources.processingBase import ProcessorBase
+from resources.validator import Validator
 
 
 class Processor(ProcessorBase):
@@ -159,6 +160,18 @@ class Processor(ProcessorBase):
         except:
             self.logger.exception()
             return None
+
+    def processArtists(self, dontValidate):
+        """
+
+        :param dontValidate: bool
+        """
+        validator = Validator(self.config, self.conn, self.session, False)
+        for artist in self.session.query(Artist).filter(Artist.isLocked == 0).order_by(Artist.name):
+            self.logger.debug("=: Processing Artist [" + str(artist.name) + "] RoadieId [" + artist.roadieId + "]")
+            self.process(folder=self.artistFolder(artist), forceFolderScan=True)
+            if not dontValidate:
+                validator.validate(artist)
 
     def process(self, **kwargs):
         """
