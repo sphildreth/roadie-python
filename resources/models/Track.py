@@ -57,19 +57,6 @@ class Track(Base):
                 "Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 
     def fullPath(self):
-        # path = track.FilePath
-        # if trackPathReplace:
-        #     for rpl in trackPathReplace:
-        #         for key, val in rpl.items():
-        #             path = path.replace(key, val)
-
-        # if not self.trackPathReplace:
-        #     self.trackPathReplace = self.getTrackPathReplace()
-        # if self.trackPathReplace:
-        #     for rpl in self.trackPathReplace:
-        #         for key, val in rpl.items():
-        #             path = path.replace(key, val)
-        # return path
         if not self.filePath or not self.fileName:
             return None
         return os.path.join(self.filePath, self.fileName)

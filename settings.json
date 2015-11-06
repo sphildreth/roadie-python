@@ -12,6 +12,11 @@
   "ROADIE_CONVERTING": {
     "DoDeleteAfter": "True"
   },
+  "ROADIE_TRACK_PATH_REPLACE": [
+    {
+      "/": "\\"
+    }
+  ],
   "ROADIE_PROCESSING": {
     "DoAudioCleanup": "True",
     "DoSaveEditsToTags": "True",

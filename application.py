@@ -81,6 +81,10 @@ with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 app.config.update(config)
 
+trackPathReplace = None
+if 'ROADIE_TRACK_PATH_REPLACE' in config:
+    trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
+
 thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
 siteName = config['ROADIE_SITE_NAME']
 
@@ -184,7 +188,12 @@ def pathToTrack(track):
     :param track: Track
     :return: str
     """
-    return os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath, track.fileName)
+    path = os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath, track.fileName)
+    if trackPathReplace:
+        for rpl in trackPathReplace:
+            for key, val in rpl.items():
+                path = path.replace(key, val)
+    return path
 
 
 @app.before_request
