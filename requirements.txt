@@ -29,7 +29,6 @@ itsdangerous==0.24
 Jinja2==2.8
 Logbook==0.11.2
 MarkupSafe==0.23
-mongoengine==0.10.0
 musicbrainzngs==0.6.dev0
 mutagen==1.31
 nose==1.3.7
@@ -40,9 +39,7 @@ passlib==1.6.5
 PdbSublimeTextSupport==0.2
 Photohash==0.3.2
 Pillow==3.0.0
-psycopg2==2.5.2
 pycparser==2.14
-pymongo==3.0.3
 PyMySQL==0.6.7
 python-bcrypt==0.3.1
 python-dateutil==2.4.2
