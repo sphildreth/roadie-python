@@ -6,12 +6,26 @@ from viewModels.RoadieModelView import RoadieModelView
 
 
 class RoadieReleaseModelView(RoadieModelView):
+    form_excluded_columns = ('images', 'collections')
+
     form_subdocuments = {
-        'labels': {
+        'releaseLabels': {
             'form_subdocuments': {
                 None: {
                     'form_ajax_refs': {
                         'Label': {
+                            'fields': ['name'],
+                            'page_size': 10
+                        }
+                    }
+                }
+            }
+        },
+        'genres': {
+            'form_subdocuments': {
+                None: {
+                    'form_ajax_refs': {
+                        'Genre': {
                             'fields': ['name'],
                             'page_size': 10
                         }

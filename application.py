@@ -397,9 +397,12 @@ def artistDetail(artist_id):
                                             releaseTrackTime=Integer, releaseTrackFileSize=Integer,
                                             missingTrackCount=Integer)) \
         .fetchone()
-    counts = {'tracks': artistSummaries[2], 'releaseMedia': artistSummaries[0], 'releases': artistSummaries[1],
-              'length': formatTimeMillisecondsNoDays(artistSummaries[3]), 'fileSize': sizeof_fmt(artistSummaries[4]),
-              'missingTrackCount': artistSummaries[5]}
+    counts = {'tracks': artistSummaries[2] if artistSummaries else 0,
+              'releaseMedia': artistSummaries[0] if artistSummaries else 0,
+              'releases': artistSummaries[1] if artistSummaries else 0,
+              'length': formatTimeMillisecondsNoDays(artistSummaries[3]) if artistSummaries else "--:--",
+              'fileSize': sizeof_fmt(artistSummaries[4]) if artistSummaries else "0",
+              'missingTrackCount': artistSummaries[5] if artistSummaries else 0}
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
@@ -1257,7 +1260,7 @@ def findImageForType(type, type_id):
         if it:
             for i in it:
                 data.append(i)
-        return Response(jsonify({'message': "OK", 'query': query, 'data': data}, default=jdefault),
+        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
         return jsonify(message="ERROR")
@@ -1562,42 +1565,16 @@ def singleTrackReleaseFinder(count):
 @app.route('/dupfinder')
 @login_required
 def dupFinder():
-    artists = []
-    for a in Artist.objects():
-        artists.append({
-            'id': a.id,
-            'Name': a.Name,
-            'SortName': a.SortName
-        })
-
-    duplicateArtists = []
-    for artist in artists:
-        doContinue = True
-        for da in duplicateArtists:
-            if artist['id'] == da['a']['id']:
-                doContinue = False
-                continue
-        if doContinue:
-            for a in artists:
-                aName = a['Name'].lower().strip()
-                aSortname = None
-                sn = a['SortName']
-                if sn:
-                    aSortname = sn.lower().strip()
-                artistName = artist['Name'].lower().strip()
-                artistSortName = None
-                sn = artist['SortName']
-                if sn:
-                    artistSortName = sn.lower().strip()
-                if (artistName == aName or
-                        (aSortname and artistSortName and artistSortName == aSortname) or (
-                            artistSortName and artistSortName == aName)) and artist['id'] != a['id']:
-                    duplicateArtists.append({
-                        'artist': artist,
-                        'a': a
-                    })
-
-    return render_template('dupfinder.html', duplicateArtists=duplicateArtists)
+    potentialDuplicateArtists = conn.execute(text(
+        "select a.id, a.name, a.roadieId, a2.id, a2.name, a2.roadieId " +
+        "FROM `artist` a " +
+        "join `artist` a2 on substring(a2.name,1, length(a.name)) = a.name " +
+        "where a2.id != a.id " +
+        "and length(a.name) > 1 " +
+        "order by a.name", autocommit=True)
+                                    .columns(leftArtistId=Integer, leftArtistName=String, leftRoadieId=String,
+                                             rightArtistId=Integer, rightArtistName=String, rightRoadieId=String))
+    return render_template('dupfinder.html', potentialDuplicateArtists=potentialDuplicateArtists)
 
 
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])

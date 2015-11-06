@@ -4,22 +4,24 @@
 {% endblock %}
 {% block body_content %}
 <div class="duplicates-container">
-    <h4><span class="label label-primary">Potential Duplicate Artists [{{ duplicateArtists|length }}]</span></h4>
-    {% for duplicateArtist in duplicateArtists %}
+    <h4><span class="label label-primary">Potential Duplicate Artists</span></h4>
+    {% for duplicateArtist in potentialDuplicateArtists %}
     <div class="row duplicate-artists">
-        <div class="col-md-5 left" data-artist-id="{{ duplicateArtist['artist'].id }}">
-            <a href="/admin/artist/edit/?id={{ duplicateArtist['artist'].id  }}&amp;url=/artist/{{ duplicateArtist['artist'].id  }}">
-                <div>Name: {{ duplicateArtist['artist'].Name }}</div>
-                <div>SortName {{ duplicateArtist['artist'].SortName }}</div>
+        <div class="col-md-5 left" data-artist-id="{{ duplicateArtist[0] }}">
+            <input type="checkbox" class="pull-left" value="1" />
+            <a href="/roadie/{{ duplicateArtist[2] }}">
+                <div>Name: {{ duplicateArtist[1] }}</div>
             </a>
         </div>
         <div class="col-md-2">
             <button class="merge merge-right btn btn-default" title="Merge Right Into Left"><- Merge</button>
             <button class="merge merge-left btn btn-default" title="Merge Left Into Right">Merge -></button>
         </div>
-        <div class="col-md-5 right" data-artist-id="{{ duplicateArtist['a'].id }}">
-            <div>Name: {{ duplicateArtist['a'].Name }}</div>
-            <div>SortName: {{ duplicateArtist['a'].SortName }}</div>
+        <div class="col-md-5 right" data-artist-id="{{ duplicateArtist[3] }}">
+            <input type="checkbox" class="pull-left" value="1" />
+            <a href="/roadie/{{ duplicateArtist[5] }}">
+                <div>Name: {{ duplicateArtist[4] }}</div>
+            </a>
         </div>
     </div>
     {% endfor %}
