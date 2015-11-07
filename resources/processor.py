@@ -218,83 +218,85 @@ class Processor(ProcessorBase):
                         continue
 
                     # Get all the MP3 files in the Folder and process
-                    if mp3Folder not in mp3FoldersProcessed:
-                        for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
-                            printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
-                            self.logger.debug("Processing MP3 File [" + printableMp3 + "]")
-                            id3 = ID3(mp3, self.processingOptions)
-                            if id3 is not None:
-                                if not id3.isValid():
-                                    self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
-                                else:
-                                    foundMp3Files += 1
-                                    # Get Artist
-                                    if lastID3Artist != id3.artist:
-                                        artist = None
-                                    if not artist:
-                                        lastID3Artist = id3.artist
-                                        artist = self.artistFactory.get(id3.artist)
-                                    if artist and artist.isLocked:
+                    for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                        printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
+                        self.logger.debug("Processing MP3 File [" + printableMp3 + "]")
+                        id3StartTime = arrow.utcnow().datetime
+                        id3 = ID3(mp3, self.processingOptions)
+                        id3ElapsedTime = arrow.utcnow().datetime - id3StartTime
+                        self.logger.info(": ID3 init elapsed time [" + str(id3ElapsedTime) + "]")
+                        if id3 is not None:
+                            if not id3.isValid():
+                                self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
+                            else:
+                                foundMp3Files += 1
+                                # Get Artist
+                                if lastID3Artist != id3.artist:
+                                    artist = None
+                                if not artist:
+                                    lastID3Artist = id3.artist
+                                    artist = self.artistFactory.get(id3.artist)
+                                if artist and artist.isLocked:
+                                    self.logger.debug(
+                                        "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
+                                            artist) + "] Is Locked")
+                                    continue
+                                if self.flushBefore:
+                                    if artist.isLocked:
                                         self.logger.debug(
-                                            "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
+                                            "Skipping Flushing Artist [" + printableMp3 + "], Artist [" + str(
                                                 artist) + "] Is Locked")
                                         continue
-                                    if self.flushBefore:
-                                        if artist.isLocked:
-                                            self.logger.debug(
-                                                "Skipping Flushing Artist [" + printableMp3 + "], Artist [" + str(
-                                                    artist) + "] Is Locked")
+                                    else:
+                                        for release in artist.releases:
+                                            release.genres = []
+                                            self.session.delete(release)
+                                        self.session.commit()
+                                if not artist:
+                                    self.logger.warn(
+                                        "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
+                                    continue
+                                # Get the Release
+                                if lastID3Album != id3.album:
+                                    release = None
+                                if not release:
+                                    lastID3Album = id3.album
+                                    release = self.releaseFactory.get(artist, id3.album)
+                                    if release:
+                                        # Was found now see if needs update based on id3 tag info
+                                        id3ReleaseDate = parseDate(id3.year)
+                                        if not release.releaseDate == id3ReleaseDate and id3ReleaseDate:
+                                            release.releaseDate = id3ReleaseDate
+                                    else:
+                                        # Was not found in any Searcher create and add
+                                        self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
+                                        release = self.releaseFactory.create(artist,
+                                                                             string.capwords(id3.album),
+                                                                             1,
+                                                                             id3.year)
+                                        if not release:
+                                            self.logger.warn("! Unable to Create Album [" + id3.album +
+                                                             "] For Track [" + printableMp3 + "]")
                                             continue
-                                        else:
-                                            for release in artist.releases:
-                                                release.genres = []
-                                                self.session.delete(release)
-                                            self.session.commit()
-                                    if not artist:
-                                        self.logger.warn(
-                                            "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
-                                        continue
-                                    # Get the Release
-                                    if lastID3Album != id3.album:
-                                        release = None
-                                    if not release:
-                                        lastID3Album = id3.album
-                                        release = self.releaseFactory.get(artist, id3.album)
                                         if release:
-                                            # Was found now see if needs update based on id3 tag info
-                                            id3ReleaseDate = parseDate(id3.year)
-                                            if not release.releaseDate == id3ReleaseDate and id3ReleaseDate:
-                                                release.releaseDate = id3ReleaseDate
-                                        else:
-                                            # Was not found in any Searcher create and add
-                                            self.logger.debug("Release [" + id3.album + "] Not Found By Factory")
-                                            release = self.releaseFactory.create(artist,
-                                                                                 string.capwords(id3.album),
-                                                                                 1,
-                                                                                 id3.year)
-                                            if not release:
-                                                self.logger.warn("! Unable to Create Album [" + id3.album +
-                                                                 "] For Track [" + printableMp3 + "]")
-                                                continue
-                                            if release:
-                                                if id3.imageBytes:
-                                                    try:
-                                                        img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
-                                                        img.thumbnail(self.thumbnailSize)
-                                                        b = io.BytesIO()
-                                                        img.save(b, "JPEG")
-                                                        release.thumbnail = b.getvalue()
-                                                    except:
-                                                        pass
-                                                release.status = 1
-                                                self.releaseFactory.add(release)
-                                                self.logger.info(
-                                                    "+ Processor Added Release [" + str(release.info()) + "]")
-                                                self.session.commit()
-                                    if self.shouldMoveToLibrary(artist, id3, mp3):
-                                        newMp3 = self.moveToLibrary(artist, id3, mp3)
-                                        head, tail = os.path.split(newMp3)
-                                        newMp3Folder = head
+                                            if id3.imageBytes:
+                                                try:
+                                                    img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                                    img.thumbnail(self.thumbnailSize)
+                                                    b = io.BytesIO()
+                                                    img.save(b, "JPEG")
+                                                    release.thumbnail = b.getvalue()
+                                                except:
+                                                    pass
+                                            release.status = 1
+                                            self.releaseFactory.add(release)
+                                            self.logger.info(
+                                                "+ Processor Added Release [" + str(release.info()) + "]")
+                                            self.session.commit()
+                                if self.shouldMoveToLibrary(artist, id3, mp3):
+                                    newMp3 = self.moveToLibrary(artist, id3, mp3)
+                                    head, tail = os.path.split(newMp3)
+                                    newMp3Folder = head
                     if artist and release:
                         if not release.releaseDate and release.media:
                             for media in release.media:
@@ -327,9 +329,7 @@ class Processor(ProcessorBase):
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
-                        if releaseFolder not in mp3FoldersProcessed:
-                            scanner.scan(releaseFolder, artist, release)
-                            mp3FoldersProcessed.append(mp3Folder)
+                        scanner.scan(releaseFolder, artist, release)
                         if release.status == 1:
                             # Sync  the counts as some releases where added by the processor
                             release.mediaCount = len(release.media)
@@ -351,7 +351,6 @@ class Processor(ProcessorBase):
                     self.session.rollback()
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
-            self.logger.debug("-> MP3 Folders Processed [" + str(len(mp3FoldersProcessed)) + "]")
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
         except:
             self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")

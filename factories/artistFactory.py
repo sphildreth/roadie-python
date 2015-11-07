@@ -82,6 +82,7 @@ class ArtistFactory(object):
         if not name:
             return None
         try:
+            startTime = arrow.utcnow().datetime
             name = deriveArtistFromName(name)
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
             artist = self._getFromDatabaseByName(name)
@@ -189,6 +190,8 @@ class ArtistFactory(object):
                                 artist.genres.append(dbGenre)
                     self.session.add(artist)
                     self.session.commit()
+            elapsedTime = arrow.utcnow().datetime - startTime
+            self.logger.info(": ArtistFactory get elapsed time [" + str(elapsedTime) + "]")
             return artist
         except:
             self.logger.exception("ArtistFactory: Error In get()")

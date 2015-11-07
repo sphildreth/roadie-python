@@ -1,19 +1,17 @@
-# Represents ID3 Tag loaded from an MP3 File
 import os
 import string
-import sys
+
 import mutagen
-from mutagen.mp3 import MP3
+from hsaudiotag import mpeg
 from mutagen.id3 import ID3 as mutagenID3
 from mutagen.id3 import ID3NoHeaderError
-from mutagen.id3 import ID3, TIT2, TALB, TPE1, TPE2, COMM, USLT, TCOM, TCON, TDRC, TRCK
+from mutagen.id3 import TIT2, TALB, TPE1, TPE2, TDRC, TRCK
+from mutagen.mp3 import MP3
+
 from resources.logger import Logger
-from hsaudiotag import mpeg
-from resources.models.Release import Release
-from resources.models.Track import Track
 
 
-class ID3:
+class ID3(object):
     filename = None
     config = None
 
@@ -95,7 +93,7 @@ class ID3:
             if isinstance(full_tags, mutagen.mp3.MP3):
                 for key in short_tags:
                     if key[0:4] == 'COMM':
-                        if (short_tags[key].desc == ''):
+                        if short_tags[key].desc == '':
                             comments.append(short_tags[key].text[0])
                 short_tags = mutagen.mp3.MP3(filename, ID3=mutagen.easyid3.EasyID3)
             comments.append('')
@@ -154,9 +152,11 @@ class ID3:
             genres = short_tags.get('genre', [''])
             if len(genres) > 0:
                 self.genre = genres[0]
-            self.size = os.stat(filename).st_size
             self.imageBytes = None
-            if full_tags.tags and 'APIC:' in full_tags.tags:
-                self.imageBytes = full_tags.tags._DictProxy__dict['APIC:'].data
+            try:
+                if full_tags.tags and 'APIC:' in full_tags.tags:
+                    self.imageBytes = full_tags.tags._DictProxy__dict['APIC:'].data
+            except:
+                pass
         except:
             self.logger.exception()

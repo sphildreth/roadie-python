@@ -63,6 +63,7 @@ class ReleaseFactory(object):
         try:
             if not title or not artist:
                 return None
+            startTime = arrow.utcnow().datetime
             printableTitle = title.encode('ascii', 'ignore').decode('utf-8')
             printableArtistName = artist.name.encode('ascii', 'ignore').decode('utf-8')
             release = self._getFromDatabaseByTitle(artist, title)
@@ -87,6 +88,8 @@ class ReleaseFactory(object):
                     release = self._createDatabaseModelFromSearchModel(artist, title, sr)
                 self.session.add(release)
                 self.session.commit()
+            elapsedTime = arrow.utcnow().datetime - startTime
+            self.logger.info(": ReleaseFactory get elapsed time [" + str(elapsedTime) + "]")
             return release
         except:
             self.logger.exception("ReleaseFactory: Error In get()")
