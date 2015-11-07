@@ -12,6 +12,7 @@
   "ROADIE_CONVERTING": {
     "DoDeleteAfter": "True"
   },
+  "ROADIE_SINGLE_ARTIST_HOLDING_FOLDER": "Z:/single_holding/",
   "ROADIE_PROCESSING": {
     "DoAudioCleanup": "True",
     "DoSaveEditsToTags": "True",

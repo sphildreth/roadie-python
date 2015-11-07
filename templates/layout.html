@@ -45,6 +45,7 @@
                     <ul class="dropdown-menu">
                         <li><a href="/admin"><i class="fa fa-cog"></i> Admin</a></li>
                         <li><a href="/dupfinder"><i class="fa fa-files-o"></i> Duplicate Finder</a></li>
+                        <li><a id="separateSingle" href="javascript:separateSingles();"><i class="fa fa-files-o"></i> Separate Single Releases</a></li>
                         <li><a href="/singletrackreleasefinder"><i class="fa fa-files-o"></i> Single Track Release
                             Finder</a></li>
                         <li><a href="/scanStorage"><i class="fa fa-hdd-o"></i> Scan</a></li>
@@ -155,6 +156,29 @@
 <script>
     window.user = { username: '{{ current_user }}' };
     window.user.doUseHtmlPlayer = {{ "true" if current_user.doUseHtmlPlayer else "false" }};
+
+    var separateSingles = function() {
+        bootbox.confirm("Continue To Separate Single Releases?", function(result) {
+            if(result) {
+                $(".loader").fadeIn("slow", function() {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/separatesinglereleases',
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            if(data.message == "OK") {
+                                location.reload(true);
+                            }
+                        },
+                        error:function(jq, st, error){
+                            roadieLibrary.showErrorMessage(error);
+                        }
+                    });
+                });
+            }
+        })
+    };
+
     $(function() {
 
         {% with messages = get_flashed_messages() %}
@@ -175,11 +199,7 @@
         searchEngine.init({
             searchTrackThumbNailUrl: "{{ url_for('static', filename='img/track.png') }}"
         });
-
-
     });
-
-
 </script>
 {% block script_content %}
 {% endblock %}

@@ -2,6 +2,7 @@ import os
 import simplejson as json
 import hashlib
 import random
+import shutil
 import zipfile
 import uuid
 from math import floor
@@ -237,7 +238,10 @@ def index():
                 'Title': r.title,
                 'UserRating': 0
             })
-    return render_template('home.html', lastPlayedInfos=lastPlayedInfos, wsRoot=wsRoot, releases=releases)
+    return render_template('home.html',
+                           lastPlayedInfos=lastPlayedInfos,
+                           wsRoot=wsRoot,
+                           releases=releases)
 
 
 @app.route("/release/setReleaseDate/<roadieId>/<new_release_date>/<set_tracks_year>", methods=['POST'])
@@ -453,6 +457,38 @@ def toggleUserArtistDislike(artist_id, toggle):
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Dislike")
+        return jsonify(message="ERROR")
+
+
+@app.route("/separatesinglereleases", methods=['POST'])
+@login_required
+def separateSingleReleases():
+    try:
+        for separateSingleRelease in dbSession.query(Release).filter(Release.trackCount == 1):
+            doDelete = True
+            for media in separateSingleRelease.media:
+                if len(media.tracks) == 1:
+                    try:
+                        for track in media.tracks:
+                            try:
+                                fullPath = pathToTrack(track)
+                                newFileName = os.path.join(config['ROADIE_SINGLE_ARTIST_HOLDING_FOLDER'], str(track.id) + "."
+                                                       + track.fullPath().replace("\\", "_").replace("/", "_"))
+                                logger.info("= Moving to Single Release Folder [" + newFileName + "]")
+                                shutil.move(fullPath, newFileName)
+                                doDelete = True
+                            except:
+                                pass
+                    except:
+                        pass
+            if doDelete:
+                separateSingleRelease.genres = []
+                logger.info("x Separate Single Release: Deleting Release [" + str(separateSingleRelease.id) + "]")
+                dbSession.delete(separateSingleRelease)
+        dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Separate Single Release Favorite")
         return jsonify(message="ERROR")
 
 
@@ -1572,8 +1608,9 @@ def dupFinder():
         "where a2.id != a.id " +
         "and length(a.name) > 1 " +
         "order by a.name", autocommit=True)
-                                    .columns(leftArtistId=Integer, leftArtistName=String, leftRoadieId=String,
-                                             rightArtistId=Integer, rightArtistName=String, rightRoadieId=String))
+                                             .columns(leftArtistId=Integer, leftArtistName=String, leftRoadieId=String,
+                                                      rightArtistId=Integer, rightArtistName=String,
+                                                      rightRoadieId=String))
     return render_template('dupfinder.html', potentialDuplicateArtists=potentialDuplicateArtists)
 
 
