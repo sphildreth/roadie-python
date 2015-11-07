@@ -57,18 +57,24 @@ class Scanner(ProcessorBase):
             self.logger.debug("[Read Only] Would Process Folder [" + folder + "] With Artist [" + str(artist) + "]")
             return None
         if not artist:
+            self.logger.debug("! scanner.scan given Invalid Artist")
             raise RuntimeError("Invalid Artist")
         if not release:
+            self.logger.debug("! scanner.scan given Invalid Release")
             raise RuntimeError("Invalid Release")
         if not folder:
+            self.logger.debug("! scanner.scan given Invalid Folder")
             raise RuntimeError("Invalid Folder")
         foundGoodMp3s = False
         startTime = arrow.utcnow().datetime
         self.logger.info("-> Scanning Folder [" + folder + "] " +
                          "Artist Folder [" + self.artistFolder(artist) + "] ")
+
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
+            existingTracksChecked = 0
             for track in self.dbSession.query(Track).filter(Track.filePath == folder).all():
+                existingTracksChecked += 1
                 filename = self.pathToTrack(track)
                 # File no longer exists for track
                 if not os.path.isfile(filename):
@@ -94,6 +100,8 @@ class Scanner(ProcessorBase):
                                     self._markTrackMissing(track.id, track.title, filename)
                         except:
                             pass
+            self.logger.debug(
+                "-- Checked [" + str(existingTracksChecked) + "]  Existing Tracks for [" + str(folder) + "]")
 
         # For each file found in folder get ID3 info and insert record into Track DB
         foundReleaseTracks = 0
