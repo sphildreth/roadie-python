@@ -8,6 +8,9 @@ from resources.processingBase import ProcessorBase
 class Validator(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly):
         self.config = config
+        self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
+        if 'ROADIE_TRACK_PATH_REPLACE' in config:
+            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn
@@ -20,6 +23,7 @@ class Validator(ProcessorBase):
     def validate(self, artist, onlyValidateRelease=None):
         """
         Do sanity checks on given Artist
+        :param onlyValidateRelease: Release
         :param artist: Artist
         :return:
         """
@@ -52,7 +56,7 @@ class Validator(ProcessorBase):
                     releaseMediaTrackCount = 0
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
-                            trackFilename = os.path.join(self.config['ROADIE_LIBRARY_FOLDER'], track.fullPath())
+                            trackFilename = self.pathToTrack(track)
                             if not os.path.exists(trackFilename):
                                 if not self.readOnly:
                                     self.session.delete(track)

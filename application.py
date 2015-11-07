@@ -997,10 +997,9 @@ def streamTrack(user_id, track_id):
         track_id = track_id[:-4]
     track = getTrack(track_id)
     if not track or not track.filePath or not track.fileName:
-        fullPath = None
-        if track:
-            fullPath = track.fullPath()
-        logger.warn("Stream Request Not Found. Track Id [" + str(track_id) + "], Full Path [" + str(fullPath) + "]")
+        logger.warn("Stream Request Not Found. Track Id [" + str(track_id) + "], " +
+                    "Track FilePath [" + str(track.filePath) + "] " +
+                    "Track FileName [" + str(track.fileName) + "] ")
         return render_template('404.html'), 404
     track.playedCount += 1
     dbSession.commit()

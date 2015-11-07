@@ -6,6 +6,7 @@ from resources.pathInfo import PathInfo
 
 class ProcessorBase(object):
     libraryFolder = None
+    trackPathReplace = None
     config = None
 
     @staticmethod
@@ -41,6 +42,19 @@ class ProcessorBase(object):
 
     def trackName(self, trackNumber, trackTitle):
         return str(trackNumber).zfill(2) + " " + self.makeFileFriendly(trackTitle) + ".mp3"
+
+    def pathToTrack(self, track):
+        """
+        Adjust the path to a track with any OS or config substitutions
+        :param track: Track
+        :return: str
+        """
+        path = os.path.join(self.libraryFolder, track.filePath, track.fileName)
+        if self.trackPathReplace:
+            for rpl in self.trackPathReplace:
+                for key, val in rpl.items():
+                    path = path.replace(key, val)
+        return path
 
     @staticmethod
     def infoFromPath(filePath):

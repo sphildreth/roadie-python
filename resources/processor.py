@@ -34,6 +34,8 @@ class Processor(ProcessorBase):
         self.config = config
         self.InboundFolder = self.config['ROADIE_INBOUND_FOLDER']
         self.LibraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
+        if 'ROADIE_TRACK_PATH_REPLACE' in config:
+            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         # TODO if set then process music files; like clear comments
         self.processingOptions = self.config['ROADIE_PROCESSING']
         self.conn = dbConn

@@ -15,6 +15,8 @@ class Scanner(ProcessorBase):
         self.config = config
         self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
         self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
+        if 'ROADIE_TRACK_PATH_REPLACE' in config:
+            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn
@@ -67,7 +69,7 @@ class Scanner(ProcessorBase):
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             for track in self.dbSession.query(Track).filter(Track.filePath == folder).all():
-                filename = track.fullPath()
+                filename = self.pathToTrack(track)
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     if not self.readOnly:
