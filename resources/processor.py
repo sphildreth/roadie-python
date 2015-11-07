@@ -327,6 +327,8 @@ class Processor(ProcessorBase):
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
+                        self.logger.debug("- releaseFolder [" + str(releaseFolder) + "] Exists [" + str(
+                            os.path.isfile(releaseFolder)) + "]")
                         if releaseFolder not in mp3FoldersProcessed:
                             scanner.scan(releaseFolder, artist, release)
                             mp3FoldersProcessed.append(mp3Folder)
