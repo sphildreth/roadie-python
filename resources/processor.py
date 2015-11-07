@@ -221,9 +221,7 @@ class Processor(ProcessorBase):
                     for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
                         printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
                         if mp3Folder not in mp3FoldersProcessed:
-                            pathInfo = self.infoFromPath(os.path.basename(mp3))
-                            self.logger.debug("Processing MP3 PathInfo [" + str(pathInfo) + "] " +
-                                              "File [" + printableMp3 + "]...")
+                            self.logger.debug("Processing MP3 File [" + printableMp3 + "]")
                             id3 = ID3(mp3, self.processingOptions)
                             if id3 is not None:
                                 if not id3.isValid():

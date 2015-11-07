@@ -24,8 +24,11 @@ path = os.path.join(os.sep.join(d), "settings.json")
 with open(path, "r") as rf:
     config = json.load(rf)
 
+forceFolderScan = False
+
 if args.folder:
     config['ROADIE_INBOUND_FOLDER'] = args.folder
+    forceFolderScan = True
 
 engine = create_engine(config['ROADIE_DATABASE_URL'])
 conn = engine.connect()
@@ -37,7 +40,7 @@ pp = Processor(config, conn, session, args.readOnly, args.dontDeleteInboundFolde
 if args.processArtists:
     pp.processArtists(args.dontValidate)
 else:
-    pp.process()
+    pp.process(forceFolderScan=forceFolderScan)
     if not args.dontValidate:
         validator = Validator(config, conn, session, False)
         validator.validateArtists()

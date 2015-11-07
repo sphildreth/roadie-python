@@ -31,23 +31,17 @@ class ProcessorBase(object):
         return vfn(string.capwords(fileName), space="keep").decode('utf-8')
 
     def artistFolder(self, artist):
+        if not self.libraryFolder:
+            self.libraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
         artistFolder = artist.sortName or artist.name
-        return self.doTrackPathReplaceOnPath(os.path.join(self.libraryFolder, self.makeFileFriendly(artistFolder)))
+        return os.path.join(self.libraryFolder, self.makeFileFriendly(artistFolder))
 
     def albumFolder(self, artist, year, albumTitle):
-        return self.doTrackPathReplaceOnPath(os.path.join(self.artistFolder(artist),
-                                                          "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(
-                                                              albumTitle)))
+        return os.path.join(self.artistFolder(artist),
+                            "[" + year.zfill(4)[:4] + "] " + self.makeFileFriendly(albumTitle))
 
     def trackName(self, trackNumber, trackTitle):
         return str(trackNumber).zfill(2) + " " + self.makeFileFriendly(trackTitle) + ".mp3"
-
-    def doTrackPathReplaceOnPath(self, path):
-        if self.trackPathReplace:
-            for rpl in self.trackPathReplace:
-                for key, val in rpl.items():
-                    path = path.replace(key, val)
-        return path
 
     def pathToTrack(self, track):
         """
@@ -55,7 +49,12 @@ class ProcessorBase(object):
         :param track: Track
         :return: str
         """
-        return self.doTrackPathReplaceOnPath(os.path.join(self.libraryFolder, track.filePath, track.fileName))
+        path = os.path.join(self.libraryFolder, track.filePath, track.fileName)
+        if self.trackPathReplace:
+            for rpl in self.trackPathReplace:
+                for key, val in rpl.items():
+                    path = path.replace(key, val)
+        return path
 
     @staticmethod
     def infoFromPath(filePath):
