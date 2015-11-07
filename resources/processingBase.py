@@ -14,8 +14,6 @@ class ProcessorBase(object):
         if isReleaseFolder:
             yield directory
         for root, dirs, files in os.walk(directory):
-            if not dirs:
-                yield root
             for d in dirs:
                 yield os.path.join(root, d)
 

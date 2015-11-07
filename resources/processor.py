@@ -218,9 +218,9 @@ class Processor(ProcessorBase):
                         continue
 
                     # Get all the MP3 files in the Folder and process
-                    for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
-                        printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
-                        if mp3Folder not in mp3FoldersProcessed:
+                    if mp3Folder not in mp3FoldersProcessed:
+                        for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                            printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
                             self.logger.debug("Processing MP3 File [" + printableMp3 + "]")
                             id3 = ID3(mp3, self.processingOptions)
                             if id3 is not None:
@@ -327,8 +327,6 @@ class Processor(ProcessorBase):
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
-                        self.logger.debug("- releaseFolder [" + str(releaseFolder) + "] Exists [" + str(
-                            os.path.isfile(releaseFolder)) + "]")
                         if releaseFolder not in mp3FoldersProcessed:
                             scanner.scan(releaseFolder, artist, release)
                             mp3FoldersProcessed.append(mp3Folder)

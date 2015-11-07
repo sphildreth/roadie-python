@@ -65,15 +65,17 @@ class Scanner(ProcessorBase):
         if not folder:
             self.logger.debug("! scanner.scan given Invalid Folder")
             raise RuntimeError("Invalid Folder")
+        folderHead, folderTail = os.path.split(folder)
+        folderHeadNoLibrary = folderHead.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
+        trackFilePath = os.path.join(folderHeadNoLibrary, folderTail)
         foundGoodMp3s = False
         startTime = arrow.utcnow().datetime
         self.logger.info("-> Scanning Folder [" + folder + "] " +
                          "Artist Folder [" + self.artistFolder(artist) + "] ")
-
         # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
         if not self.readOnly:
             existingTracksChecked = 0
-            for track in self.dbSession.query(Track).filter(Track.filePath == folder).all():
+            for track in self.dbSession.query(Track).filter(Track.filePath == trackFilePath).all():
                 existingTracksChecked += 1
                 filename = self.pathToTrack(track)
                 # File no longer exists for track
@@ -101,7 +103,7 @@ class Scanner(ProcessorBase):
                         except:
                             pass
             self.logger.debug(
-                "-- Checked [" + str(existingTracksChecked) + "]  Existing Tracks for [" + str(folder) + "]")
+                "-- Checked [" + str(existingTracksChecked) + "] Existing Tracks for [" + str(trackFilePath) + "]")
 
         # For each file found in folder get ID3 info and insert record into Track DB
         foundReleaseTracks = 0
