@@ -33,9 +33,6 @@ class Processor(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly, dontDeleteInboundFolders, flushBefore=False):
         self.config = config
         self.InboundFolder = self.config['ROADIE_INBOUND_FOLDER']
-        self.LibraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
-        if 'ROADIE_TRACK_PATH_REPLACE' in config:
-            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         # TODO if set then process music files; like clear comments
         self.processingOptions = self.config['ROADIE_PROCESSING']
         self.conn = dbConn
@@ -51,6 +48,7 @@ class Processor(ProcessorBase):
         self.folderDB.execute("CREATE TABLE IF NOT EXISTS `folder` (namehash text, mtime real);")
         self.folderDB.execute("CREATE INDEX IF NOT EXISTS `idx_folder_namehash` on `folder`(namehash);")
         self.folderDB.commit()
+        super().__init__(config)
 
     def _doProcessFolder(self, name, mtime, forceFolderScan):
         try:
@@ -194,7 +192,7 @@ class Processor(ProcessorBase):
             release = None
             mp3FoldersProcessed = []
             # Get all the folder in the InboundFolder
-            for mp3Folder in self.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
+            for mp3Folder in allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
                 try:
                     mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(mp3Folder))
                     if not self._doProcessFolder(mp3Folder, mp3FolderMtime, forceFolderScan):

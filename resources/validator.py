@@ -9,18 +9,15 @@ from resources.processingBase import ProcessorBase
 class Validator(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly):
         self.config = config
-        self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
-        if 'ROADIE_TRACK_PATH_REPLACE' in config:
-            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn
         self.session = dbSession
+        super().__init__(config)
 
     def validateArtists(self):
         for artist in self.session.query(Artist).all():
             self.validate(artist)
-
 
     def validate(self, artist, onlyValidateRelease=None):
         """
@@ -59,7 +56,10 @@ class Validator(ProcessorBase):
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
                             trackFilename = self.pathToTrack(track)
-                            if not os.path.isfile(trackFilename):
+                            isTrackFilePresent = False
+                            if trackFilename:
+                                isTrackFilePresent = os.path.isfile(trackFilename)
+                            if not isTrackFilePresent:
                                 #if not self.readOnly:
                                 #    self.session.delete(track)
                                 self.logger.warn(
@@ -76,6 +76,7 @@ class Validator(ProcessorBase):
                                     issuesFound = True
                         except:
                             self.logger.exception()
+                            issuesFound = True
                             pass
                     if not self.readOnly:
                         releaseMedia.trackCount = releaseMediaTrackCount

@@ -14,13 +14,11 @@ class Scanner(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly):
         self.config = config
         self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
-        self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
-        if 'ROADIE_TRACK_PATH_REPLACE' in config:
-            self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn
         self.dbSession = dbSession
+        super().__init__(config)
 
     @staticmethod
     def inboundMp3Files(folder):
@@ -192,7 +190,7 @@ class Scanner(ProcessorBase):
                     elif not self.readOnly:
                         foundReleaseTracks += 1
                         try:
-                            trackFullPath = os.path.join(self.libraryFolder, track.fullPath())
+                            trackFullPath = self.pathToTrack(track)
                             isFilePathSame = os.path.samefile(trackFullPath, mp3)
                         except:
                             trackFullPath = None
