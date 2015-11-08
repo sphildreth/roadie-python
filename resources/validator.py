@@ -76,8 +76,8 @@ class Validator(ProcessorBase):
                                 releaseTrackCount += 1
                                 if not isEqual(track.trackNumber, releaseMediaTrackCount):
                                     self.logger.warn("! Track Number Sequence InCorrect Is [" +
-                                                     str(releaseMediaTrackCount) + "] Expected [" +
-                                                     str(track.trackNumber) + "]")
+                                                     str(track.trackNumber) + "] Expected [" +
+                                                     str(releaseMediaTrackCount) + "]")
                                     release.libraryStatus = 'Incomplete'
                                     issuesFound = True
                         except:
