@@ -58,11 +58,14 @@ class Validator(ProcessorBase):
                     releaseMediaTrackCount = 0
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
-                            self.logger.debug("Track Info [" + str(track.info()) + "]")
+                            self.logger.debug("LibraryFolder [" + str(self.libraryFolder) + "] " +
+                                              "Track Info [" + str(track.info(includePathInfo=True)) + "]")
                             trackFilename = self.pathToTrack(track)
-                            isTrackFilePresent = False
                             if trackFilename:
-                                isTrackFilePresent = os.path.isfile(trackFilename)
+                                try:
+                                    isTrackFilePresent = os.path.isfile(trackFilename)
+                                except:
+                                    isTrackFilePresent = False
                             if not isTrackFilePresent:
                                 #if not self.readOnly:
                                 #    self.session.delete(track)
