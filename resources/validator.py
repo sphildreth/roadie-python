@@ -75,6 +75,7 @@ class Validator(ProcessorBase):
                                     release.libraryStatus = 'Incomplete'
                                     issuesFound = True
                         except:
+                            self.logger.exception()
                             pass
                     if not self.readOnly:
                         releaseMedia.trackCount = releaseMediaTrackCount
