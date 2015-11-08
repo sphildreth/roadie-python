@@ -10,7 +10,6 @@ class ProcessorBase(object):
     def __init__(self, config):
         self.config = config
         self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
-        print(str(self.libraryFolder))
         if 'ROADIE_TRACK_PATH_REPLACE' in config:
             self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
 

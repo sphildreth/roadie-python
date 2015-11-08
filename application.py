@@ -80,6 +80,8 @@ app.jinja_env.filters['count_new_lines'] = count_new_lines
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
+if not config:
+    raise RuntimeError("Invalid Configuration")
 app.config.update(config)
 
 trackPathReplace = None

@@ -27,6 +27,10 @@ class Validator(ProcessorBase):
         """
         if not artist:
             raise RuntimeError("Invalid Artist")
+        if not self.config:
+            raise RuntimeError("Invalid Configuration")
+        if not self.libraryFolder:
+            raise RuntimeError("Invalid Configuration: Library Folder Not Set")
         try:
             for release in artist.releases:
                 issuesFound = False
