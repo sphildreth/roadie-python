@@ -54,6 +54,7 @@ class Validator(ProcessorBase):
                     releaseMediaTrackCount = 0
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
+                            self.logger.debug("Track Info [" + str(track.info()) + "]")
                             trackFilename = self.pathToTrack(track)
                             isTrackFilePresent = False
                             if trackFilename:

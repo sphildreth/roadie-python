@@ -54,6 +54,8 @@ class Track(Base):
                 "Hash [" + str(self.hash) + "], " +
                 "Title [" + str(self.title) + "], " +
                 "TrackNumber [" + str(self.trackNumber) + "], " +
+                "FilePath [" + str(self.filePath) + "], " +
+                "FileName [" + str(self.fileName) + "], " +
                 "Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 
     def fullPath(self):

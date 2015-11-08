@@ -41,11 +41,13 @@ class Track(ModelBase):
         return "[" + str(self.trackNumber) + "] " + str(self.title) + " [" + str(self.duration) + "]"
 
     def info(self):
-        return "Id [" + str(self.id) + "], RoadieId [" + str(self.roadieId) + "], MusicBrainzId [" + str(
-            self.musicBrainzId) \
-               + "], Title [" + str(self.title) + "], ReleaseMediaNumber[" + str(
-            self.releaseMediaNumber) + "], TrackNumber [" + str(self.trackNumber) \
-               + "], Duration [" + str(self.duration) + "]"
+        return "RoadieId [" + str(self.roadieId) + "], " + \
+               "MusicBrainzId [" + str(self.musicBrainzId) + "], " + \
+               "Title [" + str(self.title) + "], " + \
+               "TrackNumber [" + str(self.trackNumber) + "], " + \
+               "Duration [" + str(self.duration) + "], " + \
+               "FilePath [" + str(self.filePath) + "], " + \
+               "FileName [" + str(self.fileName)
 
     def mergeWithTrack(self, right):
 
