@@ -71,7 +71,7 @@ class Validator(ProcessorBase):
                                 #if not self.readOnly:
                                 #    self.session.delete(track)
                                 self.logger.warn(
-                                    "X Deleting Track [" + str(track) + "] File [" + trackFilename + "] not found")
+                                    "X Deleting Track [" + str(track) + "] File [" + str(trackFilename) + "] not found")
                                 issuesFound = True
                             else:
                                 releaseMediaTrackCount += 1
