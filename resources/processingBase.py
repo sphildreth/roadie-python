@@ -14,14 +14,12 @@ class ProcessorBase(object):
             self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
 
     def artistFolder(self, artist):
-        if not self.libraryFolder:
-            self.libraryFolder = self.config['ROADIE_LIBRARY_FOLDER']
         result = artist.sortName or artist.name
-        return os.path.join(self.libraryFolder, makeFileFriendly(result))
+        return os.path.join(self.libraryFolder, ProcessorBase.makeFileFriendly(result))
 
     def albumFolder(self, artist, year, albumTitle):
         return os.path.join(self.artistFolder(artist),
-                            "[" + year.zfill(4)[:4] + "] " + makeFileFriendly(albumTitle))
+                            "[" + year.zfill(4)[:4] + "] " + ProcessorBase.makeFileFriendly(albumTitle))
 
     def pathToTrack(self, track):
         """
@@ -38,48 +36,43 @@ class ProcessorBase(object):
                     path = path.replace(key, val)
         return path
 
+    @staticmethod
+    def trackName(trackNumber, trackTitle):
+        return str(trackNumber).zfill(2) + " " + ProcessorBase.makeFileFriendly(trackTitle) + ".mp3"
 
-@staticmethod
-def trackName(trackNumber, trackTitle):
-    return str(trackNumber).zfill(2) + " " + makeFileFriendly(trackTitle) + ".mp3"
+    @staticmethod
+    def allDirectoriesInDirectory(directory, isReleaseFolder=False):
+        if isReleaseFolder:
+            yield directory
+        for root, dirs, files in os.walk(directory):
+            for d in dirs:
+                yield os.path.join(root, d)
 
+    @staticmethod
+    def folderMp3Files(folder):
+        for root, dirs, files in os.walk(folder):
+            for filename in files:
+                if os.path.splitext(filename)[1].lower() == ".mp3":
+                    yield root, os.path.join(root, filename)
 
-@staticmethod
-def allDirectoriesInDirectory(directory, isReleaseFolder=False):
-    if isReleaseFolder:
-        yield directory
-    for root, dirs, files in os.walk(directory):
-        for d in dirs:
-            yield os.path.join(root, d)
+    @staticmethod
+    def makeFileFriendly(fileName):
+        return vfn(string.capwords(fileName), space="keep").decode('utf-8')
 
-
-@staticmethod
-def folderMp3Files(folder):
-    for root, dirs, files in os.walk(folder):
-        for filename in files:
-            if os.path.splitext(filename)[1].lower() == ".mp3":
-                yield root, os.path.join(root, filename)
-
-
-@staticmethod
-def makeFileFriendly(fileName):
-    return vfn(string.capwords(fileName), space="keep").decode('utf-8')
-
-
-@staticmethod
-def infoFromPath(filePath):
-    """
-    See if given path is in "<Artist> -- [Year] <ReleaseTitle>" format is so then return parsed info
-    :param filePath: str
-                     Path To Parse
-    :return: PathInfo
-    """
-    if not filePath:
-        return None
-    parts = filePath.split("--")
-    if parts and len(parts) == 2:
-        artistName = string.capwords(parts[0])
-        secondPart = parts[1].strip()
-        releaseYear = secondPart[1:4]
-        releaseTitle = string.capwords(secondPart[4:])
-        return PathInfo(artistName, releaseYear, releaseTitle)
+    @staticmethod
+    def infoFromPath(filePath):
+        """
+        See if given path is in "<Artist> -- [Year] <ReleaseTitle>" format is so then return parsed info
+        :param filePath: str
+                         Path To Parse
+        :return: PathInfo
+        """
+        if not filePath:
+            return None
+        parts = filePath.split("--")
+        if parts and len(parts) == 2:
+            artistName = string.capwords(parts[0])
+            secondPart = parts[1].strip()
+            releaseYear = secondPart[1:4]
+            releaseTitle = string.capwords(secondPart[4:])
+            return PathInfo(artistName, releaseYear, releaseTitle)

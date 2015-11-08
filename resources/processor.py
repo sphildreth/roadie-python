@@ -103,7 +103,7 @@ class Processor(ProcessorBase):
             fileFolderLibPath = self.albumFolder(artist, id3.year, id3.album)
             os.makedirs(fileFolderLibPath, exist_ok=True)
             fullFileLibPath = os.path.join(fileFolderLibPath,
-                                           self.makeFileFriendly(self.trackName(id3.track, id3.title)))
+                                           ProcessorBase.makeFileFriendly(ProcessorBase.trackName(id3.track, id3.title)))
             if not os.path.isfile(fullFileLibPath):
                 # Does not exist copy it over
                 return True
@@ -135,7 +135,7 @@ class Processor(ProcessorBase):
         """
         try:
             newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album),
-                                       self.trackName(id3.track, id3.title))
+                                       ProcessorBase.trackName(id3.track, id3.title))
             isMp3File = os.path.isfile(mp3)
             isNewFilenameFile = os.path.isfile(newFilename)
             # If it already exists delete it as the shouldMove function determines if
@@ -192,7 +192,7 @@ class Processor(ProcessorBase):
             release = None
             mp3FoldersProcessed = []
             # Get all the folder in the InboundFolder
-            for mp3Folder in allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
+            for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
                 try:
                     mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(mp3Folder))
                     if not self._doProcessFolder(mp3Folder, mp3FolderMtime, forceFolderScan):
@@ -216,7 +216,7 @@ class Processor(ProcessorBase):
                         continue
 
                     # Get all the MP3 files in the Folder and process
-                    for rootFolder, mp3 in self.folderMp3Files(mp3Folder):
+                    for rootFolder, mp3 in ProcessorBase.folderMp3Files(mp3Folder):
                         printableMp3 = mp3.encode('ascii', 'ignore').decode('utf-8')
                         self.logger.debug("Processing MP3 File [" + printableMp3 + "]")
                         id3StartTime = arrow.utcnow().datetime
