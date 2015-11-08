@@ -48,6 +48,7 @@ class ProcessorBase(object):
         :return: str
         """
         path = os.path.join(self.libraryFolder, track.filePath, track.fileName)
+        print(str(path))
         if self.trackPathReplace:
             for rpl in self.trackPathReplace:
                 for key, val in rpl.items():

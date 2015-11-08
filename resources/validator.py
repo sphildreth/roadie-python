@@ -21,6 +21,7 @@ class Validator(ProcessorBase):
         for artist in self.session.query(Artist).all():
             self.validate(artist)
 
+
     def validate(self, artist, onlyValidateRelease=None):
         """
         Do sanity checks on given Artist
@@ -58,10 +59,9 @@ class Validator(ProcessorBase):
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
                             trackFilename = self.pathToTrack(track)
-                            print(str(self.libraryFolder))
                             if not os.path.isfile(trackFilename):
-                         #   if not self.readOnly:
-                         #           self.session.delete(track)
+                                if not self.readOnly:
+                                #    self.session.delete(track)
                                 self.logger.warn(
                                     "X Deleting Track [" + str(track) + "] File [" + trackFilename + "] not found")
                                 issuesFound = True
