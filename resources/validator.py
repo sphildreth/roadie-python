@@ -42,9 +42,8 @@ class Validator(ProcessorBase):
                 except:
                     folderExists = False
                 if not folderExists:
-                    #  if not self.readOnly:
-                    #       self.session.delete(release)
-                    issuesFound = True
+                    if not self.readOnly:
+                        self.session.delete(release)
                     self.logger.warn(
                         "X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
                     continue
@@ -58,8 +57,6 @@ class Validator(ProcessorBase):
                     releaseMediaTrackCount = 0
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
-                            self.logger.debug("LibraryFolder [" + str(self.libraryFolder) + "] " +
-                                              "Track Info [" + str(track.info(includePathInfo=True)) + "]")
                             trackFilename = self.pathToTrack(track)
                             isTrackFilePresent = False
                             if trackFilename:
@@ -68,10 +65,11 @@ class Validator(ProcessorBase):
                                 except:
                                     pass
                             if not isTrackFilePresent:
-                                #if not self.readOnly:
-                                #    self.session.delete(track)
+                                if not self.readOnly:
+                                    self.session.delete(track)
                                 self.logger.warn(
-                                    "X Deleting Track [" + str(track) + "] File [" + str(trackFilename) + "] not found")
+                                    "X Deleting Track [" + str(track.info(includePathInfo=True)) + "] File [" + str(
+                                        trackFilename) + "] not found")
                                 issuesFound = True
                             else:
                                 releaseMediaTrackCount += 1
