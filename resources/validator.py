@@ -61,11 +61,12 @@ class Validator(ProcessorBase):
                             self.logger.debug("LibraryFolder [" + str(self.libraryFolder) + "] " +
                                               "Track Info [" + str(track.info(includePathInfo=True)) + "]")
                             trackFilename = self.pathToTrack(track)
+                            isTrackFilePresent = False
                             if trackFilename:
                                 try:
                                     isTrackFilePresent = os.path.isfile(trackFilename)
                                 except:
-                                    isTrackFilePresent = False
+                                    pass
                             if not isTrackFilePresent:
                                 #if not self.readOnly:
                                 #    self.session.delete(track)
