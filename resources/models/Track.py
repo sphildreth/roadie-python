@@ -49,13 +49,16 @@ class Track(Base):
         return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self, includePathInfo=False):
+        fileAndNameInfo = "FilePath [" + str(self.filePath) + "], " +\
+                          "FileName [" + str(self.fileName) + "], "
+        if not includePathInfo:
+            fileAndNameInfo = ""
         return ("Id [" + str(self.id) + "], " +
                 "RoadieId [" + str(self.roadieId) + "], " +
                 "Hash [" + str(self.hash) + "], " +
                 "Title [" + str(self.title) + "], " +
                 "TrackNumber [" + str(self.trackNumber) + "], " +
-                "FilePath [" + str(self.filePath) + "], " if includePathInfo else "" +
-                "FileName [" + str(self.fileName) + "], " if includePathInfo else "" +
+                fileAndNameInfo +
                 "Duration [" + str(self.duration) + "]").encode('ascii', 'ignore').decode('utf-8')
 
     def fullPath(self):
