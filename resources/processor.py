@@ -222,7 +222,6 @@ class Processor(ProcessorBase):
                         id3StartTime = arrow.utcnow().datetime
                         id3 = ID3(mp3, self.processingOptions)
                         id3ElapsedTime = arrow.utcnow().datetime - id3StartTime
-                        self.logger.info(": ID3 init elapsed time [" + str(id3ElapsedTime) + "]")
                         if id3 is not None:
                             if not id3.isValid():
                                 self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + printableMp3 + "]")
