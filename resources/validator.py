@@ -60,7 +60,7 @@ class Validator(ProcessorBase):
                         try:
                             trackFilename = self.pathToTrack(track)
                             if not os.path.isfile(trackFilename):
-                                if not self.readOnly:
+                                #if not self.readOnly:
                                 #    self.session.delete(track)
                                 self.logger.warn(
                                     "X Deleting Track [" + str(track) + "] File [" + trackFilename + "] not found")
