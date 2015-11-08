@@ -8,7 +8,6 @@ from resources.processingBase import ProcessorBase
 
 class Validator(ProcessorBase):
     def __init__(self, config, dbConn, dbSession, readOnly):
-        self.config = config
         self.readOnly = readOnly or False
         self.logger = Logger()
         self.conn = dbConn

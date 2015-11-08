@@ -28,6 +28,10 @@ class ProcessorBase(object):
         :return: str
         """
         if not track or not track.filePath or not track.fileName:
+            try:
+                print("track [" + str(track) + "] filePath [" + str(track.filePath) + "] fileName [" + str.fileName + "]")
+            except:
+                pass
             return None
         path = os.path.join(self.libraryFolder, track.filePath, track.fileName)
         if self.trackPathReplace:
