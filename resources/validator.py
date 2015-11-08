@@ -1,7 +1,8 @@
 import os
+
 from resources.common import *
-from resources.models.Artist import Artist
 from resources.logger import Logger
+from resources.models.Artist import Artist
 from resources.processingBase import ProcessorBase
 
 
@@ -48,7 +49,7 @@ class Validator(ProcessorBase):
                     continue
                 releaseTrackCount = 0
                 releaseMediaCount = 0
-                # Set this to complete unless its found otherwise
+                # If release is not already complete, set to complete unless its found otherwise
                 if release.libraryStatus != 'Complete':
                     release.libraryStatus = 'Complete'
                 for releaseMedia in release.media:
@@ -57,7 +58,7 @@ class Validator(ProcessorBase):
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
                             trackFilename = self.pathToTrack(track)
-                            if not os.path.exists(trackFilename):
+                            if not os.path.isfile(trackFilename):
                                 if not self.readOnly:
                                     self.session.delete(track)
                                 self.logger.warn(
