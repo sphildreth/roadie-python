@@ -11,8 +11,8 @@ p = argparse.ArgumentParser(description='Process Inbound Folders For Updates.')
 p.add_argument('--folder', '-f', help='Override library setting in config')
 p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
                help='Dont Delete Any Processed Inbound Folders')
-p.add_argument('--dontValidate', '-dv', action='store_true',
-               help='Dont Run Validate Command After Processing')
+p.add_argument('--validate', '-vv', action='store_true',
+               help='Run Validate Command After Processing')
 p.add_argument('--processArtists', '-pa', action='store_true',
                help='Process Artist release folders in Library')
 p.add_argument('--flush', '-fl', action='store_true', help='Flush All Releases For Artist Before Processing')
@@ -41,6 +41,6 @@ if args.processArtists:
     pp.processArtists(args.dontValidate)
 else:
     pp.process(forceFolderScan=forceFolderScan)
-    if not args.dontValidate:
+    if not args.validate:
         validator = Validator(config, conn, session, False)
         validator.validateArtists()
