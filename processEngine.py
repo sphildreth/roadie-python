@@ -12,7 +12,7 @@ p.add_argument('--folder', '-f', help='Override library setting in config')
 p.add_argument('--dontDeleteInboundFolders', '-d', action='store_true',
                help='Dont Delete Any Processed Inbound Folders')
 p.add_argument('--validate', '-vv', action='store_true',
-               help='Run Validate Command After Processing')
+               help='Run Validate Artists After Processing')
 p.add_argument('--processArtists', '-pa', action='store_true',
                help='Process Artist release folders in Library')
 p.add_argument('--flush', '-fl', action='store_true', help='Flush All Releases For Artist Before Processing')
@@ -41,6 +41,6 @@ if args.processArtists:
     pp.processArtists(args.dontValidate)
 else:
     pp.process(forceFolderScan=forceFolderScan)
-    if not args.validate:
+    if args.validate:
         validator = Validator(config, conn, session, False)
         validator.validateArtists()
