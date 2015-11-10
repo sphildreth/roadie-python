@@ -11,21 +11,40 @@
 <body>
 <style>
     body {
-    padding: 0;
+        padding: 0;
     }
     .sm2-bar-ui {
-    font-size: 18px;
+        font-size: 18px;
     }
     .sm2-bar-ui .sm2-main-controls,
     .sm2-bar-ui .sm2-playlist-drawer {
-    background-color: #6f7980;
+        background-color: #6f7980;
     }
     .sm2-bar-ui .sm2-inline-texture {
-    background: transparent;
+        background: transparent;
     }
     img.artist-thumb, img.release-thumb {
-    height: 25px;
+        display:inline-block;
+        height: 25px;
+        margin: 0 5px;
     }
+    span.artist-label, span.release-label {
+        display: inline-block;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    span.artist-label {
+        font-weight: bold;
+        width: 40%;
+    }
+    span.release-label {
+        width: 50%;
+    }
+
+
+
 </style>
 <div class="sm2-bar-ui playlist-open full-width">
     <div class="bd sm2-main-controls">
@@ -101,11 +120,15 @@
                     data-release-title="{{ track.ReleaseTitle }}"
                     data-release-year="{{ track.ReleaseYear }}">
                     <a href="{{ track.StreamUrl }}.mp3">
-                        <b><img class="release-thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
-                                alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}</b> &#8226; <img
+                        <span class="artist-label">
+                        <img class="release-thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
+                                alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}
+                        </span>
+                        <span class="release-label">
+                        <img
                             class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
-                            alt="{{ track.ReleaseTitle }}"/> [{{ track.ReleaseYear }}] {{ track.ReleaseTitle }} &#8212;
-                        {{ track.Title }}
+                            alt="{{ track.ReleaseTitle }}"/>&nbsp;[{{ track.ReleaseYear }}] {{ track.ReleaseTitle }}&nbsp;{{ '%02d' % track.ReleaseMediaNumber }}&nbsp;{{ track.Title }}
+                        </span>
                     </a>
                 </li>
                 {% endfor %}
