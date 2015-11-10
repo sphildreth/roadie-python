@@ -310,10 +310,13 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
         return jsonify(message="ERROR")
     oldTitle = setReleaseTitleRelease.title
     setReleaseTitleRelease.title = new_title
-    if not setReleaseTitleRelease.alternateNames:
-        setReleaseTitleRelease.alternateNames = []
-    if create_alternate_name == "true" and oldTitle not in setReleaseTitleRelease.alternateNames:
-        setReleaseTitleRelease.alternateNames.append(oldTitle)
+    if create_alternate_name == "true":
+        oldAlternateTitles = []
+        if setReleaseTitleRelease.alternateNames:
+            oldAlternateTitles = setReleaseTitleRelease.alternateNames
+        if oldTitle not in oldAlternateTitles:
+            oldAlternateTitles.append(oldTitle)
+        setReleaseTitleRelease.alternateNames = oldAlternateTitles
     setReleaseTitleRelease.lastUpdated = now
     dbSession.commit()
     if set_tracks_title == "true":
