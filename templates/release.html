@@ -354,7 +354,7 @@
         {% endfor %}
     </div>
     <div class="meta pull-right">
-        <p><span class="label label-info">Last Modified: {{ release.lastUpdated }}</span></p>
+        <p><span class="label label-info">Last Modified: {{ release.lastUpdated or release.createdDate }}</span></p>
     </div>
 </div>
 {% endblock %}
@@ -885,7 +885,7 @@
                         }
                     }
                 }
-            })
+            });
         });
 
         $("#setAlbumTitle").on("click", function(e) {

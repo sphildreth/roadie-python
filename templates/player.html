@@ -28,7 +28,7 @@
         height: 25px;
         margin: 0 5px;
     }
-    span.artist-label, span.release-label {
+    span.artist-label, span.release-label, span.track-label{
         display: inline-block;
         text-align: left;
         overflow: hidden;
@@ -37,12 +37,14 @@
     }
     span.artist-label {
         font-weight: bold;
-        width: 40%;
+        width: 30%;
     }
     span.release-label {
-        width: 50%;
+        width: 34%;
     }
-
+    span.track-label {
+        width: 34%;
+    }
 
 
 </style>
@@ -116,7 +118,7 @@
                 <li data-artist-id="{{ track.ArtistId }}"
                     data-artist-name="{{ track.ArtistName }}"
                     data-track-id="{{ track.TrackId }}"
-                    data-track-title="{{ track.ReleaseTitle }}"
+                    data-track-title="{{ track.Title }}"
                     data-release-title="{{ track.ReleaseTitle }}"
                     data-release-year="{{ track.ReleaseYear }}">
                     <a href="{{ track.StreamUrl }}.mp3">
@@ -125,9 +127,12 @@
                                 alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}
                         </span>
                         <span class="release-label">
-                        <img
-                            class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
-                            alt="{{ track.ReleaseTitle }}"/>&nbsp;[{{ track.ReleaseYear }}] {{ track.ReleaseTitle }}&nbsp;{{ '%02d' % track.ReleaseMediaNumber }}&nbsp;{{ track.Title }}
+                            <img
+                                class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
+                                alt="{{ track.ReleaseTitle }}"/>&nbsp;[{{ track.ReleaseYear }}] {{ track.ReleaseTitle }}
+                        </span>
+                        <span class="track-label">
+                            {{ '%02d' % track.TrackNumber }}&nbsp;{{ track.Title }}
                         </span>
                     </a>
                 </li>

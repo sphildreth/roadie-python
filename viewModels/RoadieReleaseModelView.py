@@ -6,52 +6,53 @@ from viewModels.RoadieModelView import RoadieModelView
 
 
 class RoadieReleaseModelView(RoadieModelView):
-    form_excluded_columns = ('images', 'collections')
+    form_excluded_columns = ('userRatings', 'images', 'collections', 'releaseLabels')
 
-    form_subdocuments = {
-        'releaseLabels': {
-            'form_subdocuments': {
-                None: {
-                    'form_ajax_refs': {
-                        'Label': {
-                            'fields': ['name'],
-                            'page_size': 10
-                        }
-                    }
-                }
-            }
-        },
-        'genres': {
-            'form_subdocuments': {
-                None: {
-                    'form_ajax_refs': {
-                        'Genre': {
-                            'fields': ['name'],
-                            'page_size': 10
-                        }
-                    }
-                }
-            }
-        },
-        'tracks': {
-            'form_subdocuments': {
-                None: {
-                    'form_ajax_refs': {
-                        'Track': {
-                            'fields': ['title'],
-                            'page_size': 10
-                        }
-                    }
-                }
-            }
-        }
-    }
+    # form_subdocuments = {
+    #     'media': {
+    #         'form_subdocuments': {
+    #             None: {
+    #                 'form_ajax_refs': {
+    #                     'Track': {
+    #                         'fields': ['title'],
+    #                         'page_size': 10
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     },
+    #     'releaseLabels': {
+    #         'form_subdocuments': {
+    #             None: {
+    #                 'form_ajax_refs': {
+    #                     'Label': {
+    #                         'fields': ['name'],
+    #                         'page_size': 10
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
 
     form_ajax_refs = {
         'artist': {
             'fields': ['name'],
             'page_size': 10
+        },
+        'genres': {
+            'fields': ['name'],
+            'page_size': 10
+        },
+        'media': {
+            'fields': ['releaseMediaNumber'],
+            'page_size': 10
         }
+        # 'releaseLabels': {
+        #     'fields': ['label.name', 'catalogNumber'],
+        #     'page_size': 10
+        # }
+
     }
 
     def on_model_change(self, form, model, is_created):

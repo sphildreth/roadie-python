@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Enum, ForeignKey, Index, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
+from resources.common import *
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.CollectionRelease import CollectionRelease
@@ -86,6 +87,83 @@ class Release(Base):
                 + "],LastFMId [" + str(self.lastFMId) + "], ReleaseDate [" +
                 str(self.releaseDate) + "], TrackCount [" + str(self.trackCount) +
                 "], Title [" + str(self.title) + "]").encode('ascii', 'ignore').decode('utf-8')
+
+    def mergeWith(self, right):
+        result = self
+        if not right:
+            return result
+        result.isVirtual = result.isVirtual or right.isVirtual
+        if not result.title and right.title:
+            result.title = right.title
+        elif right.title and not isEqual(result.title, right.title):
+            if not result.alternateNames:
+                result.alternateNames = []
+            if not isInList(result.alternateNames, right.title):
+                result.alternateNames.append(right.title)
+        result.releaseDate = result.releaseDate or right.releaseDate
+        result.profile = result.profile or right.profile
+        result.thumbnail = result.thumbnail or right.thumbnail
+        result.coverUrl = result.coverUrl or right.coverUrl
+        result.iTunesId = result.iTunesId or right.iTunesId
+        result.amgId = result.amgId or right.amgId
+        result.lastFMId = result.lastFMId or right.lastFMId
+        result.musicBrainzId = result.musicBrainzId or right.musicBrainzId
+        result.spotifyId = result.spotifyId or right.spotifyId
+        result.lastFMSummary = result.lastFMSummary or right.lastFMSummary
+        if not result.tags and right.tags:
+            result.tags = right.tags
+        elif result.tags and right.tags:
+            for tag in right.tags:
+                if not isInList(result.tags, tag):
+                    result.tags.append(tag)
+        if not result.alternateNames and right.alternateNames:
+            result.alternateNames = right.alternateNames
+        elif result.alternateNames and right.alternateNames:
+            for alternateName in right.alternateNames:
+                if not isInList(result.alternateNames, alternateName):
+                    result.alternateNames.append(alternateName)
+        if not result.urls and right.urls:
+            result.urls = right.urls
+        elif result.urls and right.urls:
+            for url in right.urls:
+                if not isInList(result.urls, url):
+                    result.urls.append(url)
+        if not result.images and right.images:
+            result.images = right.images
+        elif result.images and right.images:
+            for image in right.images:
+                if image not in result.images:
+                    result.images.append(image)
+        if not result.genres and right.genres:
+            result.genres = right.genres
+        elif result.genres and right.genres:
+            for genre in right.genres:
+                if not ([g for g in result.genres if isEqual(g.name, genre.name)]):
+                    result.genres.append(genre)
+        if not result.releaseLabels and right.releaseLabels:
+            result.releaseLabels = right.releaseLabels
+        elif result.releaseLabels and right.releaseLabels:
+            for releaseLabel in right.releaseLabels:
+                if not ([l for l in result.releaseLabels if isEqual(l.label.name, releaseLabel.label.name)]):
+                    result.releaseLabels.append(releaseLabel)
+        if not result.media and right.media:
+            result.media = right.media
+        elif result.media and right.media:
+            mergedMedia = []
+            for media in result.media:
+                rightMedia = [m for m in right.media if m.releaseMediaNumber == media.releaseMediaNumber]
+                if rightMedia:
+                    mergedMedia.append(media.mergeWithReleaseMedia(rightMedia[0]))
+                else:
+                    mergedMedia.append(media)
+            result.media = mergedMedia
+        if result.media:
+            result.trackCount = 0
+            result.mediaCount = 0
+            for media in result.media:
+                result.trackCount += len(media.tracks or [])
+                result.mediaCount += 1
+        return result
 
 
 Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)

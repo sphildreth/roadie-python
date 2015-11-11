@@ -316,7 +316,10 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
             oldAlternateTitles = setReleaseTitleRelease.alternateNames
         if oldTitle not in oldAlternateTitles:
             oldAlternateTitles.append(oldTitle)
-        setReleaseTitleRelease.alternateNames = oldAlternateTitles
+        # I cannot get setting the release alternateNames working so I did this direct update
+        t = text("UPDATE `release` set alternateNames = '" + "|".join(oldAlternateTitles) + "' WHERE id = " + str(
+            setReleaseTitleRelease.id) + ";")
+        conn.execute(t)
     setReleaseTitleRelease.lastUpdated = now
     dbSession.commit()
     if set_tracks_title == "true":
@@ -326,6 +329,38 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
                 id3 = ID3(trackPath, config)
                 id3.updateFromRelease(setReleaseTitleRelease, track)
     return jsonify(message="OK")
+
+
+@app.route("/mergereleases/<release_roadie_id_to_merge>/<release_roadie_id_to_merge_into>/<add_as_media>", methods=['POST'])
+def mergeReleases(release_roadie_id_to_merge, release_roadie_id_to_merge_into, add_as_media):
+    try:
+        if not release_roadie_id_to_merge or not release_roadie_id_to_merge_into:
+            return jsonify(message="ERROR")
+        releaseToMerge = dbSession.query(Release).filter(Release.roadieId == release_roadie_id_to_merge).first()
+        releaseToMergeInto = dbSession.query(Release).filter(Release.roadieId == release_roadie_id_to_merge_into).first()
+        if not releaseToMerge or not releaseToMergeInto:
+            return jsonify(message="ERROR")
+        if add_as_media == "True":
+            now = arrow.utcnow().datetime
+            mediaNumber = releaseToMergeInto.mediaCount
+            for media in releaseToMerge.media:
+                mediaNumber += 1
+                media.releaseId = releaseToMergeInto.id
+                media.releaseMediaNumber = mediaNumber
+                media.lastUpdated = now
+                releaseToMergeInto.mediaCount += 1
+                releaseToMergeInto.trackCount += media.trackCount
+            releaseToMerge.genres = []
+            dbSession.commit()
+            dbSession.delete(releaseToMerge)
+            dbSession.commit()
+        else:
+            return jsonify(message="ERROR")
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error In Release Random")
+        dbSession.rollback()
+        return jsonify(message="ERROR")
 
 
 @app.route("/release/random/<count>", methods=['POST'])
@@ -505,8 +540,9 @@ def separateSingleReleases():
                         for track in media.tracks:
                             try:
                                 fullPath = pathToTrack(track)
-                                newFileName = os.path.join(config['ROADIE_SINGLE_ARTIST_HOLDING_FOLDER'], str(track.id) + "."
-                                                       + track.fullPath().replace("\\", "_").replace("/", "_"))
+                                newFileName = os.path.join(config['ROADIE_SINGLE_ARTIST_HOLDING_FOLDER'],
+                                                           str(track.id) + "."
+                                                           + track.fullPath().replace("\\", "_").replace("/", "_"))
                                 logger.info("= Moving to Single Release Folder [" + newFileName + "]")
                                 shutil.move(fullPath, newFileName)
                                 doDelete = True
@@ -1191,7 +1227,8 @@ def playStats(option):
     user = getUser()
     tracks = []
     if option == "top25songs":
-        for track in dbSession.query(Track).order_by(desc(Track.rating)).order_by(Track.title).limit(25):
+        for track in dbSession.query(Track).filter(Track.rating > 0).order_by(desc(Track.rating)).order_by(
+                Track.title).limit(25):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks
@@ -1200,7 +1237,8 @@ def playStats(option):
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
     if option == "top10Albums":
-        for track in dbSession.query(Release).order_by(desc(Release.rating)).order_by(Release.title).limit(10):
+        for track in dbSession.query(Release).filter(Release.rating > 0).order_by(desc(Release.rating)).order_by(
+                Release.title).limit(10):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks

@@ -216,7 +216,7 @@
     <div class="release-info-container">
         <div class="row bordered">
             {% for release in releases|sort(attribute='releaseDate') %}
-            <div class="release pull-left" data-release-id="{{ release.roadieId }}">
+            <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
                 <div>
                     <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
                          alt="{{ release.title }}"/>
@@ -484,6 +484,69 @@
 
             $("#searchInternetArtst").on("click", function() {
                 roadieLibrary.doInternetSearch($("span.artist-name").text() + " Band");
+            });
+
+            $("div.release").on("dragstart", function(e) {
+                e.dataTransfer.setData('text/plain', $(this).data("release-id"));
+            }).on("dragenter dragover", function(e) {
+                e.preventDefault();
+                $(this).addClass("drag-highlight");
+            }).on("dragleave", function(e) {
+                e.preventDefault();
+                $(this).removeClass("drag-highlight");
+            }).on("drop", function(e) {
+                e.preventDefault();
+                $(this).removeClass("drag-highlight");
+                var releaseIdToMerge = e.dataTransfer.getData('text/plain');
+                var releaseIdMergeInto = $(this).data("release-id");
+                if(releaseIdToMerge && releaseIdMergeInto) {
+                    var releaseToMergeTitle = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.release-title").text();
+                    var releaseToMergeYear = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.releasedate").text();
+                    var releaseMergeIntoTitle = $(this).find("span.release-title").text();
+                    var releaseMergeIntoYear = $(this).find("span.releasedate").text();
+                    bootbox.dialog({
+                        title: "Merge Releases",
+                        message: '<div class="row">  ' +
+                            '<div class="col-md-12"> ' +
+                            '<form class="form-horizontal"> ' +
+                            '<div class="form-group"> ' +
+                            '<div>Continue to Merge Release:</div> ' +
+                            '<div><span class="label label-info">' + releaseToMergeYear + '</span><span class="label label-default">' + releaseToMergeTitle + '</span></div>' +
+                            '<div>Into Release:</div> ' +
+                            '<div><span class="label label-info">' + releaseMergeIntoYear + '</span><span class="label label-default"> ' + releaseMergeIntoTitle + '</span></div>' +
+                            '<div class="form-group"><label class="col-md-7 control-label" for="add_as_media">Add Release as Media (ie "CD2")?</label> ' +
+                            '<div class="col-md-4 checkbox"><label><input type="checkbox" name="add_as_media" id="add_as_media" value="True" checked="checked">Yes</label>' +
+                            '</div></div>' +
+                            '</form></div></div>',
+                        buttons: {
+                            cancel: {
+                                label: "Cancel",
+                                className: "btn-default"
+                            },
+                            success: {
+                                label: "Save",
+                                className: "btn-danger",
+                                callback: function () {
+                                    var addAsMedia = $("input[name='add_as_media']:checked").val();
+                                    $(".loader").fadeIn("slow", function() {
+                                        $.ajax({
+                                            type: 'POST',
+                                            url: '/mergereleases/' + releaseIdToMerge + '/' + releaseIdMergeInto + '/' + addAsMedia,
+                                            success: function(data) {
+                                                if(data.message == "OK") {
+                                                    location.reload(true);
+                                                }
+                                            },
+                                            error:function(jq, st, error){
+                                                roadieLibrary.showErrorMessage(error);
+                                            }
+                                        });
+                                    });
+                                }
+                            }
+                        }
+                    });
+                }
             });
 
         });
