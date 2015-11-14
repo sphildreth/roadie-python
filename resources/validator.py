@@ -43,6 +43,7 @@ class Validator(ProcessorBase):
                     folderExists = False
                 if not folderExists:
                     if not self.readOnly:
+                        release.genres = []
                         self.session.delete(release)
                     self.logger.warn(
                         "X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")

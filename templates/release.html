@@ -403,7 +403,11 @@
     };
 
     var isReleaseMarkedComplete = function() {
-        return $(".release-detail-container").hasClass("librarystatus_complete");
+        var isComplete =  $(".release-detail-container").hasClass("librarystatus_complete");
+        if(!isComplete) {
+            console.log("Release Is Marked Incomplete!");
+        }
+        return isComplete;
     };
 
     var areNoTracksOfZeroLength = function() {
