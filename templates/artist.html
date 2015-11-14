@@ -253,6 +253,9 @@
             {% endfor %}
         </div>
     </div>
+    <div class="row lists bordered danger insane-messages" style="display:none;">
+        <dl></dl>
+    </div>
     <div class="meta pull-right">
         <p><span class="label label-info">Last Modified: {{ artist.lastUpdated }}</span></p>
     </div>
@@ -260,296 +263,303 @@
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
-        var artistId = '{{ artist.roadieId }}';
+    var artistId = '{{ artist.roadieId }}';
 
-        var doArtistSanityChecks = function() {
-            checkReleaseMediaTrackCount();
+    var showInsaneMessage = function(message) {
+        $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
+    };
 
-            var $c = $("div.release-counts-container");
-            $c.find(".release-sane-indicator").remove();
-            var isSane = areNoInvalidReleasesFound();
-            isSane = isSane && noTracksAreMissing();
-            if(isSane) {
-                $c.append("<span class='release-sane-indicator release-sane label label-success' title='Artist Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
-            } else {
-                $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Artist Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+    var doArtistSanityChecks = function() {
+        checkReleaseMediaTrackCount();
+
+        var $c = $("div.release-counts-container");
+        $c.find(".release-sane-indicator").remove();
+        var isSane = areNoInvalidReleasesFound();
+        isSane = isSane && noTracksAreMissing();
+        if(isSane) {
+            $c.append("<span class='release-sane-indicator release-sane label label-success' title='Artist Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+        } else {
+            $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Artist Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
+        }
+    };
+
+    var noTracksAreMissing = function() {
+        return $(".artist-detail-container span.trackNumber.missing").length === 0;
+    };
+
+    var checkReleaseMediaTrackCount = function() {
+        $.each($(".release-media"), function(i, d) {
+            var $t = $(this);
+            var tracksFound = $t.find("li").length;
+            var trackCount = parseInt($t.data('track-count'));
+            var hasMissingTracks = $t.find("span.trackNumber.missing").length;
+            if (tracksFound !== trackCount || hasMissingTracks > 0) {
+                var $r = $t.closest("div.release").find(".release-title")
+                var releaseName = $r.text();
+                showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
+                $r.addClass("label-danger").removeClass("label-default");
             }
-        };
+        });
+    };
 
-        var noTracksAreMissing = function() {
-            return $(".artist-detail-container span.trackNumber.missing").length === 0;
-        };
+    var areNoInvalidReleasesFound = function() {
+        var r = $("span.release-title.label-danger").length === 0;
+        if(!r) {
+            showInsaneMessage("Found Invalid Releases");
+        }
+    };
 
-        var checkReleaseMediaTrackCount = function() {
-            $.each($(".release-media"), function(i, d) {
-                var $t = $(this);
-                var tracksFound = $t.find("li").length;
-                var trackCount = parseInt($t.data('track-count'));
-                var hasMissingTracks = $t.find("span.trackNumber.missing").length;
-                if (tracksFound !== trackCount || hasMissingTracks > 0) {
-                    var $r = $t.closest("div.release").find(".release-title")
-                    var releaseName = $r.text();
-                    console.log("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
-                    $r.addClass("label-danger").removeClass("label-default");
+    $(function() {
+
+        $(".tokenfield-readonly").tokenfield();
+
+        doArtistSanityChecks();
+
+        $(".user-rating-container a.dislike").on("click", function(e) {
+            var $i =  $(this).find("i:first");
+            var toggle = !$i.hasClass("fa-thumbs-down");
+            $.ajax({
+                type: 'POST',
+                url: '/user/artist/toggledislike/' + artistId + '/' + toggle,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        roadieLibrary.showSuccessMessage("Successfully Toggled Dislike");
+                        if(toggle) {
+                            $i.removeClass("fa-thumbs-o-down").addClass("fa-thumbs-down");
+                            $(".user-rating-container input.rating").rating('rate',0);
+                            $(".rating-container input.rating").rating('rate', data.average);
+                        } else {
+                            $i.removeClass("fa-thumbs-down").addClass("fa-thumbs-o-down");
+                        }
+                    }
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
                 }
             });
-        };
-
-        var areNoInvalidReleasesFound = function() {
-            return $("span.release-title.label-danger").length === 0;
-        };
-
-        $(function() {
-
-            $(".tokenfield-readonly").tokenfield();
-
-            doArtistSanityChecks();
-
-            $(".user-rating-container a.dislike").on("click", function(e) {
-                var $i =  $(this).find("i:first");
-                var toggle = !$i.hasClass("fa-thumbs-down");
-                $.ajax({
-                    type: 'POST',
-                    url: '/user/artist/toggledislike/' + artistId + '/' + toggle,
-                    contentType: "application/javascript",
-                    success: function(data) {
-                        if(data.message == "OK") {
-                            roadieLibrary.showSuccessMessage("Successfully Toggled Dislike");
-                            if(toggle) {
-                                $i.removeClass("fa-thumbs-o-down").addClass("fa-thumbs-down");
-                                $(".user-rating-container input.rating").rating('rate',0);
-                                $(".rating-container input.rating").rating('rate', data.average);
-                            } else {
-                                $i.removeClass("fa-thumbs-down").addClass("fa-thumbs-o-down");
-                            }
+        });
+        $(".user-rating-container a.favorite").on("click", function(e) {
+            var $i =  $(this).find("i:first");
+            var toggle = !$i.hasClass("fa-heart");
+            $.ajax({
+                type: 'POST',
+                url: '/user/artist/togglefavorite/' + artistId + '/' + toggle,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        roadieLibrary.showSuccessMessage("Successfully Toggled Favorite");
+                        if(toggle) {
+                            $i.removeClass("fa-heart-o").addClass("fa-heart");
+                        } else {
+                            $i.removeClass("fa-heart").addClass("fa-heart-o");
                         }
-                    },
-                    error:function(jq, st, error){
-                        roadieLibrary.showErrorMessage(error);
                     }
-                });
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
             });
-            $(".user-rating-container a.favorite").on("click", function(e) {
-                var $i =  $(this).find("i:first");
-                var toggle = !$i.hasClass("fa-heart");
-                $.ajax({
-                    type: 'POST',
-                    url: '/user/artist/togglefavorite/' + artistId + '/' + toggle,
-                    contentType: "application/javascript",
-                    success: function(data) {
-                        if(data.message == "OK") {
-                            roadieLibrary.showSuccessMessage("Successfully Toggled Favorite");
-                            if(toggle) {
-                                $i.removeClass("fa-heart-o").addClass("fa-heart");
-                            } else {
-                                $i.removeClass("fa-heart").addClass("fa-heart-o");
-                            }
-                        }
-                    },
-                    error:function(jq, st, error){
-                        roadieLibrary.showErrorMessage(error);
+        });
+        $(".user-rating-container input.rating").on("change", function(e) {
+            $.ajax({
+                type: 'POST',
+                url: '/user/artist/setrating/' + artistId + '/' + $(this).rating('rate'),
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $(".rating-container input.rating").rating('rate', data.average);
+                        roadieLibrary.showSuccessMessage("Successfully Set Rating");
                     }
-                });
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
             });
-            $(".user-rating-container input.rating").on("change", function(e) {
-                $.ajax({
-                    type: 'POST',
-                    url: '/user/artist/setrating/' + artistId + '/' + $(this).rating('rate'),
-                    contentType: "application/javascript",
-                    success: function(data) {
-                        if(data.message == "OK") {
-                            $(".rating-container input.rating").rating('rate', data.average);
-                            roadieLibrary.showSuccessMessage("Successfully Set Rating");
-                        }
-                    },
-                    error:function(jq, st, error){
-                        roadieLibrary.showErrorMessage(error);
-                    }
-                });
-            });
+        });
 
-            $(".user-rating-container span.reset-rating").on("click", function(e) {
-                var $rc = $(this).siblings("input.rating");
-                $.ajax({
-                    type: 'POST',
-                    url: '/user/artist/setrating/' + artistId + '/0',
-                    contentType: "application/javascript",
-                    success: function(data) {
-                        if(data.message == "OK") {
-                            $rc.rating('rate', 0);
-                            $(".rating-container input.rating").rating('rate', data.average);
-                            roadieLibrary.showSuccessMessage("Successfully Removed Rating");
-                        }
-                    },
-                    error:function(jq, st, error){
-                        roadieLibrary.showErrorMessage(error);
+        $(".user-rating-container span.reset-rating").on("click", function(e) {
+            var $rc = $(this).siblings("input.rating");
+            $.ajax({
+                type: 'POST',
+                url: '/user/artist/setrating/' + artistId + '/0',
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $rc.rating('rate', 0);
+                        $(".rating-container input.rating").rating('rate', data.average);
+                        roadieLibrary.showSuccessMessage("Successfully Removed Rating");
                     }
-                });
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
             });
+        });
 
-            $("#playAll").on("click", function(e) {
-                roadieLibrary.playLoader("/artist/play/" + artistId + "/0");
+        $("#playAll").on("click", function(e) {
+            roadieLibrary.playLoader("/artist/play/" + artistId + "/0");
+        });
+        $("#playAllShuffle").on("click", function(e) {
+            roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
+        });
+        $(".artist-detail-container a.thumbnail").on("click", function(e) {
+            var $t = $(this);
+            bootbox.dialog({
+                title: $t.data("title"),
+                size: 'large',
+                message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
             });
-            $("#playAllShuffle").on("click", function(e) {
-                roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
-            });
-            $(".artist-detail-container a.thumbnail").on("click", function(e) {
-                var $t = $(this);
-                bootbox.dialog({
-                    title: $t.data("title"),
-                    size: 'large',
-                    message: '<img src="' + $t.data("url") + '" style="max-width: 100%;" />'
-                });
-            });
+        });
 
-            $("#scan-artist").on("click", function(e) {
-                bootbox.confirm("Continue To Re-Scan Artist Release Folder(s)?", function(result) {
-                    if(result) {
-                        $(".loader").fadeIn("slow", function() {
-                            $.ajax({
-                                type: 'POST',
-                                url: '/artist/rescan/' + artistId,
-                                contentType: "application/javascript",
-                                success: function(data) {
-                                    if(data.message == "OK") {
-                                        location.reload(true);
-                                    } else {
-                                        roadieLibrary.showErrorMessage("An Error Occurred");
-                                    }
-                                },
-                                error:function(jq, st, error){
-                                    roadieLibrary.showErrorMessage(error);
-                                }
-                            });
-                        });
-                    }
-                });
-            });
-
-            $("#delete-artist").on("click", function(e) {
-                bootbox.confirm("Continue To Delete Artist?", function(result) {
-                    if(result) {
-                        var $t = $(this);
+        $("#scan-artist").on("click", function(e) {
+            bootbox.confirm("Continue To Re-Scan Artist Release Folder(s)?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
                         $.ajax({
                             type: 'POST',
-                            url: '/artist/delete/' + artistId,
-                            contentType: "application/javascript",
-                            success: function(data) {
-                                if(data.message == "OK") {
-                                    window.location.href = '/';
-                                }
-                            },
-                            error:function(jq, st, error){
-                                roadieLibrary.showErrorMessage(error);
-                            }
-                        });
-                    }
-                });
-            });
-            $("a.setArtistImage").on("click", function(e) {
-                var $t = $(this);
-                var imageId = $t.parents(".context-menu").data("image-id");
-                $.ajax({
-                    type: 'POST',
-                    url: '/artist/setimage/' + artistId + '/' + imageId,
-                    contentType: "application/javascript",
-                    success: function(data) {
-                        $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
-                    },
-                    error:function(jq, st, error){
-                        roadieLibrary.showErrorMessage(error);
-                    }
-                });
-            });
-
-            $("#deleteArtistReleases").on("click", function(e) {
-                bootbox.confirm("Continue To Delete All Artist Releases?", function(result) {
-                    if(result) {
-                        $.ajax({
-                            type: 'POST',
-                            url: '/artist/deletereleases/' + artistId,
+                            url: '/artist/rescan/' + artistId,
                             contentType: "application/javascript",
                             success: function(data) {
                                 if(data.message == "OK") {
                                     location.reload(true);
+                                } else {
+                                    roadieLibrary.showErrorMessage("An Error Occurred");
                                 }
                             },
                             error:function(jq, st, error){
                                 roadieLibrary.showErrorMessage(error);
                             }
                         });
-                    }
-                });
+                    });
+                }
             });
+        });
 
-            $("#searchInternetArtst").on("click", function() {
-                roadieLibrary.doInternetSearch($("span.artist-name").text() + " Band");
-            });
-
-            $("div.release").on("dragstart", function(e) {
-                e.dataTransfer.setData('text/plain', $(this).data("release-id"));
-            }).on("dragenter dragover", function(e) {
-                e.preventDefault();
-                $(this).addClass("drag-highlight");
-            }).on("dragleave", function(e) {
-                e.preventDefault();
-                $(this).removeClass("drag-highlight");
-            }).on("drop", function(e) {
-                e.preventDefault();
-                $(this).removeClass("drag-highlight");
-                var releaseIdToMerge = e.dataTransfer.getData('text/plain');
-                var releaseIdMergeInto = $(this).data("release-id");
-                if(releaseIdToMerge && releaseIdMergeInto) {
-                    var releaseToMergeTitle = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.release-title").text();
-                    var releaseToMergeYear = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.releasedate").text();
-                    var releaseMergeIntoTitle = $(this).find("span.release-title").text();
-                    var releaseMergeIntoYear = $(this).find("span.releasedate").text();
-                    bootbox.dialog({
-                        title: "Merge Releases",
-                        message: '<div class="row">  ' +
-                            '<div class="col-md-12"> ' +
-                            '<form class="form-horizontal"> ' +
-                            '<div class="form-group"> ' +
-                            '<div>Continue to Merge Release:</div> ' +
-                            '<div><span class="label label-info">' + releaseToMergeYear + '</span><span class="label label-default">' + releaseToMergeTitle + '</span></div>' +
-                            '<div>Into Release:</div> ' +
-                            '<div><span class="label label-info">' + releaseMergeIntoYear + '</span><span class="label label-default"> ' + releaseMergeIntoTitle + '</span></div>' +
-                            '<div class="form-group"><label class="col-md-7 control-label" for="add_as_media">Add Release as Media (ie "CD2")?</label> ' +
-                            '<div class="col-md-4 checkbox"><label><input type="checkbox" name="add_as_media" id="add_as_media" value="True" checked="checked">Yes</label>' +
-                            '</div></div>' +
-                            '</form></div></div>',
-                        buttons: {
-                            cancel: {
-                                label: "Cancel",
-                                className: "btn-default"
-                            },
-                            success: {
-                                label: "Save",
-                                className: "btn-danger",
-                                callback: function () {
-                                    var addAsMedia = $("input[name='add_as_media']:checked").val();
-                                    $(".loader").fadeIn("slow", function() {
-                                        $.ajax({
-                                            type: 'POST',
-                                            url: '/mergereleases/' + releaseIdToMerge + '/' + releaseIdMergeInto + '/' + addAsMedia,
-                                            success: function(data) {
-                                                if(data.message == "OK") {
-                                                    location.reload(true);
-                                                }
-                                            },
-                                            error:function(jq, st, error){
-                                                roadieLibrary.showErrorMessage(error);
-                                            }
-                                        });
-                                    });
-                                }
+        $("#delete-artist").on("click", function(e) {
+            bootbox.confirm("Continue To Delete Artist?", function(result) {
+                if(result) {
+                    var $t = $(this);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/artist/delete/' + artistId,
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            if(data.message == "OK") {
+                                window.location.href = '/';
                             }
+                        },
+                        error:function(jq, st, error){
+                            roadieLibrary.showErrorMessage(error);
                         }
                     });
                 }
             });
-
         });
+        $("a.setArtistImage").on("click", function(e) {
+            var $t = $(this);
+            var imageId = $t.parents(".context-menu").data("image-id");
+            $.ajax({
+                type: 'POST',
+                url: '/artist/setimage/' + artistId + '/' + imageId,
+                contentType: "application/javascript",
+                success: function(data) {
+                    $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
+
+        $("#deleteArtistReleases").on("click", function(e) {
+            bootbox.confirm("Continue To Delete All Artist Releases?", function(result) {
+                if(result) {
+                    $.ajax({
+                        type: 'POST',
+                        url: '/artist/deletereleases/' + artistId,
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            if(data.message == "OK") {
+                                location.reload(true);
+                            }
+                        },
+                        error:function(jq, st, error){
+                            roadieLibrary.showErrorMessage(error);
+                        }
+                    });
+                }
+            });
+        });
+
+        $("#searchInternetArtst").on("click", function() {
+            roadieLibrary.doInternetSearch($("span.artist-name").text() + " Band");
+        });
+
+        $("div.release").on("dragstart", function(e) {
+            e.dataTransfer.setData('text/plain', $(this).data("release-id"));
+        }).on("dragenter dragover", function(e) {
+            e.preventDefault();
+            $(this).addClass("drag-highlight");
+        }).on("dragleave", function(e) {
+            e.preventDefault();
+            $(this).removeClass("drag-highlight");
+        }).on("drop", function(e) {
+            e.preventDefault();
+            $(this).removeClass("drag-highlight");
+            var releaseIdToMerge = e.dataTransfer.getData('text/plain');
+            var releaseIdMergeInto = $(this).data("release-id");
+            if(releaseIdToMerge && releaseIdMergeInto) {
+                var releaseToMergeTitle = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.release-title").text();
+                var releaseToMergeYear = $(".release[data-release-id='" + releaseIdToMerge + "']").find("span.releasedate").text();
+                var releaseMergeIntoTitle = $(this).find("span.release-title").text();
+                var releaseMergeIntoYear = $(this).find("span.releasedate").text();
+                bootbox.dialog({
+                    title: "Merge Releases",
+                    message: '<div class="row">  ' +
+                        '<div class="col-md-12"> ' +
+                        '<form class="form-horizontal"> ' +
+                        '<div class="form-group"> ' +
+                        '<div>Continue to Merge Release:</div> ' +
+                        '<div><span class="label label-info">' + releaseToMergeYear + '</span><span class="label label-default">' + releaseToMergeTitle + '</span></div>' +
+                        '<div>Into Release:</div> ' +
+                        '<div><span class="label label-info">' + releaseMergeIntoYear + '</span><span class="label label-default"> ' + releaseMergeIntoTitle + '</span></div>' +
+                        '<div class="form-group"><label class="col-md-7 control-label" for="add_as_media">Add Release as Media (ie "CD2")?</label> ' +
+                        '<div class="col-md-4 checkbox"><label><input type="checkbox" name="add_as_media" id="add_as_media" value="True" checked="checked">Yes</label>' +
+                        '</div></div>' +
+                        '</form></div></div>',
+                    buttons: {
+                        cancel: {
+                            label: "Cancel",
+                            className: "btn-default"
+                        },
+                        success: {
+                            label: "Save",
+                            className: "btn-danger",
+                            callback: function () {
+                                var addAsMedia = $("input[name='add_as_media']:checked").val();
+                                $(".loader").fadeIn("slow", function() {
+                                    $.ajax({
+                                        type: 'POST',
+                                        url: '/mergereleases/' + releaseIdToMerge + '/' + releaseIdMergeInto + '/' + addAsMedia,
+                                        success: function(data) {
+                                            if(data.message == "OK") {
+                                                location.reload(true);
+                                            }
+                                        },
+                                        error:function(jq, st, error){
+                                            roadieLibrary.showErrorMessage(error);
+                                        }
+                                    });
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        });
+
+    });
 
 </script>
 {% endblock %}

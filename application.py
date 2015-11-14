@@ -234,7 +234,7 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    for ut in dbSession.query(UserTrack).order_by(desc(UserTrack.lastPlayed)).limit(35):
+    for ut in dbSession.query(UserTrack).join(Track, Track.id == UserTrack.trackId).order_by(desc(UserTrack.lastPlayed)).limit(35):
         lastPlayedInfos.append({
             'TrackId': str(ut.track.roadieId),
             'TrackTitle': ut.track.title,

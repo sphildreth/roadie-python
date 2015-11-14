@@ -662,3 +662,11 @@ body.roadie .tokenfield.disabled a.close {
     display: none;
 }
 
+div.insane-messages {
+    border: 1px solid red;
+}
+.insane-messages dd {
+    display: block;
+    margin: 4px;
+    text-align: left;
+}

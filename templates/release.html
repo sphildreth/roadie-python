@@ -289,7 +289,7 @@
         </div>
         {% endif %}
         {% for media in release.media|sort(attribute='releaseMediaNumber') %}
-        <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}">
+        <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-releasemediatrackcount="{{ media.trackCount }}">
             <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
             {% if media.releaseSubTitle %}
             <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span>
@@ -353,6 +353,9 @@
         </div>
         {% endfor %}
     </div>
+    <div class="row lists bordered danger insane-messages" style="display:none;">
+        <dl></dl>
+    </div>
     <div class="meta pull-right">
         <p><span class="label label-info">Last Modified: {{ release.lastUpdated or release.createdDate }}</span></p>
     </div>
@@ -363,6 +366,10 @@
     var artistId = '{{ release.artist.roadieId }}';
     var releaseId = '{{ release.roadieId }}';
     var selectedCoverUrl = null;
+
+    var showInsaneMessage = function(message) {
+        $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
+    };
 
     var doTrackDelete = function(trackId, flag) {
         $.ajax({
@@ -405,7 +412,7 @@
     var isReleaseMarkedComplete = function() {
         var isComplete =  $(".release-detail-container").hasClass("librarystatus_complete");
         if(!isComplete) {
-            console.log("Release Is Marked Incomplete!");
+            showInsaneMessage("Release Is Marked Incomplete!");
         }
         return isComplete;
     };
@@ -417,6 +424,7 @@
             trackLength = parseInt($t.data("track-length"));
             if(trackLength < 1) {
                 result = false;
+                showInsaneMessage("Track [" + $t.data("track-id") + "] Has Invalid Track Length");
                 return false;
             }
         });
@@ -429,7 +437,7 @@
         var sane = releaseTrackCount === foundTracks;
         if (!sane) {
             $("#releaseTrackCount").removeClass("label-default").addClass("label-danger");
-            console.log("Track Counts Insane, releaseTrackCount [" + releaseTrackCount + "], foundTracks [" + foundTracks + "]");
+            showInsaneMessage("Release Track Count [" + releaseTrackCount + "], Does Not Match Found Tracks [" + foundTracks + "]");
         }
         return sane
     };
@@ -440,7 +448,7 @@
         var sane = mediaCount === foundMedia;
         if (!sane) {
             $("#releaseDiscCount").removeClass("label-default").addClass("label-danger");
-            console.log("Release Media Counts Insane, discCount [" + mediaCount + "], foundMedia [" + foundMedia + "]");
+            showInsaneMessage("Release Media Counts Insane, discCount [" + mediaCount + "], foundMedia [" + foundMedia + "]");
         }
         return sane;
     };
@@ -449,20 +457,29 @@
         var sane = true;
         var firstTrackOnDisc = null;
         var discCount = parseInt($(".media-count").data("media-count"));
+        var foundMediaCount = parseInt($(".release-media-container[data-releasemedianumber]").length);
+        if (discCount !== foundMediaCount) {
+            showInsaneMessage("Found Media Count [" + foundMediaCount + "] Does Not Match Release Media Count [" + discCount + "]");
+            sane = false;
+        }
         for(var disc = 1; disc <= discCount; disc++) {
+            var trackLooper = 1;
             $.each($(".release-media-container[data-releasemedianumber='" + disc + "'] .track span.trackNumber "), function(i,d) {
-                if(i === 0) {
-                    firstTrackOnDisc = parseInt($(d).text())-1;
-                }
-                firstTrackOnDisc++;
                 var $this = $(this);
-                var isTrackNumberRight = firstTrackOnDisc === parseInt($this.text());
+                var isTrackNumberRight = trackLooper === parseInt($this.text());
                 if (!isTrackNumberRight) {
                     $this.removeClass("label-primary").addClass("label-danger").attr("title", "Track Number Sequence is Invalid");
-                    console.log("Track Number Sequence is Insane, Expected [" + firstTrackOnDisc + "], Found [" + parseInt($this.text()) + "]");
+                    showInsaneMessage("Track Number Sequence is Insane, Expected [" + trackLooper + "], Found [" + parseInt($this.text()) + "]");
                 }
                 sane = sane && isTrackNumberRight;
+                trackLooper++;
             });
+            trackLooper--;
+            var mediaTrackCount = parseInt($(".release-media-container[data-releasemedianumber='" + disc + "']").data("releasemediatrackcount"));
+            if(trackLooper !== mediaTrackCount) {
+                showInsaneMessage("Media Number [" + disc + "] Track Count [" + mediaTrackCount + "] Does Not Match Found Tracks For Media [" + trackLooper + "]");
+                sane = false;
+            }
         }
         return sane;
     };
