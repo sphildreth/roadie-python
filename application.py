@@ -948,11 +948,11 @@ def playArtist(artist_id, doShuffle):
         return render_template('404.html'), 404
     tracks = []
     user = getUser()
-    for playArtistReleaseToDelete in artist.releases:
-        for media in playArtistReleaseToDelete.media:
-            for track in sorted(media.tracks, key=lambda tt: (media.releaseMediaNumber, tt.trackNumber)):
+    for playArtistRelease in artist.releases:
+        for media in sorted(playArtistRelease.media, key=lambda mm: mm.releaseMediaNumber):
+            for track in sorted(media.tracks, key=lambda tt: tt.trackNumber):
                 if track.fileName and track.filePath:
-                    tracks.append(M3U.makeTrackInfo(user, playArtistReleaseToDelete, track))
+                    tracks.append(M3U.makeTrackInfo(user, playArtistRelease, track))
     if doShuffle == "1":
         random.shuffle(tracks)
     if user.doUseHtmlPlayer:
@@ -971,8 +971,8 @@ def playRelease(release_id):
         return render_template('404.html'), 404
     tracks = []
     user = getUser()
-    for media in playReleaseRelease.media:
-        for track in media.tracks:
+    for media in sorted(playReleaseRelease.media, key=lambda mm: mm.releaseMediaNumber):
+        for track in sorted(media.tracks, key=lambda tt: tt.trackNumber):
             if track.fileName and track.filePath:
                 tracks.append(M3U.makeTrackInfo(user, playReleaseRelease, track))
     if user.doUseHtmlPlayer:
@@ -1040,6 +1040,7 @@ def saveQue(que_name):
             pl = Playlist()
             pl.userId = user.id
             pl.name = que_name
+            pl.roadieId = str(uuid.uuid4())
             dbSession.add(pl)
             dbSession.commit()
         # adding tracks to an existing playlist
@@ -1310,6 +1311,24 @@ def getCollectionThumbnailImage(collection_id):
         return send_file("static/img/collection.gif")
 
 
+@app.route("/images/playlist/thumbnail/<playlist_id>")
+def getPlaylistThumbnailImage(playlist_id):
+    getPlaylistThumbnailImageCollection = dbSession.query(Playlist).filter(
+        Playlist.roadieId == playlist_id).first()
+    try:
+        if getPlaylistThumbnailImageCollection:
+            etag = hashlib.sha1(
+                ('%s%s' % (
+                    getPlaylistThumbnailImageCollection.id,
+                    getPlaylistThumbnailImageCollection.LastUpdated)).encode(
+                    'utf-8')).hexdigest()
+            return makeImageResponse(getPlaylistThumbnailImageCollection.thumbnail,
+                                     getPlaylistThumbnailImageCollection.lastUpdated,
+                                     "a_tn_" + str(getPlaylistThumbnailImageCollection.id) + ".jpg", etag)
+    except:
+        return send_file("static/img/playlists.gif")
+
+
 @app.route("/images/artist/thumbnail/<artistId>")
 def getArtistThumbnailImage(artistId):
     artist = getArtist(artistId)
@@ -1517,8 +1536,63 @@ def scanStorage():
 @login_required
 def playlists():
     user = getUser()
-    userPlaylists = dbSession.query(Playlist).filter(Playlist.userId == user.id)
-    return render_template('playlist.html', userPlaylists=userPlaylists)  # , sharedPlaylists=sharedPlaylists)
+    userPlaylists = dbSession.query(Playlist).filter(Playlist.userId == user.id).order_by(Playlist.name)
+    return render_template('playlists.html', userPlaylists=userPlaylists)
+
+
+@app.route('/playlist/<playlist_id>')
+@login_required
+def playlist(playlist_id):
+    indexPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
+    if not indexPlaylist:
+        return render_template('404.html'), 404
+    counts = conn.execute(text(
+        "SELECT COUNT(1) AS trackCount, SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
+        "FROM `track` t " +
+        "JOIN `playlisttrack` plt on t.id = plt.trackId " +
+        "JOIN `playlist` pl on pl.id = plt.playListId " +
+        "WHERE pl.roadieId = '" + playlist_id + "' " +
+        "AND t.fileName IS NOT NULL;", autocommit=True)
+                          .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer)) \
+        .fetchone()
+    trackIds = list(map(lambda pt: pt.trackId, sorted(indexPlaylist.tracks, key=lambda pt: pt.listNumber)))
+    tracks = dbSession.query(Track).filter(Track.id.in_(trackIds))
+    return render_template('playlist.html', playlist=indexPlaylist, tracks=tracks, counts=counts)
+
+
+@app.route("/playlist/play/<playlist_id>")
+@login_required
+def playPlaylist(playlist_id):
+    playPlaylistPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
+    if not playPlaylistPlaylist:
+        return render_template('404.html'), 404
+    user = getUser()
+    trackIds = list(map(lambda pt: pt.trackId, sorted(playPlaylistPlaylist.tracks, key=lambda pt: pt.listNumber)))
+    tracks = dbSession.query(Track).filter(Track.id.in_(trackIds))
+    m3uTracks = []
+    for track in tracks:
+        m3uTracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
+    if user.doUseHtmlPlayer:
+        session['tracks'] = m3uTracks
+        return player()
+    return send_file(M3U.generate(m3uTracks),
+                     as_attachment=True,
+                     attachment_filename=collection.Name + ".m3u")
+
+
+@app.route("/playlist/delete/<playlist_id>", methods=['POST'])
+def deletePlaylist(playlist_id):
+    deletePlaylistPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
+    if not deletePlaylistPlaylist:
+        return jsonify(message="ERROR")
+    try:
+        dbSession.delete(deletePlaylistPlaylist)
+        dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        dbSession.rollback()
+        logger.exception("Error Deleting Playlist")
+        return jsonify(message="ERROR")
 
 
 def is_safe_url(target):

@@ -35,6 +35,9 @@
         text-overflow: ellipsis;
         white-space: nowrap;
     }
+    .sm2-playlist-bd span.label {
+        vertical-align: middle;
+    }
     span.artist-label {
         font-weight: bold;
         width: 30%;
@@ -44,6 +47,7 @@
     }
     span.track-label {
         width: 34%;
+        height: 24px;
     }
 
 
@@ -129,10 +133,11 @@
                         <span class="release-label">
                             <img
                                 class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
-                                alt="{{ track.ReleaseTitle }}"/>&nbsp;[{{ track.ReleaseYear }}] {{ track.ReleaseTitle }}
+                                alt="{{ track.ReleaseTitle }}"/>&nbsp;<span class="label label-default">{{ track.ReleaseYear }}</span> {{ track.ReleaseTitle }}
                         </span>
                         <span class="track-label">
-                            {{ '%02d' % track.TrackNumber }}&nbsp;{{ track.Title }}
+                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
+                            {{ track.Title }}
                         </span>
                     </a>
                 </li>

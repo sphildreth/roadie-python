@@ -1,26 +1,112 @@
 {% extends "layout.html" %}
-{% block title %}Playlists{% endblock %}
+{% block title %}{{ playlist.name }}{% endblock %}
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-<div class="playlist-container">
-    <div class="row">
-        {% for userPlaylist in userPlaylists %}
-        <h4><span class="label label-default">{{ userPlaylist.name }}</span></h4>
-        <ul class="playlist" data-playlist-id="{{ userPlaylist.roadieId }}">
-            {%for track in userPlaylist.tracks %}
-            <li data-track-id="{{ track.roadieId }}">{{ track.title }}</li>
-            {% endfor %}
-        </ul>
-        {% endfor %}
+<div class="playlist-container" data-playlist-id="{{ playlist.roadieId }}">
+    <div class="release-counts-container pull-right">
+        <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Tracks of Playlist">{{ counts.trackCount }}</span></span>
+        <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                               title="Total Playtime of Playlist">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
     </div>
-    <h1>WIP</h1>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <div class="btn-group">
+            <button id="playAll" type="button" class="btn btn-default" aria-haspopup="true" aria-expanded="false">
+                <i class="fa fa-play"></i> Play All
+            </button>
+        </div>
+       <div class="btn-group">
+            {% if current_user.is_editor() %}
+            <a href="/admin/playlist/edit/?id={{ playlist.id }}&url=/playlist/{{ playlist.roadieId }}"
+               type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            {% endif %}
+            <a id="delete-playlist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+        </div>
+    </div>
+    <div class="row title bordered">
+        <img class="playlist-thumb thumb pull-left" src="/images/playlist/thumbnail/{{ playlist.roadieId }}"
+             alt="{{ playlist.title }}"/>
+        <h2><span class="label label-default">{{ playlist.name }}</span></h2>
+    </div>
+    <div class="row">
+        <div class="table-responsive">
+            <table id="playlistTracks" class="table-track-info table table-striped table-condensed table-responsive">
+                <thead>
+                <tr>
+                    <td>Track</td>
+                    <td>Release</td>
+                    <td>Artist</td>
+                </tr>
+                </thead>
+                <tbody>
+                {%for track in tracks %}
+                <tr>
+                    <td class="track" data-track-id="{{ track.roadieId }}">
+                        <span class="title label label-default pull-left">{{ track.title }}</span>
+                        <span class="hover-on play-track" title="Play Track"><i class="fa fa-play"></i></span>
+                        <span class="hover-on que-track" title="Que Track"><i class="fa fa-plus"></i></span>
+
+                        <div class="clearfix"></div>
+                            <span class="user-rating-container">
+                                <input type="hidden" class="track-rating user-rating rating"
+                                       value="{{ track.userRatings.rating }}"/>
+                            </span>
+                    </td>
+                    <td class="release" data-release-id="{{ track.releasemedia.release.roadieId }}">
+                        <a href="/release/{{ track.releasemedia.release.roadieId }}">
+                            <div class="thumbnail-container pull-left">
+                                <img class="release-thumb" src="/images/release/thumbnail/{{ track.releasemedia.release.roadieId }}"
+                                     alt="{{ track.releasemedia.release.title }}"/>
+                            </div>
+                            <span class="label label-default">{{ track.releasemedia.release.title }}</span>
+                        </a>
+                    </td>
+                    <td class="artist" data-artist-id="{{ track.releasemedia.release.artist }}">
+                        <a href="/artist/{{ track.releasemedia.release.artist.roadieId }}">
+                            <div class="thumbnail-container pull-left">
+                                <img class="artist-thumb" src="/images/artist/thumbnail/{{ track.releasemedia.release.artist.roadieId }}"
+                                     alt="{{ track.releasemedia.release.artist.name }}"/>
+                            </div>
+                            <span class="label label-default">{{  track.releasemedia.release.artist.name}}</span>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
+    var playlistId = '{{ playlist.roadieId }}';
     $(function() {
-
+        $("#playAll").on("click", function(e) {
+            roadieLibrary.playLoader("/playlist/play/" + playlistId);
+        });
+        $("#delete-playlist").on("click", function(e) {
+            bootbox.confirm("Continue To Delete Playlist?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/playlist/delete/' + playlistId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    window.location.href = '/';
+                                }
+                            },
+                            error:function(jq, st, error){
+                                roadieLibrary.showErrorMessage(error);
+                            }
+                        });
+                    });
+                }
+            });
+        });
     });
 
 </script>

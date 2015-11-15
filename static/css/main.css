@@ -551,7 +551,7 @@ img.thumb {
     display: inherit;
 }
 
-#lastPlayedTracks img.release-thumb, #lastPlayedTracks img.artist-thumb, #lastPlayedTracks img.user-thumb {
+.table-track-info img.release-thumb, .table-track-info img.artist-thumb, .table-track-info img.user-thumb {
     max-height: 45px;
 }
 
@@ -634,11 +634,11 @@ form.profile input {
     background-color: #FA5882;
 }
 
-#lastPlayedTracks tbody tr td {
+.table-track-info tbody tr td {
     height: 55px;
 }
 
-#lastPlayedTracks td.track, #lastPlayedTracks td.release, #lastPlayedTracks td.artist, #lastPlayedTracks td.username {
+.table-track-info td.track, .table-track-info td.release, .table-track-info td.artist, .table-track-info td.username {
     width: 22%
 }
 
