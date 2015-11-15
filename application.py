@@ -37,6 +37,7 @@ from resources.models.Label import Label
 from resources.models.Release import Release
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Playlist import Playlist
+from resources.models.PlaylistTrack import PlaylistTrack
 from resources.models.Track import Track
 from resources.models.User import User
 from resources.models.UserArtist import UserArtist
@@ -1022,34 +1023,43 @@ def playQue():
 @app.route("/que/save/<que_name>", methods=['POST'])
 @login_required
 def saveQue(que_name):
-    if not que_name or not current_user:
-        return jsonify(message="ERROR")
-    tracks = []
-    for t in request.json:
-        if t["type"] == "track":
-            track = getTrack(t["id"])
-            if track:
-                tracks.append(track)
-    user = getUser()
-    pl = dbSession.query(Playlist).filter(Playlist.userId == user.id).filter(Playlist.name == que_name).first()
-    if not pl:
-        # adding a new playlist
-        pl = Playlist()
-        pl.userId = user.id
-        pl.name = que_name
-        pl.tracks = tracks
-        dbSession.add(pl)
-        dbSession.commit()
-    else:
+    try:
+        if not que_name or not current_user:
+            return jsonify(message="ERROR")
+        tracks = []
+        for t in request.json:
+            if t["type"] == "track":
+                track = getTrack(t["trackId"])
+                if track:
+                    tracks.append(track)
+        user = getUser()
+        now = arrow.utcnow().datetime
+        pl = dbSession.query(Playlist).filter(Playlist.userId == user.id).filter(Playlist.name == que_name).first()
+        if not pl:
+            # adding a new playlist
+            pl = Playlist()
+            pl.userId = user.id
+            pl.name = que_name
+            dbSession.add(pl)
+            dbSession.commit()
         # adding tracks to an existing playlist
-        if pl.Tracks:
-            for plt in pl.Tracks:
-                if plt not in tracks:
-                    tracks.append(plt)
-        else:
-            pl.Tracks = tracks
+        pl.tracks = pl.tracks or []
+        looper = 1
+        for track in tracks:
+            existingInPlaylist = [x for x in pl.tracks if x.trackId == track.id]
+            if not existingInPlaylist:
+                plt = PlaylistTrack()
+                plt.trackId = track.id
+                plt.listNumber = looper
+                pl.tracks.append(plt)
+            looper += 1
+        pl.lastUpdated = now
         dbSession.commit()
-    return jsonify(message="OK")
+        return jsonify(message="OK")
+    except:
+        logger.exception()
+        dbSession.rollback()
+        return jsonify(message="ERROR")
 
 
 @app.route("/stream/track/<user_id>/<track_id>")
