@@ -99,7 +99,7 @@
         </div>
         <div class="col-md-6">
             {% for image in release.images %}
-            <div class="col-md-3">
+            <div class="col-md-3 image-container">
                 <a href="javascript:void(0);"
                    data-title="{{ image.caption }}"
                    data-url="/images/release/{{ image.roadieId }}/2048/2048"
@@ -111,7 +111,11 @@
             </div>
             <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
                 <ul class="dropdown-menu" role="menu">
-                    <li><a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a>
+                    <li>
+                        <a class="setReleaseImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Release Image</a>
+                    </li>
+                    <li>
+                        <a class="deleteReleaseImage" tabindex="-1"><i class="fa fa-trash-o"></i> Delete Release Image</a>
                     </li>
                 </ul>
             </div>
@@ -739,6 +743,27 @@
                 }
             });
         });
+
+        $("a.deleteReleaseImage").on("click", function(e) {
+            var $t = $(this);
+            bootbox.confirm("Continue To Delete Release Image?", function(result) {
+                if(result) {
+                    var imageId = $t.parents(".context-menu").data("image-id");
+                    $.ajax({
+                        type: 'POST',
+                        url: '/release/deleteimage/' + releaseId + '/' + imageId,
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            $("img[data-image-id='" + imageId + "']").closest("div.image-container").remove();
+                        },
+                        error:function(jq, st, error){
+                            roadieLibrary.showErrorMessage(error);
+                        }
+                    });
+                }
+            });
+        });
+
 
         $("#scanRelease").on("click", function(e) {
             bootbox.confirm("Continue To Re-Scan Release Folder(s)?", function(result) {

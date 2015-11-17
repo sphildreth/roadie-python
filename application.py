@@ -910,6 +910,23 @@ def setReleaseImage(release_id, image_id):
         return jsonify(message="ERROR")
 
 
+@app.route("/release/deleteimage/<release_id>/<image_id>", methods=['POST'])
+@login_required
+def deleteReleaseImage(release_id, image_id):
+    deleteReleaseImageRelease = getRelease(release_id)
+    if not deleteReleaseImageRelease:
+        return jsonify(message="ERROR")
+    try:
+        image = dbSession.query(Image).filter(Image.roadieId == image_id).first()
+        if image:
+            dbSession.delete(image)
+            dbSession.commit()
+            return jsonify(message="OK")
+    except:
+        logger.exception("Error Delete Release Image")
+        return jsonify(message="ERROR")
+
+
 @app.route('/release/<roadieId>')
 @login_required
 def release(roadieId):
