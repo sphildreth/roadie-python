@@ -91,7 +91,9 @@ div.collection-container .collection-release h3.album-title {
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    display: inline;
+    display: inline-block;
+    max-width: 350px;
+
 }
 
 
