@@ -659,6 +659,7 @@
         });
 
         $(".release-detail-container a.thumbnail").on("click", function(e) {
+            e.preventDefault();
             var $t = $(this);
             bootbox.dialog({
                 title: $t.data("title"),

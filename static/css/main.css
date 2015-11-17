@@ -156,10 +156,56 @@ div.collection-container h3.missing-number {
   display: inline-block;
   height: 425px;
   width: 430px;
-  overflow-y: auto;
   border: 1px solid #000;
   padding: 2px;
 }
+
+.release-info-container .release-media-container {
+  display: inline-block;
+  height: 316px;
+  padding: 2px;
+  overflow-y: auto;
+}
+
+.release-info-container .release-media-container .releasedate {
+    max-width: 80px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-align: left;
+}
+
+.release-info-container .release-media-container .releasetitle {
+    max-width: 300px;
+    display: inline-block;
+    text-overflow: ellipsis;
+    overflow-x: hidden;
+    text-align: left;
+}
+
+.release-info-container ul.tracks span.trackNumber {
+  width: 29px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: right;
+}
+
+.release-info-container ul.tracks span.title {
+  width: 285px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: left;
+}
+.release-info-container ul.tracks span.length {
+  width: 67px;
+  display: inline-block;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  text-align: right;
+}
+
 
 .release-info-container .release-media {
   display:inline-block;
@@ -217,47 +263,9 @@ h5.release-cd {
 ul.no-list-style {
     list-style: none;
 }
-.release-info-container ul.tracks span.trackNumber {
-  width: 29px;
-  display: inline-block;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  text-align: right;
-}
-
-.release-info-container ul.tracks span.title {
-  width: 290px;
-  display: inline-block;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  text-align: left;
-}
-.release-info-container ul.tracks span.length {
-  width: 67px;
-  display: inline-block;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  text-align: right;
-}
 
 .release-info-container .row {
   min-width: 450px;
-}
-
-.release-info-container .release .releasedate {
-    max-width: 80px;
-    display: inline-block;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    text-align: left;
-}
-
-.release-info-container .release .releasetitle {
-    max-width: 300px;
-    display: inline-block;
-    text-overflow: ellipsis;
-    overflow-x: hidden;
-    text-align: left;
 }
 
 .counts-header h3 {

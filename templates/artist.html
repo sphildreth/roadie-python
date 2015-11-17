@@ -229,26 +229,28 @@
                         </h4>
                     </a>
                 </div>
-                {% for media in release.media|sort(attribute='releaseMediaNumber') %}
-                <div class="release-media" data-track-count="{{ media.trackCount }}">
-                    {% if media.releaseSubTitle %}
-                    <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span>
-                    </h5>
-                    {% endif %}
-                    <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span>
-                    </h5>
-                    <ul class="tracks no-list-style">
-                        {% for track in media.tracks|sort(attribute='trackNumber') %}
-                        <li>
-                            <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
-                            <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}"
-                                  class="title label label-default">{{ track.title }}</span>
-                            <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
-                        </li>
-                        {% endfor %}
-                    </ul>
+                <div class="release-media-container">
+                    {% for media in release.media|sort(attribute='releaseMediaNumber') %}
+                    <div class="release-media" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-track-count="{{ media.trackCount }}">
+                        {% if media.releaseSubTitle %}
+                        <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span>
+                        </h5>
+                        {% endif %}
+                        <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span>
+                        </h5>
+                        <ul class="tracks no-list-style">
+                            {% for track in media.tracks|sort(attribute='trackNumber') %}
+                            <li>
+                                <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
+                                <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}"
+                                      class="title label label-default">{{ track.title }}</span>
+                                <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
             {% endfor %}
         </div>
