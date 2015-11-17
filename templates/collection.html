@@ -70,20 +70,32 @@
     {% endfor %}
     <div class="clearfix"></div>
     {% if notFoundEntryInfos %}
-    <div class="bordered">
-        {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
-        <div class="row not-found">
-            <div class="col-md-5">
-                [{{ notFoundEntryInfo['artist'] }}]
-            </div>
-            <div class="col-md-5">
-                [{{ notFoundEntryInfo['release'] }}]
-            </div>
-            <div class="col-md-2">
-                [{{ notFoundEntryInfo['position'] }}]
-            </div>
-        </div>
-        {% endfor %}
+    <div class="row collection-not-found bordered">
+        <h5 class="label label-warning">Unable to Find Collection Items ({{ notFoundEntryInfo|length }}) :</h5>
+        <table  class="table table-striped table-condensed table-responsive">
+            <thead>
+            <tr>
+                <td>Position</td>
+                <td>Artist</td>
+                <td>Release</td>
+            </tr>
+            </thead>
+            <tbody>
+                {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
+                <tr class="not-found">
+                    <td>
+                        [{{ notFoundEntryInfo['position'] }}]
+                    </td>
+                    <td>
+                        [{{ notFoundEntryInfo['artist'] }}]
+                    </td>
+                    <td>
+                        [{{ notFoundEntryInfo['release'] }}]
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
     <div class="row missing bordered">

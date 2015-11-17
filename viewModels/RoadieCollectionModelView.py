@@ -2,20 +2,7 @@ from viewModels.RoadieModelView import RoadieModelView
 
 
 class RoadieCollectionModelView(RoadieModelView):
-    form_subdocuments = {
-        'releases': {
-            'form_subdocuments': {
-                None: {
-                    'form_ajax_refs': {
-                        'release': {
-                            'fields': ['title'],
-                            'page_size': 10
-                        }
-                    }
-                }
-            }
-        }
-    }
+    form_excluded_columns = ('collectionreleases')
 
     form_ajax_refs = {
         'user': {

@@ -34,7 +34,7 @@ class CollectionImporter(ProcessorBase):
         for i, position in enumerate(self.positions):
             if position.lower() == "position":
                 self.position = i
-            elif position.lower() == "release":
+            elif position.lower() == "release" or position.lower() == "album":
                 self.release = i
             elif position.lower() == "artist":
                 self.artist = i
@@ -64,12 +64,14 @@ class CollectionImporter(ProcessorBase):
             artist = self.artistFactory.get(csvArtist, False)
             if not artist:
                 self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
+                self.notFoundEntryInfo.append({'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
                 continue
             release = self.releaseFactory.get(artist, csvRelease, False)
             if not release:
                 self.logger.warn(
                     ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
                         'utf-8'))
+                self.notFoundEntryInfo.append({'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
                 continue
             colRelease = CollectionRelease()
             colRelease.releaseId = release.id

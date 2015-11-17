@@ -1709,16 +1709,13 @@ def playCollection(collection_id):
 @app.route("/collections/updateall", methods=['POST'])
 def updateAllCollections():
     try:
-        notFoundEntryInfos = []
         for updateCollectionCollection in dbSession.query(Collection).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
             i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
                                    updateCollectionCollection.listInCSVFormat,
                                    None)
             i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
-            for i in i.notFoundEntryInfo:
-                notFoundEntryInfos.append(i)
-            session['notFoundEntryInfos'] = notFoundEntryInfos
+            session['notFoundEntryInfos'] = i.notFoundEntryInfo
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
@@ -1729,14 +1726,11 @@ def updateAllCollections():
 @app.route("/collection/update/<collection_id>", methods=['POST'])
 def updateCollection(collection_id):
     try:
-        notFoundEntryInfos = []
         updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
         i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
                                updateCollectionCollection.listInCSVFormat, None)
         i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
-        for i in i.notFoundEntryInfo:
-            notFoundEntryInfos.append(i)
-        session['notFoundEntryInfos'] = notFoundEntryInfos
+        session['notFoundEntryInfos'] = i.notFoundEntryInfo
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
