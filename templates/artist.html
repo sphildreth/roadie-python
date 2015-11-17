@@ -257,7 +257,7 @@
         <dl></dl>
     </div>
     <div class="meta pull-right">
-        <p><span class="label label-info">Last Modified: {{ artist.lastUpdated }}</span></p>
+        <p><span class="label label-info">Last Modified: {{ artist.lastUpdated or artist.createdDate }}</span></p>
     </div>
 </div>
 {% endblock %}
