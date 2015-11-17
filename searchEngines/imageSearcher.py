@@ -1,4 +1,5 @@
 import json
+import re
 from io import StringIO
 from urllib import request, parse
 from PIL import Image
@@ -16,6 +17,15 @@ class ImageSearchResult(object):
 
 
 class ImageSearcher(object):
+
+    regex = re.compile(
+            r'^(?:http|ftp)s?://' # http:// or https://
+            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
+            r'localhost|' #localhost...
+            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+            r'(?::\d+)?' # optional port
+            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+
     def __init__(self, referer=None):
         self.referer = referer
         if not self.referer or self.referer.startswith("http://localhost"):
@@ -40,21 +50,24 @@ class ImageSearcher(object):
     def googleSearchImages(self, requestIp, query):
         if self.referer.startswith("http://localhost"):
             requestIp = '192.30.252.128'
-        url = "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=8&q=" + parse.quote_plus(
-            query) + "&userip=" + requestIp
-        rq = request.Request(url=url)
-        rq.add_header('Referer', self.referer)
         result = []
-        with request.urlopen(rq) as f:
-            o = json.load(StringIO((f.read().decode('utf-8'))))
-            try:
-                for r in o['responseData']['results']:
-                    h = int(r['height'])
-                    w = int(r['width'])
-                    if h and w:
-                        result.append(ImageSearchResult(r['height'], r['width'], r['unescapedUrl']))
-            except:
-                pass
+        if self.regex.match(parse.unquote(query)):
+            result.append(ImageSearchResult(0, 0, parse.unquote(query)))
+        else:
+            url = "https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=8&q=" + parse.quote_plus(
+                query) + "&userip=" + requestIp
+            rq = request.Request(url=url)
+            rq.add_header('Referer', self.referer)
+            with request.urlopen(rq) as f:
+                o = json.load(StringIO((f.read().decode('utf-8'))))
+                try:
+                    for r in o['responseData']['results']:
+                        h = int(r['height'])
+                        w = int(r['width'])
+                        if h and w:
+                            result.append(ImageSearchResult(r['height'], r['width'], r['unescapedUrl']))
+                except:
+                    pass
         return result
 
     def getImageBytesForUrl(self, url):
