@@ -69,11 +69,29 @@ div.collection-container .collection-release h4 {
     margin-bottom: 5px;
 }
 
+div.collection-container h3.missing-number {
+    margin: 0 3px;
+    float: left;
+    padding-bottom: 7px;
+}
+
+div.missing {
+   margin-top: 15px;
+}
+
+div.collection-container  h2 {
+    width: 84%;
+    margin: 5px 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+}
+
 div.collection-container .collection-release h3.album-title {
-    width: 80%;
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    display: inline;
 }
 
 
@@ -523,20 +541,27 @@ div.collection-container .collection-release .artist-info img.thumb {
     margin: 0 5px;
 }
 
+.release-detail-container .artist-info img, .collection-release .artist-info img {
+    max-height: 18px;
+    max-width: 18px;
+}
+
 div.collection-container .artist .thumbnail {
   padding-right: 5px;
 }
 
 .thumbnail-container {
-    min-width: 60px;
+    display: inline-block;
+    width: 80px;
+    margin: 2px 8px;
     min-height: 60px;
-    display:inline-block;
-    margin: 2px 5px;
 }
 
 .thumbnail-container img.thumb {
     display: block;
     margin: auto;
+    max-height: 80px;
+    max-width: 80px;
 }
 
 img.thumb {
@@ -556,7 +581,8 @@ img.thumb {
 }
 
 img.artist-thumb, img.release-thumb {
-    height: 80px;
+    max-height: 80px;
+    max-width: 80px;
 }
 
 .stats-container img.artist-thumb .thumb {

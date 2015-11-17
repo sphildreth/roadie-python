@@ -20,8 +20,8 @@
         </div>
         {% if current_user.is_editor() %}
         <div class="btn-group">
-            <a href="/admin/collection/edit/?id={{ collection.id }}&url=/collection/{{ collection.roadieId }}"
-               type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            <a href="/admin/collection/edit/?id={{ collection.id }}&amp;url=/collection/{{ collection.roadieId }}"
+               class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
             {% if collection.listInCSVFormat and collection.listInCSV %}
             <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
@@ -48,19 +48,23 @@
                      alt="{{ collectionRelease.release.title }}"/>
             </div>
             <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber  }}</span></h4>
-
-            <div class="artist-info">
-                <img class="thumb pull-left"
-                     src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}"
-                     alt="{{ collectionRelease.release.artist.name }}"/>
-                <h5><a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}"><span
-                        class="label label-info">{{ collectionRelease.release.artist.name }}</span></a></h5>
-            </div>
-            <div class="release-rating-container">
-                <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}"/>
-            </div>
+        </a>
+        <div class="artist-info">
+            <a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}">
+            <img class="thumb pull-left"
+                 src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}"
+                 alt="{{ collectionRelease.release.artist.name }}"/>
+            <h5><span
+                    class="label label-info">{{ collectionRelease.release.artist.name }}</span></h5>
+            </a>
+        </div>
+        <div class="release-rating-container">
+            <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}"/>
+        </div>
+        <a href="/release/{{ collectionRelease.release.roadieId }}">
             <h3 class="album-title"><span class="label label-default">{{ collectionRelease.release.title }}</span></h3>
         </a>
+
     </div>
     {% endif %}
     {% endfor %}

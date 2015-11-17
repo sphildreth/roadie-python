@@ -96,8 +96,8 @@ var searchEngine = ( function( window, undefined ) {
         searchEngine.trackSearchEngine.initialize();
 
         $("#search").on("keydown", function(e) {
-            if(event.keyCode == 13) {
-              event.preventDefault();
+            if(e.keyCode == 13) {
+              e.preventDefault();
               return false;
             }
         }).on("keyup", _.debounce(function(e) {
