@@ -777,14 +777,15 @@ def deleteRelease(release_id, delete_files):
     try:
         if delete_files == "true":
             try:
-                for track in deleteReleaseRelease.tracks:
-                    trackPath = pathToTrack(track)
-                    trackFolder = os.path.dirname(trackPath)
-                    os.remove(trackPath)
-                    # if the folder is empty then delete the folder as well
-                    if trackFolder:
-                        if not os.listdir(trackFolder):
-                            os.rmdir(trackFolder)
+                for deleteReleaseMedia in deleteReleaseRelease.media:
+                    for track in deleteReleaseMedia.tracks:
+                        trackPath = pathToTrack(track)
+                        trackFolder = os.path.dirname(trackPath)
+                        os.remove(trackPath)
+                        # if the folder is empty then delete the folder as well
+                        if trackFolder:
+                            if not os.listdir(trackFolder):
+                                os.rmdir(trackFolder)
             except OSError:
                 pass
         deleteReleaseRelease.genres = []
