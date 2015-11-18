@@ -269,59 +269,69 @@ def index():
 
 @app.route("/release/setReleaseDate/<roadieId>/<new_release_date>/<set_tracks_year>", methods=['POST'])
 def setReleaseDate(roadieId, new_release_date, set_tracks_year):
-    setReleaseYearRelease = getRelease(roadieId)
-    user = getUser()
-    now = arrow.utcnow().datetime
-    if not setReleaseYearRelease or not user or not new_release_date:
+    try:
+        setReleaseYearRelease = getRelease(roadieId)
+        user = getUser()
+        now = arrow.utcnow().datetime
+        if not setReleaseYearRelease or not user or not new_release_date:
+            return jsonify(message="ERROR")
+        setReleaseYearRelease.releaseDate = parseDate(new_release_date)
+        setReleaseYearRelease.lastUpdated = now
+        dbSession.commit()
+        if set_tracks_year == "true":
+            for media in setReleaseYearRelease.media:
+                for track in media.tracks:
+                    trackPath = pathToTrack(track)
+                    id3 = ID3(trackPath, config)
+                    id3.updateFromRelease(setReleaseYearRelease, track)
+        # Update Database with folders found in Library as folder structure is bound to release year
+        processor = Processor(config, conn, dbSession, False, True)
+        releaseFolder = processor.albumFolder(setReleaseYearRelease.artist,
+                                              setReleaseYearRelease.releaseDate.strftime('%Y'),
+                                              setReleaseYearRelease.title)
+        processor.process(folder=releaseFolder, isReleaseFolder=True)
+        validator = Validator(config, conn, dbSession, False)
+        validator.validate(setReleaseYearRelease.artist, setReleaseYearRelease)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error In Set Release Date")
+        dbSession.rollback()
         return jsonify(message="ERROR")
-    setReleaseYearRelease.releaseDate = parseDate(new_release_date)
-    setReleaseYearRelease.lastUpdated = now
-    dbSession.commit()
-    if set_tracks_year == "true":
-        for media in setReleaseYearRelease.media:
-            for track in media.tracks:
-                trackPath = pathToTrack(track)
-                id3 = ID3(trackPath, config)
-                id3.updateFromRelease(setReleaseYearRelease, track)
-    # Update Database with folders found in Library as folder structure is bound to release year
-    processor = Processor(config, conn, dbSession, False, True)
-    releaseFolder = processor.albumFolder(setReleaseYearRelease.artist,
-                                          setReleaseYearRelease.releaseDate.strftime('%Y'),
-                                          setReleaseYearRelease.title)
-    processor.process(folder=releaseFolder, isReleaseFolder=True)
-    validator = Validator(config, conn, dbSession, False)
-    validator.validate(setReleaseYearRelease.artist, setReleaseYearRelease)
-    return jsonify(message="OK")
 
 
 @app.route("/release/setTitle/<roadieId>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
 def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name):
-    setReleaseTitleRelease = getRelease(roadieId)
-    user = getUser()
-    now = arrow.utcnow().datetime
-    if not setReleaseTitleRelease or not user or not new_title:
+    try:
+        setReleaseTitleRelease = getRelease(roadieId)
+        user = getUser()
+        now = arrow.utcnow().datetime
+        if not setReleaseTitleRelease or not user or not new_title:
+            return jsonify(message="ERROR")
+        oldTitle = setReleaseTitleRelease.title
+        setReleaseTitleRelease.title = new_title
+        if create_alternate_name == "true":
+            oldAlternateTitles = []
+            if setReleaseTitleRelease.alternateNames:
+                oldAlternateTitles = setReleaseTitleRelease.alternateNames
+            if oldTitle not in oldAlternateTitles:
+                oldAlternateTitles.append(oldTitle)
+            # I cannot get setting the release alternateNames working so I did this direct update
+            t = text("UPDATE `release` set alternateNames = '" + "|".join(oldAlternateTitles) + "' WHERE id = " + str(
+                setReleaseTitleRelease.id) + ";")
+            conn.execute(t)
+        setReleaseTitleRelease.lastUpdated = now
+        dbSession.commit()
+        if set_tracks_title == "true":
+            for media in setReleaseTitleRelease.media:
+                for track in media.tracks:
+                    trackPath = pathToTrack(track)
+                    id3 = ID3(trackPath, config)
+                    id3.updateFromRelease(setReleaseTitleRelease, track)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error In Set Release Title")
+        dbSession.rollback()
         return jsonify(message="ERROR")
-    oldTitle = setReleaseTitleRelease.title
-    setReleaseTitleRelease.title = new_title
-    if create_alternate_name == "true":
-        oldAlternateTitles = []
-        if setReleaseTitleRelease.alternateNames:
-            oldAlternateTitles = setReleaseTitleRelease.alternateNames
-        if oldTitle not in oldAlternateTitles:
-            oldAlternateTitles.append(oldTitle)
-        # I cannot get setting the release alternateNames working so I did this direct update
-        t = text("UPDATE `release` set alternateNames = '" + "|".join(oldAlternateTitles) + "' WHERE id = " + str(
-            setReleaseTitleRelease.id) + ";")
-        conn.execute(t)
-    setReleaseTitleRelease.lastUpdated = now
-    dbSession.commit()
-    if set_tracks_title == "true":
-        for media in setReleaseTitleRelease.media:
-            for track in media.tracks:
-                trackPath = pathToTrack(track)
-                id3 = ID3(trackPath, config)
-                id3.updateFromRelease(setReleaseTitleRelease, track)
-    return jsonify(message="OK")
 
 
 @app.route("/mergereleases/<release_roadie_id_to_merge>/<release_roadie_id_to_merge_into>/<add_as_media>", methods=['POST'])
@@ -492,6 +502,7 @@ def setUserArtistRating(artist_id, rating):
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Rating")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -518,6 +529,7 @@ def toggleUserArtistDislike(artist_id, toggle):
         return jsonify(message="OK", average=artistAverage)
     except:
         logger.exception("Error Setting Artist Dislike")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -551,6 +563,7 @@ def separateSingleReleases():
         return jsonify(message="OK")
     except:
         logger.exception("Error Separate Single Release Favorite")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -567,40 +580,46 @@ def toggleUserArtistFavorite(artist_id, toggle):
         return jsonify(message="OK")
     except:
         logger.exception("Error Toggling Favorite")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
 @app.route("/release/movetrackstocd/<release_id>/<selected_to_cd>", methods=['POST'])
 @login_required
 def moveTracksToCd(release_id, selected_to_cd):
-    moveTracksToCdRelease = getRelease(release_id)
-    user = getUser()
-    tracksToMove = request.form['tracksToMove']
-    if not moveTracksToCdRelease or not user or not tracksToMove:
+    try:
+        moveTracksToCdRelease = getRelease(release_id)
+        user = getUser()
+        tracksToMove = request.form['tracksToMove']
+        if not moveTracksToCdRelease or not user or not tracksToMove:
+            return jsonify(message="ERROR")
+        releaseMediaNumber = int(selected_to_cd)
+        tracksToMove = tracksToMove.split(',')
+        now = arrow.utcnow().datetime
+        # Ensure that a release media exists for the release for the given releaseMediaNumber
+        releaseMedia = dbSession.query(ReleaseMedia) \
+            .filter(ReleaseMedia.releaseId == moveTracksToCdRelease.id). \
+            filter(ReleaseMedia.releaseMediaNumber == releaseMediaNumber).first()
+        if not releaseMedia:
+            releaseMedia = ReleaseMedia()
+            releaseMedia.releaseId = moveTracksToCdRelease.id
+            releaseMedia.roadieId = str(uuid.uuid4())
+            releaseMedia.releaseMediaNumber = releaseMediaNumber
+            releaseMedia.trackCount = len(tracksToMove)
+            dbSession.add(releaseMedia)
+        releaseMedia.lastUpdated = now
+        dbSession.commit()
+        for trackToMove in tracksToMove:
+            track = getTrack(trackToMove)
+            if track:
+                track.releaseMediaId = releaseMedia.id
+                track.lastUpdated = now
+                dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error In Move Tracks To Cd")
+        dbSession.rollback()
         return jsonify(message="ERROR")
-    releaseMediaNumber = int(selected_to_cd)
-    tracksToMove = tracksToMove.split(',')
-    now = arrow.utcnow().datetime
-    # Ensure that a release media exists for the release for the given releaseMediaNumber
-    releaseMedia = dbSession.query(ReleaseMedia) \
-        .filter(ReleaseMedia.releaseId == moveTracksToCdRelease.id). \
-        filter(ReleaseMedia.releaseMediaNumber == releaseMediaNumber).first()
-    if not releaseMedia:
-        releaseMedia = ReleaseMedia()
-        releaseMedia.releaseId = moveTracksToCdRelease.id
-        releaseMedia.roadieId = str(uuid.uuid4())
-        releaseMedia.releaseMediaNumber = releaseMediaNumber
-        releaseMedia.trackCount = len(tracksToMove)
-        dbSession.add(releaseMedia)
-    releaseMedia.lastUpdated = now
-    dbSession.commit()
-    for trackToMove in tracksToMove:
-        track = getTrack(trackToMove)
-        if track:
-            track.releaseMediaId = releaseMedia.id
-            track.lastUpdated = now
-            dbSession.commit()
-    return jsonify(message="OK")
 
 
 @app.route("/user/release/setrating/<release_id>/<rating>", methods=['POST'])
@@ -624,6 +643,7 @@ def setUserReleaseRating(release_id, rating):
         return jsonify(message="OK", average=releaseAverage)
     except:
         logger.exception("Error Settings Release Rating")
+        dbSession.rollback()
         return jsonify({'message': "ERROR"})
 
 
@@ -650,6 +670,7 @@ def toggleUserReleaseDislike(release_id, toggle):
         return jsonify(message="OK", average=releaseAverage)
     except:
         logger.exception("Error Toggling Release Dislike")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -671,6 +692,7 @@ def toggleUserReleaseFavorite(release_id, toggle):
         return jsonify(message="OK")
     except:
         logger.exception("Error Toggling Release Favorite")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -829,6 +851,7 @@ def setUserTrackRating(track_id, rating):
         return jsonify(message="OK", average=str(trackAverage))
     except:
         logger.exception("Error Setting Track Rating")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -918,20 +941,25 @@ def setReleaseAlternateNames(release_id):
 @app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
 @login_required
 def setArtistImage(artist_id, image_id):
-    artist = getArtist(artist_id)
-    if not artist:
+    try:
+        artist = getArtist(artist_id)
+        if not artist:
+            return jsonify(message="ERROR")
+        image = dbSession.query(Image).filter(Image.roadieId == image_id).first()
+        if image:
+            img = PILImage.open(io.BytesIO(image.image)).convert('RGB')
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            artist.thumbnail = b.getvalue()
+            artist.lastUpdated = arrow.utcnow().datetime
+            dbSession.commit()
+            return jsonify(message="OK")
         return jsonify(message="ERROR")
-    image = dbSession.query(Image).filter(Image.roadieId == image_id).first()
-    if image:
-        img = PILImage.open(io.BytesIO(image.image)).convert('RGB')
-        img.thumbnail(thumbnailSize)
-        b = io.BytesIO()
-        img.save(b, "JPEG")
-        artist.thumbnail = b.getvalue()
-        artist.lastUpdated = arrow.utcnow().datetime
-        dbSession.commit()
-        return jsonify(message="OK")
-    return jsonify(message="ERROR")
+    except:
+        logger.exception("Error In Set Artist Image")
+        dbSession.rollback()
+        return jsonify(message="ERROR")
 
 
 @app.route('/release/setimage/<release_id>/<image_id>', methods=['POST'])
@@ -954,6 +982,7 @@ def setReleaseImage(release_id, image_id):
             return jsonify(message="OK")
     except:
         logger.exception("Error Setting Release Image")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -971,6 +1000,7 @@ def deleteReleaseImage(release_id, image_id):
             return jsonify(message="OK")
     except:
         logger.exception("Error Delete Release Image")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -1479,6 +1509,7 @@ def setCoverViaUrl(release_id):
         return jsonify(message="OK")
     except:
         logger.exception("Error Setting Release Image via Url")
+        dbSession.rollback()
         return jsonify(message="ERROR")
 
 
@@ -1514,40 +1545,44 @@ def register():
 
 @app.route("/profile/edit", methods=['GET', 'POST'])
 def editProfile():
-    user = getUser()
-    if not user:
-        return render_template('404.html'), 404
-    if request.method == 'GET':
-        return render_template('profileEdit.html', user=user)
-    doUseHTMLPlayerSet = False
-    if 'useHTMLPlayer' in request.form:
-        doUseHTMLPlayerSet = True
-    encryptedPassword = None
-    password = request.form['password']
-    if password:
-        encryptedPassword = bcrypt.generate_password_hash(password)
-    email = request.form['email']
-    userWithDuplicateEmail = dbSession.query(User).filter(User.email == email, User.id != user.id).first()
-    if userWithDuplicateEmail:
-        flash('Email Address Already Exists!', 'error')
-        return redirect(url_for('profile/edit'))
-    file = request.files['avatar']
-    if file:
-        img = PILImage.open(io.BytesIO(file.stream.read()))
-        img.thumbnail(thumbnailSize)
-        b = io.BytesIO()
-        img.save(b, "PNG")
-        user.avatar = b.getvalue()
+    try:
+        user = getUser()
+        if not user:
+            return render_template('404.html'), 404
+        if request.method == 'GET':
+            return render_template('profileEdit.html', user=user)
+        doUseHTMLPlayerSet = False
+        if 'useHTMLPlayer' in request.form:
+            doUseHTMLPlayerSet = True
+        encryptedPassword = None
+        password = request.form['password']
+        if password:
+            encryptedPassword = bcrypt.generate_password_hash(password)
+        email = request.form['email']
+        userWithDuplicateEmail = dbSession.query(User).filter(User.email == email, User.id != user.id).first()
+        if userWithDuplicateEmail:
+            flash('Email Address Already Exists!', 'error')
+            return redirect(url_for('profile/edit'))
+        file = request.files['avatar']
+        if file:
+            img = PILImage.open(io.BytesIO(file.stream.read()))
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "PNG")
+            user.avatar = b.getvalue()
 
-    if encryptedPassword:
-        user.password = encryptedPassword
-    user.email = email
-    user.doUseHTMLPlayer = doUseHTMLPlayerSet
-    user.lastUpdated = arrow.utcnow().datetime
-    if user.id in userCache:
-        userCache[user.id] = user
-    dbSession.commit()
-    flash('Profile Edited successfully')
+        if encryptedPassword:
+            user.password = encryptedPassword
+        user.email = email
+        user.doUseHTMLPlayer = doUseHTMLPlayerSet
+        user.lastUpdated = arrow.utcnow().datetime
+        if user.id in userCache:
+            userCache[user.id] = user
+        dbSession.commit()
+        flash('Profile Edited successfully')
+    except:
+        flash('Error Editing Profile')
+        dbSession.rollback()
     return redirect(url_for("index"))
 
 
@@ -1764,6 +1799,7 @@ def updateAllCollections():
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
+        dbSession.rollback()
         return jsonify(message="ERROR")
     return None
 
@@ -1778,6 +1814,7 @@ def updateCollection(collection_id):
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
+        dbSession.rollback()
         return jsonify(message="ERROR")
     return None
 
