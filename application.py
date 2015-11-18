@@ -1476,11 +1476,14 @@ def findImageForType(type, type_id):
         if gs:
             for g in gs:
                 data.append(g)
-        it = searcher.itunesSearchArtistAlbumImages(findImageForTypeRelease.artist.name,
-                                                    findImageForTypeRelease.title)
-        if it:
-            for i in it:
-                data.append(i)
+        try:
+            it = searcher.itunesSearchArtistAlbumImages(findImageForTypeRelease.artist.name,
+                                                        findImageForTypeRelease.title)
+            if it:
+                for i in it:
+                    data.append(i)
+        except:
+            pass
         return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
