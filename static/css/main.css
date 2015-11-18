@@ -339,6 +339,13 @@ ul.no-list-style {
     margin-top: 0;
 }
 
+.artist-detail-container span.release-title {
+    max-width: 278px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .artist-detail-container div.associated-artists li {
     display: inline-block;
     width: 100%;
