@@ -3,6 +3,7 @@ from flask_restful import Resource, reqparse
 from flask import jsonify
 from resources.models.Artist import Artist
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import func, and_, or_, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine, Integer, desc, String, update
 from sqlalchemy.sql import text, func
@@ -35,7 +36,14 @@ class ArtistListApi(Resource):
         column_sorted = getattr(Artist.sortName, order)()
 
         if args.filter:
-            artists = self.dbSession.query(Artist).filter(Artist.name.like("%" + args.filter + "%")) \
+            name = args.filter.lower().strip().replace("'", "''")
+            stmt = or_(func.lower(Artist.name) == name,
+                       func.lower(Artist.sortName) == name,
+                       text("(lower(alternateNames) = '" + name + "'" + ""
+                                                                        " OR alternateNames like '" + name + "|%'" +
+                            " OR alternateNames like '%|" + name + "|%'" +
+                            " OR alternateNames like '%|" + name + "')"))
+            artists = self.dbSession.query(Artist).filter(stmt) \
                 .order_by(column_sorted).slice(get_skip, get_limit)
         else:
             artists = self.dbSession.query(Artist).order_by(column_sorted).slice(get_skip, get_limit)
