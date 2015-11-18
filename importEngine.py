@@ -36,4 +36,5 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 if str(args.type).lower() == "collection":
-    c = CollectionImporter(conn, session, args.id, args.readOnly, args.format, args.filename)
+    c = CollectionImporter(conn, session, args.readOnly)
+    c.importFile(args.id, args.format, args.filename)

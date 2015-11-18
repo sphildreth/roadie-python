@@ -1755,13 +1755,11 @@ def playCollection(collection_id):
 @app.route("/collections/updateall", methods=['POST'])
 def updateAllCollections():
     try:
+        i = CollectionImporter(conn, dbSession, False)
         for updateCollectionCollection in dbSession.query(Collection).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
-            i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
-                                   updateCollectionCollection.listInCSVFormat,
-                                   None)
-            i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
-            session['notFoundEntryInfos'] = i.notFoundEntryInfo
+            i.importCollection(updateCollectionCollection)
+        session['notFoundEntryInfos'] = i.notFoundEntryInfo
         return jsonify(message="OK")
     except:
         logger.exception("Error Updating Collection")
@@ -1773,9 +1771,8 @@ def updateAllCollections():
 def updateCollection(collection_id):
     try:
         updateCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
-        i = CollectionImporter(conn, dbSession, updateCollectionCollection.id, False,
-                               updateCollectionCollection.listInCSVFormat, None)
-        i.importCsvData(io.StringIO(updateCollectionCollection.listInCSV))
+        i = CollectionImporter(conn, dbSession, False)
+        i.importCollection(updateCollectionCollection)
         session['notFoundEntryInfos'] = i.notFoundEntryInfo
         return jsonify(message="OK")
     except:

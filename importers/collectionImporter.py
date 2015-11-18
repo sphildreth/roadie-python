@@ -1,4 +1,5 @@
 import csv
+import io
 import os
 import uuid
 import arrow
@@ -11,21 +12,20 @@ from factories.releaseFactory import ReleaseFactory
 
 
 class CollectionImporter(ProcessorBase):
-    def __init__(self, dbConn, dbSession, collectionId, readOnly, format, filename):
+    format = None
+    positions = None
+    filename = None
+    collectionId = None
+    collection = None
+
+    def __init__(self, dbConn, dbSession, readOnly):
         self.logger = Logger()
         self.dbConn = dbConn
         self.dbSession = dbSession
-        self.collectionId = collectionId
         self.artistFactory = ArtistFactory(dbConn, dbSession)
         self.releaseFactory = ReleaseFactory(dbConn, dbSession)
         self.notFoundEntryInfo = []
         self.readOnly = readOnly
-        self.format = format
-        self.positions = self.format.split(',')
-        self._findColumns()
-        if filename:
-            self.filename = filename
-            self._import()
 
     def _findColumns(self):
         self.position = -1
@@ -43,20 +43,31 @@ class CollectionImporter(ProcessorBase):
             return False
         return True
 
-    def _import(self):
+    def importFile(self, collectionId, fileFormat, filename):
+        self.collectionId = collectionId
+        self.collection = self.dbSession.query(Collection).filter(Collection.id == collectionId).first()
+        self.format = fileFormat
+        self.positions = self.format.split(',')
+        self.filename = filename
         if not os.path.exists(self.filename):
             self.logger.critical("Unable to Find CSV File [" + self.filename + "]")
         else:
             self.logger.debug("Importing [" + self.filename + "]")
             return self.importCsvData(open(self.filename))
 
+    def importCollection(self, collection):
+        self.collectionId = collection.id
+        self.collection = collection
+        self.positions = collection.listInCSVFormat.split(',')
+        self.importCsvData(io.StringIO(collection.listInCSV))
+
     def importCsvData(self, csvData):
-        col = self.dbSession.query(Collection).filter(Collection.id == self.collectionId).first()
-        if not col:
+        if not self.collection:
             self.logger.critical("Unable to Find Collection Id [" + self.collectionId + "]")
             return False
+        self._findColumns()
         reader = csv.reader(csvData)
-        col.collectionReleases = []
+        self.collection.collectionReleases = []
         for row in reader:
             csvPosition = int(row[self.position].strip())
             csvArtist = row[self.artist].strip()
@@ -64,22 +75,24 @@ class CollectionImporter(ProcessorBase):
             artist = self.artistFactory.get(csvArtist, False)
             if not artist:
                 self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
-                self.notFoundEntryInfo.append({'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                self.notFoundEntryInfo.append(
+                    {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
                 continue
             release = self.releaseFactory.get(artist, csvRelease, False)
             if not release:
                 self.logger.warn(
                     ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
                         'utf-8'))
-                self.notFoundEntryInfo.append({'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                self.notFoundEntryInfo.append(
+                    {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
                 continue
             colRelease = CollectionRelease()
             colRelease.releaseId = release.id
             colRelease.listNumber = csvPosition
             colRelease.createdDate = arrow.utcnow().datetime
             colRelease.roadieId = str(uuid.uuid4())
-            col.collectionReleases.append(colRelease)
+            self.collection.collectionReleases.append(colRelease)
             self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
-        col.lastUpdated = arrow.utcnow().datetime
+        self.collection.lastUpdated = arrow.utcnow().datetime
         self.dbSession.commit()
         return True
