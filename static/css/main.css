@@ -92,7 +92,7 @@ div.collection-container .collection-release h3.album-title {
     overflow: hidden;
     text-overflow: ellipsis;
     display: inline-block;
-    max-width: 350px;
+    max-width: 300px;
 
 }
 
@@ -696,9 +696,14 @@ body.roadie .tokenfield {
     background-color: #272b30;
 }
 
+body.roadie .tokenfield .token-input {
+    color: #ffffff;
+}
+
 body.roadie .tokenfield .token-label {
     color: #ffffff;
     background-color: #3a3f44;
+    padding-right: 3px;
 }
 
 body.roadie .tokenfield.disabled .token-label {

@@ -868,6 +868,52 @@ def deleteReleaseTrack(release_id, track_id, flag):
         return jsonify(message="ERROR")
 
 
+@app.route("/artist/setalternatenames/<artist_id>", methods=['POST'])
+@login_required
+def setArtistAlternateNames(artist_id):
+    try:
+        artist = getArtist(artist_id)
+        if not artist:
+            return jsonify(message="ERROR")
+        alternateNamesPosted = None
+        if 'alternatenames' in request.form:
+            alternateNamesPosted = json.loads(request.form['alternatenames'])
+        if alternateNamesPosted:
+            artist.alternateNames = []
+            for alternateNamePosted in alternateNamesPosted:
+                artist.alternateNames.append(alternateNamePosted['value'])
+            artist.lastUpdated = arrow.utcnow().datetime
+            dbSession.commit()
+            return jsonify(message="OK")
+        return jsonify(message="ERROR")
+    except:
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
+@app.route("/release/setalternatenames/<release_id>", methods=['POST'])
+@login_required
+def setReleaseAlternateNames(release_id):
+    try:
+        setReleaseAlternateNamesRelease = getRelease(release_id)
+        if not setReleaseAlternateNamesRelease:
+            return jsonify(message="ERROR")
+        alternateNamesPosted = None
+        if 'alternatenames' in request.form:
+            alternateNamesPosted = json.loads(request.form['alternatenames'])
+        if alternateNamesPosted:
+            setReleaseAlternateNamesRelease.alternateNames = []
+            for alternateNamePosted in alternateNamesPosted:
+                setReleaseAlternateNamesRelease.alternateNames.append(alternateNamePosted['value'])
+            setReleaseAlternateNamesRelease.lastUpdated = arrow.utcnow().datetime
+            dbSession.commit()
+            return jsonify(message="OK")
+        return jsonify(message="ERROR")
+    except:
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
 @app.route('/artist/setimage/<artist_id>/<image_id>', methods=['POST'])
 @login_required
 def setArtistImage(artist_id, image_id):

@@ -222,13 +222,12 @@
             </div>
             {% endif %}
             {% if release.alternateNames %}
-            <div>
+            <div class="">
+                {% if release.alternateNames %}
                 <h4><span class="label label-primary">Alternate Names</span></h4>
-                <ul>
-                    {% for alternateName in release.alternateNames %}
-                    <li><span class="label label-default">{{ alternateName }}</span></li>
-                    {% endfor %}
-                </ul>
+                <input type="text" class="form-control {{'tokenfield' if current_user.is_editor() else 'tokenfield-readonly' }}" id="alternateNamesTokenfield"
+                       value="{{ release.alternateNames|sort|join('|') }}" />
+                {% endif %}
             </div>
             {% endif %}
         </div>
@@ -543,6 +542,32 @@
     $(function() {
 
         $(".tokenfield-readonly").tokenfield();
+
+        $("#alternateNamesTokenfield").tokenfield({
+            delimiter: '|',
+            delay: 100,
+            beautify: false,
+        }).on('tokenfield:createtoken', function(event) {
+            var existingTokens = $(this).tokenfield('getTokens');
+            $.each(existingTokens, function(index, token) {
+                if (token.value === event.attrs.value)
+                    event.preventDefault();
+            });
+        }).on('tokenfield:removedtoken tokenfield:createdtoken tokenfield:editedtoken', function(event) {
+            $.ajax({
+                type: 'POST',
+                url: '/release/setalternatenames/' + releaseId,
+                data: { "alternatenames": JSON.stringify($(this).tokenfield('getTokens')) },
+                success: function(data) {
+                    if(data.message != "OK") {
+                        roadieLibrary.showErrorMessage("Error Saving Alternate Names");
+                    }
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
 
         doReleaseSanityChecks();
 
