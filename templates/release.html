@@ -18,6 +18,28 @@
         <span class="file-size">File Size: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                  title="Total FileSize of Release">{{ releaseTrackFileSize }}</span></span>
     </div>
+    <div class="breadcrumb-container">
+        <ol class="breadcrumb">
+           {% for releaseLabel in release.releaseLabels %}
+           <li>
+               <a href="/label/{{ releaseLabel.label.roadieId }}">
+                <img class="label-thumb thumb" src="/images/label/thumbnail/{{ releaseLabel.label.roadieId }}"
+                 alt="{{ releaseLabel.label.name }}"/>
+                   <span class="label label-default">{{ releaseLabel.label.name }}</span></a>
+           </li>
+           {% endfor %}
+           <li>
+               <a href="/artist/{{ release.artist.roadieId }}">
+                <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
+                 alt="{{ release.artist.name }}"/>
+                   <span class="label label-default">{{ release.artist.name }}</span>
+               </a>
+           </li>
+           <li class="active">
+               <span class="label label-info">{{ release.title }}</span>
+           </li>
+        </ol>
+    </div>
     <div class="btn-toolbar edit-toolbar" role="toolbar">
         <div class="btn-group">
             <a id="playAll" class="btn btn-default"><i class="fa fa-play"></i> Play</a>
@@ -65,15 +87,10 @@
     <div class="row title bordered">
         <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
              alt="{{ release.title }}"/>
-
         <div class="release-rating-container pull-left">
             <input type="hidden" class="rating" data-readonly value="{{ release.rating }}"/>
         </div>
         <div class="artist-info">
-            <img class="thumb pull-left" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
-                 alt="{{ release.artist.name }}"/>
-            <h5><a title="View Artist" href="/artist/{{ release.artist.roadieId }}"><span
-                    class="release-artist-name label label-info">{{ release.artist.name }}</span></a></h5>
         </div>
         <h2>
             <span class="release-title label label-default">{{ release.title }}</span>

@@ -1,5 +1,5 @@
 body.roadie {
-  margin: 15px;
+  margin: 10px;
   padding: 0;
   font-size: 16px;
 }
@@ -13,6 +13,11 @@ body.roadie .navbar-default {
 
 }
 
+body.roadie .breadcrumb {
+    height: 46px;
+    padding: 4px;
+    margin: 3px 0 11px 0;
+}
 
 .loader {
     display: none;
@@ -47,12 +52,12 @@ li.username, td.username {
 }
 
 .release-counts-container {
+    height: 46px;
     font-size: 14px;
     text-align:right;
     background-color: #5882FA;
     color: white;
     padding: 9px 10px;
-    margin-bottom: 10px;
     border-radius: 5px;
 }
 
@@ -274,6 +279,10 @@ h5.release-cd {
 
 ul.no-list-style {
     list-style: none;
+}
+
+ul.text-align-right {
+    text-align: right;
 }
 
 .release-info-container .row {
@@ -606,6 +615,22 @@ img.thumb {
 .table-track-info img.release-thumb, .table-track-info img.artist-thumb, .table-track-info img.user-thumb {
     max-height: 45px;
 }
+
+.breadcrumb-container img.thumb {
+    max-height: 30px;
+    max-width: 30px;
+}
+
+.breadcrumb a {
+    text-decoration: none !important;
+}
+
+.breadcrumb a span:hover {
+    color: #ffff66 !important;
+    background-color: #000000 !important;
+}
+
+
 
 img.artist-thumb, img.release-thumb {
     max-height: 80px;
