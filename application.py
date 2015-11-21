@@ -187,10 +187,11 @@ def getTrack(trackId):
 def getUserArtistRating(artistId):
     user = getUser()
     userArtist = dbSession.query(UserArtist) \
-        .filter(UserArtist.id == user.id) \
+        .filter(UserArtist.userId == user.id) \
         .filter(UserArtist.artistId == artistId).first()
     if not userArtist:
         userArtist = UserArtist()
+        userArtist.rating = 0
         userArtist.roadieId = str(uuid.uuid4())
         userArtist.userId = user.id
         userArtist.artistId = artistId
@@ -205,6 +206,7 @@ def getUserReleaseRating(releaseId):
         .filter(UserRelease.releaseId == releaseId).first()
     if not userRelease:
         userRelease = UserRelease()
+        userRelease.rating = 0
         userRelease.roadieId = str(uuid.uuid4())
         userRelease.releaseId = releaseId
         userRelease.userId = user.id
@@ -642,7 +644,7 @@ def toggleUserArtistFavorite(artist_id, toggle):
         artist = getArtist(artist_id)
         now = arrow.utcnow().datetime
         userArtist = getUserArtistRating(artist.id)
-        userArtist.isDisliked = toggle.lower() == "true"
+        userArtist.isFavorite = toggle.lower() == "true"
         userArtist.lastUpdated = now
         dbSession.commit()
         return jsonify(message="OK")
