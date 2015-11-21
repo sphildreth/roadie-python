@@ -6,9 +6,9 @@ from searchEngines.models.ModelBase import ModelBase
 
 class ReleaseType(Enum):
     Unknown = 0
-    Complete = 1
-    Incomplete = 2
-    Missing = 3
+    Album = 1
+    EP = 2
+    Single = 3
 
 
 class Release(ModelBase):

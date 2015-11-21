@@ -264,6 +264,16 @@ class Processor(ProcessorBase):
                                         id3ReleaseDate = parseDate(id3.year)
                                         if not release.releaseDate == id3ReleaseDate and id3ReleaseDate:
                                             release.releaseDate = id3ReleaseDate
+                                        if id3.imageBytes and not release.thumbnail:
+                                            try:
+                                                img = Image.open(io.BytesIO(id3.imageBytes)).convert('RGB')
+                                                img.thumbnail(self.thumbnailSize)
+                                                b = io.BytesIO()
+                                                img.save(b, "JPEG")
+                                                release.thumbnail = b.getvalue()
+                                            except:
+                                                pass
+
                                     else:
                                         # Was not found in any Searcher create and add
                                         self.logger.debug("Release [" + id3.album + "] Not Found By Factory")

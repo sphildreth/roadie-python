@@ -13,6 +13,7 @@ from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track
 from resources.logger import Logger
 from searchEngines.artistSearcher import ArtistSearcher
+from searchEngines.models.Release import ReleaseType as SearchReleaseType
 
 Base = declarative_base()
 
@@ -135,8 +136,12 @@ class ReleaseFactory(object):
         createDattabaseModelFromSearchModelRelease.mediaCount = sr.mediaCount
         createDattabaseModelFromSearchModelRelease.thumbnail = sr.thumbnail
         createDattabaseModelFromSearchModelRelease.profile = sr.profile
-        # TODO
-        #        release.releaseType = sr.releaseType
+        if sr.releaseType == SearchReleaseType.Album:
+            createDattabaseModelFromSearchModelRelease.releaseType = 'Album'
+        elif sr.releaseType == SearchReleaseType.EP:
+            createDattabaseModelFromSearchModelRelease.releaseType = 'EP'
+        elif sr.releaseType == SearchReleaseType.Single:
+            createDattabaseModelFromSearchModelRelease.releaseType = 'Single'
         createDattabaseModelFromSearchModelRelease.iTunesId = sr.iTunesId
         createDattabaseModelFromSearchModelRelease.amgId = sr.amgId
         createDattabaseModelFromSearchModelRelease.lastFMId = sr.lastFMId
