@@ -1038,9 +1038,50 @@ def setReleaseImage(release_id, image_id):
             setReleaseImageRelease.thumbnail = b.getvalue()
             setReleaseImageRelease.lastUpdated = arrow.utcnow().datetime
             dbSession.commit()
+            for media in release.media:
+                for track in media.tracks:
+                    trackPath = pathToTrack(track)
+                    id3 = ID3(trackPath, config)
+                    id3.setCoverImage(setReleaseImageRelease.thumbnail)
             return jsonify(message="OK")
     except:
         logger.exception("Error Setting Release Image")
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
+@app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
+def setCoverViaUrl(release_id):
+    try:
+        setCoverViaUrlRelease = getRelease(release_id)
+        if not setCoverViaUrlRelease:
+            return jsonify(message="ERROR")
+        url = request.form['url']
+        searcher = ImageSearcher(request.url_root)
+        imageBytes = searcher.getImageBytesForUrl(url)
+        if imageBytes:
+            img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            setCoverViaUrlRelease.thumbnail = b.getvalue()
+            setCoverViaUrlRelease.lastUpdated = arrow.utcnow().datetime
+            dbSession.commit()
+            # ID3 Tags should be 300x300 to render proper in media players
+            tagImageSize = 300, 300
+            img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
+            img.resize(tagImageSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            tagImage = b.getvalue()
+            for media in setCoverViaUrlRelease.media:
+                for track in media.tracks:
+                    trackPath = pathToTrack(track)
+                    id3 = ID3(trackPath, config)
+                    id3.setCoverImage(tagImage)
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Setting Release Image via Url")
         dbSession.rollback()
         return jsonify(message="ERROR")
 
@@ -1065,7 +1106,7 @@ def deleteReleaseImage(release_id, image_id):
 
 @app.route('/release/<roadieId>')
 @login_required
-def release(roadieId):
+def releaseDetail(roadieId):
     indexRelease = getRelease(roadieId)
     user = getUser()
     if not indexRelease:
@@ -1556,29 +1597,6 @@ def findImageForType(type, type_id):
     else:
         return jsonify(message="ERROR")
 
-
-@app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
-def setCoverViaUrl(release_id):
-    try:
-        setCoverViaUrlRelease = getRelease(release_id)
-        if not setCoverViaUrlRelease:
-            return jsonify(message="ERROR")
-        url = request.form['url']
-        searcher = ImageSearcher(request.url_root)
-        imageBytes = searcher.getImageBytesForUrl(url)
-        if imageBytes:
-            img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
-            img.thumbnail(thumbnailSize)
-            b = io.BytesIO()
-            img.save(b, "JPEG")
-            setCoverViaUrlRelease.thumbnail = b.getvalue()
-            setCoverViaUrlRelease.lastUpdated = arrow.utcnow().datetime
-            dbSession.commit()
-        return jsonify(message="OK")
-    except:
-        logger.exception("Error Setting Release Image via Url")
-        dbSession.rollback()
-        return jsonify(message="ERROR")
 
 
 @app.route('/register', methods=['GET', 'POST'])

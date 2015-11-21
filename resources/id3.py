@@ -1,9 +1,10 @@
+import base64
 import os
 import string
 
 import mutagen
 from hsaudiotag import mpeg
-from mutagen.id3 import ID3 as mutagenID3
+from mutagen.id3 import ID3 as mutagenID3, APIC, error
 from mutagen.id3 import ID3NoHeaderError
 from mutagen.id3 import TIT2, TALB, TPE1, TPE2, TDRC, TRCK
 from mutagen.mp3 import MP3
@@ -50,6 +51,25 @@ class ID3(object):
                str(self.title) + "." + \
                str(self.bitrate) + "." + \
                str(self.length)
+
+    def setCoverImage(self, image):
+        try:
+            tags = mutagenID3(self.filename)
+        except ID3NoHeaderError:
+            tags = mutagenID3()
+        if self.config:
+            if 'DoClearComments' in self.config:
+                if self.config['DoClearComments'].lower() == "true":
+                    tags.delall(u"COMM::'en'")
+        tags.delall(u"APIC::'en'")
+        tags.add(APIC(
+                    encoding=3,
+                    mime='image/jpeg',
+                    type=3,
+                    desc=u'Cover',
+                    data=image
+        ))
+        tags.save(self.filename, v2_version=3) # this is for Windows Media Player compatiblity
 
     def updateFromRelease(self, release, track):
         """
