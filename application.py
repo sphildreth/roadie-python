@@ -1,4 +1,5 @@
 import os
+import pytz
 import simplejson as json
 import hashlib
 import random
@@ -27,6 +28,7 @@ from flask_login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from flask_bcrypt import Bcrypt
 from flask_session import Session as FlaskSession
+from flask_babel import Babel
 from importers.collectionImporter import CollectionImporter
 from resources.common import *
 from resources.models.Artist import Artist
@@ -55,7 +57,8 @@ from resources.m3u import M3U
 from resources.validator import Validator
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
-    group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines
+    group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines, \
+    format_datetime_for_user
 from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
@@ -79,6 +82,7 @@ app.jinja_env.filters['group_release_tracks_filepaths'] = group_release_tracks_f
 app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
 app.jinja_env.filters['count_new_lines'] = count_new_lines
+app.jinja_env.filters['format_datetime_for_user'] = format_datetime_for_user
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
@@ -101,6 +105,7 @@ conn = sa.engine
 flask_bcrypt = Bcrypt(app)
 bcrypt = Bcrypt()
 api = Api(app)
+babel = Babel(app)
 
 FlaskSession(app)
 
@@ -120,6 +125,7 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
             except:
                 pass
             raise
+
 
 event.listen(sa.engine, 'checkout', checkout_listener)
 
@@ -235,7 +241,8 @@ def before_request():
 @login_required
 def index():
     lastPlayedInfos = []
-    for ut in dbSession.query(UserTrack).join(Track, Track.id == UserTrack.trackId).order_by(desc(UserTrack.lastPlayed)).limit(35):
+    for ut in dbSession.query(UserTrack).join(Track, Track.id == UserTrack.trackId).order_by(
+            desc(UserTrack.lastPlayed)).limit(35):
         lastPlayedInfos.append({
             'TrackId': str(ut.track.roadieId),
             'TrackTitle': ut.track.title,
@@ -334,13 +341,15 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
         return jsonify(message="ERROR")
 
 
-@app.route("/mergereleases/<release_roadie_id_to_merge>/<release_roadie_id_to_merge_into>/<add_as_media>", methods=['POST'])
+@app.route("/mergereleases/<release_roadie_id_to_merge>/<release_roadie_id_to_merge_into>/<add_as_media>",
+           methods=['POST'])
 def mergeReleases(release_roadie_id_to_merge, release_roadie_id_to_merge_into, add_as_media):
     try:
         if not release_roadie_id_to_merge or not release_roadie_id_to_merge_into:
             return jsonify(message="ERROR")
         releaseToMerge = dbSession.query(Release).filter(Release.roadieId == release_roadie_id_to_merge).first()
-        releaseToMergeInto = dbSession.query(Release).filter(Release.roadieId == release_roadie_id_to_merge_into).first()
+        releaseToMergeInto = dbSession.query(Release).filter(
+            Release.roadieId == release_roadie_id_to_merge_into).first()
         if not releaseToMerge or not releaseToMergeInto:
             return jsonify(message="ERROR")
         if add_as_media == "True":
@@ -465,9 +474,9 @@ def labelDetail(label_id):
         "	GROUP BY r.artistId  " +
         "	) AS mts ON mts.artistId = a.id " +
         "WHERE a.roadieId = '" + label_id + "';", autocommit=True)
-                                   .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
-                                            releaseTrackTime=Integer, releaseTrackFileSize=Integer,
-                                            missingTrackCount=Integer)) \
+                                  .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
+                                           releaseTrackTime=Integer, releaseTrackFileSize=Integer,
+                                           missingTrackCount=Integer)) \
         .fetchone()
     counts = {'artists': 0,
               'tracks': labelSummaries[2] if labelSummaries else 0,
@@ -1038,7 +1047,7 @@ def setReleaseImage(release_id, image_id):
             setReleaseImageRelease.thumbnail = b.getvalue()
             setReleaseImageRelease.lastUpdated = arrow.utcnow().datetime
             dbSession.commit()
-            for media in release.media:
+            for media in setReleaseImageRelease.media:
                 for track in media.tracks:
                     trackPath = pathToTrack(track)
                     id3 = ID3(trackPath, config)
@@ -1598,7 +1607,6 @@ def findImageForType(type, type_id):
         return jsonify(message="ERROR")
 
 
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
@@ -1636,10 +1644,11 @@ def editProfile():
         if not user:
             return render_template('404.html'), 404
         if request.method == 'GET':
-            return render_template('profileEdit.html', user=user)
+            return render_template('profileEdit.html', user=user, timezones=pytz.all_timezones)
         doUseHTMLPlayerSet = False
         if 'useHTMLPlayer' in request.form:
             doUseHTMLPlayerSet = True
+        timezone = request.form['timezone']
         encryptedPassword = None
         password = request.form['password']
         if password:
@@ -1661,6 +1670,7 @@ def editProfile():
             user.password = encryptedPassword
         user.email = email
         user.doUseHTMLPlayer = doUseHTMLPlayerSet
+        user.timezone = timezone
         user.lastUpdated = arrow.utcnow().datetime
         if user.id in userCache:
             userCache[user.id] = user

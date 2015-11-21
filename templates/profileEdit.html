@@ -1,37 +1,63 @@
 {% extends "layout.html" %}
 {% block body_content %}
-<form action="" method="post" enctype="multipart/form-data" class="form-horizontal profile">
-    <h2>Edit Your Profile</h2>
 
-    <div class="control-group">
-        <div class="controls">
-            <label for="password">New Password:</label>
-            <input type="password" id="password" name="password" class="input-xlarge"
-                   placeholder="Enter New Password" value=""/>
-        </div>
-        <div class="controls">
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" class="input-xlarge"
-                   placeholder="Enter Email" value="{{ user.email }}"
-                   required/>
-        </div>
-        <div class="controls">
-            <label for="useHTMLPlayer">Use HTML Player:</label>
-            <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="input-xlarge"
-                   placeholder="Enter Email" value="true" {{ "checked" if user.doUseHTMLPlayer else "" }} />
-        </div>
-        <div class="controls">
-            <label for="avatar">Avatar:</label>
-            <input type="file" accept=".png" class="input" id="avatar" name="avatar"/>
-        </div>
-    </div>
+<style type="text/css">
+    .profile-form {
+    	margin: 20px;
+    }
+</style>
 
-    <div class="control-group">
-        <div class="controls">
-            <button type="submit" class="btn btn-success">Save</button>
+<h2>Edit Your Profile</h2>
+
+<div class="profile-form">
+    <form action="" method="post" role="form" enctype="multipart/form-data" class="form-horizontal">
+        <div class="form-group">
+            <label for="password" class = "col-sm-2 control-label">New Password:</label>
+            <div class="col-sm-10">
+                <input type="password" id="password" name="password" class="form-control"
+                       placeholder="Enter New Password" value=""/>
+            </div>
         </div>
-    </div>
-</form>
+        <div class="form-group">
+            <label for="email" class = "col-sm-2 control-label">Email:</label>
+            <div class="col-sm-10">
+                <input type="email" id="email" name="email" class="form-control"
+                       placeholder="Enter Email" value="{{ user.email }}"
+                       required/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="timezone" class = "col-sm-2 control-label">Time Zone:</label>
+            <div class="col-sm-10">
+                <select id="timezone" class="form-control" name="timezone">
+                     {% for tz in timezones %}
+                    <option value="{{ tz }}" {{ "selected" if tz == user.timezone else "" }}>
+                        {{ tz }}
+                    </option>
+                    {% endfor %}
+                 </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="useHTMLPlayer" class = "col-sm-2 control-label">Use HTML Player:</label>
+            <div class="col-sm-10">
+                <input type="checkbox" id="useHTMLPlayer" name="useHTMLPlayer" class="form-control"
+                       placeholder="Enter Email" value="true" {{ "checked" if user.doUseHTMLPlayer else "" }} />
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="avatar" class = "col-sm-2 control-label">Avatar:</label>
+            <div class="col-sm-10">
+                <input type="file" accept=".png" class="input" id="avatar" name="avatar"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-success">Save</button>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">

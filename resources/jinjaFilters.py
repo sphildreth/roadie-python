@@ -2,6 +2,7 @@ import datetime
 import dateutil
 import re
 from math import floor
+from babel.dates import get_timezone, UTC, format_datetime
 
 
 def format_age_from_date(value):
@@ -57,6 +58,10 @@ def calculate_release_tracks_Length(value):
 def format_tracktime(value):
     value = int(floor(value / 1000))
     return format_timedelta(datetime.timedelta(seconds=value), "{hours2}:{minutes2}:{seconds2}")
+
+
+def format_datetime_for_user(value, user):
+    return format_datetime(value, 'YYYY-MM-dd HH:mm:ss', tzinfo=get_timezone(user.timezone), locale='en_US')
 
 
 def format_timedelta(value, time_format="{days} days, {hours2}:{minutes2}:{seconds2}"):

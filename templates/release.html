@@ -377,7 +377,7 @@
         <dl></dl>
     </div>
     <div class="meta pull-right">
-        <p><span class="label label-info">Last Modified: {{ release.lastUpdated or release.createdDate }}</span></p>
+        <p><span class="label label-info">Last Modified: {{ (release.lastUpdated or release.createdDate)|format_datetime_for_user(user=g.user) }}</span></p>
     </div>
 </div>
 {% endblock %}

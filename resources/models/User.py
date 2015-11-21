@@ -18,6 +18,7 @@ class User(Base):
     username = Column(String(20), nullable=False, unique=True, index=True)
     password = Column(String(100), nullable=False)
     email = Column(String(100), nullable=False, unique=True)
+    timezone = Column(String(50))
     registeredOn = Column(DateTime(), default=arrow.utcnow().datetime)
     lastLogin = Column(DateTime())
     isActive = Column(Boolean(), default=True)
