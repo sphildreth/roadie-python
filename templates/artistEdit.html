@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}{{ 'Edit:' + artist.name }}{% endblock %}
+{% block title %}{{ 'Edit: ' + artist.name }}{% endblock %}
 {% block header_content %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}">
@@ -10,7 +10,8 @@
 {% endblock %}
 {% block body_content %}
 <div class="artist-edit-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
-    <form id="demo-form2" data-parsley-validate class="form-horizontal form-label-left">
+    <form id="demo-form2" action="/artist/edit/{{ artist.roadieId }}" method="post" class="form-horizontal form-label-left validate">
+        <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
         <div class="details bordered">
             <div class="form-group">
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isLocked">Locked</label>
@@ -23,7 +24,7 @@
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="name">Type <span class="required">*</span>
                 </label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <select class="select2 form-control">
+                    <select id="artistType" name="artistType" class="select2 form-control">
                         <option value="Person" {{ 'selected="selected"' if artist.artistType == 'Person' else '' }}>Person</option>
                         <option value="Group" {{ 'selected="selected"' if artist.artistType == 'Group' else '' }}>Group</option>
                         <option value="Orchestra" {{ 'selected="selected"' if artist.artistType == 'Orchestra' else '' }}>Orchestra</option>
@@ -34,22 +35,30 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="name">Name <span class="required">*</span>
+                <label class="control-label col-md-3 col-sm-3 col-xs-12"
+                       for="name">Name <span class="required">*</span>
                 </label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input type="text" id="name" name="name" required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.name }}">
+                    <input type="text" id="name" name="name"
+                           required="required"
+                           data-parsley-maxlength="250"
+                           class="form-control col-md-7 col-xs-12" value="{{ artist.name }}">
                 </div>
             </div>
             <div class="form-group">
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sortName">Sort Name</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input type="text" id="sortName" name="sortName" required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
+                    <input type="text" id="sortName" name="sortName"
+                           data-parsley-maxlength="500"
+                           required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label for="realName" class="control-label col-md-3 col-sm-3 col-xs-12">Real Name</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="realName" class="form-control col-md-7 col-xs-12" type="text" name="realName" value="{{ artist.realName or '' }}">
+                    <input id="realName" class="form-control col-md-7 col-xs-12"
+                           data-parsley-maxlength="500"
+                           type="text" name="realName" value="{{ artist.realName or '' }}">
                 </div>
             </div>
             <div class="form-group">
@@ -99,28 +108,32 @@
             <div class="form-group">
                 <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="alternateNamesTokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="alternateNamesTokenfield" name="alternateNamesTokenfield"
                    value="{{ artist.alternateNames|sort|join('|') }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="tagsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Tags</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="tagsTokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="tagsTokenfield" name="tagsTokenfield"
                    value="{{ artist.tags|sort|join('|') }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="urlsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Urls</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="urlsTokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="urlsTokenfield" name="urlsTokenfield"
                    value="{{ artist.urls|sort|join('|') }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="isniTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">ISNI</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="isniTokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="isniTokenfield" name="isniTokenfield"
                    value="{{ artist.isni|sort|join('|') }}" >
                 </div>
             </div>
@@ -129,7 +142,8 @@
             <div class="form-group">
                 <label for="bioContext" class="control-label col-md-3 col-sm-3 col-xs-12">Biography</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <div id="bioContext" name="bioContext" class="wysiwyg">
+                    <input name="bioContext" type="hidden" />
+                    <div id="bioContext" class="wysiwyg">
                         {{ artist.bioContext or '' }}
                     </div>
                 </div>
@@ -137,7 +151,8 @@
             <div class="form-group">
                 <label for="profile" class="control-label col-md-3 col-sm-3 col-xs-12">Profile</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <div id="profile" name="profile" class="wysiwyg">
+                    <input name="profile" type="hidden" />
+                    <div id="profile" class="wysiwyg">
                         {{ artist.profile or '' }}
                     </div>
                 </div>
@@ -147,25 +162,33 @@
             <div class="form-group">
                 <label for="musicBrainzId" class="control-label col-md-3 col-sm-3 col-xs-12">MusicBrainz Id</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="musicBrainzId" name="musicBrainzId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.musicBrainzId or '' }}">
+                    <input id="musicBrainzId" name="musicBrainzId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.musicBrainzId or '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label for="iTunesId" class="control-label col-md-3 col-sm-3 col-xs-12">iTunesId Id</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="iTunesId" name="iTunesId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.iTunesId or '' }}">
+                    <input id="iTunesId" name="iTunesId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.iTunesId or '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label for="amgId" class="control-label col-md-3 col-sm-3 col-xs-12">AllMusicGuide Id</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="amgId" name="amgId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.amgId or '' }}">
+                    <input id="amgId" name="amgId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.amgId or '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label for="spotifyId" class="control-label col-md-3 col-sm-3 col-xs-12">Spotify Id</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="spotifyId" name="spotifyId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.spotifyId or '' }}">
+                    <input id="spotifyId" name="spotifyId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.spotifyId or '' }}">
                 </div>
             </div>
         </div>
@@ -185,6 +208,7 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/i18n/en.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
 <script>
     var artistId = '{{ artist.roadieId }}';
     $(function() {
@@ -207,6 +231,13 @@
                     event.preventDefault();
             });
         });
+        $('.validate').parsley();
+        $("form").on('submit', function(e) {
+            $.each($(".wysiwyg"), function(i,d) {
+                $("input[name='" + $(d).attr("id") + "']").val($(d).text());
+            });
+        });
+
     });
 
 </script>

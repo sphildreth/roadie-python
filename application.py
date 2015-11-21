@@ -11,7 +11,7 @@ from time import time
 from re import findall
 from urllib.parse import urlparse, urljoin
 from PIL import Image as PILImage
-from flask import Flask, jsonify, render_template, send_file, Response, request, session, \
+from flask import Flask, abort, jsonify, render_template, send_file, Response, request, session, \
     flash, url_for, redirect, g
 import flask_admin as admin
 from flask_restful import Api
@@ -108,6 +108,14 @@ api = Api(app)
 babel = Babel(app)
 
 FlaskSession(app)
+
+
+def generate_csrf_token():
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = str(uuid.uuid4())
+    return session['_csrf_token']
+
+app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 
 def checkout_listener(dbapi_con, con_record, con_proxy):
@@ -551,13 +559,64 @@ def artistDetail(artist_id):
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
-@app.route("/artist/edit/<artist_id>")
+@app.route("/artist/edit/<artist_id>", methods=['GET', 'POST'])
 @login_required
 def editArtist(artist_id):
-    artist = getArtist(artist_id)
-    if not artist:
-        return render_template('404.html'), 404
-    return render_template('artistEdit.html', artist=artist)
+    try:
+        artist = getArtist(artist_id)
+        if not artist:
+            return render_template('404.html'), 404
+        if request.method == 'GET':
+            return render_template('artistEdit.html', artist=artist)
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            abort(400)
+        form = request.form
+        artist.name = form['name']
+        artist.sortName = form['sortName']
+        artist.realName = form['realName']
+        artist.musicBrainzId = form['musicBrainzId']
+        artist.iTunesId = form['iTunesId']
+        artist.amgId = form['amgId']
+        artist.spotifyId = form['spotifyId']
+        artist.profile = form['profile']
+        artist.bioContext = form['bioContext']
+        artist.birthDate = form['birthDate']
+        artist.endDate = form['endDate']
+        artist.beginDate = form['beginDate']
+        artist.artistType = form['artistType']
+        artist.tags = []
+        if 'tagsTokenfield' in form:
+            formtags = form['tagsTokenfield']
+            if formtags:
+                for tag in formtags.split('|'):
+                    artist.tags.append(tag)
+        artist.alternateNames = []
+        if 'alternateNamesTokenfield' in form:
+            formAlternateNames = form['alternateNamesTokenfield']
+            if formAlternateNames:
+                for alternateName in formAlternateNames.split('|'):
+                    artist.alternateNames.append(alternateName)
+        artist.urls = []
+        if 'urlsTokenfield' in form:
+            formUrls = form['urlsTokenfield']
+            if formUrls:
+                for url in formUrls.split('|'):
+                    artist.urls.append(url)
+        artist.isniList = []
+        if 'isniTokenfield' in form:
+            formIsniTokenfield = form['isniTokenfield']
+            if formIsniTokenfield:
+                artist.isniList = []
+                for isni in formIsniTokenfield.split('|'):
+                    artist.isniList.append(isni)
+        artist.lastUpdated = arrow.utcnow().datetime
+        dbSession.commit()
+        flash('Artist Edited successfully')
+    except:
+        logger.exception("Error Setting Artist Rating")
+        dbSession.rollback()
+    return redirect("/artist/" + artist_id)
 
 
 @app.route("/user/artist/setrating/<artist_id>/<rating>", methods=['POST'])
