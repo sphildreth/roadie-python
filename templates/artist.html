@@ -3,7 +3,7 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-<div class="artist-detail-container" data-artist-id="{{ artist.id }}">
+<div class="artist-detail-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
     <div class="release-counts-container pull-right">
         <span class="release-count">Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                     title="Total Releases of Artist">{{ '%02d' % counts.releases }}</span></span>
@@ -37,7 +37,7 @@
         <button id="searchInternetArtst" class="btn btn-default"><i class="fa fa-search"></i> Search Internet</button>
         {% if current_user.is_editor() %}
         <div class="btn-group">
-            <a href="/admin/artist/edit/?id={{ artist.id }}&amp;url=/artist/{{ artist.roadieId }}"
+            <a href="/artist/edit/{{ artist.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             {% if artist.isLocked == False %}
             <div class="btn-group">
@@ -202,7 +202,7 @@
             {% if artist.urls %}
             <h4><span class="label label-primary">Urls</span></h4>
             <ul>
-                {% for url in artist.Urls %}
+                {% for url in artist.urls %}
                 <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
                 {% endfor %}
             </ul>

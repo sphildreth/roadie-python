@@ -551,6 +551,15 @@ def artistDetail(artist_id):
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
+@app.route("/artist/edit/<artist_id>")
+@login_required
+def editArtist(artist_id):
+    artist = getArtist(artist_id)
+    if not artist:
+        return render_template('404.html'), 404
+    return render_template('artistEdit.html', artist=artist)
+
+
 @app.route("/user/artist/setrating/<artist_id>/<rating>", methods=['POST'])
 @login_required
 def setUserArtistRating(artist_id, rating):

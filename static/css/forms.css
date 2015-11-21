@@ -1,0 +1,18 @@
+.note-codable {
+    display: none;
+}
+
+.artist-edit-container .form-group.images img {
+    max-height: 150px;
+    max-width: 150px;
+    margin: 5px;
+}
+
+.artist-edit-container .image-container {
+    margin: 5px;
+    padding: 5px;
+}
+
+.artist-edit-container .image-container:hover {
+    border: 1px solid #ffff66;
+}

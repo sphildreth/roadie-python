@@ -3,7 +3,7 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-<div class="label-detail-container" data-label-id="{{ label.roadieId }}">
+<div class="label-detail-container" data-label-id="{{ label.roadieId }}" data-db-id="{{ label.id }}">
     <div class="release-counts-container pull-right">
         <span class="artist-count">Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                     title="Total Artists On Label">{{ '%03d' % counts.artists }}</span></span>

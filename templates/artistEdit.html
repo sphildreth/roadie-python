@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit:' + artist.name }}{% endblock %}
+{% block header_content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote-bs3.min.css">
+
+{% endblock %}
+{% block body_content %}
+<div class="artist-edit-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
+    <form id="demo-form2" data-parsley-validate class="form-horizontal form-label-left">
+        <div class="details bordered">
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isLocked">Locked</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="isLocked" name="isLocked" type="checkbox" class="bootswitch" data-off-text="No"
+                           data-on-text="Yes" {{ 'checked' if artist.isLocked else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="name">Type <span class="required">*</span>
+                </label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <select class="select2 form-control">
+                        <option value="Person" {{ 'selected="selected"' if artist.artistType == 'Person' else '' }}>Person</option>
+                        <option value="Group" {{ 'selected="selected"' if artist.artistType == 'Group' else '' }}>Group</option>
+                        <option value="Orchestra" {{ 'selected="selected"' if artist.artistType == 'Orchestra' else '' }}>Orchestra</option>
+                        <option value="Choir" {{ 'selected="selected"' if artist.artistType == 'Choir' else '' }}>Choir</option>
+                        <option value="Character" {{ 'selected="selected"' if artist.artistType == 'Character' else '' }}>Character</option>
+                        <option value="Other" {{ 'selected="selected"' if artist.artistType == 'Other' or not artist.artistType else '' }}>Other</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="name">Name <span class="required">*</span>
+                </label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="name" name="name" required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.name }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sortName">Sort Name</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="sortName" name="sortName" required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="realName" class="control-label col-md-3 col-sm-3 col-xs-12">Real Name</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="realName" class="form-control col-md-7 col-xs-12" type="text" name="realName" value="{{ artist.realName or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="birthDate" class="control-label col-md-3 col-sm-3 col-xs-12">Date Of Birth</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="birthDate" name="birthDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.birthDate or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="beginDate" class="control-label col-md-3 col-sm-3 col-xs-12">Begin Date</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="beginDate" name="beginDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.beginDate or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="endDate" class="control-label col-md-3 col-sm-3 col-xs-12">End Date</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="endDate" name="endDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.endDate or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="bordered">
+            <div class="form-group">
+                <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Thumbnail</h5>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <div class="thumbnail-container">
+                        <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group images">
+                <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Images</h5>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    {% for image in artist.images %}
+                        <div class="image-container pull-left" data-image-id="{{ image.roadieId }}">
+                            <img src="/images/artist/{{ image.roadieId }}/512/512" alt="Image"/>
+                            <div class="image-options">
+                                <a href="javascript:deleteArtistImage();"><i class="fa fa-trash-o" title="Delete"></i></a>
+                                <a href="javascript:makeThumbnail();"><i class="fa fa-camera" title="Make Thumbnail"></i></a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="lists bordered">
+            <div class="form-group">
+                <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="alternateNamesTokenfield"
+                   value="{{ artist.alternateNames|sort|join('|') }}" >
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tagsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Tags</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="tagsTokenfield"
+                   value="{{ artist.tags|sort|join('|') }}" >
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="urlsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Urls</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="urlsTokenfield"
+                   value="{{ artist.urls|sort|join('|') }}" >
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="isniTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">ISNI</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield" id="isniTokenfield"
+                   value="{{ artist.isni|sort|join('|') }}" >
+                </div>
+            </div>
+        </div>
+        <div class="text-areas bordered">
+            <div class="form-group">
+                <label for="bioContext" class="control-label col-md-3 col-sm-3 col-xs-12">Biography</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <div id="bioContext" name="bioContext" class="wysiwyg">
+                        {{ artist.bioContext or '' }}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="profile" class="control-label col-md-3 col-sm-3 col-xs-12">Profile</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <div id="profile" name="profile" class="wysiwyg">
+                        {{ artist.profile or '' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="third-party-ids bordered">
+            <div class="form-group">
+                <label for="musicBrainzId" class="control-label col-md-3 col-sm-3 col-xs-12">MusicBrainz Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="musicBrainzId" name="musicBrainzId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.musicBrainzId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="iTunesId" class="control-label col-md-3 col-sm-3 col-xs-12">iTunesId Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="iTunesId" name="iTunesId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.iTunesId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="amgId" class="control-label col-md-3 col-sm-3 col-xs-12">AllMusicGuide Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="amgId" name="amgId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.amgId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="spotifyId" class="control-label col-md-3 col-sm-3 col-xs-12">Spotify Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="spotifyId" name="spotifyId" class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.spotifyId or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="ln_solid"></div>
+        <div class="form-group">
+            <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                <button type="submit" class="btn btn-primary">Cancel</button>
+                <button type="submit" class="btn btn-success">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block script_content %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-switch.min.js') }}"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.full.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/i18n/en.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
+<script>
+    var artistId = '{{ artist.roadieId }}';
+    $(function() {
+        $(".bootswitch").bootstrapSwitch();
+        $(".select2").select2();
+        $(".date-picker").datepicker({
+            clearBtn: true,
+            autoclose: true,
+            todayHighlight: true
+        });
+        $('.wysiwyg').summernote();
+        $(".tokenfield").tokenfield({
+            delimiter: '|',
+            delay: 100,
+            beautify: false,
+        }).on('tokenfield:createtoken', function(event) {
+            var existingTokens = $(this).tokenfield('getTokens');
+            $.each(existingTokens, function(index, token) {
+                if (token.value === event.attrs.value)
+                    event.preventDefault();
+            });
+        });
+    });
+
+</script>
+{% endblock %}
