@@ -492,6 +492,8 @@ ul.urls {
 #searchResults {
   width: 522px;
   top: 48px;
+  height: 90%;
+  overflow: auto;
   position: absolute;
   margin: 12px 0;
   padding: 8px 0;

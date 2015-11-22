@@ -25,7 +25,7 @@ class ArtistListApi(Resource):
     def get(self):
         args = self.reqparse.parse_args()
         get_current = args.current or 1
-        get_limit = args.limit or 10
+        get_limit = args.limit or 20
         get_skip = args.skip or 0
         includes = args.inc or 'releases,tracks'
         sort = args.sort or 'sortName'
@@ -37,7 +37,8 @@ class ArtistListApi(Resource):
 
         if args.filter:
             name = args.filter.lower().strip().replace("'", "''")
-            stmt = text("lower(artist.name) LIKE '%" + name + "%' " +
+            stmt = text("lower(artist.name) = '" + name + "' " +
+                        "OR lower(artist.name) LIKE '%" + name + "%' " +
                         "OR lower(artist.sortName) LIKE '%" + name + "%' " +
                         "OR (lower(alternateNames) LIKE '%" + name + "%' " + ""
                         " OR alternateNames LIKE '" + name + "|%' " +
@@ -46,7 +47,7 @@ class ArtistListApi(Resource):
                         )
 
             artists = self.dbSession.query(Artist).filter(stmt) \
-                .order_by(column_sorted).slice(get_skip, get_limit)
+                .order_by(column_sorted, Artist.name).slice(get_skip, get_limit)
         else:
             artists = self.dbSession.query(Artist).order_by(column_sorted).slice(get_skip, get_limit)
 

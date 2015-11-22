@@ -141,6 +141,9 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
 
 event.listen(sa.engine, 'checkout', checkout_listener)
 
+# @event.listens_for(sa.engine, "before_cursor_execute")
+# def before_cursor_execute(bcconn, bccursor, bcstatement, bcparameters, bccontext, bcexecutemany):
+#     logger.debug("Query: %s" % bcstatement % bcparameters)
 
 def getUser(userId=None):
     """
@@ -335,7 +338,7 @@ def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name
             if setReleaseTitleRelease.alternateNames:
                 oldAlternateTitles = setReleaseTitleRelease.alternateNames
             if oldTitle not in oldAlternateTitles:
-                oldAlternateTitles.append(oldTitle)
+                oldAlternateTitles.append(oldTitle.replace("'", "''"))
             # I cannot get setting the release alternateNames working so I did this direct update
             t = text("UPDATE `release` set alternateNames = '" + "|".join(oldAlternateTitles) + "' WHERE id = " + str(
                 setReleaseTitleRelease.id) + ";")

@@ -50,11 +50,12 @@ class ArtistFactory(object):
             return None
         name = name.lower().strip().replace("'", "''")
         stmt = text("lower(artist.name) = '" + name + "' " +
-                    "OR lower(artist.sortName) = '" + name + "' " +
-                    "OR (lower(alternateNames) = '" + name + "' " + ""
-                    " OR alternateNames like '" + name + "|%' " +
-                    " OR alternateNames like '%|" + name + "|%' " +
-                    " OR alternateNames like '%|" + name + "')"
+                    "OR lower(artist.name) LIKE '%" + name + "%' " +
+                    "OR lower(artist.sortName) LIKE '%" + name + "%' " +
+                    "OR (lower(alternateNames) LIKE '%" + name + "%' " + ""
+                    " OR alternateNames LIKE '" + name + "|%' " +
+                    " OR alternateNames LIKE '%|" + name + "|%' " +
+                    " OR alternateNames LIKE '%|" + name + "')"
                     )
         return self.session.query(Artist).filter(stmt).first()
 
