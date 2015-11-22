@@ -480,7 +480,7 @@ def labelDetail(label_id):
         " 	) AS ts ON ts.labelId = l.id " +
         " INNER JOIN " +
         " ( " +
-        " 	select rl.labelId as labelId, count(r.artistId) as artistCount " +
+        " 	select rl.labelId as labelId, count(DISTINCT r.artistId) as artistCount " +
         " 	from `release` r " +
         " 	join `releaselabel` rl on rl.releaseId = r.id " +
         " 	group by rl.labelId " +
