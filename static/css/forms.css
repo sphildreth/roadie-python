@@ -50,3 +50,11 @@ textarea.parsley-error {
 .parsley-errors-list.filled {
   opacity: 1;
 }
+
+#gallery .thumbnail{
+    width:150px;
+    height: 150px;
+    float:left;
+    margin:2px;
+}
+

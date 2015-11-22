@@ -10,7 +10,7 @@
 {% endblock %}
 {% block body_content %}
 <div class="artist-edit-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
-    <form id="demo-form2" action="/artist/edit/{{ artist.roadieId }}" method="post" class="form-horizontal form-label-left validate">
+    <form id="demo-form2" enctype="multipart/form-data" action="/artist/edit/{{ artist.roadieId }}" method="post" class="form-horizontal form-label-left validate">
         <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
         <div class="details bordered">
             <div class="form-group">
@@ -80,7 +80,7 @@
                 </div>
             </div>
         </div>
-        <div class="bordered">
+        <div class="bordered images">
             <div class="form-group">
                 <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Thumbnail</h5>
                 <div class="col-md-6 col-sm-6 col-xs-12">
@@ -95,12 +95,15 @@
                     {% for image in artist.images %}
                         <div class="image-container pull-left" data-image-id="{{ image.roadieId }}">
                             <img src="/images/artist/{{ image.roadieId }}/512/512" alt="Image"/>
-                            <div class="image-options">
-                                <a href="javascript:deleteArtistImage();"><i class="fa fa-trash-o" title="Delete"></i></a>
-                                <a href="javascript:makeThumbnail();"><i class="fa fa-camera" title="Make Thumbnail"></i></a>
-                            </div>
                         </div>
                     {% endfor %}
+                </div>
+            </div>
+            <div class="form-group">
+                <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Add Images</h5>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="file" name="fileinput[]" id="fileinput" multiple="multiple" accept="image/*" />
+                    <div id="gallery"></div>
                 </div>
             </div>
         </div>
@@ -209,12 +212,42 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+
 <script>
     var artistId = '{{ artist.roadieId }}';
+
+    var previewImage = function (file) {
+        var galleryId = "gallery";
+        var gallery = document.getElementById(galleryId);
+        var imageType = /image.*/;
+        if (!file.type.match(imageType)) {
+            throw "File Type must be an image";
+        }
+        var thumb = document.createElement("div");
+        thumb.classList.add('thumbnail'); // Add the class thumbnail to the created div
+        var img = document.createElement("img");
+        img.file = file;
+        thumb.appendChild(img);
+        gallery.appendChild(thumb);
+        var reader = new FileReader();
+        reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })(img);
+        reader.readAsDataURL(file);
+    };
+
     $(function() {
+        var uploadfiles = document.querySelector('#fileinput');
+        uploadfiles.addEventListener('change', function () {
+            var files = this.files;
+            for(var i=0; i<files.length; i++){
+                previewImage(this.files[i]);
+            }
+
+        }, false);
+
         $(".bootswitch").bootstrapSwitch();
         $(".select2").select2();
         $(".date-picker").datepicker({
+            format: "yyyy-mm-dd",
             clearBtn: true,
             autoclose: true,
             todayHighlight: true

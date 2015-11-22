@@ -109,6 +109,8 @@ babel = Babel(app)
 
 FlaskSession(app)
 
+ALLOWED_IMAGE_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
+
 
 def generate_csrf_token():
     if '_csrf_token' not in session:
@@ -559,6 +561,11 @@ def artistDetail(artist_id):
     return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
 
 
+def allowed_image_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_IMAGE_EXTENSIONS
+
+
 @app.route("/artist/edit/<artist_id>", methods=['GET', 'POST'])
 @login_required
 def editArtist(artist_id):
@@ -572,6 +579,22 @@ def editArtist(artist_id):
         if not token or token != request.form.get('_csrf_token'):
             abort(400)
         form = request.form
+        formFiles = request.files.getlist("fileinput[]")
+        if formFiles:
+            for uploadedFile in formFiles:
+                # Resize to maximum image size and convert to JPEG
+                img = PILImage.open(io.BytesIO(uploadedFile.read())).convert('RGB')
+                img.resize(thumbnailSize)
+                b = io.BytesIO()
+                img.save(b, "JPEG")
+                image = Image()
+                image.status = 2
+                image.artistId = artist.id
+                image.roadieId = str(uuid.uuid4())
+                image.image = b.getvalue()
+                image.signature = image.averageHash()
+                dbSession.add(image)
+        originalName = artist.name
         artist.name = form['name']
         artist.sortName = form['sortName']
         artist.realName = form['realName']
@@ -579,7 +602,9 @@ def editArtist(artist_id):
         artist.iTunesId = form['iTunesId']
         artist.amgId = form['amgId']
         artist.spotifyId = form['spotifyId']
-        artist.profile = form['profile']
+        formProfile = form['profile']
+        if formProfile:
+            artist.profile = formProfile.strip()
         artist.bioContext = form['bioContext']
         artist.birthDate = form['birthDate']
         artist.endDate = form['endDate']
@@ -592,11 +617,14 @@ def editArtist(artist_id):
                 for tag in formtags.split('|'):
                     artist.tags.append(tag)
         artist.alternateNames = []
+        if not isEqual(originalName, artist.name):
+            artist.alternateNames(originalName)
         if 'alternateNamesTokenfield' in form:
             formAlternateNames = form['alternateNamesTokenfield']
             if formAlternateNames:
                 for alternateName in formAlternateNames.split('|'):
-                    artist.alternateNames.append(alternateName)
+                    if not isEqual(originalName, alternateName):
+                        artist.alternateNames.append(alternateName)
         artist.urls = []
         if 'urlsTokenfield' in form:
             formUrls = form['urlsTokenfield']
@@ -1072,6 +1100,24 @@ def setReleaseAlternateNames(release_id):
             return jsonify(message="OK")
         return jsonify(message="ERROR")
     except:
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
+@app.route('/artist/deleteimage/<artist_id>/<image_id>', methods=['POST'])
+@login_required
+def deleteArtistImage(artist_id, image_id):
+    artist = getArtist(artist_id)
+    if not artist:
+        return jsonify(message="ERROR")
+    try:
+        image = dbSession.query(Image).filter(Image.roadieId == image_id).first()
+        if image:
+            dbSession.delete(image)
+            dbSession.commit()
+            return jsonify(message="OK")
+    except:
+        logger.exception("Error Delete Release Image")
         dbSession.rollback()
         return jsonify(message="ERROR")
 

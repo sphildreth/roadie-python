@@ -94,7 +94,7 @@
 
         <div class="col-md-6">
             {% for image in artist.images %}
-            <div class="col-xs-4 col-sm-3 col-md-3">
+            <div class="col-xs-4 col-sm-3 col-md-3 image-container">
                 <a href="javascript:void(0);"
                    data-title="{{ image.caption }}"
                    data-url="/images/artist/{{ image.roadieId }}/2048/2048"
@@ -106,8 +106,13 @@
             </div>
             <div id="context-menu-{{ image.roadieId }}" data-image-id="{{ image.roadieId }}" class="context-menu">
                 <ul class="dropdown-menu" role="menu">
-                    <li><a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist
-                        Image</a></li>
+                    <li>
+                        <a class="setArtistImage" tabindex="-1"><i class="fa fa-file-image-o"></i> Set as Artist
+                        Image</a>
+                    </li>
+                    <li>
+                        <a class="deleteArtistImage" tabindex="-1"><i class="fa fa-trash-o"></i> Delete Artist Image</a>
+                    </li>
                 </ul>
             </div>
             {% endfor %}
@@ -493,6 +498,26 @@
                 },
                 error:function(jq, st, error){
                     roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
+
+        $("a.deleteArtistImage").on("click", function(e) {
+            var $t = $(this);
+            bootbox.confirm("Continue To Delete Artist Image?", function(result) {
+                if(result) {
+                    var imageId = $t.parents(".context-menu").data("image-id");
+                    $.ajax({
+                        type: 'POST',
+                        url: '/artist/deleteimage/' + artistId + '/' + imageId,
+                        contentType: "application/javascript",
+                        success: function(data) {
+                            $("img[data-image-id='" + imageId + "']").closest("div.image-container").remove();
+                        },
+                        error:function(jq, st, error){
+                            roadieLibrary.showErrorMessage(error);
+                        }
+                    });
                 }
             });
         });
