@@ -49,12 +49,13 @@ class ArtistFactory(object):
         if not name:
             return None
         name = name.lower().strip().replace("'", "''")
-        stmt = or_(func.lower(Artist.name) == name,
-                   func.lower(Artist.sortName) == name,
-                   text("(lower(alternateNames) = '" + name + "'" + ""
-                                                                    " OR alternateNames like '" + name + "|%'" +
-                        " OR alternateNames like '%|" + name + "|%'" +
-                        " OR alternateNames like '%|" + name + "')"))
+        stmt = text("lower(artist.name) = '" + name + "' " +
+                    "OR lower(artist.sortName) = '" + name + "' " +
+                    "OR (lower(alternateNames) = '" + name + "' " + ""
+                    " OR alternateNames like '" + name + "|%' " +
+                    " OR alternateNames like '%|" + name + "|%' " +
+                    " OR alternateNames like '%|" + name + "')"
+                    )
         return self.session.query(Artist).filter(stmt).first()
 
     def _getFromDatabaseByExternalIds(self, musicBrainzId, iTunesId, amgId, spotifyId):

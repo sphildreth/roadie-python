@@ -37,12 +37,14 @@ class ArtistListApi(Resource):
 
         if args.filter:
             name = args.filter.lower().strip().replace("'", "''")
-            stmt = or_(func.lower(Artist.name) == name,
-                       func.lower(Artist.sortName) == name,
-                       text("(lower(alternateNames) = '" + name + "'" + ""
-                                                                        " OR alternateNames like '" + name + "|%'" +
-                            " OR alternateNames like '%|" + name + "|%'" +
-                            " OR alternateNames like '%|" + name + "')"))
+            stmt = text("lower(artist.name) LIKE '%" + name + "%' " +
+                        "OR lower(artist.sortName) LIKE '%" + name + "%' " +
+                        "OR (lower(alternateNames) LIKE '%" + name + "%' " + ""
+                        " OR alternateNames LIKE '" + name + "|%' " +
+                        " OR alternateNames LIKE '%|" + name + "|%' " +
+                        " OR alternateNames LIKE '%|" + name + "')"
+                        )
+
             artists = self.dbSession.query(Artist).filter(stmt) \
                 .order_by(column_sorted).slice(get_skip, get_limit)
         else:
