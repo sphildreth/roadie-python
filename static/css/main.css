@@ -285,6 +285,11 @@ ul.text-align-right {
     text-align: right;
 }
 
+ul.urls {
+    max-height: 250px;
+    overflow: auto;
+}
+
 .release-info-container .row {
   min-width: 450px;
 }
@@ -358,6 +363,13 @@ ul.text-align-right {
 .artist-detail-container div.associated-artists li {
     display: inline-block;
     width: 100%;
+}
+
+.artist-detail-container span.folder-release-title {
+    width: 30%;
+    text-align: left;
+    margin-right: 8px;
+    display: inline-block;
 }
 
 .recent-releases h3 {

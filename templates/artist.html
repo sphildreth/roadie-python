@@ -192,7 +192,7 @@
         <div class="col-md-4">
             {% if artist.alternateNames %}
             <h4><span class="label label-primary">Alternate Names</span></h4>
-            <input type="text" class="form-control {{'tokenfield' if current_user.is_editor() else 'tokenfield-readonly' }}" id="alternateNamesTokenfield"
+            <input type="text" disabled class="form-control tokenfield-readonly" id="alternateNamesTokenfield"
                    value="{{ artist.alternateNames|sort|join('|') }}" />
             {% endif %}
         </div>
@@ -200,13 +200,13 @@
             {% if artist.tags %}
             <h4><span class="label label-primary">Tags</span></h4>
             <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield"
-                   value="{{ artist.tags|sort|join(',') }}"/>
+                   value="{{ artist.tags|sort|join('|') }}"/>
             {% endif %}
         </div>
         <div class="col-md-4">
             {% if artist.urls %}
             <h4><span class="label label-primary">Urls</span></h4>
-            <ul>
+            <ul class="urls">
                 {% for url in artist.urls %}
                 <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
                 {% endfor %}
@@ -257,9 +257,21 @@
             {% endfor %}
         </div>
     </div>
+    {% if current_user.is_editor() %}
+    <div class="folder-info">
+        <div class="row bordered">
+            <h4><span class="label label-primary">Release Folders</span></h4>
+            <ol>
+                {% for folder in artistFolders %}
+                <li><span class="folder-release-title label label-default">{{ folder[0] }}</span><span class="folder-name label label-info">{{ folder[1] }}</span></li>
+                {% endfor %}
+            </ol>
+        </div>
+    </div>
     <div class="row lists bordered danger insane-messages" style="display:none;">
         <dl></dl>
     </div>
+    {% endif %}
     <div class="meta pull-right">
         <p><span class="label label-info">Last Modified: {{ (artist.lastUpdated or artist.createdDate)|format_datetime_for_user(user=g.user) }}</span></p>
     </div>
@@ -315,32 +327,8 @@
 
     $(function() {
 
-        $(".tokenfield-readonly").tokenfield();
-
-        $("#alternateNamesTokenfield").tokenfield({
-            delimiter: '|',
-            delay: 100,
-            beautify: false,
-        }).on('tokenfield:createtoken', function(event) {
-            var existingTokens = $(this).tokenfield('getTokens');
-            $.each(existingTokens, function(index, token) {
-                if (token.value === event.attrs.value)
-                    event.preventDefault();
-            });
-        }).on('tokenfield:removedtoken tokenfield:createdtoken tokenfield:editedtoken', function(event) {
-            $.ajax({
-                type: 'POST',
-                url: '/artist/setalternatenames/' + artistId,
-                data: { "alternatenames": JSON.stringify($(this).tokenfield('getTokens')) },
-                success: function(data) {
-                    if(data.message != "OK") {
-                        roadieLibrary.showErrorMessage("Error Saving Alternate Names");
-                    }
-                },
-                error:function(jq, st, error){
-                    roadieLibrary.showErrorMessage(error);
-                }
-            });
+        $(".tokenfield-readonly").tokenfield({
+            delimiter: "|"
         });
 
         doArtistSanityChecks();

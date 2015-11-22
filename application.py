@@ -47,6 +47,7 @@ from resources.models.UserRelease import UserRelease
 from resources.models.UserRole import UserRole
 from resources.models.UserTrack import UserTrack
 from resources.artistListApi import ArtistListApi
+from resources.processingBase import ProcessorBase
 from searchEngines.imageSearcher import ImageSearcher
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
@@ -116,6 +117,7 @@ def generate_csrf_token():
     if '_csrf_token' not in session:
         session['_csrf_token'] = str(uuid.uuid4())
     return session['_csrf_token']
+
 
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
@@ -558,7 +560,20 @@ def artistDetail(artist_id):
               'length': formatTimeMillisecondsNoDays(artistSummaries[3]) if artistSummaries else "--:--",
               'fileSize': sizeof_fmt(artistSummaries[4]) if artistSummaries else "0",
               'missingTrackCount': artistSummaries[5] if artistSummaries else 0}
-    return render_template('artist.html', artist=artist, releases=artist.releases, counts=counts, userArtist=userArtist)
+
+    artistFolders = conn.execute(text(
+        "select r.title, t.filePath " +
+        "from `track` t " +
+        "join `releasemedia` rm on rm.id = t.releaseMediaId " +
+        "join `release` r on r.id = rm.releaseId " +
+        "join `artist` a on a.id = r.artistId " +
+        "where a.id = " + str(artist.id) + " " +
+        "group by t.filePath, r.title " +
+        "order by r.title, t.filePath;"
+        , autocommit=True).columns(releaseTitle=String, filePath=String))
+
+    return render_template('artist.html', artist=artist, releases=artist.releases,
+                           counts=counts, userArtist=userArtist, artistFolders=artistFolders)
 
 
 def allowed_image_file(filename):
@@ -578,25 +593,60 @@ def editArtist(artist_id):
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             abort(400)
+        processorBase = ProcessorBase(config)
+        now = arrow.utcnow().datetime
         form = request.form
         formFiles = request.files.getlist("fileinput[]")
         if formFiles:
             for uploadedFile in formFiles:
-                # Resize to maximum image size and convert to JPEG
-                img = PILImage.open(io.BytesIO(uploadedFile.read())).convert('RGB')
-                img.resize(thumbnailSize)
-                b = io.BytesIO()
-                img.save(b, "JPEG")
-                image = Image()
-                image.status = 2
-                image.artistId = artist.id
-                image.roadieId = str(uuid.uuid4())
-                image.image = b.getvalue()
-                image.signature = image.averageHash()
-                dbSession.add(image)
+                if uploadedFile.filename:
+                    # Resize to maximum image size and convert to JPEG
+                    img = PILImage.open(io.BytesIO(uploadedFile.read())).convert('RGB')
+                    img.resize(thumbnailSize)
+                    b = io.BytesIO()
+                    img.save(b, "JPEG")
+                    image = Image()
+                    image.status = 2
+                    image.artistId = artist.id
+                    image.roadieId = str(uuid.uuid4())
+                    image.image = b.getvalue()
+                    image.signature = image.averageHash()
+                    dbSession.add(image)
+        originalArtistFolder = processorBase.artistFolder(artist)
         originalName = artist.name
         artist.name = form['name']
         artist.sortName = form['sortName']
+        artistFolder = processorBase.artistFolder(artist)
+        if not isEqual(originalArtistFolder, artistFolder):
+            for src_dir, dirs, files in os.walk(originalArtistFolder):
+                dst_dir = src_dir.replace(originalArtistFolder, artistFolder, 1)
+                if not os.path.exists(dst_dir):
+                    os.mkdir(dst_dir)
+                for file_ in files:
+                    src_file = os.path.join(src_dir, file_)
+                    dst_file = os.path.join(dst_dir, file_)
+                    if os.path.exists(dst_file):
+                        os.remove(dst_file)
+                    shutil.move(src_file, dst_dir)
+                if not os.listdir(src_dir):
+                    try:
+                        shutil.rmtree(src_dir)
+                    except:
+                        logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
+                        pass
+            if not os.listdir(originalArtistFolder):
+                try:
+                    shutil.rmtree(originalArtistFolder)
+                except:
+                    logger.warn("Unable to Remove Empty Folder [" + originalArtistFolder + "]")
+                    pass
+            dbOriginalArtistFolder = originalArtistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+            dbArtistFolder = artistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+            for release in artist.releases:
+                for media in release.media:
+                    for track in media.tracks:
+                        track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
+                        track.lastUpdated = now
         artist.realName = form['realName']
         artist.musicBrainzId = form['musicBrainzId']
         artist.iTunesId = form['iTunesId']
@@ -618,7 +668,7 @@ def editArtist(artist_id):
                     artist.tags.append(tag)
         artist.alternateNames = []
         if not isEqual(originalName, artist.name):
-            artist.alternateNames(originalName)
+            artist.alternateNames.append(originalName)
         if 'alternateNamesTokenfield' in form:
             formAlternateNames = form['alternateNamesTokenfield']
             if formAlternateNames:
@@ -638,7 +688,7 @@ def editArtist(artist_id):
                 artist.isniList = []
                 for isni in formIsniTokenfield.split('|'):
                     artist.isniList.append(isni)
-        artist.lastUpdated = arrow.utcnow().datetime
+        artist.lastUpdated = now
         dbSession.commit()
         flash('Artist Edited successfully')
     except:

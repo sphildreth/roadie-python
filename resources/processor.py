@@ -349,6 +349,7 @@ class Processor(ProcessorBase):
                                 shutil.rmtree(mp3Folder)
                                 self.logger.debug("x Deleted Processed Folder [" + mp3Folder + "]")
                             except OSError:
+                                self.logger.warn("Could Not Delete Folder [" + mp3Folder + "]")
                                 pass
                     self.session.commit()
                     gc.collect()

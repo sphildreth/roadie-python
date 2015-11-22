@@ -23,7 +23,7 @@ class Artist(Base):
     # For artists with same name append ' (XXXX)' as year started to make unique
     # Example: 'Prism (1974)', 'Prism (1977)', 'Prism (2013)'
     name = Column(String(250), nullable=False, index=True, unique=True)
-    sortName = Column(String(500))
+    sortName = Column(String(250), unique=True)
     # This is calculated when a user rates an artist based on average User Ratings and stored here for performance
     rating = Column(SmallInteger(), nullable=False, default=0)
     realName = Column(String(500))

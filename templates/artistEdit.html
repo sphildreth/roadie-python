@@ -49,8 +49,8 @@
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sortName">Sort Name</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input type="text" id="sortName" name="sortName"
-                           data-parsley-maxlength="500"
-                           required="required" class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
+                           data-parsley-maxlength="250"
+                           class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
                 </div>
             </div>
             <div class="form-group">
@@ -113,7 +113,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="alternateNamesTokenfield" name="alternateNamesTokenfield"
-                   value="{{ artist.alternateNames|sort|join('|') }}" >
+                   value="{{ artist.alternateNames|sort|join('|') if artist.alternateNames else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -121,7 +121,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="tagsTokenfield" name="tagsTokenfield"
-                   value="{{ artist.tags|sort|join('|') }}" >
+                   value="{{ artist.tags|sort|join('|') if artist.tags else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -129,7 +129,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="urlsTokenfield" name="urlsTokenfield"
-                   value="{{ artist.urls|sort|join('|') }}" >
+                   value="{{ artist.urls|sort|join('|') if artist.urls else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -137,7 +137,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="isniTokenfield" name="isniTokenfield"
-                   value="{{ artist.isni|sort|join('|') }}" >
+                   value="{{ artist.isni|sort|join('|') if artist.isni else '' }}" >
                 </div>
             </div>
         </div>
