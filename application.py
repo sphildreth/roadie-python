@@ -450,56 +450,72 @@ def labelDetail(label_id):
     if not label:
         return render_template('404.html'), 404
     labelSummaries = conn.execute(text(
-        "SELECT rm.releaseMediaCount, r.releaseCount, ts.trackCount, ts.duration, " +
-        "ts.size, mts.trackCount AS missingTracks " +
-        "FROM `artist` a " +
-        "INNER JOIN  " +
-        "( " +
-        "	select a.id as artistId, count(rm.id) as releaseMediaCount " +
-        "	From `releasemedia` rm " +
-        "	join `release` r on rm.releaseId = r.id " +
-        "	join `artist` a on r.artistId = a.id " +
-        "	group by a.id " +
-        ") as rm ON rm.artistId = a.id " +
-        "INNER JOIN  " +
-        "( " +
-        "	select a.id as artistId, count(r.id) as releaseCount " +
-        "	from `release` r  " +
-        "	join `artist` a on r.artistId = a.id " +
-        "	group by a.id " +
-        ") as r ON r.artistId = a.id " +
-        "INNER JOIN  " +
+        "SELECT ac.artistCount, r.releaseCount, rm.releaseMediaCount, ts.trackCount, ts.duration, ts.size " +
+        " FROM `label` l " +
+        " INNER JOIN " +
         " ( " +
-        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
+        " 	select rl.labelId as labelId, count(rm.id) as releaseMediaCount " +
+        " 	From `releasemedia` rm " +
+        " 	join `release` r on rm.releaseId = r.id " +
+        " 	join `releaselabel` rl on rl.releaseId = r.id " +
+        " 	group by rl.labelId " +
+        " ) as rm ON rm.labelId = l.id " +
+        " INNER JOIN " +
+        " ( " +
+        " 	select rl.labelId as labelId, count(r.id) as releaseCount " +
+        " 	from `release` r " +
+        " 	join `releaselabel` rl on rl.releaseId = r.id " +
+        " 	group by rl.labelId " +
+        " ) as r ON r.labelId = l.id " +
+        " INNER JOIN " +
+        " ( " +
+        " 	SELECT rl.labelId as labelId, COUNT(1) AS trackCount, " +
         "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	WHERE t.fileName IS NOT NULL " +
-        "	GROUP BY r.artistId  " +
-        "	) AS ts ON ts.artistId = a.id " +
-        "LEFT JOIN  " +
+        " 	FROM `track` t " +
+        " 	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+        " 	JOIN `release` r ON r.id = rm.releaseId " +
+        " 	join `releaselabel` rl on rl.releaseId = r.id " +
+        " 	WHERE t.fileName IS NOT NULL " +
+        " 	GROUP BY rl.labelId " +
+        " 	) AS ts ON ts.labelId = l.id " +
+        " INNER JOIN " +
         " ( " +
-        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	WHERE t.fileName IS NULL " +
-        "	GROUP BY r.artistId  " +
-        "	) AS mts ON mts.artistId = a.id " +
-        "WHERE a.roadieId = '" + label_id + "';", autocommit=True)
-                                  .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
-                                           releaseTrackTime=Integer, releaseTrackFileSize=Integer,
-                                           missingTrackCount=Integer)) \
+        " 	select rl.labelId as labelId, count(r.artistId) as artistCount " +
+        " 	from `release` r " +
+        " 	join `releaselabel` rl on rl.releaseId = r.id " +
+        " 	group by rl.labelId " +
+        " ) as ac ON ac.labelId = l.id " +
+        " WHERE l.roadieId = '" + label_id + "';", autocommit=True)
+                                  .columns(artistCount=Integer,
+                                           releaseCount=Integer,
+                                           releaseMediaCount=Integer,
+                                           trackCount=Integer,
+                                           releaseTrackTime=Integer,
+                                           releaseTrackFileSize=Integer,
+                                           )) \
         .fetchone()
-    counts = {'artists': 0,
-              'tracks': labelSummaries[2] if labelSummaries else 0,
-              'releaseMedia': labelSummaries[0] if labelSummaries else 0,
+    counts = {'artists': labelSummaries[0] if labelSummaries else 0,
               'releases': labelSummaries[1] if labelSummaries else 0,
-              'length': formatTimeMillisecondsNoDays(labelSummaries[3]) if labelSummaries else "--:--",
-              'fileSize': sizeof_fmt(labelSummaries[4]) if labelSummaries else "0",
-              'missingTrackCount': labelSummaries[5] if labelSummaries else 0}
-    return render_template('label.html', label=label, counts=counts)
+              'releaseMedia': labelSummaries[2] if labelSummaries else 0,
+              'tracks': labelSummaries[3] if labelSummaries else 0,
+              'length': formatTimeMillisecondsNoDays(labelSummaries[4]) if labelSummaries else "--:--",
+              'fileSize': sizeof_fmt(labelSummaries[5]) if labelSummaries else "0",
+              }
+    labelArtists = conn.execute(text(
+        "SELECT a.id, a.roadieId, a.name, count(r.id) as releaseCount " +
+        "FROM `artist` a " +
+        "join `release` r on r.artistId = a.id " +
+        "join `releaselabel` rl on rl.releaseId = r.id " +
+        "join `label` l on l.id = rl.labelId " +
+        "where l.roadieId = '" + label_id + "' " +
+        "group by a.id " +
+        "order by a.name;", autocommit=True)
+                                          .columns(artistId=Integer,
+                                                   artistRoadieId=String,
+                                                   artistName=String,
+                                                   releaseCount=Integer
+                                                   ))
+    return render_template('label.html', label=label, counts=counts, labelArtists=labelArtists)
 
 
 @app.route('/artist/<artist_id>')

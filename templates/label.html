@@ -27,20 +27,122 @@
             <a href="/admin/label/edit/?id={{ label.id }}&url=/label/{{ label.roadieId }}"
                type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             {% endif %}
+            {% if label.isLocked == False %}
             <a id="delete-playlist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+            {% endif %}
         </div>
     </div>
+    {% if label.isLocked %}
+    <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Label Is Locked"></i></span>
+    {% endif %}
     <div class="row title bordered">
+        <div class="thumbnail-container pull-left">
+            <img class="thumb " src="/images/label/thumbnail/{{ label.roadieId }}" alt="{{ label.name }}"/>
+        </div>
         <h2><span class="label label-default">{{ label.name }}</span></h2>
     </div>
-    <h3>WIP</h3>
+    <div class="row details bordered">
+        <div class="col-md-3">
+            {% if label.sortName %}
+            <div>
+                <h4><span class="label label-primary">Sort Name</span></h4>
+                <span class="label label-default">{{ label.sortName }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-3">
+            {% if label.beginDate %}
+            <div>
+                <h4><span class="label label-primary">Begin Date</span></h4>
+                <span class="label label-default">{{ label.beginDate|format_age_from_date }}</span>
+            </div>
+            {% endif %}
+            {% if label.endDate %}
+            <div>
+                <h4><span class="label label-primary">End Date</span></h4>
+                <span class="label label-default">{{ label.endDate }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-md-3">
+            <div>
+                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
+                {% if label.musicBrainzId %}
+                <a href="https://musicbrainz.org/label/{{ label.musicBrainzId }}" target="_blank"><span
+                        class="label label-default">{{ label.musicBrainzId }}</span></a>
+                {% else %}
+                <span class="label label-default">None</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if label.alternateNames or label.tags or label.urls %}
+    <div class="row lists bordered">
+        <div class="col-md-4">
+            {% if label.alternateNames %}
+            <h4><span class="label label-primary">Alternate Names</span></h4>
+            <input type="text" disabled class="form-control tokenfield-readonly" id="alternateNamesTokenfield"
+                   value="{{ label.alternateNames|sort|join('|') if label.alternateNames else '' }}" />
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            {% if label.tags %}
+            <h4><span class="label label-primary">Tags</span></h4>
+            <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield"
+                   value="{{ label.tags|sort|join('|') if label.tags else '' }}"/>
+            {% endif %}
+        </div>
+        <div class="col-md-4">
+            {% if label.urls %}
+            <h4><span class="label label-primary">Urls</span></h4>
+            <ul class="urls">
+                {% for url in label.urls %}
+                <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row bordered">
+        <table id="labelArtists" class="table-label-artists-info table table-striped table-condensed table-responsive">
+            <thead>
+            <tr>
+                <td>Artist</td>
+                <td>Release Count</td>
+            </tr>
+            </thead>
+            <tbody>
+            {% for labelArtist in labelArtists %}
+                <tr>
+                    <td>
+                        <a href="/artist/{{ labelArtist[1] }}">
+                            <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ labelArtist[1] }}"
+                                 alt="{{  labelArtist[2] }}"/>
+                            <span class="label label-default">{{ labelArtist[2] }}</span>
+                        </a>
+                    </td>
+                    <td>
+                        {{  labelArtist[3] }}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+    {% endif %}
+    <div class="meta pull-right">
+        <p><span class="label label-info">Last Modified: {{ (label.lastUpdated or label.createdDate)|format_datetime_for_user(user=g.user) }}</span></p>
+    </div>
 </div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
     var labelId = '{{ label.roadieId }}';
     $(function() {
-
+        $(".tokenfield-readonly").tokenfield({
+            delimiter: "|"
+        });
     });
 
 </script>

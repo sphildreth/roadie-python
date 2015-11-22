@@ -141,7 +141,7 @@
             <div>
                 <h4><span class="label label-primary">MusicBrainz Id</span></h4>
                 {% if artist.musicBrainzId %}
-                <a href="https://musicbrainz.org/artist/{{ artist.MusicBrainzId }}" target="_blank"><span
+                <a href="https://musicbrainz.org/artist/{{ artist.musicBrainzId }}" target="_blank"><span
                         class="label label-default">{{ artist.musicBrainzId }}</span></a>
                 {% else %}
                 <span class="label label-default">None</span>
@@ -263,7 +263,7 @@
             <h4><span class="label label-primary">Release Folders</span></h4>
             <ol>
                 {% for folder in artistFolders %}
-                <li><span class="folder-release-title label label-default">{{ folder[0] }}</span><span class="folder-name label label-info">{{ folder[1] }}</span></li>
+                <li><span class="folder-release-title label label-default">{{ folder[0] }}</span><span class="folder-name label label-primary">{{ folder[1] }}</span></li>
                 {% endfor %}
             </ol>
         </div>
