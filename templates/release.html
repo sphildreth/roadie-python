@@ -25,14 +25,14 @@
                <a href="/label/{{ releaseLabel.label.roadieId }}">
                 <img class="label-thumb thumb" src="/images/label/thumbnail/{{ releaseLabel.label.roadieId }}"
                  alt="{{ releaseLabel.label.name }}"/>
-                   <span class="label label-default">{{ releaseLabel.label.name }}</span></a>
+                   <span class="label label-default release-label-name">{{ releaseLabel.label.name }}</span></a>
            </li>
            {% endfor %}
            <li>
                <a href="/artist/{{ release.artist.roadieId }}">
                 <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
                  alt="{{ release.artist.name }}"/>
-                   <span class="label label-default">{{ release.artist.name }}</span>
+                   <span class="label label-default release-artist-name">{{ release.artist.name }}</span>
                </a>
            </li>
            <li class="active">
