@@ -259,7 +259,7 @@ def before_request():
 def index():
     lastPlayedInfos = []
     for ut in dbSession.query(UserTrack).join(Track, Track.id == UserTrack.trackId).order_by(
-            desc(UserTrack.lastPlayed)).limit(35):
+            desc(UserTrack.lastPlayed)).limit(50):
         lastPlayedInfos.append({
             'TrackId': str(ut.track.roadieId),
             'TrackTitle': ut.track.title,
@@ -1322,7 +1322,8 @@ def releaseDetail(roadieId):
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
-                           userRelease=userRelease[0] if userRelease else None, trackCount=releaseSummaries[0],
+                           userRelease=userRelease[0] if userRelease else None,
+                           trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))

@@ -231,7 +231,9 @@
                     <li>
                         <a href="/collection/{{ collectionRelease.roadieId }}">
                             <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span>
-                            <span class="label label-default">{{ collectionRelease.collectionReleases.name }}</span>
+                            <span data-toggle="tooltip" data-placement="top"
+                                  title="{{ collectionRelease.collectionReleases.name }}"
+                                  class="label label-default">{{ collectionRelease.collectionReleases.name }}</span>
                         </a>
                     </li>
                     {% endfor %}
@@ -361,11 +363,12 @@
                     </div>
                 </div>
                 <div class="col-xs-3 col-sm-3 col-md-3">
-                    <span data-track-duration="{{ track.duration }}" class="duration label label-info">{{ track.duration|format_tracktime() }}</span>
+                    <span data-track-duration="{{ track.duration }}"
+                          class="duration label label-info">{{ track.duration|format_tracktime() }}</span>
                             <span class="user-rating-container">
                                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
                                 <input type="hidden" class="track-rating user-rating rating"
-                                       value="{{ track.userRatings.rating }}"/>
+                                       value="{{ track.userRatings[0].rating if track.userRatings else 0 }}"/>
                             </span>
                 </div>
             </div>
@@ -673,7 +676,7 @@
         $(".release-detail-container .tracks input.track-rating").on("change", function(e) {
             $.ajax({
                 type: 'POST',
-                url: '/user/track/setrating/' + releaseId + '/' + $(this).closest("div.track").data("track-id") + '/' + $(this).rating('rate'),
+                url: '/user/track/setrating/' + $(this).closest("div.track").data("track-id") + '/' + $(this).rating('rate'),
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
