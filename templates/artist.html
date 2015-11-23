@@ -226,7 +226,7 @@
                         <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
                             <span data-toggle="tooltip"
                                   data-placement="top"
-                                  title="{{ release.Title }}"
+                                  title="{{ release.title }}"
                                   class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span>
                         </h4>
                     </a>
@@ -244,7 +244,7 @@
                             {% for track in media.tracks|sort(attribute='trackNumber') %}
                             <li>
                                 <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
-                                <span data-toggle="tooltip" data-placement="top" title="{{ track.Title }}"
+                                <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
                                       class="title label label-default">{{ track.title }}</span>
                                 <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
                             </li>

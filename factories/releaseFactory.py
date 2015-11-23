@@ -270,13 +270,14 @@ class ReleaseFactory(object):
     def _getFromDatabaseByTitle(self, artist, title):
         if not title:
             return None
-        title = title.lower().strip().replace("'", "''")
+        title = title.lower().strip()
         cleanedTitle = createCleanedName(title)
         stmt = or_(func.lower(Release.title) == title,
-                   text("(lower(alternateNames) = '" + title + "'" + ""
-                                                                     " OR alternateNames like '" + title + "|%'" +
-                        " OR alternateNames like '%|" + title + "|%'" +
-                        " OR alternateNames like '%|" + title + "')"),
+                   text("(lower(alternateNames) = '" + title.replace("'", "''") + "'" + ""
+                                                                                        " OR alternateNames like '" + title.replace(
+                       "'", "''") + "|%'" +
+                        " OR alternateNames like '%|" + title.replace("'", "''") + "|%'" +
+                        " OR alternateNames like '%|" + title.replace("'", "''") + "')"),
                    text("(alternateNames = '" + cleanedTitle + "'" + ""
                                                                      " OR alternateNames like '" + cleanedTitle + "|%'" +
                         " OR alternateNames like '%|" + cleanedTitle + "|%'" +
@@ -287,12 +288,12 @@ class ReleaseFactory(object):
     def _getLabelFromDatabase(self, name):
         if not name:
             return None
-        name = name.lower().strip().replace("'", "''")
+        name = name.lower().strip()
         stmt = or_(func.lower(Label.name) == name,
-                   text("(lower(alternateNames) = '" + name + "'" + ""
-                                                                    " OR alternateNames like '" + name + "|%'" +
-                        " OR alternateNames like '%|" + name + "|%'" +
-                        " OR alternateNames like '%|" + name + "')"))
+                   text("(lower(alternateNames) = '" + name.replace("'", "''") + "'" + ""
+                                                                    " OR alternateNames like '" + name.replace("'", "''") + "|%'" +
+                        " OR alternateNames like '%|" + name.replace("'", "''") + "|%'" +
+                        " OR alternateNames like '%|" + name.replace("'", "''") + "')"))
         return self.session.query(Label).filter(stmt).first()
 
     def _getFromDatabaseByExternalIds(self, musicBrainzId, iTunesId, lastFMId, amgId, spotifyId):
