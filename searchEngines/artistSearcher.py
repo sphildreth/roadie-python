@@ -128,8 +128,12 @@ class ArtistSearcher(object):
                 self.cache[name] = artist
             elapsedTime = arrow.utcnow().datetime - startTime
             printableName = name.encode('ascii', 'ignore').decode('utf-8')
-            self.logger.debug("searchForArtist Elapsed Time [" + str(elapsedTime) + "] Name [" + printableName
-                              + "] Found [" + (artist.name if artist else "")
+            self.logger.debug("searchForArtist Elapsed Time [" + str(elapsedTime) + "] Name [" + printableName +
+                              "] Found [" + (artist.name if artist else "") +
+                              "] MusicBrainzId [" + str(artist.musicBrainzId) + "] " +
+                              " iTunesId [" + str(artist.iTunesId) + "] " +
+                              " amgId [" + str(artist.amgId) + "]" +
+                              " spotifyId [" + str(artist.spotifyId) + "]"
                               .encode('ascii', 'ignore').decode('utf-8') + "]")
             return artist
         except:

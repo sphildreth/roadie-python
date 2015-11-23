@@ -29,7 +29,7 @@ class Spotify(SearchEngineBase):
     def lookupArtist(self, name):
         try:
             artist = None
-            url = "https://api.spotify.com/v1/search?offset=0&limit=1&type=artist&query=" + parse.quote_plus(name)
+            url = "https://api.spotify.com/v1/search?offset=0&limit=5&type=artist&query=" + parse.quote_plus(name)
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             self.logger.debug("Performing Spotify Lookup For Artist")
@@ -39,27 +39,29 @@ class Spotify(SearchEngineBase):
                     o = json.load(s)
                     ar = o['artists']
                     if ar and 'items' in ar and ar['items']:
-                        r = ar['items'][0]
-                        artist = Artist(name=r['name'])
-                        artist.spotifyId = r['id']
-                        artist.artistType = ArtistType.Group if r['type'] and isEqual(r['type'],
-                                                                                      "group") else ArtistType.Person
-                        if 'external_urls' in r and 'spotify' in r['external_urls']:
-                            artist.urls = []
-                            artist.urls.append(r['external_urls']['spotify'])
-                        if 'genres' in r:
-                            artist.tags = artist.tags or []
-                            for genre in r['genres']:
-                                if not isInList(artist.tags, genre):
-                                    artist.tags.append(genre)
-                        images = r['images']
-                        if images:
-                            artist.imageUrl = images[0]['url']
+                        for r in ar['items']:
+                            if isEqual(r['name'], name):
+                                artist = Artist(name=r['name'])
+                                artist.spotifyId = r['id']
+                                artist.artistType = ArtistType.Group if r['type'] and isEqual(r['type'],
+                                                                                              "group") else ArtistType.Person
+                                if 'external_urls' in r and 'spotify' in r['external_urls']:
+                                    artist.urls = []
+                                    artist.urls.append(r['external_urls']['spotify'])
+                                if 'genres' in r:
+                                    artist.tags = artist.tags or []
+                                    for genre in r['genres']:
+                                        if not isInList(artist.tags, genre):
+                                            artist.tags.append(genre)
+                                images = r['images']
+                                if images:
+                                    artist.imageUrl = images[0]['url']
+                                break
                 except:
                     self.logger.exception("Spotify: Error In LookupArtist")
                     pass
-                    #    if artist:
-                    #         print(artist.info())
+            # if artist:
+            #     print(artist.info())
             return artist
         except:
             self.logger.exception("Spotify: Error In LookupArtist")
@@ -177,7 +179,7 @@ class Spotify(SearchEngineBase):
         return None
 
 # a = Spotify()
-# artist = a.lookupArtist('Men At Work')
+# artist = a.lookupArtist('Beck')
 # release = a.searchForRelease(artist, "Cargo")
 # # #r = a.lookupReleaseByMusicBrainzId('76df3287-6cda-33eb-8e9a-044b5e15ffdd')
 # print(artist)

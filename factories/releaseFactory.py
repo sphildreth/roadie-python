@@ -41,7 +41,7 @@ class ReleaseFactory(object):
             else:
                 self.logger.info("Refreshing Releases For Artist [" + printableArtistName + "]")
             releases = []
-            srList = self.searcher.searchForArtistReleases(artist)
+            srList = self.searcher.searchForArtistReleases(artist, [])
             if not srList:
                 self.logger.info("Releases For Artist [" + printableArtistName +
                                  "] Not Found")
