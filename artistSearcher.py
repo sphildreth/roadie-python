@@ -1,6 +1,7 @@
 import os
 import json
 import argparse
+from sqlalchemy import event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
@@ -28,6 +29,12 @@ Base = declarative_base()
 Base.metadata.bind = engine
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
+
+
+# @event.listens_for(engine, "before_cursor_execute")
+# def before_cursor_execute(bcconn, bccursor, bcstatement, bcparameters, bccontext, bcexecutemany):
+#     print("Query: %s" % bcstatement % bcparameters)
+
 
 artistFactory = ArtistFactory(conn, session)
 releaseFactory = ReleaseFactory(conn, session)

@@ -321,6 +321,8 @@ class Processor(ProcessorBase):
                             else:
                                 continue
                             break
+                        if not release.releaseDate:
+                            release.releaseDate = parseDate(id3.year)
                         releaseFolder = self.albumFolder(artist, release.releaseDate.strftime('%Y'), release.title)
                         if newMp3Folder and newMp3Folder not in mp3FoldersProcessed:
                             for coverImage in self.releaseCoverImages(mp3Folder):

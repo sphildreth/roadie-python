@@ -118,6 +118,10 @@ def parseDate(date):
     try:
         result = arrow.get(date, dateFormat).date()
     except:
+        try:
+            result = arrow.get(date, yearFormat).date()
+        except:
+            pass
         pass
     return result
 
