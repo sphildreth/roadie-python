@@ -30,7 +30,7 @@ class Release(Base):
     # Number of Release Media (CDs or LPs) for this Release
     mediaCount = Column(SmallInteger(), default=1)
     thumbnail = Column(BLOB())
-    profile = Column(String(2000))
+    profile = Column(Text())
     releaseType = Column(Enum('Album', 'EP', 'Single', 'Unknown', name='releaseType'), default='Album')
     # Flag if all tracks are found (Complete), missing some tracks (Incomplete),
     #     no Folder Found/Missing All Tracks (Missing) or Missing and Wished for (Wishlist)
@@ -51,6 +51,7 @@ class Release(Base):
     images = relationship(Image, cascade="all, delete-orphan", backref="release")
     userRatings = relationship(UserRelease, cascade="all, delete-orphan", backref="release")
     collections = relationship(CollectionRelease, cascade="all, delete-orphan", backref="release")
+
 
     def get_id(self):
         return self.roadieId

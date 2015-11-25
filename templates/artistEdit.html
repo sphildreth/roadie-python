@@ -147,7 +147,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input name="bioContext" type="hidden" />
                     <div id="bioContext" class="wysiwyg">
-                        {{ artist.bioContext or '' }}
+                        {{ (artist.bioContext or '')|safe }}
                     </div>
                 </div>
             </div>
@@ -156,7 +156,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input name="profile" type="hidden" />
                     <div id="profile" class="wysiwyg">
-                        {{ artist.profile or '' }}
+                        {{ (artist.profile or '')|safe }}
                     </div>
                 </div>
             </div>
@@ -267,7 +267,7 @@
         $('.validate').parsley();
         $("form").on('submit', function(e) {
             $.each($(".wysiwyg"), function(i,d) {
-                $("input[name='" + $(d).attr("id") + "']").val($(d).text());
+                $("input[name='" + $(d).attr("id") + "']").val($(d).code());
             });
         });
 

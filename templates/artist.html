@@ -81,14 +81,16 @@
             {% if artist.profile %}
             <div>
                 <h4><span class="label label-primary">Profile</span></h4>
-
-                <p>{{ artist.profile|safe }}</p>
+                <div class="profile-container">
+                {{ artist.profile|safe }}
+                </div>
             </div>
             {% endif %}
             <div>
                 <h4><span class="label label-primary">Bio</span></h4>
-
-                <p>{{ artist.bioContext|safe }}</p>
+                <div class="bioContext-container">
+                    {{ artist.bioContext|safe }}
+                </div>
             </div>
         </div>
 

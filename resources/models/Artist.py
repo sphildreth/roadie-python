@@ -32,7 +32,7 @@ class Artist(Base):
     amgId = Column(String(100))
     spotifyId = Column(String(100))
     thumbnail = Column(BLOB())
-    profile = Column(String(2000))
+    profile = Column(Text())
     birthDate = Column(Date())
     beginDate = Column(Date())
     endDate = Column(Date())

@@ -2021,7 +2021,6 @@ def collection(collection_id):
     indexCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
     if not indexCollection:
         return render_template('404.html'), 404
-
     counts = conn.execute(text(
         "select count(r.id) as releaseCount, ts.trackCount, ts.trackDuration, ts.trackSize " +
         "from `collection` c " +

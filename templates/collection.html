@@ -38,7 +38,7 @@
         {% endif %}
         <h2><span class="label label-default">{{ collection.name }}</span></h2>
     </div>
-    {%for collectionRelease in collection.collectionReleases|sort(attribute='listNumber') %}
+    {%for collectionRelease in collection.collectionReleases|sort(attribute='sortOrder') %}
     {% if collectionRelease.release and collectionRelease.release.artist %}
     <div class="collection-release pull-left" data-release-id="{{ collectionRelease.release.roadieId }}"
          data-listnumber="{{ collectionRelease.listNumber }}">
@@ -47,7 +47,7 @@
                 <img class="release-thumb" src="/images/release/thumbnail/{{ collectionRelease.release.roadieId }}"
                      alt="{{ collectionRelease.release.title }}"/>
             </div>
-            <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber  }}</span></h4>
+            <h4><span class="label label-primary pull-left">{{ '%03d' % collectionRelease.listNumber if collectionRelease.listNumber else "---"  }}</span></h4>
         </a>
         <div class="artist-info">
             <a title="View Artist" href="/artist/{{ collectionRelease.release.artist.roadieId }}">
@@ -123,11 +123,16 @@
         myNumbers = $.map($(".collection-release"), function(d) {
             return parseInt($(d).data("listnumber"));
         });
-        for(var i = 1; i <= collectionCountShouldBe; i++) {
-            if($.inArray(i, myNumbers) < 0) {
-                missing.push(i);
-           }
-        };
+        var isListNumbered = _.reduce(myNumbers, function(sum, el) {
+                                return sum + el
+                            }, 0);
+        if(isListNumbered) {
+            for(var i = 1; i <= collectionCountShouldBe; i++) {
+                if($.inArray(i, myNumbers) < 0) {
+                    missing.push(i);
+               }
+            };
+        }
         if(missing.length > 0) {
             var html = '<div><h4>Missing</h4></div>';
             $.each(missing, function(i,d) {
