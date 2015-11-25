@@ -633,6 +633,9 @@ def editArtist(artist_id):
                     dbSession.add(image)
         originalArtistFolder = processorBase.artistFolder(artist)
         originalName = artist.name
+        artist.isLocked = False
+        if 'isLocked' in form and form['isLocked'] == "on":
+            artist.isLocked = True
         artist.name = form['name']
         artist.sortName = form['sortName']
         artistFolder = processorBase.artistFolder(artist)
