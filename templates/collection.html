@@ -54,15 +54,22 @@
             <img class="thumb pull-left"
                  src="/images/artist/thumbnail/{{ collectionRelease.release.artist.roadieId }}"
                  alt="{{ collectionRelease.release.artist.name }}"/>
-            <h5><span
-                    class="label label-info">{{ collectionRelease.release.artist.name }}</span></h5>
+            <h5><span data-toggle="tooltip"
+                      data-placement="top"
+                      title="{{ collectionRelease.release.artist.name }}"
+                      class="label label-info">{{ collectionRelease.release.artist.name }}</span></h5>
             </a>
         </div>
         <div class="release-rating-container">
             <input type="hidden" class="rating" data-readonly value="{{ collectionRelease.release.rating }}"/>
         </div>
         <a href="/release/{{ collectionRelease.release.roadieId }}">
-            <h3 class="album-title"><span class="label label-default">{{ collectionRelease.release.title }}</span></h3>
+            <h3 class="album-title">
+                <span data-toggle="tooltip"
+                      data-placement="top"
+                      title="{{ collectionRelease.release.title }}"
+                      class="label label-default">{{ collectionRelease.release.title }}</span>
+            </h3>
         </a>
 
     </div>
