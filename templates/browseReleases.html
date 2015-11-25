@@ -64,7 +64,7 @@
                 { field: 'trackCount', sortable: true, title: '# Tracks' },
                 { field: 'artist.name', sortable: true, title: 'Artist', formatter: function(value,row, index) {
                     var thumbnail = "/images/artist/thumbnail/" + row.artistId;
-                    return '<a href="/artist/' + row.artistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.artistName  + '" /></div><span class="label label-default">' + row.artistName + '</span></a>';
+                    return '<a href="/artist/' + row.artistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row['artist.name']  + '" /></div><span class="label label-default">' + row['artist.name'] + '</span></a>';
                 }},
                 { field: 'releasePlayedCount', title: '# Plays' }
             ]
