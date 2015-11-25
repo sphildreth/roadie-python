@@ -1,6 +1,7 @@
 import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
+from resources.models.Artist import Artist
 from resources.models.Track import Track
 from resources.models.Release import Release
 from resources.models.ReleaseMedia import ReleaseMedia
@@ -32,17 +33,30 @@ class ReleaseListApi(Resource):
         includes = args.inc or 'tracks'
         sort = args.sort or 'releaseDate'
         order = args.order or 'asc'
-        if order != 'asc':
-            order = "-"
-        else:
-            order = ""
+        total_records = 0
+
+        if sort == "releaseYear":
+            sort = "releaseDate"
+
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
+
         if args.filter:
-            releases = self.dbSession.query(Release).filter(Release.title.like("%" + args.filter + "%")) \
-                .order_by(order + sort).slice(get_skip, get_limit)
+            name = args.filter.lower().strip().replace("'", "''")
+            stmt = text("lower(release.title) = '" + name + "' " +
+                        "OR lower(release.title) LIKE '%" + name + "%' " +
+                        "OR (lower(alternateNames) LIKE '%" + name + "%' " + ""
+                        " OR alternateNames LIKE '" + name + "|%' " +
+                        " OR alternateNames LIKE '%|" + name + "|%' " +
+                        " OR alternateNames LIKE '%|" + name + "')"
+                        )
+
+            total_records = self.dbSession.query(func.count(Release.id)).filter(stmt).scalar()
+            releases = self.dbSession.query(Release).filter(stmt) \
+                .order_by(text(sort + " " + order)).slice(get_skip, get_limit)
         else:
-            releases = self.dbSession.query(Release).order_by(order + sort).limit(get_limit)
+            total_records = self.dbSession.query(func.count(Release.id)).scalar()
+            releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).order_by(text(sort + " " + order)).limit(get_limit)
         rows = []
         if releases:
             for release in releases:
@@ -68,14 +82,15 @@ class ReleaseListApi(Resource):
                     "artistId": release.artist.roadieId,
                     "releaseDate": "" if not release.releaseDate else release.releaseDate.isoformat(),
                     "releaseYear": "----" if not release.releaseDate else release.releaseDate.strftime('%Y'),
-                    "artistName": release.artist.name,
+                    "artist.name": release.artist.name,
                     "title": release.title,
                     "tracks": trackInfo,
                     "trackCount": len(trackInfo) if trackInfo else int(trackCount or 0),
                     "releasePlayedCount": 0,
-                    "lastUpdated": "" if not release.lastUpdated else release.lastUpdated.isoformat(),
-                    "rating": release.rating or 0,
+                    "release.createdDate": release.createdDate.isoformat(),
+                    "release.lastUpdated": "" if not release.lastUpdated else release.lastUpdated.isoformat(),
+                    "release.rating": release.rating or 0,
                     "thumbnailUrl": "/images/release/thumbnail/" + release.roadieId
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=0, message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=total_records, message="OK")

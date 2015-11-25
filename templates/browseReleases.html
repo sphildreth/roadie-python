@@ -33,7 +33,9 @@
             },
             idField: 'id',
             search: true,
-            pageSize: 25,
+            showExport: true,
+            exportDataType: 'all',
+            pageSize: 50,
             pagination: true,
             sidePagination: 'server',
             detailView: true,
@@ -44,7 +46,7 @@
                 });
                 return html.join('');
             },
-            sortName: "Rating",
+            sortName: "release.createdDate",
             sortOrder: "desc",
             columns: [
                 { field: 'ReleaseId', visible: false },
@@ -55,15 +57,16 @@
                     var thumbnail = row.thumbnailUrl;
                     return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
                 }},
-                { field: 'rating', sortable: true, title: 'Rating' },
-                { field: 'releaseYear', sortable: true, title: 'Year' },
-                { field: 'lastUpdated', sortable: true, title: 'LastUpdated' },
+                { field: 'release.rating', sortable: true, title: 'Rating' },
+                { field: 'releaseYear', sortName: 'releaseDate', sortable: true, title: 'Year' },
+                { field: 'release.createdDate', sortable: true, title: 'Created Date' },
+                { field: 'release.lastUpdated', sortable: true, title: 'Last Updated' },
                 { field: 'trackCount', sortable: true, title: '# Tracks' },
-                { field: 'artistName', sortable: true, title: 'Artist', formatter: function(value,row, index) {
+                { field: 'artist.name', sortable: true, title: 'Artist', formatter: function(value,row, index) {
                     var thumbnail = "/images/artist/thumbnail/" + row.artistId;
                     return '<a href="/artist/' + row.artistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.artistName  + '" /></div><span class="label label-default">' + row.artistName + '</span></a>';
                 }},
-                { field: 'playedCount', title: '# Plays' }
+                { field: 'releasePlayedCount', title: '# Plays' }
             ]
         });
     });

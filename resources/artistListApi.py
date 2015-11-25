@@ -30,10 +30,10 @@ class ArtistListApi(Resource):
         includes = args.inc or 'releases,tracks'
         sort = args.sort or 'sortName'
         order = args.order or 'asc'
+        total_records = 0
+
         if get_current:
             get_skip = (get_current * get_limit) - get_limit
-
-        column_sorted = getattr(Artist.sortName, order)()
 
         if args.filter:
             name = args.filter.lower().strip().replace("'", "''")
@@ -45,12 +45,12 @@ class ArtistListApi(Resource):
                         " OR alternateNames LIKE '%|" + name + "|%' " +
                         " OR alternateNames LIKE '%|" + name + "')"
                         )
-
+            total_records = self.dbSession.query(func.count(Artist.id)).filter(stmt).scalar()
             artists = self.dbSession.query(Artist).filter(stmt) \
-                .order_by(column_sorted, Artist.name).slice(get_skip, get_limit)
+                .order_by(text(sort + " " + order)).slice(get_skip, get_limit)
         else:
-            artists = self.dbSession.query(Artist).order_by(column_sorted).slice(get_skip, get_limit)
-
+            total_records = self.dbSession.query(func.count(Artist.id)).scalar()
+            artists = self.dbSession.query(Artist).order_by(text(sort + " " + order)).slice(get_skip, get_limit)
         rows = []
         if artists:
             for artist in artists:
@@ -91,9 +91,11 @@ class ArtistListApi(Resource):
                     "rating": str(artist.rating or 0),
                     "artistReleaseCount": len(artist.releases),
                     "artistTrackCount": artistTrackCount[0],
+                    "createdDate": artist.createdDate.isoformat(),
+                    "lastUpdated": "" if not artist.lastUpdated else artist.lastUpdated.isoformat(),
                     "artistPlayedCount": 0,
                     "releases": releaseInfo,
                     "thumbnailUrl": "/images/artist/thumbnail/" + str(artist.roadieId)
                 })
 
-        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=0, message="OK")
+        return jsonify(rows=rows, current=args.current or 1, rowCount=len(rows), total=total_records, message="OK")

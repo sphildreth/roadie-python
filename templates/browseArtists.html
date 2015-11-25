@@ -33,7 +33,7 @@
             },
             idField: 'id',
             search: true,
-            pageSize: 25,
+            pageSize: 50,
             pagination: true,
             sidePagination: 'server',
             detailView: true,
@@ -44,7 +44,7 @@
                 });
                 return html.join('');
             },
-            sortName: "rating",
+            sortName: "createdDate",
             sortOrder: "desc",
             columns: [
                 { field: 'id', visible: false },
@@ -56,6 +56,8 @@
                     return '<a href="/artist/' + artistId + '"><div class="thumbnail-container pull-left"><img class="artist-thumb" src="' + artistThumbnail + '" alt="' + artistName + '" /></div><span class="label label-default">' + artistName + '</span></a><span class="user-rating-container"><input type="hidden" class="release-rating rating" data-readonly value="' + artistRating + '" /></span>';
                 }},
                 { field: 'rating', sortable: true, title: 'Rating' },
+                { field: 'createdDate', sortable: true, title: 'createdDate' },
+                { field: 'lastUpdated', sortable: true, title: 'LastUpdated' },
                 { field: 'artistReleaseCount', title: '# Releases' },
                 { field: 'artistTrackCount', title: '# Tracks' },
                 { field: 'artistPlayedCount',  title: '# Plays' }
