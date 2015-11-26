@@ -58,3 +58,7 @@ textarea.parsley-error {
     margin:2px;
 }
 
+.csv-editor {
+    width: 100%;
+    min-height: 300px;
+}

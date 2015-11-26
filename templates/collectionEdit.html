@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit: ' + collection.name }}{% endblock %}
+{% block header_content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote-bs3.min.css">
+
+{% endblock %}
+{% block body_content %}
+<div class="collecetion-edit-container" data-collection-id="{{ collection.roadieId }}" data-db-id="{{ collection.id }}">
+    <form id="demo-form2" enctype="multipart/form-data" action="/collection/edit/{{ collection.roadieId }}" method="post" class="form-horizontal form-label-left validate">
+        <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
+        <div class="details bordered">
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isLocked">Locked</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="isLocked" name="isLocked" type="checkbox" class="bootswitch" data-off-text="No"
+                           data-on-text="Yes" {{ 'checked' if collection.isLocked else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12"
+                       for="name">Name <span class="required">*</span>
+                </label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="name" name="name"
+                           required="required"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" value="{{ collection.name }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="edition">Edition</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="edition" name="edition"
+                           data-parsley-maxlength="200"
+                           class="form-control col-md-7 col-xs-12" value="{{ collection.edition or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="listInCSVFormat" class="control-label col-md-3 col-sm-3 col-xs-12">List Format</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="listInCSVFormat" class="form-control col-md-7 col-xs-12"
+                           data-parsley-maxlength="200"
+                           type="text" name="listInCSVFormat" value="{{ collection.listInCSVFormat or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="listInCSV" class="control-label col-md-3 col-sm-3 col-xs-12">List</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <textarea id="listInCSV"
+                              name="listInCSV"
+                              class="csv-editor">{{ (collection.listInCSV or '')|safe }}</textarea>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="description" class="control-label col-md-3 col-sm-3 col-xs-12">Description</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input name="description" data-parsley-maxlength="1000" type="hidden" />
+                    <div id="description" class="wysiwyg">
+                        {{ (collection.description or '')|safe }}
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="user" class="control-label col-md-3 col-sm-3 col-xs-12">Maintainer</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12"
+                       id="user" name="user"
+                   value="{{ collection.user }}" >
+                </div>
+            </div>
+        </div>
+        <div class="lists bordered">
+            <div class="form-group">
+                <label for="urlsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Urls</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12"
+                       id="urlsTokenfield" name="urlsTokenfield"
+                   value="{{ collection.urls|sort|join('|') if collection.urls else '' }}" >
+                </div>
+            </div>
+        </div>
+        <div class="ln_solid"></div>
+        <div class="form-group">
+            <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                <button type="submit" class="btn btn-primary">Cancel</button>
+                <button type="submit" class="btn btn-success">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block script_content %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-switch.min.js') }}"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.full.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/i18n/en.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+
+<script>
+    var collectionId = '{{ collection.roadieId }}';
+
+    $(function() {
+
+        var bhUsers = new Bloodhound({
+            remote: {
+                url: '/api/v1.0/users?filter=%QUERY',
+                wildcard: '%QUERY',
+                filter: function(x) {
+                    result = [];
+                    $.each(x.rows, function(i,d) {
+                        result.push({
+                            id: d.roadieId,
+                            username: d.username
+                        });
+                    });
+                    return result;
+                }
+            },
+            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('username'),
+            queryTokenizer: Bloodhound.tokenizers.whitespace
+        });
+        bhUsers.initialize();
+
+        $(".bootswitch").bootstrapSwitch();
+        $(".select2").select2();
+        $(".date-picker").datepicker({
+            format: "yyyy-mm-dd",
+            clearBtn: true,
+            autoclose: true,
+            todayHighlight: true
+        });
+        $('.wysiwyg').summernote();
+        $("#urlsTokenfield").tokenfield({
+            delimiter: '|',
+            delay: 100,
+            beautify: false,
+        }).on('tokenfield:createtoken', function(event) {
+            var existingTokens = $(this).tokenfield('getTokens');
+            $.each(existingTokens, function(index, token) {
+                if (token.value === event.attrs.value)
+                    event.preventDefault();
+            });
+        });
+        $("#user").tokenfield({
+            typeahead: [null, {
+                name: 'userapi',
+                source: bhUsers,
+                display: 'username',
+                limit: 10,
+                minLength: 3
+            }],
+            limit: 1,
+            delay: 100,
+            beautify: false
+        });
+
+        $('.validate').parsley();
+        $("form").on('submit', function(e) {
+            $.each($(".wysiwyg"), function(i,d) {
+                $("input[name='" + $(d).attr("id") + "']").val($(d).code());
+            });
+        });
+
+    });
+
+</script>
+{% endblock %}

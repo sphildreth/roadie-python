@@ -51,6 +51,7 @@ from resources.processingBase import ProcessorBase
 from searchEngines.imageSearcher import ImageSearcher
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
+from resources.userListApi import UserListApi
 from resources.processor import Processor
 from resources.logger import Logger
 from resources.id3 import ID3
@@ -2052,6 +2053,48 @@ def collection(collection_id):
                            notFoundEntryInfos=notFoundEntryInfos)
 
 
+@app.route("/collection/edit/<collection_id>", methods=['GET', 'POST'])
+@login_required
+def editCollection(collection_id):
+    try:
+        editCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+        if not editCollectionCollection:
+            return render_template('404.html'), 404
+        if request.method == 'GET':
+            return render_template('collectionEdit.html', collection=editCollectionCollection)
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            abort(400)
+        now = arrow.utcnow().datetime
+        form = request.form
+        editCollectionCollection.name = form['name']
+        editCollectionCollection.edition = form['edition']
+        editCollectionCollection.listInCSVFormat = form['listInCSVFormat']
+        editCollectionCollection.listInCSV = form['listInCSV']
+        editCollectionCollection.description = form['description']
+        editCollectionCollection.isLocked = False
+        if 'isLocked' in form and form['isLocked'] == "on":
+            editCollectionCollection.isLocked = True
+        editCollectionCollection.user = None
+        if 'user' in form:
+            maintainer = dbSession.query(User).filter(User.username == form['user']).first()
+            if maintainer:
+                editCollectionCollection.user = maintainer
+        editCollectionCollection.urls = []
+        if 'urlsTokenfield' in form:
+            formUrls = form['urlsTokenfield']
+            if formUrls:
+                for url in formUrls.split('|'):
+                    editCollectionCollection.urls.append(url)
+        editCollectionCollection.lastUpdated = now
+        dbSession.commit()
+        flash('Collection Edited successfully')
+    except:
+        logger.exception("Error Editing Collection")
+        dbSession.rollback()
+    return redirect("/collection/" + collection_id)
+
+
 @app.route("/collection/play/<collection_id>")
 @login_required
 def playCollection(collection_id):
@@ -2076,7 +2119,7 @@ def playCollection(collection_id):
 def updateAllCollections():
     try:
         i = CollectionImporter(conn, dbSession, False)
-        for updateCollectionCollection in dbSession.query(Collection).filter(
+        for updateCollectionCollection in dbSession.query(Collection).filter(Collection.isLocked == 0).filter(
                                 Collection.listInCSV is not None and Collection.listInCSVFormat is not None):
             i.importCollection(updateCollectionCollection)
         session['notFoundEntryInfos'] = i.notFoundEntryInfo
@@ -2218,6 +2261,7 @@ class WebSocket(WebSocketHandler):
 api.add_resource(ArtistListApi, '/api/v1.0/artists', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 
 login_manager = LoginManager()
 login_manager.init_app(app)

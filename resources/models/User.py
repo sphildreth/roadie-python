@@ -52,7 +52,7 @@ class User(Base):
         return UserRole(name="Admin") in self.roles or UserRole(name="Editor") in self.roles
 
     def __repr__(self):
-        return '<User %r>' % self.username
+        return self.username
 
     def __unicode__(self):
         return self.username

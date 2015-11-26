@@ -20,11 +20,16 @@
         </div>
         {% if current_user.is_editor() %}
         <div class="btn-group">
-            <a href="/admin/collection/edit/?id={{ collection.id }}&amp;url=/collection/{{ collection.roadieId }}"
+            <a href="/collection/edit/{{ collection.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            {% if not collection.isLocked %}
             <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
             {% if collection.listInCSVFormat and collection.listInCSV %}
             <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
+            {% endif %}
+            {% endif %}
+            {% if collection.isLocked %}
+            <span class="edit-locked label label-danger"><i class="fa fa-lock fa-2x" title="Collection Is Locked"></i></span>
             {% endif %}
         </div>
         {% endif %}
@@ -106,6 +111,9 @@
     </div>
     {% endif %}
     <div class="row missing bordered">
+    </div>
+    <div class="meta pull-right">
+        <p><span class="label label-info">Last Modified: {{ (collection.lastUpdated or collection.createdDate)|format_datetime_for_user(user=g.user) }}</span></p>
     </div>
 </div>
 {% endblock %}
