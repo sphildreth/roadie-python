@@ -316,6 +316,7 @@
                 var releaseName = $r.text();
                 showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
                 $r.addClass("label-danger").removeClass("label-default");
+
             }
         });
     };
@@ -325,6 +326,7 @@
         if(!r) {
             showInsaneMessage("Found Invalid Releases");
         }
+        return r;
     };
 
     $(function() {
