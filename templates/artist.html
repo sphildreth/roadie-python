@@ -138,7 +138,7 @@
         <div class="col-md-3">
             <div>
                 <h4><span class="label label-primary">Artist Type</span></h4>
-                <span class="label label-default">{{ artist.artistType }}</span>
+                <span class="label label-default artist-type">{{ artist.artistType }}</span>
             </div>
             <div>
                 <h4><span class="label label-primary">MusicBrainz Id</span></h4>
@@ -210,7 +210,13 @@
             <h4><span class="label label-primary">Urls</span></h4>
             <ul class="urls">
                 {% for url in artist.urls %}
-                <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
+                    <li>
+                        <a href="{{ url }}" target="_blank"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{url }}">
+                            <span class="label label-default">{{ url }}</span>
+                        </a>
+                    </li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -535,7 +541,13 @@
         });
 
         $("#searchInternetArtst").on("click", function() {
-            roadieLibrary.doInternetSearch($("span.artist-name").text() + " Band");
+            var type = $(".artist-type").text();
+            if(type === 'Person') {
+                type = ' artist';
+            } else {
+                type = ' band';
+            }
+            roadieLibrary.doInternetSearch($("span.artist-name").text() + type);
         });
 
         $("div.release").on("dragstart", function(e) {

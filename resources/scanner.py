@@ -11,8 +11,9 @@ from resources.processingBase import ProcessorBase
 
 
 class Scanner(ProcessorBase):
-    def __init__(self, config, dbConn, dbSession, readOnly):
+    def __init__(self, config, dbConn, dbSession, artistFactory, readOnly):
         self.config = config
+        self.artistFactory = artistFactory
         self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
         self.logger = Logger()
@@ -177,6 +178,10 @@ class Scanner(ProcessorBase):
                         track.trackNumber = id3.track
                         track.duration = int(id3.length) * 1000
                         track.status = 1
+                        if id3.hasTrackArtist():
+                            trackArtist = self.artistFactory.get(id3.getArtist())
+                            if trackArtist:
+                                track.artistId = trackArtist.id
                         track.tags = []
                         track.partTitles = []
                         track.alternateNames = []

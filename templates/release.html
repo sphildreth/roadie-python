@@ -60,7 +60,7 @@
         </div>
         {% if current_user.is_editor() %}
         <div class="btn-group">
-            <a href="/admin/release/edit/?id={{ release.id }}&amp;url=/release/{{ release.roadieId }}"
+            <a href="/release/edit/{{ release.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
             {% if release.artist.isLocked == False %}
@@ -229,7 +229,7 @@
                 <ul class="no-list-style">
                     {% for collectionRelease in collectionReleases|sort(attribute='listNumber') %}
                     <li>
-                        <a href="/collection/{{ collectionRelease.roadieId }}">
+                        <a href="/collection/{{ collectionRelease.collectionReleases.roadieId }}">
                             <span class="label label-{{ 'success' if collectionRelease.listNumber == 1 else 'primary'}}">{{ '%03d' % collectionRelease.listNumber  }}</span>
                             <span data-toggle="tooltip" data-placement="top"
                                   title="{{ collectionRelease.collectionReleases.name }}"
@@ -284,7 +284,13 @@
                 <h4><span class="label label-primary">Urls</span></h4>
                 <ul>
                     {% for url in release.urls %}
-                    <li><a href="{{ url }}" target="_blank"><span class="label label-default">{{ url }}</span></a></li>
+                    <li>
+                        <a href="{{ url }}" target="_blank"
+                           data-toggle="tooltip" data-placement="top"
+                           title="{{url }}">
+                            <span class="label label-default">{{ url }}</span>
+                        </a>
+                    </li>
                     {% endfor %}
                 </ul>
             </div>

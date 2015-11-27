@@ -183,7 +183,7 @@ class Processor(ProcessorBase):
             forceFolderScan = kwargs.pop('forceFolderScan', False)
             isReleaseFolder = kwargs.pop('isReleaseFolder', False)
             self.logger.info("Processing Folder [" + inboundFolder + "] Flush [" + str(self.flushBefore) + "]")
-            scanner = Scanner(self.config, self.conn, self.session, self.readOnly)
+            scanner = Scanner(self.config, self.conn, self.session, self.artistFactory, self.readOnly)
             startTime = arrow.utcnow().datetime
             newMp3Folder = None
             lastID3Artist = None
@@ -228,11 +228,11 @@ class Processor(ProcessorBase):
                             else:
                                 foundMp3Files += 1
                                 # Get Artist
-                                if lastID3Artist != id3.artist:
+                                if lastID3Artist != id3.getArtist():
                                     artist = None
                                 if not artist:
-                                    lastID3Artist = id3.artist
-                                    artist = self.artistFactory.get(id3.artist)
+                                    lastID3Artist = id3.getArtist()
+                                    artist = self.artistFactory.get(id3.getArtist())
                                 if artist and artist.isLocked:
                                     self.logger.debug(
                                         "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
@@ -251,7 +251,7 @@ class Processor(ProcessorBase):
                                         self.session.commit()
                                 if not artist:
                                     self.logger.warn(
-                                        "! Unable to Find Artist [" + id3.artist + "] for Mp3 [" + printableMp3 + "]")
+                                        "! Unable to Find Artist [" + id3.getArtist() + "] for Mp3 [" + printableMp3 + "]")
                                     continue
                                 # Get the Release
                                 if lastID3Album != id3.album:

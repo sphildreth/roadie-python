@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.Release import Release
+from resources.models.Track import Track
 from resources.models.UserArtist import UserArtist
 from resources.models.Image import Image
 
@@ -46,6 +47,8 @@ class Artist(Base):
     releases = relationship(Release, cascade="all, delete-orphan", backref="artist")
     images = relationship(Image, cascade="all, delete-orphan", backref="artist")
     genres = relationship(Genre, secondary=artistGenreTable, backref="artist")
+
+    artistTracks = relationship(Track, backref="artist")
 
     userRatings = relationship(UserArtist, cascade="all, delete-orphan", backref="artist")
 

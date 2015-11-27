@@ -2,6 +2,7 @@ import base64
 import os
 import string
 
+
 import mutagen
 from hsaudiotag import mpeg
 from mutagen.id3 import ID3 as mutagenID3, APIC, error
@@ -9,6 +10,7 @@ from mutagen.id3 import ID3NoHeaderError
 from mutagen.id3 import TIT2, TALB, TPE1, TPE2, TDRC, TRCK
 from mutagen.mp3 import MP3
 
+from resources.common import *
 from resources.logger import Logger
 
 
@@ -38,10 +40,17 @@ class ID3(object):
             return False
 
     def info(self):
-        return "--- IsValid: [" + str(self.isValid()) + "] Artist [" + self.artist + "], Year [" + \
-               str(self.year) + "], Album: [" + self.album + "], Disc: [" + str(self.disc) + \
-               "] Track [" + str(self.track).zfill(2) + "], Title [" + self.title + "], (" + \
-               str(self.bitrate) + "bps::" + str(self.length) + ")"
+        return "--- IsValid: [" + str(self.isValid()) + "] " + \
+               "Artist [" + str(self.getArtist()) + "] " + \
+               "HasTrackArtist [" + str(self.hasTrackArtist()) + "] " + \
+               "Artist (TPE1) [" + str(self.artist) + "], " + \
+               "Album Artist (TPE2) [" + str(self.albumArtist) + "], " + \
+               "Year [" + str(self.year) + "], " + \
+               "Album: [" + str(self.album) + "], " + \
+               "Disc: [" + str(self.disc) + "], " + \
+               "Track [" + str(self.track).zfill(2) + "], " + \
+               "Title [" + str(self.title) + "], " + \
+               "(" + str(self.bitrate) + "bps::" + str(self.length) + ")"
 
     def __str__(self):
         return str(self.artist) + "." + \
@@ -84,8 +93,11 @@ class ID3(object):
             tags = mutagenID3()
         tags["TIT2"] = TIT2(encoding=3, text=track.title)
         tags["TALB"] = TALB(encoding=3, text=release.title)
-        tags["TPE2"] = TPE2(encoding=3, text=release.artist.name)
-        tags["TPE1"] = TPE1(encoding=3, text=release.artist.name)
+        if track.artist:
+            tags["TPE2"] = TPE2(encoding=3, text=release.artist.name)
+            tags["TPE1"] = TPE1(encoding=3, text=track.artist.name)
+        else:
+            tags["TPE1"] = TPE1(encoding=3, text=release.artist.name)
         tags["TRCK"] = TRCK(encoding=3, text=str(track.trackNumber))
         if release.releaseDate:
             year = release.releaseDate.strftime('%Y')
@@ -97,9 +109,28 @@ class ID3(object):
                     tags.delall(u"COMM::'en'")
         tags.save(self.filename)
 
+    def getArtist(self):
+        """
+        Return the artist to use for this track be it Artist ("TPE1") or Album Artist ("TPE2")
+        :param self:
+        :return: str
+        """
+        artist = (self.artist or '').strip()
+        albumArtist = (self.albumArtist or '').strip()
+        return albumArtist or artist
+
+    def hasTrackArtist(self):
+        artist = (self.artist or '').strip()
+        albumArtist = (self.albumArtist or '').strip()
+        if albumArtist and not isEqual(artist, albumArtist):
+            return True
+        return False
+
+
     def _load(self, filename, config):
         self.dirty = False
         self.artist = ''
+        self.albumArtist = ''
         self.album = ''
         self.track = ''
         self.title = ''
@@ -119,6 +150,10 @@ class ID3(object):
             comments.append('')
             self.album = string.capwords(short_tags.get('album', [''])[0])
             self.artist = string.capwords(short_tags.get('artist', [''])[0])
+            try:
+                self.albumArtist = full_tags['TPE2'].text[0]
+            except:
+                pass
             self.duration = "%u:%.2d" % (full_tags.info.length / 60, full_tags.info.length % 60)
             trackNumber = short_tags.get('tracknumber', [''])[0]
             self.track = 0

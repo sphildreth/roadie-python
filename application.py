@@ -52,6 +52,8 @@ from searchEngines.imageSearcher import ImageSearcher
 from resources.releaseListApi import ReleaseListApi
 from resources.trackListApi import TrackListApi
 from resources.userListApi import UserListApi
+from resources.genreListApi import GenreListApi
+from resources.labelListApi import LabelListApi
 from resources.processor import Processor
 from resources.logger import Logger
 from resources.id3 import ID3
@@ -711,11 +713,12 @@ def editArtist(artist_id):
                 artist.isniList = []
                 for isni in formIsniTokenfield.split('|'):
                     artist.isniList.append(isni)
+        # TODO Associated Artists
         artist.lastUpdated = now
         dbSession.commit()
         flash('Artist Edited successfully')
     except:
-        logger.exception("Error Setting Artist Rating")
+        logger.exception("Error Editing Artist")
         dbSession.rollback()
     return redirect("/artist/" + artist_id)
 
@@ -1331,6 +1334,123 @@ def releaseDetail(roadieId):
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
+
+
+@app.route("/release/edit/<roadieId>", methods=['GET', 'POST'])
+@login_required
+def editRelease(roadieId):
+    try:
+        release = getRelease(roadieId)
+        if not release:
+            return render_template('404.html'), 404
+        if request.method == 'GET':
+            return render_template('releaseEdit.html', release=release)
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            abort(400)
+        processorBase = ProcessorBase(config)
+        now = arrow.utcnow().datetime
+        form = request.form
+        formFiles = request.files.getlist("fileinput[]")
+        if formFiles:
+            for uploadedFile in formFiles:
+                if uploadedFile.filename:
+                    # Resize to maximum image size and convert to JPEG
+                    img = PILImage.open(io.BytesIO(uploadedFile.read())).convert('RGB')
+                    img.resize(thumbnailSize)
+                    b = io.BytesIO()
+                    img.save(b, "JPEG")
+                    image = Image()
+                    image.status = 2
+                    image.releaseId = release.id
+                    image.roadieId = str(uuid.uuid4())
+                    image.image = b.getvalue()
+                    image.signature = image.averageHash()
+                    dbSession.add(image)
+        originalReleaseYear = release.releaseDate.strftime('%Y')
+        originalReleaseFolder = processorBase.albumFolder(release.artist, originalReleaseYear, release.title)
+        originalTitle = release.title
+        release.isLocked = False
+        if 'isLocked' in form and form['isLocked'] == "on":
+            release.isLocked = True
+        release.title = form['title']
+        if not isEqual(originalTitle, release.title):
+            # TODO Update tracks with new title
+            pass
+        release.releaseDate = parseDate(form['releaseDate'])
+        releaseYear = release.releaseDate.strftime('%Y')
+        releaseFolder = processorBase.albumFolder(release.artist, releaseYear, release.title)
+        if not isEqual(originalReleaseFolder, releaseFolder):
+            for src_dir, dirs, files in os.walk(originalReleaseFolder):
+                dst_dir = src_dir.replace(originalReleaseFolder, releaseFolder, 1)
+                if not os.path.exists(dst_dir):
+                    os.mkdir(dst_dir)
+                for file_ in files:
+                    src_file = os.path.join(src_dir, file_)
+                    dst_file = os.path.join(dst_dir, file_)
+                    if os.path.exists(dst_file):
+                        os.remove(dst_file)
+                    shutil.move(src_file, dst_dir)
+                if not os.listdir(src_dir):
+                    try:
+                        shutil.rmtree(src_dir)
+                    except:
+                        logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
+                        pass
+            if not os.listdir(originalReleaseFolder):
+                try:
+                    shutil.rmtree(originalReleaseFolder)
+                except:
+                    logger.warn("Unable to Remove Empty Folder [" + originalReleaseFolder + "]")
+                    pass
+            dbOriginalReleaseFolder = originalReleaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+            dbReleaseFolder = releaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+            for media in release.media:
+                for track in media.tracks:
+                    track.filePath = track.filePath.replace(dbOriginalReleaseFolder, dbReleaseFolder, 1)
+                    track.lastUpdated = now
+        release.releaseType = form['releaseType']
+        release.musicBrainzId = form['musicBrainzId']
+        release.iTunesId = form['iTunesId']
+        release.amgId = form['amgId']
+        release.spotifyId = form['spotifyId']
+        release.lastFMId = form['lastFMId']
+        release.lastFMSummary = form['lastFMSummary']
+        formProfile = form['profile']
+        if formProfile:
+            release.profile = formProfile.strip()
+        release.releaseType = form['releaseType']
+        release.tags = []
+        if 'tagsTokenfield' in form:
+            formtags = form['tagsTokenfield']
+            if formtags:
+                for tag in formtags.split('|'):
+                    release.tags.append(tag)
+        release.alternateNames = []
+        if not isEqual(originalTitle, release.title):
+            release.alternateNames.append(originalTitle)
+        if 'alternateNamesTokenfield' in form:
+            formAlternateNames = form['alternateNamesTokenfield']
+            if formAlternateNames:
+                for alternateName in formAlternateNames.split('|'):
+                    if not isEqual(originalTitle, alternateName):
+                        release.alternateNames.append(alternateName)
+        release.urls = []
+        if 'urlsTokenfield' in form:
+            formUrls = form['urlsTokenfield']
+            if formUrls:
+                for url in formUrls.split('|'):
+                    release.urls.append(url)
+        release.lastUpdated = now
+        # TODO genres
+        # TODO artistId
+        # TODO releaseLabels
+        dbSession.commit()
+        flash('Release Edited successfully')
+    except:
+        logger.exception("Error Editing Release")
+        dbSession.rollback()
+    return redirect("/release/" + roadieId)
 
 
 @app.route("/artist/play/<artist_id>/<doShuffle>")
@@ -2262,6 +2382,8 @@ api.add_resource(ArtistListApi, '/api/v1.0/artists', resource_class_kwargs={'dbC
 api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(GenreListApi, '/api/v1.0/genres', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(LabelListApi, '/api/v1.0/labels', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 
 login_manager = LoginManager()
 login_manager.init_app(app)

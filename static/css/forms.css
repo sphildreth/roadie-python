@@ -62,3 +62,7 @@ textarea.parsley-error {
     width: 100%;
     min-height: 300px;
 }
+
+body.roadie .note-editor .panel-body {
+    min-height: 50px;
+}

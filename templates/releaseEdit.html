@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}{{ 'Edit: ' + artist.name }}{% endblock %}
+{% block title %}{{ 'Edit: ' + release.title }}{% endblock %}
 {% block header_content %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}">
@@ -9,74 +9,51 @@
 
 {% endblock %}
 {% block body_content %}
-<div class="artist-edit-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
-    <form id="demo-form2" enctype="multipart/form-data" action="/artist/edit/{{ artist.roadieId }}" method="post" class="form-horizontal form-label-left validate">
+<div class="artist-edit-container" data-artist-id="{{release.roadieId }}" data-db-id="{{release.id }}">
+    <form id="demo-form2" enctype="multipart/form-data" action="/release/edit/{{release.roadieId }}" method="post" class="form-horizontal form-label-left validate">
         <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
         <div class="details bordered">
             <div class="form-group">
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isLocked">Locked</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="isLocked" name="isLocked" type="checkbox" class="bootswitch" data-off-text="No"
-                           data-on-text="Yes" {{ 'checked' if artist.isLocked else '' }}>
+                           data-on-text="Yes" {{ 'checked' if release.isLocked else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isVirtual">Is Virtual</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="isVirtual" name="isVirtual" type="checkbox" class="bootswitch" data-off-text="No"
+                           data-on-text="Yes" {{ 'checked' if release.isVirtual else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12"
+                       for="title">Title <span class="required">*</span>
+                </label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="title" name="title"
+                           required="required"
+                           data-parsley-maxlength="250"
+                           class="form-control col-md-7 col-xs-12" value="{{release.title }}">
                 </div>
             </div>
             <div class="form-group">
                 <label class="control-label col-md-3 col-sm-3 col-xs-12" for="releaseType">Type <span class="required">*</span>
                 </label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <select id="releaseType" name="artistType" class="select2 form-control">
-                        <option value="Person" {{ 'selected="selected"' if artist.artistType == 'Person' else '' }}>Person</option>
-                        <option value="Group" {{ 'selected="selected"' if artist.artistType == 'Group' else '' }}>Group</option>
-                        <option value="Orchestra" {{ 'selected="selected"' if artist.artistType == 'Orchestra' else '' }}>Orchestra</option>
-                        <option value="Choir" {{ 'selected="selected"' if artist.artistType == 'Choir' else '' }}>Choir</option>
-                        <option value="Character" {{ 'selected="selected"' if artist.artistType == 'Character' else '' }}>Character</option>
-                        <option value="Other" {{ 'selected="selected"' if artist.artistType == 'Other' or not artist.artistType else '' }}>Other</option>
+                    <select id="releaseType" name="releaseType" class="select2 form-control">
+                        <option value="Album" {{ 'selected="selected"' if release.releaseType == 'Album' else '' }}>Album</option>
+                        <option value="EP" {{ 'selected="selected"' if release.releaseType == 'EP' else '' }}>EP</option>
+                        <option value="Single" {{ 'selected="selected"' if release.releaseType == 'Single' else '' }}>Single</option>
+                        <option value="Unknown" {{ 'selected="selected"' if release.releaseType == 'Unknown' else '' }}>Unknown</option>
                     </select>
                 </div>
             </div>
             <div class="form-group">
-                <label class="control-label col-md-3 col-sm-3 col-xs-12"
-                       for="name">Name <span class="required">*</span>
-                </label>
+                <label for="releaseDate" class="control-label col-md-3 col-sm-3 col-xs-12">Release Date</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input type="text" id="name" name="name"
-                           required="required"
-                           data-parsley-maxlength="250"
-                           class="form-control col-md-7 col-xs-12" value="{{ artist.name }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="sortName">Sort Name</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input type="text" id="sortName" name="sortName"
-                           data-parsley-maxlength="250"
-                           class="form-control col-md-7 col-xs-12" value="{{ artist.sortName or '' }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="realName" class="control-label col-md-3 col-sm-3 col-xs-12">Real Name</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="realName" class="form-control col-md-7 col-xs-12"
-                           data-parsley-maxlength="500"
-                           type="text" name="realName" value="{{ artist.realName or '' }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="birthDate" class="control-label col-md-3 col-sm-3 col-xs-12">Date Of Birth</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="birthDate" name="birthDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.birthDate or '' }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="beginDate" class="control-label col-md-3 col-sm-3 col-xs-12">Begin Date</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="beginDate" name="beginDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.beginDate or '' }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="endDate" class="control-label col-md-3 col-sm-3 col-xs-12">End Date</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input id="endDate" name="endDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{ artist.endDate or '' }}">
+                    <input id="releaseDate" name="releaseDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{release.releaseDate or '' }}">
                 </div>
             </div>
         </div>
@@ -85,16 +62,16 @@
                 <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Thumbnail</h5>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <div class="thumbnail-container">
-                        <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}"/>
+                        <img class="thumb " src="/images/release/thumbnail/{{release.roadieId }}" alt="{{release.title }}"/>
                     </div>
                 </div>
             </div>
             <div class="form-group images">
                 <h5 class="control-label col-md-3 col-sm-3 col-xs-12">Images</h5>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                    {% for image in artist.images %}
+                    {% for image in release.images %}
                         <div class="image-container pull-left" data-image-id="{{ image.roadieId }}">
-                            <img src="/images/artist/{{ image.roadieId }}/512/512" alt="Image"/>
+                            <img src="/images/release/{{ image.roadieId }}/512/512" alt="Image"/>
                         </div>
                     {% endfor %}
                 </div>
@@ -109,27 +86,19 @@
         </div>
         <div class="lists bordered">
             <div class="form-group">
-                <label for="associatedArtistsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Associated Artists</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
-                       id="associatedArtistsTokenfield" name="alternateNamesTokenfield"
-                   value="{{ artist.associatedartists|join('|') if artist.associatedartists else '' }}" >
-                </div>
-            </div>
-            <div class="form-group">
                 <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="alternateNamesTokenfield" name="alternateNamesTokenfield"
-                   value="{{ artist.alternateNames|sort|join('|') if artist.alternateNames else '' }}" >
+                   value="{{release.alternateNames|sort|join('|') if release.alternateNames else '' }}" >
                 </div>
             </div>
             <div class="form-group">
-                <label for="isniTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">ISNI</label>
+                <label for="genresTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Genres</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
-                       id="isniTokenfield" name="isniTokenfield"
-                   value="{{ artist.isni|sort|join('|') if artist.isni else '' }}" >
+                       id="genresTokenfield" name="genresTokenfield"
+                   value="{{release.genres|join('|') if release.genres else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -137,7 +106,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="tagsTokenfield" name="tagsTokenfield"
-                   value="{{ artist.tags|sort|join('|') if artist.tags else '' }}" >
+                   value="{{release.tags|sort|join('|') if release.tags else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -145,26 +114,17 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="urlsTokenfield" name="urlsTokenfield"
-                   value="{{ artist.urls|sort|join('|') if artist.urls else '' }}" >
+                   value="{{release.urls|sort|join('|') if release.urls else '' }}" >
                 </div>
             </div>
         </div>
         <div class="text-areas bordered">
             <div class="form-group">
-                <label for="bioContext" class="control-label col-md-3 col-sm-3 col-xs-12">Biography</label>
-                <div class="col-md-6 col-sm-6 col-xs-12">
-                    <input name="bioContext" type="hidden" />
-                    <div id="bioContext" class="wysiwyg">
-                        {{ (artist.bioContext or '')|safe }}
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
                 <label for="profile" class="control-label col-md-3 col-sm-3 col-xs-12">Profile</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input name="profile" type="hidden" />
                     <div id="profile" class="wysiwyg">
-                        {{ (artist.profile or '')|safe }}
+                        {{ (release.profile or '')|safe }}
                     </div>
                 </div>
             </div>
@@ -175,7 +135,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="musicBrainzId" name="musicBrainzId"
                            data-parsley-maxlength="100"
-                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.musicBrainzId or '' }}">
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{release.musicBrainzId or '' }}">
                 </div>
             </div>
             <div class="form-group">
@@ -183,7 +143,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="iTunesId" name="iTunesId"
                            data-parsley-maxlength="100"
-                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.iTunesId or '' }}">
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{release.iTunesId or '' }}">
                 </div>
             </div>
             <div class="form-group">
@@ -191,7 +151,7 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="amgId" name="amgId"
                            data-parsley-maxlength="100"
-                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.amgId or '' }}">
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{release.amgId or '' }}">
                 </div>
             </div>
             <div class="form-group">
@@ -199,14 +159,33 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="spotifyId" name="spotifyId"
                            data-parsley-maxlength="100"
-                           class="form-control col-md-7 col-xs-12" type="text" value="{{ artist.spotifyId or '' }}">
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{release.spotifyId or '' }}">
                 </div>
             </div>
+            <div class="form-group">
+                <label for="lastFMId" class="control-label col-md-3 col-sm-3 col-xs-12">Last FM Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="lastFMId" name="lastFMId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{release.lastFMId or '' }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="lastFMSummary" class="control-label col-md-3 col-sm-3 col-xs-12">Last FM Summary</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input name="lastFMSummary" type="hidden" />
+                    <div id="lastFMSummary" class="wysiwyg">
+                        {{ (release.lastFMSummary or '')|safe }}
+                    </div>
+                </div>
+            </div>
+
         </div>
         <div class="ln_solid"></div>
         <div class="form-group">
             <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
-                <a href="/artist/{{ artist.roadieId }}"class="btn btn-primary">Cancel</a>
+                <a href="/release/{{ release.roadieId }}"class="btn btn-primary">Cancel</a>
                 <button type="submit" class="btn btn-success">Submit</button>
             </div>
         </div>
@@ -222,7 +201,7 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
 
 <script>
-    var artistId = '{{ artist.roadieId }}';
+    var artistId = '{{release.roadieId }}';
 
     var previewImage = function (file) {
         var galleryId = "gallery";

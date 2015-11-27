@@ -33,6 +33,10 @@ class Track(Base):
     duration = Column(Integer)
     tags = Column(ScalarListType(separator="|"))
 
+    # This is the TPE1 ("Artist") if different than TPE2 ("Album Artist")
+    # An example would be TPE2 of "Titantic: Music from the Motion Picture" and TPE1 of "Celine Dion" for Track #14
+    artistId = Column(Integer, ForeignKey("artist.id"))
+
     releaseMediaId = Column(Integer, ForeignKey("releasemedia.id"))
     playlists = relationship(PlaylistTrack, secondary=trackPlaylistTrackTable, backref="track")
     userRatings = relationship(UserTrack, backref="track")
