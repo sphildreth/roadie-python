@@ -115,14 +115,16 @@ class ID3(object):
         :param self:
         :return: str
         """
-        artist = (self.artist or '').strip()
-        albumArtist = (self.albumArtist or '').strip()
-        return albumArtist or artist
+        if self.hasTrackArtist():
+            return (self.albumArtist or '').strip()
+        return (self.artist or '').strip()
 
     def hasTrackArtist(self):
+        # Artist is always set
         artist = (self.artist or '').strip()
+        # Album Artist is sometimes set and most of the times when set its the same as the Artist
         albumArtist = (self.albumArtist or '').strip()
-        if artist and not isEqual(artist, albumArtist):
+        if albumArtist and not isEqual(artist, albumArtist):
             return True
         return False
 
