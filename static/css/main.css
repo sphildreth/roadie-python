@@ -392,6 +392,11 @@ ul.urls li {
     display:inline-block;
 }
 
+span.track-artist-name {
+    width: 50%;
+    text-align: left;
+    display:inline-block;
+}
 
 /* Random Release Related */
 .random-releases-container {
@@ -661,6 +666,12 @@ img.artist-thumb, img.release-thumb {
     max-width: 125px;
     height: auto;
 }
+
+img.thumb.track-artist {
+    max-height: 40px;
+    max-width: 40px;
+}
+
 
 .home-container .recently-played-container .user-rating-container {
     margin-left: 5px;

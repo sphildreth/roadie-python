@@ -341,8 +341,10 @@
                     {% endif %}
                     {% if track.artist and track.artist.id != release.artist.id %}
                     <a href="/artist/{{ track.artist.roadieId }}">
+                        <img class="label-thumb thumb track-artist" src="/images/artist/thumbnail/{{ track.artist.roadieId }}"
+                             alt="{{ track.artist.name }}"/>
                         <span data-toggle="tooltip" data-placement="top" title="{{ track.artist.name }}"
-                              class="title label label-default">{{ track.artist.name }}</span>
+                              class="track-artist-name label label-default">{{ track.artist.name }}</span>
                     </a>
                     {% endif %}
                 </div>
