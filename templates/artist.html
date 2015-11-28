@@ -170,10 +170,12 @@
             </div>
             {% endif %}
         </div>
-        <div class="col-md-3 associated-artists">
-            {% if artist.associatedArtists %}
+    </div>
+    {% if artist.associatedArtists %}
+    <div class="row lists bordered">
+        <div class="col-md-12 associated-artists">
             <h4><span class="label label-primary">Associated Artists</span></h4>
-            <ul>
+            <ul class="multi-column four-column">
                 {% for artist in artist.associatedArtists|sort(attribute='name') %}
                 <li>
                     <a href="/artist/{{ artist.roadieId }}">
@@ -186,26 +188,53 @@
                 </li>
                 {% endfor %}
             </ul>
-            {% endif %}
         </div>
     </div>
-    {% if artist.alternateNames or artist.tags or artist.urls %}
+    {% endif %}
+    {% if artist.associatedWithArtists %}
     <div class="row lists bordered">
-        <div class="col-md-4">
+        <div class="col-md-12 associated-artists">
+            <h4><span class="label label-primary">Associated With Artists</span></h4>
+            <ul class="multi-column four-column">
+                {% for artist in artist.associatedWithArtists|sort(attribute='name') %}
+                <li>
+                    <a href="/artist/{{ artist.roadieId }}">
+                        <div class="thumbnail-container pull-left">
+                            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}"
+                                 alt="{{ artist.name }}"/>
+                        </div>
+                        <h3><span class="label label-default">{{ artist.name }}</span></h3>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+    {% if artist.alternateNames or artist.tags or artist.genres or artist.urls %}
+    <div class="row lists bordered">
+        <div class="col-md-3">
             {% if artist.alternateNames %}
             <h4><span class="label label-primary">Alternate Names</span></h4>
             <input type="text" disabled class="form-control tokenfield-readonly" id="alternateNamesTokenfield"
                    value="{{ artist.alternateNames|sort|join('|') }}" />
             {% endif %}
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            {% if artist.genres %}
+            <h4><span class="label label-primary">Genres</span></h4>
+            <input type="text" disabled class="form-control tokenfield-readonly" id="genreTokenfield"
+                   value="{{ artist.genres|join('|') }}"/>
+            {% endif %}
+        </div>
+        <div class="col-md-3">
             {% if artist.tags %}
             <h4><span class="label label-primary">Tags</span></h4>
             <input type="text" disabled class="form-control tokenfield-readonly" id="tagTokenfield"
                    value="{{ artist.tags|sort|join('|') }}"/>
             {% endif %}
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             {% if artist.urls %}
             <h4><span class="label label-primary">Urls</span></h4>
             <ul class="urls">

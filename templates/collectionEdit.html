@@ -100,31 +100,12 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bloodhound-adapters.js') }}"></script>
 
 <script>
     var collectionId = '{{ collection.roadieId }}';
 
     $(function() {
-
-        var bhUsers = new Bloodhound({
-            remote: {
-                url: '/api/v1.0/users?filter=%QUERY',
-                wildcard: '%QUERY',
-                filter: function(x) {
-                    result = [];
-                    $.each(x.rows, function(i,d) {
-                        result.push({
-                            id: d.roadieId,
-                            username: d.username
-                        });
-                    });
-                    return result;
-                }
-            },
-            datumTokenizer: Bloodhound.tokenizers.obj.whitespace('username'),
-            queryTokenizer: Bloodhound.tokenizers.whitespace
-        });
-        bhUsers.initialize();
 
         $(".bootswitch").bootstrapSwitch();
         $(".select2").select2();

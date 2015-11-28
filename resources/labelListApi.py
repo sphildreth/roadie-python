@@ -26,7 +26,7 @@ class LabelListApi(Resource):
         get_current = args.current or 1
         get_limit = args.limit or 10
         get_skip = args.skip or 0
-        sort = args.sort or 'username'
+        sort = args.sort or 'name'
         order = args.order or 'asc'
         if order != 'asc':
             order = "-"

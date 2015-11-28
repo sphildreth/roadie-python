@@ -10,6 +10,7 @@
 {% endblock %}
 {% block body_content %}
 <div class="artist-edit-container" data-artist-id="{{release.roadieId }}" data-db-id="{{release.id }}">
+    <h3>Editing: {{ release.title }}</h3>
     <form id="demo-form2" enctype="multipart/form-data" action="/release/edit/{{release.roadieId }}" method="post" class="form-horizontal form-label-left validate">
         <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
         <div class="details bordered">
@@ -25,6 +26,14 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="isVirtual" name="isVirtual" type="checkbox" class="bootswitch" data-off-text="No"
                            data-on-text="Yes" {{ 'checked' if release.isVirtual else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="artistTokenField" class="control-label col-md-3 col-sm-3 col-xs-12">Artist</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="artistTokenField" name="artistTokenField"
+                   value="{{ release.artist.name }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -54,6 +63,33 @@
                 <label for="releaseDate" class="control-label col-md-3 col-sm-3 col-xs-12">Release Date</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                     <input id="releaseDate" name="releaseDate" class="date-picker form-control col-md-7 col-xs-12" type="text" value="{{release.releaseDate or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="bordered track-media-details">
+            <div class="form-group">
+                <div class="col-md-offset-3 col-sm-offset-3 col-xs-offset-12  col-md-6 col-sm-6 col-xs-12">
+                <a class="btn btn-warning" href="javascript:autoFixTrackMediaDetails();"><i class="fa fa-magic"></i> Auto Fix</a>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="rating">Rating</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="rating" name="rating" type="number" min="0" max="5" value="{{ release.rating }}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="mediaCount">Media Count</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="mediaCount" name="mediaCount" type="number" min="0" max="99" value="{{ release.mediaCount }}" />
+                    <span class="label label-info media-count-found" data-count="{{ releaseMediaCount }}">Found [{{ releaseMediaCount }}]</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="trackCount">Track Count</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="trackCount" name="trackCount" type="number" min="0" max="999" value="{{ release.trackCount }}" />
+                    <span class="label label-info track-count-found" data-count="{{ trackCount }}">Found [{{ trackCount }}]</span>
                 </div>
             </div>
         </div>
@@ -88,9 +124,9 @@
             <div class="form-group">
                 <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="alternateNamesTokenfield" name="alternateNamesTokenfield"
-                   value="{{release.alternateNames|sort|join('|') if release.alternateNames else '' }}" >
+                   value="{{ release.alternateNames|sort|join('|') if release.alternateNames else '' }}" >
                 </div>
             </div>
             <div class="form-group">
@@ -98,23 +134,62 @@
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
                        id="genresTokenfield" name="genresTokenfield"
-                   value="{{release.genres|join('|') if release.genres else '' }}" >
+                   value="{{ release.genres|join('|') if release.genres else '' }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="tagsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Tags</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="tagsTokenfield" name="tagsTokenfield"
-                   value="{{release.tags|sort|join('|') if release.tags else '' }}" >
+                   value="{{ release.tags|sort|join('|') if release.tags else '' }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="urlsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Urls</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="urlsTokenfield" name="urlsTokenfield"
-                   value="{{release.urls|sort|join('|') if release.urls else '' }}" >
+                   value="{{ release.urls|sort|join('|') if release.urls else '' }}" >
+                </div>
+            </div>
+        </div>
+        <div class="labels-container bordered">
+            <div class="form-group">
+                <div class="col-md-offset-3 col-sm-offset-3 col-xs-offset-12  col-md-6 col-sm-6 col-xs-12">
+                    <a class="btn btn-primary" href="javascript:addLabelToRelease();"><i class="fa fa-plus"></i> Add Label</a>
+                    <a class="btn btn-primary" href="javascript:removeAllLabelsFromRelease();"><i class="fa fa-trash-o"></i> Remove All</a>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12">Label Info</label>
+                <div class="release-label-container col-md-6 col-sm-6 col-xs-12">
+                    <table id="releaseLabelTable" class="table-track-info table table-striped table-condensed table-responsive">
+                        <thead>
+                        <tr>
+                            <td>Catalog Number</td>
+                            <td>Begin Date</td>
+                            <td>End Date</td>
+                            <td>Label</td>
+                            <td>Action</td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for releaseLabel in release.releaseLabels %}
+                        <tr data-releaselabel-id="{{ releaseLabel.roadieId }}">
+                            <td class="catalogNumber">{{ releaseLabel.catalogNumber or '' }}</td>
+                            <td class="beginDate">{{ releaseLabel.beginDate or '' }}</td>
+                            <td class="endDate">{{ releaseLabel.endDate or '' }}</td>
+                            <td class="labelName">{{ releaseLabel.label.name or '' }}</td>
+                            <td>
+                                <a href="javascript:editReleaseLabel('{{ releaseLabel.roadieId }}');" title="Edit Label Info"><i class="fa fa-edit"></i></a>
+                                <a href="javascript:deleteReleaseLabel('{{ releaseLabel.roadieId }}');" title="Remove Label Info"><i class="fa fa-trash-o"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <input type="hidden" id="releaseLabelInfos" name="releaseLabelInfos" value="" >
                 </div>
             </div>
         </div>
@@ -199,9 +274,107 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bloodhound-adapters.js') }}"></script>
 
 <script>
     var artistId = '{{release.roadieId }}';
+    var newId = 0;
+
+
+    var autoFixTrackMediaDetails = function() {
+        $("#mediaCount").val($(".media-count-found").data('count'));
+        $("#trackCount").val($(".track-count-found").data('count'));
+    };
+
+    var removeAllLabelsFromRelease = function() {
+        bootbox.confirm("Continue To Remove All Release Labels From Release?", function(result) {
+            if(result) {
+                $("#releaseLabelTable tbody tr").remove();
+            }
+        });
+    };
+
+    var addLabelToRelease = function() {
+        showEditForReleaseLabel("Adding New Release Label", "", "", "", "", function(info) {
+            newId--;
+            var html = '<tr data-releaselabel-id="'+ newId + '"><td class="catalogNumber">' + info.catalogNumber + '</td>';
+            html += '<td class="beginDate">' + info.beginDate + '</td>';
+            html += '<td class="endDate">' + info.endDate + '</td>';
+            html += '<td class="labelName">' + info.labelName + '</td>';
+            html += '<td><a href="javascript:editReleaseLabel(' + newId + ');" title="Edit Label Info"><i class="fa fa-edit"></i></a><a href="javascript:deleteReleaseLabel(' + newId + ');" title="Remove Label Info"><i class="fa fa-trash-o"></i></a></td></tr>';
+            $("#releaseLabelTable").append(html);
+        });
+    };
+
+    var editReleaseLabel = function(id) {
+        var $tr = $("tr[data-releaselabel-id='" + id + "']");
+        if($tr) {
+            showEditForReleaseLabel("Editing Release Label",
+                                    $tr.find("td.catalogNumber").text(),
+                                    $tr.find("td.beginDate").text(),
+                                    $tr.find("td.endDate").text(),
+                                    $tr.find("td.labelName").text(), function(info) {
+                                        $tr.find("td.catalogNumber").text(info.catalogNumber);
+                                        $tr.find("td.beginDate").text(info.beginDate);
+                                        $tr.find("td.endDate").text(info.endDate);
+                                        $tr.find("td.labelName").text(info.labelName);
+                                    });
+        } else {
+            alert("Unable To Find Release Label [ " + id + "]!");
+        }
+    };
+
+    var deleteReleaseLabel = function(id) {
+        bootbox.confirm("Continue To Delete Release Label?", function(result) {
+            if(result) {
+                $("tr[data-releaselabel-id='" + id + "']").remove();
+            }
+        });
+    };
+
+    var showEditForReleaseLabel = function(bxTitle,catalogNumber,beginDate,endDate,labelName, callback) {
+        var html = '<div class="release-label-editing-container">';
+        html += '<div class="form-group">';
+        html += '<label for="editCatalogNumber" class="control-label">Catalog Number</label>';
+        html += '<input id="editCatalogNumber" class="form-control" type="text" value="' + catalogNumber + '">';
+        html += '</div>';
+        html += '<div class="form-group">';
+        html += '<label for="editBeginDate" class="control-label">Begin Date</label>';
+        html += '<input id="editBeginDate" class="form-control date-picker" type="text" value="' + beginDate + '">';
+        html += '</div>';
+        html += '<div class="form-group">';
+        html += '<label for="editEndDate" class="control-label">End Date</label>';
+        html += '<input id="editEndDate" class="form-control date-picker" type="text" value="' + endDate + '">';
+        html += '</div>';
+        html += '<div class="form-group">';
+        html += '<label for="editLabel" class="control-label">Label</label>';
+        html += '<input id="editLabel" class="form-control tokenfield" type="text" value="' + labelName + '">';
+        html += '</div></div>';
+        html += '<script>$(".release-label-editing-container .date-picker").datepicker({ format: "yyyy-mm-dd", clearBtn: true, autoclose: true, todayHighlight: true});';
+        html += '$("#editLabel").tokenfield({ typeahead: [null, { name: "labelApi", source: bhLabels, display: "name", limit: 10, minLength: 3 }], limit: 1, delay: 100, beautify: false });<\/script>';
+        bootbox.dialog({
+            buttons: {
+                cancel: {
+                    label: "Cancel",
+                    className: "btn-default"
+                },
+                save: {
+                    label: "Save",
+                    className: "btn-success",
+                    callback: function() {
+                        callback({
+                            'catalogNumber': $("#editCatalogNumber").val(),
+                            'beginDate': $("#editBeginDate").val(),
+                            'endDate': $("#editEndDate").val(),
+                            'labelName': $("#editLabel").val()
+                        });
+                    }
+                }
+            },
+            title: bxTitle,
+            message: html
+        });
+    };
 
     var previewImage = function (file) {
         var galleryId = "gallery";
@@ -240,7 +413,7 @@
             todayHighlight: true
         });
         $('.wysiwyg').summernote();
-        $(".tokenfield").tokenfield({
+        $(".auto-tokenfield").tokenfield({
             delimiter: '|',
             delay: 100,
             beautify: false,
@@ -251,11 +424,49 @@
                     event.preventDefault();
             });
         });
+
+        $("#genresTokenfield").tokenfield({
+            typeahead: [null, {
+                name: 'genreApi',
+                source: bhGenres,
+                display: 'name',
+                limit: 10,
+                minLength: 3
+            }],
+            delimiter: '|',
+            delay: 100,
+            beautify: false
+        });
+
+        $("#artistTokenField").tokenfield({
+            typeahead: [null, {
+                name: 'artistApi',
+                source: bhArtists,
+                display: 'name',
+                limit: 10,
+                minLength: 3
+            }],
+            limit: 1,
+            delay: 100,
+            beautify: false
+        });
+
         $('.validate').parsley();
         $("form").on('submit', function(e) {
             $.each($(".wysiwyg"), function(i,d) {
                 $("input[name='" + $(d).attr("id") + "']").val($(d).code());
             });
+            var releaseLabelData = [];
+            $.each($("#releaseLabelTable tbody tr"), function(i,d) {
+                var $tr = $(d);
+                releaseLabelData.push({
+                    'catalogNumber': $tr.find("td.catalogNumber").text(),
+                    'beginDate': $tr.find("td.beginDate").text(),
+                    'endDate': $tr.find("td.endDate").text(),
+                    'labelName':$tr.find("td.labelName").text()
+                });
+            });
+            $("#releaseLabelInfos").val(JSON.stringify(releaseLabelData));
         });
 
     });

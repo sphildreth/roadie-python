@@ -58,6 +58,12 @@ class Artist(Base):
                                       secondaryjoin="Artist.id==artistAssociation.c.associatedArtistId",
                                       backref="associatedArtists")
 
+    associated_with_artists = relationship("Artist",
+                                         secondary="artistAssociation",
+                                         primaryjoin="Artist.id==artistAssociation.c.associatedArtistId",
+                                         secondaryjoin="Artist.id==artistAssociation.c.artistId",
+                                         backref="associatedWithArtists")
+
     def __str__(self):
         return self.name
 

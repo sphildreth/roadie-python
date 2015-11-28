@@ -25,3 +25,7 @@ class Label(Base):
             self.musicBrainzId) + "], Name [" + self.name +
                 "AlternateNames [" + str(len(self.alternateNames or [])) + "], Tags [" + str(
             len(self.tags or [])) + "]").encode('ascii', 'ignore').decode('utf-8')
+
+    def __repr__(self):
+        return self.name
+

@@ -13,6 +13,10 @@ body.roadie .navbar-default {
 
 }
 
+body.roadie a {
+    text-decoration: none;
+}
+
 body.roadie .breadcrumb {
     height: 46px;
     padding: 4px;
@@ -286,8 +290,15 @@ ul.text-align-right {
 }
 
 ul.urls {
+    padding-left: 0;
     max-height: 250px;
     overflow: auto;
+}
+
+ul.urls li {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .release-info-container .row {
@@ -358,11 +369,6 @@ ul.urls {
     display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.artist-detail-container div.associated-artists li {
-    display: inline-block;
-    width: 100%;
 }
 
 .artist-detail-container span.folder-release-title {
@@ -839,4 +845,26 @@ div.insane-messages {
 
 .tt-suggestion p {
   margin: 0;
+}
+
+ul.multi-column {
+  width:100%;
+  margin-bottom:20px;
+  overflow:hidden;
+}
+ul.multi-column li {
+  float:left;
+  display:inline;
+}
+ul.two-column li  {
+    width:50%;
+}
+ul.three-column li {
+    width:33.333%;
+}
+ul.four-column li {
+    width:25%;
+}
+ul.six-column li {
+    width:16.666%;
 }

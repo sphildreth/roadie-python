@@ -339,6 +339,12 @@
                         {% endfor %}
                     </ul>
                     {% endif %}
+                    {% if track.artist %}
+                    <a href="/artist/{{ track.artist.roadieId }}">
+                        <span data-toggle="tooltip" data-placement="top" title="{{ track.artist.name }}"
+                              class="title label label-default">{{ track.artist.name }}</span>
+                    </a>
+                    {% endif %}
                 </div>
                 <div class="col-xs-1 col-sm-1 col-md-1">
                     <div class="dropdown">

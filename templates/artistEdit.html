@@ -10,6 +10,7 @@
 {% endblock %}
 {% block body_content %}
 <div class="artist-edit-container" data-artist-id="{{ artist.roadieId }}" data-db-id="{{ artist.id }}">
+    <h3>Editing: {{ artist.name }}</h3>
     <form id="demo-form2" enctype="multipart/form-data" action="/artist/edit/{{ artist.roadieId }}" method="post" class="form-horizontal form-label-left validate">
         <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
         <div class="details bordered">
@@ -112,22 +113,30 @@
                 <label for="associatedArtistsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Associated Artists</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
-                       id="associatedArtistsTokenfield" name="alternateNamesTokenfield"
-                   value="{{ artist.associatedartists|join('|') if artist.associatedartists else '' }}" >
+                       id="associatedArtistsTokenfield" name="associatedArtistsTokenfield"
+                   value="{{ artist.associatedArtists|join('|') if artist.associatedArtists else '' }}" >
                 </div>
             </div>
             <div class="form-group">
                 <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="alternateNamesTokenfield" name="alternateNamesTokenfield"
                    value="{{ artist.alternateNames|sort|join('|') if artist.alternateNames else '' }}" >
                 </div>
             </div>
             <div class="form-group">
-                <label for="isniTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">ISNI</label>
+                <label for="genresTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Genres</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
                 <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                       id="genresTokenfield" name="genresTokenfield"
+                   value="{{ artist.genres|join('|') if artist.genres else '' }}" >
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="isniTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">ISNI</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="isniTokenfield" name="isniTokenfield"
                    value="{{ artist.isni|sort|join('|') if artist.isni else '' }}" >
                 </div>
@@ -135,7 +144,7 @@
             <div class="form-group">
                 <label for="tagsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Tags</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="tagsTokenfield" name="tagsTokenfield"
                    value="{{ artist.tags|sort|join('|') if artist.tags else '' }}" >
                 </div>
@@ -143,7 +152,7 @@
             <div class="form-group">
                 <label for="urlsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Urls</label>
                 <div class="col-md-6 col-sm-6 col-xs-12">
-                <input type="text" class="form-control col-md-7 col-xs-12 tokenfield"
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
                        id="urlsTokenfield" name="urlsTokenfield"
                    value="{{ artist.urls|sort|join('|') if artist.urls else '' }}" >
                 </div>
@@ -220,6 +229,7 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bloodhound-adapters.js') }}"></script>
 
 <script>
     var artistId = '{{ artist.roadieId }}';
@@ -243,6 +253,7 @@
     };
 
     $(function() {
+
         var uploadfiles = document.querySelector('#fileinput');
         uploadfiles.addEventListener('change', function () {
             var files = this.files;
@@ -261,7 +272,7 @@
             todayHighlight: true
         });
         $('.wysiwyg').summernote();
-        $(".tokenfield").tokenfield({
+        $(".auto-tokenfield").tokenfield({
             delimiter: '|',
             delay: 100,
             beautify: false,
@@ -272,6 +283,33 @@
                     event.preventDefault();
             });
         });
+
+        $("#associatedArtistsTokenfield").tokenfield({
+            typeahead: [null, {
+                name: 'aaApi',
+                source: bhArtists,
+                display: 'name',
+                limit: 10,
+                minLength: 3
+            }],
+            delimiter: '|',
+            delay: 100,
+            beautify: false
+        });
+
+        $("#genresTokenfield").tokenfield({
+            typeahead: [null, {
+                name: 'genreApi',
+                source: bhGenres,
+                display: 'name',
+                limit: 10,
+                minLength: 3
+            }],
+            delimiter: '|',
+            delay: 100,
+            beautify: false
+        });
+
         $('.validate').parsley();
         $("form").on('submit', function(e) {
             $.each($(".wysiwyg"), function(i,d) {

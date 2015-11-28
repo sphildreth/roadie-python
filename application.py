@@ -37,6 +37,7 @@ from resources.models.Collection import Collection
 from resources.models.Image import Image
 from resources.models.Label import Label
 from resources.models.Release import Release
+from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Playlist import Playlist
 from resources.models.PlaylistTrack import PlaylistTrack
@@ -143,6 +144,7 @@ def checkout_listener(dbapi_con, con_record, con_proxy):
 
 
 event.listen(sa.engine, 'checkout', checkout_listener)
+
 
 # @event.listens_for(sa.engine, "before_cursor_execute")
 # def before_cursor_execute(bcconn, bccursor, bcstatement, bcparameters, bccontext, bcexecutemany):
@@ -516,11 +518,11 @@ def labelDetail(label_id):
         "where l.roadieId = '" + label_id + "' " +
         "group by a.id " +
         "order by a.name;", autocommit=True)
-                                          .columns(artistId=Integer,
-                                                   artistRoadieId=String,
-                                                   artistName=String,
-                                                   releaseCount=Integer
-                                                   ))
+                                .columns(artistId=Integer,
+                                         artistRoadieId=String,
+                                         artistName=String,
+                                         releaseCount=Integer
+                                         ))
     return render_template('label.html', label=label, counts=counts, labelArtists=labelArtists)
 
 
@@ -710,10 +712,24 @@ def editArtist(artist_id):
         if 'isniTokenfield' in form:
             formIsniTokenfield = form['isniTokenfield']
             if formIsniTokenfield:
-                artist.isniList = []
                 for isni in formIsniTokenfield.split('|'):
                     artist.isniList.append(isni)
-        # TODO Associated Artists
+        artist.associatedArtists = []
+        if 'associatedArtistsTokenfield' in form:
+            formAssociatedArtistsTokenfield = form['associatedArtistsTokenfield']
+            if formAssociatedArtistsTokenfield:
+                for formAssociatedArtist in formAssociatedArtistsTokenfield.split('|'):
+                    aa = dbSession.query(Artist).filter(Artist.name == formAssociatedArtist).first()
+                    if aa:
+                        artist.associatedArtists.append(aa)
+        artist.genres = []
+        if 'genresTokenfield' in form:
+            formGenresTokenfield = form['genresTokenfield']
+            if formGenresTokenfield:
+                for formGenresToken in formGenresTokenfield.split('|'):
+                    genre = dbSession.query(Genre).filter(Genre.name == formGenresToken).first()
+                    if genre:
+                        artist.genres.append(genre)
         artist.lastUpdated = now
         dbSession.commit()
         flash('Artist Edited successfully')
@@ -1326,6 +1342,7 @@ def releaseDetail(roadieId):
                                              releaseTrackFileSize=Integer)) \
         .fetchone()
     userRelease = [x for x in indexRelease.userRatings if x.userId == user.id]
+
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
@@ -1344,7 +1361,24 @@ def editRelease(roadieId):
         if not release:
             return render_template('404.html'), 404
         if request.method == 'GET':
-            return render_template('releaseEdit.html', release=release)
+            releaseLabels = '|'.join(map(lambda x: x.label.name, release.releaseLabels))
+            releaseSummaries = conn.execute(text(
+                "SELECT count(1) as trackCount, "
+                "max(rm.releaseMediaNumber) as releaseMediaCount, "
+                "sum(t.duration) as releaseTrackTime, "
+                "sum(t.fileSize) as releaseTrackFileSize "
+                "FROM `track` t "
+                "join `releasemedia` rm on t.releaseMediaId = rm.id "
+                "join `release` r on rm.releaseId = r.id "
+                "where r.roadieId = '" + roadieId + "' "
+                                                    "and t.fileName is not null;", autocommit=True)
+                                            .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
+                                                     releaseTrackFileSize=Integer)) \
+                .fetchone()
+            return render_template('releaseEdit.html', release=release,
+                                   releaseLabels=releaseLabels,
+                                   trackCount=releaseSummaries[0] or 0,
+                                   releaseMediaCount=releaseSummaries[1] or 0)
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             abort(400)
@@ -1367,6 +1401,7 @@ def editRelease(roadieId):
                     image.image = b.getvalue()
                     image.signature = image.averageHash()
                     dbSession.add(image)
+        originalArtistId = release.artist.amgId
         originalReleaseYear = release.releaseDate.strftime('%Y')
         originalReleaseFolder = processorBase.albumFolder(release.artist, originalReleaseYear, release.title)
         originalTitle = release.title
@@ -1374,9 +1409,10 @@ def editRelease(roadieId):
         if 'isLocked' in form and form['isLocked'] == "on":
             release.isLocked = True
         release.title = form['title']
-        if not isEqual(originalTitle, release.title):
-            # TODO Update tracks with new title
-            pass
+        if 'artistTokenField' in form:
+            newArtistRelease = dbSession.query(Artist).filter(Artist.name == form['artistTokenField']).first()
+            if newArtistRelease:
+                release.artist = newArtistRelease
         release.releaseDate = parseDate(form['releaseDate'])
         releaseYear = release.releaseDate.strftime('%Y')
         releaseFolder = processorBase.albumFolder(release.artist, releaseYear, release.title)
@@ -1409,6 +1445,17 @@ def editRelease(roadieId):
                 for track in media.tracks:
                     track.filePath = track.filePath.replace(dbOriginalReleaseFolder, dbReleaseFolder, 1)
                     track.lastUpdated = now
+        if not isEqual(originalTitle,
+                       release.title) or originalArtistId != release.artist.id or originalReleaseYear != releaseYear:
+            for media in release.media:
+                for track in media.tracks:
+                    trackPath = pathToTrack(track)
+                    id3 = ID3(trackPath, config)
+                    id3.updateFromRelease(release, track)
+            pass
+        release.rating = int(form['rating'])
+        release.mediaCount = int(form['mediaCount'])
+        release.trackCount = int(form['trackCount'])
         release.releaseType = form['releaseType']
         release.musicBrainzId = form['musicBrainzId']
         release.iTunesId = form['iTunesId']
@@ -1442,9 +1489,29 @@ def editRelease(roadieId):
                 for url in formUrls.split('|'):
                     release.urls.append(url)
         release.lastUpdated = now
-        # TODO genres
-        # TODO artistId
-        # TODO releaseLabels
+        release.genres = []
+        if 'genresTokenfield' in form:
+            formGenresTokenfield = form['genresTokenfield']
+            if formGenresTokenfield:
+                for formGenresToken in formGenresTokenfield.split('|'):
+                    genre = dbSession.query(Genre).filter(Genre.name == formGenresToken).first()
+                    if genre:
+                        release.genres.append(genre)
+        release.releaseLabels = []
+        if 'releaseLabelInfos' in form:
+            releaseLabelInfos = json.loads(form['releaseLabelInfos'])
+            if releaseLabelInfos:
+                for releaseLabelInfo in releaseLabelInfos:
+                    labelForReleaseLabel = dbSession.query(Label).filter(
+                        Label.name == releaseLabelInfo['labelName']).first()
+                    if labelForReleaseLabel:
+                        rl = ReleaseLabel()
+                        rl.roadieId = str(uuid.uuid4())
+                        rl.catalogNumber = releaseLabelInfo['catalogNumber']
+                        rl.beginDate = parseDate(releaseLabelInfo['beginDate'])
+                        rl.endDate = parseDate(releaseLabelInfo['endDate'])
+                        rl.labelId = labelForReleaseLabel.id
+                        release.releaseLabels.append(rl)
         dbSession.commit()
         flash('Release Edited successfully')
     except:
