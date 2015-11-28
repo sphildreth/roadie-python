@@ -339,7 +339,7 @@
                         {% endfor %}
                     </ul>
                     {% endif %}
-                    {% if track.artist %}
+                    {% if track.artist and track.artist.id != release.artist.id %}
                     <a href="/artist/{{ track.artist.roadieId }}">
                         <span data-toggle="tooltip" data-placement="top" title="{{ track.artist.name }}"
                               class="title label label-default">{{ track.artist.name }}</span>
