@@ -179,7 +179,7 @@ class Scanner(ProcessorBase):
                         track.duration = int(id3.length) * 1000
                         track.status = 1
                         if id3.hasTrackArtist():
-                            trackArtist = self.artistFactory.get(id3.getArtist())
+                            trackArtist = self.artistFactory.get(id3.getTrackArtist())
                             if trackArtist:
                                 track.artistId = trackArtist.id
                         track.tags = []

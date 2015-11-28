@@ -109,9 +109,17 @@ class ID3(object):
                     tags.delall(u"COMM::'en'")
         tags.save(self.filename)
 
-    def getArtist(self):
+    def getTrackArtist(self):
         """
         Return the artist to use for this track be it Artist ("TPE1") or Album Artist ("TPE2")
+        :param self:
+        :return: str
+        """
+        return (self.artist or '').strip()
+
+    def getReleaseArtist(self):
+        """
+        Return the artist to use for this Release be it Artist ("TPE1") or Album Artist ("TPE2")
         :param self:
         :return: str
         """

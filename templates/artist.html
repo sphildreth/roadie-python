@@ -141,12 +141,10 @@
                 <span class="label label-default artist-type">{{ artist.artistType }}</span>
             </div>
             <div>
-                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
                 {% if artist.musicBrainzId %}
+                <h4><span class="label label-primary">MusicBrainz Id</span></h4>
                 <a href="https://musicbrainz.org/artist/{{ artist.musicBrainzId }}" target="_blank"><span
                         class="label label-default">{{ artist.musicBrainzId }}</span></a>
-                {% else %}
-                <span class="label label-default">None</span>
                 {% endif %}
             </div>
         </div>

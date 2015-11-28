@@ -228,11 +228,11 @@ class Processor(ProcessorBase):
                             else:
                                 foundMp3Files += 1
                                 # Get Artist
-                                if lastID3Artist != id3.getArtist():
+                                if lastID3Artist != id3.getReleaseArtist():
                                     artist = None
                                 if not artist:
-                                    lastID3Artist = id3.getArtist()
-                                    artist = self.artistFactory.get(id3.getArtist())
+                                    lastID3Artist = id3.getReleaseArtist()
+                                    artist = self.artistFactory.get(id3.getReleaseArtist())
                                 if artist and artist.isLocked:
                                     self.logger.debug(
                                         "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(
@@ -251,7 +251,7 @@ class Processor(ProcessorBase):
                                         self.session.commit()
                                 if not artist:
                                     self.logger.warn(
-                                        "! Unable to Find Artist [" + id3.getArtist() + "] for Mp3 [" + printableMp3 + "]")
+                                        "! Unable to Find Artist [" + id3.getReleaseArtist() + "] for Mp3 [" + printableMp3 + "]")
                                     continue
                                 # Get the Release
                                 if lastID3Album != id3.album:
