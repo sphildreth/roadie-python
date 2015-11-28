@@ -122,10 +122,9 @@ class ID3(object):
     def hasTrackArtist(self):
         artist = (self.artist or '').strip()
         albumArtist = (self.albumArtist or '').strip()
-        if albumArtist and not isEqual(artist, albumArtist):
+        if artist and not isEqual(artist, albumArtist):
             return True
         return False
-
 
     def _load(self, filename, config):
         self.dirty = False
