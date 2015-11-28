@@ -605,7 +605,7 @@ def artistDetail(artist_id):
     compilations = dbSession.query(Release) \
         .join(ReleaseMedia, ReleaseMedia.releaseId == Release.id) \
         .join(Track, Track.releaseMediaId == ReleaseMedia.id) \
-        .filter(Track.artistId == artist.id)
+        .filter(Track.artistId == artist.id).all()
 
     return render_template('artist.html', artist=artist, releases=artist.releases,
                            counts=counts, userArtist=userArtist,
