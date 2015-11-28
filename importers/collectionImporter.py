@@ -62,37 +62,41 @@ class CollectionImporter(ProcessorBase):
         self.importCsvData(io.StringIO(collection.listInCSV))
 
     def importCsvData(self, csvData):
-        if not self.collection:
-            self.logger.critical("Unable to Find Collection Id [" + self.collectionId + "]")
+        try:
+            if not self.collection:
+                self.logger.critical("Unable to Find Collection Id [" + self.collectionId + "]")
+                return False
+            self._findColumns()
+            reader = csv.reader(csvData)
+            self.collection.collectionReleases = []
+            for row in reader:
+                csvPosition = int(row[self.position].strip())
+                csvArtist = row[self.artist].strip()
+                csvRelease = row[self.release].strip()
+                artist = self.artistFactory.get(csvArtist, False)
+                if not artist:
+                    self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
+                    self.notFoundEntryInfo.append(
+                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                    continue
+                release = self.releaseFactory.get(artist, csvRelease, False)
+                if not release:
+                    self.logger.warn(
+                        ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
+                            'utf-8'))
+                    self.notFoundEntryInfo.append(
+                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                    continue
+                colRelease = CollectionRelease()
+                colRelease.releaseId = release.id
+                colRelease.listNumber = csvPosition
+                colRelease.createdDate = arrow.utcnow().datetime
+                colRelease.roadieId = str(uuid.uuid4())
+                self.collection.collectionReleases.append(colRelease)
+                self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
+            self.collection.lastUpdated = arrow.utcnow().datetime
+            self.dbSession.commit()
+            return True
+        except:
+            self.logger.exception("Error Importing Collection [" + self.collection.name + "]")
             return False
-        self._findColumns()
-        reader = csv.reader(csvData)
-        self.collection.collectionReleases = []
-        for row in reader:
-            csvPosition = int(row[self.position].strip())
-            csvArtist = row[self.artist].strip()
-            csvRelease = row[self.release].strip()
-            artist = self.artistFactory.get(csvArtist, False)
-            if not artist:
-                self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
-                self.notFoundEntryInfo.append(
-                    {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
-                continue
-            release = self.releaseFactory.get(artist, csvRelease, False)
-            if not release:
-                self.logger.warn(
-                    ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
-                        'utf-8'))
-                self.notFoundEntryInfo.append(
-                    {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
-                continue
-            colRelease = CollectionRelease()
-            colRelease.releaseId = release.id
-            colRelease.listNumber = csvPosition
-            colRelease.createdDate = arrow.utcnow().datetime
-            colRelease.roadieId = str(uuid.uuid4())
-            self.collection.collectionReleases.append(colRelease)
-            self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
-        self.collection.lastUpdated = arrow.utcnow().datetime
-        self.dbSession.commit()
-        return True
