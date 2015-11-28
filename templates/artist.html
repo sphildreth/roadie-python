@@ -252,44 +252,90 @@
     {% endif %}
     <div class="release-info-container">
         <div class="row bordered">
-            {% for release in releases|sort(attribute='releaseDate') %}
-            <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
-                <div>
-                    <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
-                         alt="{{ release.title }}"/>
-                    <a href="/release/{{ release.roadieId }}">
-                        <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
-                            <span data-toggle="tooltip"
-                                  data-placement="top"
-                                  title="{{ release.title }}"
-                                  class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span>
-                        </h4>
-                    </a>
-                </div>
-                <div class="release-media-container">
-                    {% for media in release.media|sort(attribute='releaseMediaNumber') %}
-                    <div class="release-media" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-track-count="{{ media.trackCount }}">
-                        {% if media.releaseSubTitle %}
-                        <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span>
-                        </h5>
-                        {% endif %}
-                        <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span>
-                        </h5>
-                        <ul class="tracks no-list-style">
-                            {% for track in media.tracks|sort(attribute='trackNumber') %}
-                            <li>
-                                <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
-                                <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
-                                      class="title label label-default">{{ track.title }}</span>
-                                <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
-                            </li>
+            <div>
+              <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#releases" aria-controls="releases" role="tab" data-toggle="tab">Releases</a></li>
+                {% if compilations %}
+                <li role="presentation"><a href="#compilations" aria-controls="compilations" role="tab" data-toggle="tab">Compilations</a></li>
+                {% endif %}
+              </ul>
+              <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="releases">
+                    {% for release in releases|sort(attribute='releaseDate') %}
+                    <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
+                        <div>
+                            <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
+                                 alt="{{ release.title }}"/>
+                            <a href="/release/{{ release.roadieId }}">
+                                <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
+                                    <span data-toggle="tooltip"
+                                          data-placement="top"
+                                          title="{{ release.title }}"
+                                          class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span>
+                                </h4>
+                            </a>
+                        </div>
+                        <div class="release-media-container">
+                            {% for media in release.media|sort(attribute='releaseMediaNumber') %}
+                            <div class="release-media" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-track-count="{{ media.trackCount }}">
+                                {% if media.releaseSubTitle %}
+                                <h5 class="release-subtitle"><span class="label label-success pull-right">{{ media.releaseSubTitle }}</span>
+                                </h5>
+                                {% endif %}
+                                <h5 class="release-cd"><span class="label label-success pull-right">CD {{ media.releaseMediaNumber }}</span>
+                                </h5>
+                                <ul class="tracks no-list-style">
+                                    {% for track in media.tracks|sort(attribute='trackNumber') %}
+                                    <li>
+                                        <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
+                                        <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
+                                              class="title label label-default">{{ track.title }}</span>
+                                        <span class="length label label-info">{{ track.duration|format_tracktime() }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
                             {% endfor %}
-                        </ul>
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
+                <div role="tabpanel" class="tab-pane" id="compilations">
+                    {%for compilation in compilations %}
+                    <div class="compilation-release pull-left" data-release-id="{{ compilation.roadieId }}">
+                        <a href="/release/{{ compilation.roadieId }}">
+                            <div class="thumbnail-container pull-left">
+                                <img class="release-thumb" src="/images/release/thumbnail/{{ compilation.roadieId }}"
+                                     alt="{{ compilation.title }}"/>
+                            </div>
+                        </a>
+                        <div class="artist-info">
+                            <a title="View Artist" href="/artist/{{ compilation.artist.roadieId }}">
+                            <img class="thumb pull-left"
+                                 src="/images/artist/thumbnail/{{ compilation.artist.roadieId }}"
+                                 alt="{{ compilation.artist.name }}"/>
+                            <h5><span data-toggle="tooltip"
+                                      data-placement="top"
+                                      title="{{ compilation.artist.name }}"
+                                      class="label label-info">{{ compilation.artist.name }}</span></h5>
+                            </a>
+                        </div>
+                        <div class="release-rating-container">
+                            <input type="hidden" class="rating" data-readonly value="{{ compilation.rating }}"/>
+                        </div>
+                        <a href="/release/{{ compilation.roadieId }}">
+                            <h3 class="album-title">
+                                <span data-toggle="tooltip"
+                                      data-placement="top"
+                                      title="{{ compilation.title }}"
+                                      class="label label-default">{{ compilation.title }}</span>
+                            </h3>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+              </div>
             </div>
-            {% endfor %}
         </div>
     </div>
     {% if current_user.is_editor() %}

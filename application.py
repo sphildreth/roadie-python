@@ -265,15 +265,21 @@ def index():
     lastPlayedInfos = []
     for ut in dbSession.query(UserTrack).join(Track, Track.id == UserTrack.trackId).order_by(
             desc(UserTrack.lastPlayed)).limit(50):
+        artistThumbnail = "/images/artist/thumbnail/"
+        if ut.track.artist:
+            artistThumbnail += str(ut.track.artist.roadieId)
+        else:
+            artistThumbnail += str(ut.track.releasemedia.release.artist.roadieId)
         lastPlayedInfos.append({
             'TrackId': str(ut.track.roadieId),
             'TrackTitle': ut.track.title,
             'ReleaseId': str(ut.track.releasemedia.release.roadieId),
             'ReleaseTitle': ut.track.releasemedia.release.title,
             'ReleaseThumbnail': "/images/release/thumbnail/" + str(ut.track.releasemedia.release.roadieId),
-            'ArtistId': str(ut.track.releasemedia.release.artist.roadieId),
-            'ArtistName': ut.track.releasemedia.release.artist.name,
-            'ArtistThumbnail': "/images/artist/thumbnail/" + str(ut.track.releasemedia.release.artist.roadieId),
+            'ArtistId': str(ut.track.releasemedia.release.artist.roadieId) if not ut.track.artist else str(
+                ut.track.artist.roadieId),
+            'ArtistName': ut.track.releasemedia.release.artist.name if not ut.track.artist else ut.track.artist.name,
+            'ArtistThumbnail': artistThumbnail,
             'UserId': str(ut.user.roadieId),
             'Username': ut.user.username,
             'UserThumbnail': "/images/user/avatar/" + str(ut.user.roadieId),
@@ -596,8 +602,14 @@ def artistDetail(artist_id):
         "order by r.title, t.filePath;"
         , autocommit=True).columns(releaseTitle=String, filePath=String))
 
+    compilations = dbSession.query(Release) \
+        .join(ReleaseMedia, ReleaseMedia.releaseId == Release.id) \
+        .join(Track, Track.releaseMediaId == ReleaseMedia.id) \
+        .filter(Track.artistId == artist.id)
+
     return render_template('artist.html', artist=artist, releases=artist.releases,
-                           counts=counts, userArtist=userArtist, artistFolders=artistFolders)
+                           counts=counts, userArtist=userArtist,
+                           artistFolders=artistFolders, compilations=compilations)
 
 
 def allowed_image_file(filename):
@@ -1372,7 +1384,8 @@ def editRelease(roadieId):
                 "join `release` r on rm.releaseId = r.id "
                 "where r.roadieId = '" + roadieId + "' "
                                                     "and t.fileName is not null;", autocommit=True)
-                                            .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
+                                            .columns(trackCount=Integer, releaseMediaCount=Integer,
+                                                     releaseTrackTime=Integer,
                                                      releaseTrackFileSize=Integer)) \
                 .fetchone()
             return render_template('releaseEdit.html', release=release,

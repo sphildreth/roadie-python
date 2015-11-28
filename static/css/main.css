@@ -65,7 +65,7 @@ li.username, td.username {
     border-radius: 5px;
 }
 
-div.collection-container .collection-release {
+div.collection-container .collection-release, .compilation-release {
     width: 25%;
     display: block;
     min-width: 400px;
@@ -73,7 +73,7 @@ div.collection-container .collection-release {
     padding: 2px;
 }
 
-div.collection-container .collection-release h4 {
+div.collection-container .collection-release h4, .compilation-release h4 {
     padding:0;
     margin-bottom: 5px;
 }
@@ -88,7 +88,7 @@ div.missing {
    margin-top: 15px;
 }
 
-div.collection-container  h2 {
+div.collection-container  h2, .compilation-release h2 {
     width: 84%;
     margin: 5px 3px;
     overflow: hidden;
@@ -96,7 +96,7 @@ div.collection-container  h2 {
     display: inline-block;
 }
 
-div.collection-container .collection-release h3.album-title {
+div.collection-container .collection-release h3.album-title, .compilation-release h3.album-title {
     margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -116,7 +116,7 @@ div.collection-container div.collection-not-found h5 {
 }
 
 
-div.collection-container .artist {
+div.collection-container .artist, .compilation-release .artist {
   border-bottom: 1px solid #F2F2F2;
   padding-top: 6px;
 }
@@ -594,15 +594,15 @@ span.track-artist-name {
     margin: 2px 4px;
 }
 
-div.collection-container .collection-release img.release-thumb {
+div.collection-container .collection-release img.release-thumb, .compilation-release img.release-thumb {
     margin-top: 11px;
 }
 
-div.collection-container .collection-release .artist-info img.thumb {
+div.collection-container .collection-release .artist-info img.thumb, .compilation-release .artist-info img.thumb {
     margin: 0 5px;
 }
 
-.release-detail-container .artist-info img, .collection-release .artist-info img {
+.release-detail-container .artist-info img, .collection-release .artist-info img, .compilation-release .artist-info img {
     max-height: 18px;
     max-width: 18px;
 }

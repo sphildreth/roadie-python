@@ -21,8 +21,8 @@ class M3U(object):
             return None
         return {
             'Length': str(math.ceil(track.duration)),
-            'ArtistId': str(release.artist.roadieId),
-            'ArtistName': release.artist.name,
+            'ArtistId': str(release.artist.roadieId) if not track.artist else str(track.artist.roadieId),
+            'ArtistName': release.artist.name if not track.artist else track.artist.name,
             'ReleaseMediaNumber': track.releasemedia.releaseMediaNumber,
             'ReleaseTitle': release.title,
             'ReleaseYear': release.releaseDate.strftime('%Y'),
