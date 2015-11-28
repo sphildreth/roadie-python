@@ -1,4 +1,6 @@
 import os
+
+import math
 import pytz
 import simplejson as json
 import hashlib
@@ -2207,10 +2209,15 @@ def redirect_back(endpoint, **values):
 def collections():
     dbCollections = []
     for c in dbSession.query(Collection).order_by(Collection.name):
+        releaseCount = len(c.collectionReleases)
+        collectionCount = len(c.listInCSV.splitlines())
+        percentageComplete = 100. / collectionCount * releaseCount
         dbCollections.append({
             'roadieId': c.roadieId,
             'name': c.name,
-            'releaseCount': len(c.collectionReleases)
+            'releaseCount': releaseCount,
+            'collectionCount': collectionCount,
+            'percentageComplete': percentageComplete
         })
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:

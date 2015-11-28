@@ -25,7 +25,7 @@ class ArtistListApi(Resource):
     def get(self):
         args = self.reqparse.parse_args()
         get_current = args.current or 1
-        get_limit = args.limit or 20
+        get_limit = args.limit or 25
         get_skip = args.skip or 0
         includes = args.inc or 'releases,tracks'
         sort = args.sort or 'sortName'

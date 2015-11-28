@@ -20,7 +20,8 @@
                      alt="{{ collection.name }}"/>
             </div>
             <h4>
-                <span title="Found Releases In Library" class="label label-info">{{ collection.releaseCount }}</span>
+                <span title="Found {{ collection.releaseCount }} Releases of {{ collection.collectionCount }} in Library"
+                      class="label label-{{ 'info' if collection.percentageComplete != 100 else 'success' }}">{{ collection.releaseCount }}</span>
                 <span class="label label-default">{{ collection.name }}</span>
             </h4>
         </a>

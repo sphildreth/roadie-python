@@ -28,7 +28,7 @@ class ReleaseListApi(Resource):
     def get(self):
         args = self.reqparse.parse_args()
         get_current = args.current or 1
-        get_limit = args.limit or 10
+        get_limit = args.limit or 25
         get_skip = args.skip or 0
         includes = args.inc or 'tracks'
         sort = args.sort or 'releaseDate'
