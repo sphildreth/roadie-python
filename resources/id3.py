@@ -117,7 +117,7 @@ class ID3(object):
         """
         artist = (self.artist or '').strip()
         albumArtist = (self.albumArtist or '').strip()
-        return artist or albumArtist
+        return albumArtist or artist
 
     def hasTrackArtist(self):
         artist = (self.artist or '').strip()
