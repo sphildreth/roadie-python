@@ -609,7 +609,7 @@ def artistDetail(artist_id):
         .join(Track, Track.releaseMediaId == ReleaseMedia.id) \
         .filter(Track.artistId == artist.id).all()
 
-    return render_template('artist.html', artist=artist, releases=artist.releases,
+    return render_template('artist.html', artist=artist, releases=sorted(artist.releases, key=lambda rel: str(rel.releaseDate) or ''),
                            counts=counts, userArtist=userArtist,
                            artistFolders=artistFolders, compilations=compilations)
 
@@ -1417,7 +1417,7 @@ def editRelease(roadieId):
                     image.signature = image.averageHash()
                     dbSession.add(image)
         originalArtistId = release.artist.amgId
-        originalReleaseYear = release.releaseDate.strftime('%Y')
+        originalReleaseYear = release.releaseDate.strftime('%Y') if release.releaseDate else ''
         originalReleaseFolder = processorBase.albumFolder(release.artist, originalReleaseYear, release.title)
         originalTitle = release.title
         release.isLocked = False
@@ -1448,12 +1448,15 @@ def editRelease(roadieId):
                     except:
                         logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
                         pass
-            if not os.listdir(originalReleaseFolder):
-                try:
-                    shutil.rmtree(originalReleaseFolder)
-                except:
-                    logger.warn("Unable to Remove Empty Folder [" + originalReleaseFolder + "]")
-                    pass
+            try:
+                if not os.listdir(originalReleaseFolder):
+                    try:
+                        shutil.rmtree(originalReleaseFolder)
+                    except:
+                        logger.warn("Unable to Remove Empty Folder [" + originalReleaseFolder + "]")
+                        pass
+            except:
+                pass
             dbOriginalReleaseFolder = originalReleaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
             dbReleaseFolder = releaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
             for media in release.media:

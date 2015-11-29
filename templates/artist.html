@@ -261,13 +261,13 @@
               </ul>
               <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="releases">
-                    {% for release in releases|sort(attribute='releaseDate') %}
+                   {% for release in releases %}
                     <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
                         <div>
                             <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
                                  alt="{{ release.title }}"/>
                             <a href="/release/{{ release.roadieId }}">
-                                <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') }}</span>
+                                <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') if release.releaseDate else '' }}</span>
                                     <span data-toggle="tooltip"
                                           data-placement="top"
                                           title="{{ release.title }}"
