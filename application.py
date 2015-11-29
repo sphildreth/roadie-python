@@ -1791,6 +1791,7 @@ def stats():
         "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
         "FROM `artist` a " +
         "join `release` r on r.artistId = a.id " +
+        "WHERE a.artistType != 'Other' " +
         "GROUP BY a.id " +
         "ORDER BY COUNT(1) desc " +
         "LIMIT 10;", autocommit=True)
@@ -1803,6 +1804,7 @@ def stats():
         "left join `releasemedia` rm on rm.releaseId = r.id " +
         "left join `track` t on t.releaseMediaId = rm.id " +
         "where t.fileName is not null " +
+        "AND a.artistType != 'Other' " +
         "GROUP BY a.id " +
         "ORDER BY COUNT(1) desc " +
         "LIMIT 10;", autocommit=True)
