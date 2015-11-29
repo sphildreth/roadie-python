@@ -178,18 +178,16 @@ class Scanner(ProcessorBase):
                         track.trackNumber = id3.track
                         track.duration = int(id3.length) * 1000
                         track.status = 1
+                        track.partTitles = []
                         if id3.hasTrackArtist():
                             shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast"
                             trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id
                             elif not shouldMakeArtistIfNotFound:
-                                if not track.partTitles:
-                                    track.partTitles = []
                                 track.partTitles.append(id3.getTrackArtist())
                                 self.logger.info("+ Added Track PartTitle [" + str(id3.getTrackArtist()) + "]")
                         track.tags = []
-                        track.partTitles = []
                         track.alternateNames = []
                         if cleanedTitle != id3.title.lower().strip():
                             track.alternateNames.append(cleanedTitle)
