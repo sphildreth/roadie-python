@@ -184,8 +184,10 @@ class Scanner(ProcessorBase):
                             if trackArtist:
                                 track.artistId = trackArtist.id
                             elif shouldMakeArtistIfNotFound:
-                                track.partTitles = track.partTitles or []
+                                if not track.partTitles:
+                                    track.partTitles = []
                                 track.partTitles.append(id3.getTrackArtist())
+                                self.logger.info("+ Added Track PartTitle [" + str(id3.getTrackArtist()) + "]")
                         track.tags = []
                         track.partTitles = []
                         track.alternateNames = []
