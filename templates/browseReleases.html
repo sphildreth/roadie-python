@@ -4,13 +4,81 @@
 {% endblock %}
 {% block body_content %}
 <div class="browse-release-container">
+    {% if current_user.is_editor() %}
+     <div class="checked-release-options pull-right btn-group">
+        <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-edit"></i> With Checked<span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li title="Prompt For Details and Merge"><a data-selected-cd="1" class="merge" href="javascript:mergeSelected();"><i class="fa fa-suitcase"></i> Merge</a></li>
+            <li title="Delete Releases (not Files)"><a data-selected-cd="2" class="delete" href="javascript:deleteSelected();"><i class="fa fa-trash-o" ></i> Delete</a></li>
+            <li title="Delete Releases (AND Files)"><a data-selected-cd="3" class="purge" href="javascript:purgeSelected();"><i class="fa fa-suitcase"></i> Purge</a></li>
+        </ul>
+    </div>
+    {% endif %}
     <table id="browseReleasesGrid"></table>
 </div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
+
+    var $table = $('#browseReleasesGrid');
+
+    var doDelete = function(selectedReleases,doPurge) {
+        $.ajax({
+            type: 'POST',
+            url: '/release/deleteselected/' + doPurge,
+            data: { "selected": selectedReleases.join(",") },
+            success: function(data) {
+                if(data.message == "OK") {
+                    location.reload(true);
+                }
+            },
+            error:function(jq, st, error){
+                roadieLibrary.showErrorMessage(error);
+            }
+        });
+    }
+
+    var getIdSelections = function() {
+        return $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id
+        });
+    }
+
+    var mergeSelected = function() {
+        alert("Merge WIP");
+    };
+
+    var deleteSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Delete (Delete Releases not Files)?", function(result) {
+            if(result) {
+                doDelete(selectedReleases,false);
+            }
+        });
+    };
+
+    var purgeSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Purge (Delete Releases and Files)?", function(result) {
+            if(result) {
+                doDelete(selectedReleases,true);
+            }
+        });
+    };
+
     $(function() {
-        $('#browseReleasesGrid').bootstrapTable({
+        $table.bootstrapTable({
             ajax: function(params) {
                 sort = params.data.sort ? params.data.sort : "";
                 order = params.data.order ? params.data.order : "";
@@ -50,6 +118,7 @@
             sortOrder: "desc",
             columns: [
                 { field: 'ReleaseId', visible: false },
+                { field: 'state', checkbox: true, align: 'center', valign: 'middle', visible: {{ 'true' if current_user.is_editor() else 'false' }} },
                 { field: 'title', title: 'Title', sortable: true, formatter: function(value,row,index) {
                     var releaseId = row.id;
                     var title = row.title;

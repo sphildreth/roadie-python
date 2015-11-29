@@ -45,18 +45,19 @@ class ReleaseListApi(Resource):
             name = args.filter.lower().strip().replace("'", "''")
             stmt = text("lower(release.title) = '" + name + "' " +
                         "OR lower(release.title) LIKE '%" + name + "%' " +
-                        "OR (lower(alternateNames) LIKE '%" + name + "%' " + ""
-                        " OR alternateNames LIKE '" + name + "|%' " +
-                        " OR alternateNames LIKE '%|" + name + "|%' " +
-                        " OR alternateNames LIKE '%|" + name + "')"
+                        "OR (lower(release.alternateNames) LIKE '%" + name + "%' " + ""
+                        " OR release.alternateNames LIKE '" + name + "|%' " +
+                        " OR release.alternateNames LIKE '%|" + name + "|%' " +
+                        " OR release.alternateNames LIKE '%|" + name + "')"
                         )
 
             total_records = self.dbSession.query(func.count(Release.id)).filter(stmt).scalar()
-            releases = self.dbSession.query(Release).filter(stmt) \
+            releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).filter(stmt) \
                 .order_by(text(sort + " " + order)).slice(get_skip, get_limit)
         else:
             total_records = self.dbSession.query(func.count(Release.id)).scalar()
-            releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).order_by(text(sort + " " + order)).limit(get_limit)
+            releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).order_by(
+                text(sort + " " + order)).limit(get_limit)
         rows = []
         if releases:
             for release in releases:

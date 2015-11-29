@@ -74,6 +74,7 @@ from viewModels.RoadieUserReleaseModelView import RoadieUserReleaseModelView
 from viewModels.RoadieUserTrackModelView import RoadieUserTrackModelView
 from viewModels.RoadieArtistModelView import RoadieArtistModelView
 from viewModels.RoadiePlaylistModelView import RoadiePlaylistModelView
+from factories.releaseFactory import ReleaseFactory
 
 clients = []
 logger = Logger()
@@ -2374,7 +2375,6 @@ def singleTrackReleaseFinder(count):
     return render_template('singletrackreleasefinder.html', total=singleTrackReleases.count(),
                            singleTrackReleases=singleTrackReleases.limit(count))
 
-
 @app.route('/dupfinder')
 @login_required
 def dupFinder():
@@ -2389,6 +2389,20 @@ def dupFinder():
                                                       rightArtistId=Integer, rightArtistName=String,
                                                       rightRoadieId=String))
     return render_template('dupfinder.html', potentialDuplicateArtists=potentialDuplicateArtists)
+
+
+@app.route('/release/deleteselected/<do_purge>', methods=['POST'])
+@login_required
+def purgeSelectedReleases(do_purge):
+    releasesToDelete = request.form['selected']
+    if not releasesToDelete:
+        return jsonify(message="ERROR")
+    releaseFactory = ReleaseFactory(conn, dbSession)
+    for releaseToDeleteId in releasesToDelete.split(','):
+        releaseToDelete = getRelease(releaseToDeleteId)
+        if not releaseFactory.delete(releaseToDelete, pathToTrack, do_purge == "true"):
+            return jsonify(message="ERROR")
+    return jsonify(message="OK")
 
 
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])

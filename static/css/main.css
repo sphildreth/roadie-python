@@ -879,3 +879,7 @@ ul.four-column li {
 ul.six-column li {
     width:16.666%;
 }
+
+.checked-release-options {
+    margin: 10px;
+}

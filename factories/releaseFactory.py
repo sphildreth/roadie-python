@@ -1,3 +1,4 @@
+import os
 import random
 import uuid
 from sqlalchemy.sql import func, and_, or_, text
@@ -328,6 +329,36 @@ class ReleaseFactory(object):
         self.session.add(release)
         self.session.commit()
 
-    def delete(self, release):
-        self.session.delete(release)
-        self.session.commit()
+    def delete(self, release, pathToTrack, deleteFiles=False):
+        """
+        Performs all necessary steps to delete a Release and optionally Release Tracks
+        :param pathToTrack: Method to generate Full Path for Release Media Tracks
+        :param release: Release
+        :type deleteFiles: bool
+        """
+        if not release:
+            return False
+        try:
+            if deleteFiles:
+                try:
+                    for deleteReleaseMedia in release.media:
+                        for track in deleteReleaseMedia.tracks:
+                            trackPath = pathToTrack(track)
+                            trackFolder = os.path.dirname(trackPath)
+                            os.remove(trackPath)
+                            # if the folder is empty then delete the folder as well
+                            if trackFolder:
+                                if not os.listdir(trackFolder):
+                                    os.rmdir(trackFolder)
+                except OSError:
+                    pass
+            release.genres = []
+            self.session.commit()
+            self.session.delete(release)
+            self.session.commit()
+            return True
+        except:
+            self.session.rollback()
+            self.logger.exception("Error Deleting Release")
+        return False
+

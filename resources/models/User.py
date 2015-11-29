@@ -46,9 +46,13 @@ class User(Base):
         return False
 
     def has_role(self, role):
+        if not self.roles:
+            return False
         return UserRole(name=role) in self.roles
 
     def is_editor(self):
+        if not self.roles:
+            return False
         return UserRole(name="Admin") in self.roles or UserRole(name="Editor") in self.roles
 
     def __repr__(self):
