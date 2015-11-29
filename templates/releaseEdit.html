@@ -426,12 +426,9 @@
         });
 
         $("#genresTokenfield").tokenfield({
-            typeahead: [null, {
-                name: 'genreApi',
-                source: bhGenres,
+            typeahead: [null , {
                 display: 'name',
-                limit: 10,
-                minLength: 3
+                source: bhGenres
             }],
             delimiter: '|',
             delay: 100,

@@ -2,7 +2,7 @@ var bhArtists = new Bloodhound({
     remote: {
         url: '/api/v1.0/artists?filter=%QUERY',
         wildcard: '%QUERY',
-        filter: function(x) {
+        transform: function(x) {
             result = [];
             $.each(x.rows, function(i,d) {
                 result.push({
@@ -22,7 +22,7 @@ var bhGenres = new Bloodhound({
     remote: {
         url: '/api/v1.0/genres?filter=%QUERY',
         wildcard: '%QUERY',
-        filter: function(x) {
+        transform: function(x) {
             result = [];
             $.each(x.rows, function(i,d) {
                 result.push({
@@ -42,7 +42,7 @@ var bhLabels = new Bloodhound({
     remote: {
         url: '/api/v1.0/labels?filter=%QUERY',
         wildcard: '%QUERY',
-        filter: function(x) {
+        transform: function(x) {
             result = [];
             $.each(x.rows, function(i,d) {
                 result.push({
@@ -62,7 +62,7 @@ var bhUsers = new Bloodhound({
     remote: {
         url: '/api/v1.0/users?filter=%QUERY',
         wildcard: '%QUERY',
-        filter: function(x) {
+        transform: function(x) {
             result = [];
             $.each(x.rows, function(i,d) {
                 result.push({
