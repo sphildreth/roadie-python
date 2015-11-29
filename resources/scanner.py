@@ -183,7 +183,7 @@ class Scanner(ProcessorBase):
                             trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id
-                            elif shouldMakeArtistIfNotFound:
+                            elif not shouldMakeArtistIfNotFound:
                                 if not track.partTitles:
                                     track.partTitles = []
                                 track.partTitles.append(id3.getTrackArtist())
