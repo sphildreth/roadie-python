@@ -95,7 +95,7 @@
                 {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
                 <tr class="not-found">
                     <td>
-                        [{{ notFoundEntryInfo['position'] }}]
+                        <button class="btn btn-default btn-sm" data-clipboard-text="{{ notFoundEntryInfo['artist'] + ' ' + notFoundEntryInfo['release']  }}"><i  class="fa fa-clipboard"></i></button> [{{ notFoundEntryInfo['position'] }}]
                     </td>
                     <td>
                         [{{ notFoundEntryInfo['artist'] }}]
@@ -121,6 +121,8 @@
     var collectionId = '{{ collection.roadieId }}';
     var collectionCountShouldBe = {{ collection.listInCSV|count_new_lines + 1 }};
     var missing = [];
+
+    var clipboardItems = new Clipboard('[data-clipboard-text]');
 
     var showCollectionSane = function(isSane) {
         var $c = $("div.release-counts-container");
