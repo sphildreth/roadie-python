@@ -27,7 +27,7 @@ class ReleaseListApi(Resource):
 
     def get(self):
         args = self.reqparse.parse_args()
-        get_current = args.current or 1
+        get_current = args.current
         get_limit = args.limit or 25
         get_skip = args.skip or 0
         includes = args.inc or 'tracks'
@@ -53,11 +53,11 @@ class ReleaseListApi(Resource):
 
             total_records = self.dbSession.query(func.count(Release.id)).filter(stmt).scalar()
             releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).filter(stmt) \
-                .order_by(text(sort + " " + order)).slice(get_skip, get_limit)
+                .order_by(text(sort + " " + order)).slice(get_skip, get_skip + get_limit)
         else:
             total_records = self.dbSession.query(func.count(Release.id)).scalar()
             releases = self.dbSession.query(Release).join(Artist, Artist.id == Release.artistId).order_by(
-                text(sort + " " + order)).limit(get_limit)
+                text(sort + " " + order)).slice(get_skip, get_skip + get_limit)
         rows = []
         if releases:
             for release in releases:

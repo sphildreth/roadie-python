@@ -24,7 +24,7 @@ class TrackListApi(Resource):
 
     def get(self):
         args = self.reqparse.parse_args()
-        get_current = args.current or 1
+        get_current = args.current
         get_limit = args.limit or 25
         get_skip = args.skip or 0
         sort = args.sort or 'title'
@@ -40,10 +40,10 @@ class TrackListApi(Resource):
                 .query(func.count(Track.id))\
                 .filter(Track.title.like("%" + args.filter + "%")).scalar()
             tracks = self.dbSession.query(Track).filter(Track.title.like("%" + args.filter + "%")) \
-                .order_by(order + sort).slice(get_skip, get_limit)
+                .order_by(order + sort).slice(get_skip, get_skip + get_limit)
         else:
             total_records = self.dbSession.query(func.count(Track.id)).scalar()
-            tracks = self.dbSession.query(Track).order_by(order + sort).limit(get_limit)
+            tracks = self.dbSession.query(Track).order_by(order + sort).slice(get_skip, get_skip + get_limit)
         rows = []
         if tracks:
             for track in tracks:

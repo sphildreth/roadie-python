@@ -23,7 +23,7 @@ class LabelListApi(Resource):
 
     def get(self):
         args = self.reqparse.parse_args()
-        get_current = args.current or 1
+        get_current = args.current
         get_limit = args.limit or 10
         get_skip = args.skip or 0
         sort = args.sort or 'name'
@@ -38,10 +38,10 @@ class LabelListApi(Resource):
             total_records = self.dbSession.query(func.count(Label.id)).\
                 filter(Label.name.like("%" + args.filter + "%")).scalar()
             labels = self.dbSession.query(Label).filter(Label.name.like("%" + args.filter + "%")) \
-                .order_by(order + sort).slice(get_skip, get_limit)
+                .order_by(order + sort).slice(get_skip, get_skip + get_limit)
         else:
             total_records = self.dbSession.query(func.count(Label.id)).scalar()
-            labels = self.dbSession.query(Label).order_by(order + sort).limit(get_limit)
+            labels = self.dbSession.query(Label).order_by(order + sort).slice(get_skip, get_skip + get_limit)
 
         rows = []
         if labels:
