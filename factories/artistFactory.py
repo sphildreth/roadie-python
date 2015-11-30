@@ -145,7 +145,7 @@ class ArtistFactory(object):
                     if sa.alternateNames:
                         artist.alternateNames = []
                         for an in sa.alternateNames:
-                            artist.alternateNames.append(an)
+                            artist.alternateNames.append(an.replace("|", "~"))
                     if sa.urls:
                         artist.urls = []
                         for url in sa.urls:

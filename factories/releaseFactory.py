@@ -333,7 +333,7 @@ class ReleaseFactory(object):
         """
         Performs all necessary steps to delete a Release and optionally Release Tracks
         :param pathToTrack: Method to generate Full Path for Release Media Tracks
-        :param release: Release
+        :param release: Releasesaasdf
         :type deleteFiles: bool
         """
         if not release:
