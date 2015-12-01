@@ -85,27 +85,29 @@
         {% endif %}
     </div>
     <div class="row title bordered">
-        <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
-             alt="{{ release.title }}"/>
-        <div class="release-rating-container pull-left">
-            <input type="hidden" class="rating" data-readonly value="{{ release.rating }}"/>
-        </div>
-        <div class="artist-info">
-        </div>
-        <h2>
-            <span class="release-title label label-default">{{ release.title }}</span>
-            {% if current_user.is_editor() %}
-            <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i>
-            </button>
-            {% endif %}
-        </h2>
-        <div class="user-rating-container">
-            <a href="#" class="dislike" title="Toggle Dislike Release"><i
-                    class="fa {{ 'fa-thumbs-down' if userRelease.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
-            <span class="reset-rating fa fa-square" title="Remove Rating"></span>
-            <input type="hidden" class="user-rating rating" value="{{ userRelease.rating }}"/>
-            <a href="#" class="favorite" title="Toggle Favorite Release"><i
-                    class="fa {{'fa-heart' if userRelease.isFavorite else 'fa-heart-o'}}"></i></a>
+        <div class="col-md-12">
+            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
+                 alt="{{ release.title }}"/>
+            <div class="release-rating-container pull-left">
+                <input type="hidden" class="rating" data-readonly value="{{ release.rating }}"/>
+            </div>
+            <div class="artist-info">
+            </div>
+            <h2>
+                <span class="release-title label label-default">{{ release.title }}</span>
+                {% if current_user.is_editor() %}
+                <button id="setAlbumTitle" class="btn btn-warning btn-sm" title="Set Album Title"><i class="fa fa-edit"></i>
+                </button>
+                {% endif %}
+            </h2>
+            <div class="user-rating-container">
+                <a href="#" class="dislike" title="Toggle Dislike Release"><i
+                        class="fa {{ 'fa-thumbs-down' if userRelease.isDisliked else 'fa-thumbs-o-down'}}"></i></a>
+                <span class="reset-rating fa fa-square" title="Remove Rating"></span>
+                <input type="hidden" class="user-rating rating" value="{{ userRelease.rating }}"/>
+                <a href="#" class="favorite" title="Toggle Favorite Release"><i
+                        class="fa {{'fa-heart' if userRelease.isFavorite else 'fa-heart-o'}}"></i></a>
+            </div>
         </div>
     </div>
     <div class="row bordered">
@@ -325,11 +327,10 @@
             {% endif %}
             {% for track in media.tracks|sort(attribute='trackNumber') %}
             <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
-                <div class="col-xs-1 col-sm-1 col-md-1">
+                <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
                     <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
-                    <span class="multiSelect-container"><input class="track-select" type="checkbox" value="1"/></span>
                 </div>
-                <div class="col-xs-7 col-sm-7 col-md-7">
+                <div class="col-xs-2 col-sm-6 col-md-6 col-lg-7">
                     <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
                           class="title label label-default">{{ track.title }}</span>
                     {% if track.partTitles|count > 0 %}
@@ -348,7 +349,7 @@
                     </a>
                     {% endif %}
                 </div>
-                <div class="col-xs-1 col-sm-1 col-md-1">
+                <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
                     <div class="dropdown">
                         <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown"
                                 aria-haspopup="true" aria-expanded="false">
@@ -376,7 +377,7 @@
                         </ul>
                     </div>
                 </div>
-                <div class="col-xs-3 col-sm-3 col-md-3">
+                <div class="col-xs-8 col-sm-4 col-md-4 col-lg-3">
                     <span data-track-duration="{{ track.duration }}"
                           class="duration label label-info">{{ track.duration|format_tracktime() }}</span>
                             <span class="user-rating-container">
