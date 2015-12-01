@@ -19,7 +19,7 @@ Built on:
 
 Video:
 -----------
-<iframe width="420" height="315" src="https://www.youtube.com/embed/-BnXV-qrQqc" frameborder="0" allowfullscreen></iframe>
+[linkname](https://youtu.be/-BnXV-qrQqc)
 
 Requirements
 ------------
