@@ -143,7 +143,8 @@
                                 return sum + el
                             }, 0);
         if(isListNumbered) {
-            for(var i = 1; i <= collectionCountShouldBe; i++) {
+            var firstReleaseNumberInCollection = myNumbers[0];
+            for(var i = firstReleaseNumberInCollection; i < (firstReleaseNumberInCollection + collectionCountShouldBe); i++) {
                 if($.inArray(i, myNumbers) < 0) {
                     missing.push(i);
                }
