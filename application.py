@@ -1,5 +1,4 @@
 import os
-
 import math
 import pytz
 import simplejson as json
@@ -610,7 +609,8 @@ def artistDetail(artist_id):
         .join(Track, Track.releaseMediaId == ReleaseMedia.id) \
         .filter(Track.artistId == artist.id).all()
 
-    return render_template('artist.html', artist=artist, releases=sorted(artist.releases, key=lambda rel: str(rel.releaseDate) or ''),
+    return render_template('artist.html', artist=artist,
+                           releases=sorted(artist.releases, key=lambda rel: str(rel.releaseDate) or ''),
                            counts=counts, userArtist=userArtist,
                            artistFolders=artistFolders, compilations=compilations)
 
@@ -1985,8 +1985,8 @@ def findImageForType(type, type_id):
         if 'query' in request.form:
             query = request.form['query']
         data = searcher.searchForReleaseImages(findImageForTypeRelease.artist.name,
-                                        findImageForTypeRelease.title,
-                                        query)
+                                               findImageForTypeRelease.title,
+                                               query)
         return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
@@ -2207,7 +2207,7 @@ def collections():
     for c in dbSession.query(Collection).order_by(Collection.name):
         releaseCount = len(c.collectionReleases)
         collectionCount = len(c.listInCSV.splitlines())
-        percentageComplete = 100. / collectionCount * releaseCount
+        percentageComplete = int(100 / float(collectionCount) * float(releaseCount))
         dbCollections.append({
             'roadieId': c.roadieId,
             'name': c.name,
@@ -2219,7 +2219,9 @@ def collections():
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
-    return render_template('collections.html', collections=dbCollections, notFoundEntryInfos=notFoundEntryInfos)
+    return render_template('collections.html',
+                           collections=sorted(dbCollections, key=lambda x: (x['percentageComplete'], x['name'])),
+                           notFoundEntryInfos=notFoundEntryInfos)
 
 
 @app.route('/collection/<collection_id>')
@@ -2364,6 +2366,7 @@ def singleTrackReleaseFinder(count):
     singleTrackReleases = Release.objects(__raw__={'Tracks': {'$size': 1}}).order_by('Title', 'Artist.Name')
     return render_template('singletrackreleasefinder.html', total=singleTrackReleases.count(),
                            singleTrackReleases=singleTrackReleases.limit(count))
+
 
 @app.route('/dupfinder')
 @login_required
