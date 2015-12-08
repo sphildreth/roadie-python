@@ -105,7 +105,8 @@ class LastFM(SearchEngineBase):
         """
         This is because there is no way to ge all the releases from an Artist via LastFM and their top albums query
         contains releases not by the given artist.
-        :param mbIdList:
+        :param artist: Artist
+        :param mbIdList: array
         :return:
         """
         cacheKey = hashlib.sha1((artist.roadieId + str(mbIdList)).encode('utf-8')).hexdigest()

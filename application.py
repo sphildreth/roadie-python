@@ -1980,23 +1980,13 @@ def findImageForType(type, type_id):
         findImageForTypeRelease = getRelease(type_id)
         if not findImageForTypeRelease:
             return jsonify(message="ERROR")
-        data = []
-        searcher = ImageSearcher(request.url_root)
+        searcher = ImageSearcher(request.remote_addr, request.url_root)
         query = findImageForTypeRelease.title
         if 'query' in request.form:
             query = request.form['query']
-        gs = searcher.googleSearchImages(request.remote_addr, query)
-        if gs:
-            for g in gs:
-                data.append(g)
-        try:
-            it = searcher.itunesSearchArtistAlbumImages(findImageForTypeRelease.artist.name,
-                                                        findImageForTypeRelease.title)
-            if it:
-                for i in it:
-                    data.append(i)
-        except:
-            pass
+        data = searcher.searchForReleaseImages(findImageForTypeRelease.artist.name,
+                                        findImageForTypeRelease.title,
+                                        query)
         return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
