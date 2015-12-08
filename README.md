@@ -17,6 +17,10 @@ Built on:
 * Mutagen
 * SQLAlchemy
 
+Video:
+-----------
+[Roadie Show-N-Tell](https://youtu.be/-BnXV-qrQqc)
+
 Requirements
 ------------
 * Python 3
