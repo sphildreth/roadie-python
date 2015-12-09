@@ -26,7 +26,7 @@ class ImageSearcher(object):
             r'(?::\d+)?' # optional port
             r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
-    def __init__(self, requestIp, referer=None):
+    def __init__(self, requestIp=None, referer=None):
         self.referer = referer
         if not self.referer or self.referer.startswith("http://localhost"):
             self.referer = "http://github.com/sphildreth/roadie"
