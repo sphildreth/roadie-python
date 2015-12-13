@@ -77,7 +77,8 @@ class CollectionImporter(ProcessorBase):
                 if not artist:
                     self.logger.warn(("Artist [" + csvArtist + "] Not Found In Database").encode('utf-8'))
                     self.notFoundEntryInfo.append(
-                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist,
+                         'release': csvRelease});
                     continue
                 release = self.releaseFactory.get(artist, csvRelease, False)
                 if not release:
@@ -85,7 +86,8 @@ class CollectionImporter(ProcessorBase):
                         ("Not able to find Release [" + csvRelease + "], Artist [" + csvArtist + "]").encode(
                             'utf-8'))
                     self.notFoundEntryInfo.append(
-                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist, 'release': csvRelease});
+                        {'col': self.collection.name, 'position': csvPosition, 'artist': csvArtist,
+                         'release': csvRelease})
                     continue
                 colRelease = CollectionRelease()
                 colRelease.releaseId = release.id
@@ -93,10 +95,12 @@ class CollectionImporter(ProcessorBase):
                 colRelease.createdDate = arrow.utcnow().datetime
                 colRelease.roadieId = str(uuid.uuid4())
                 self.collection.collectionReleases.append(colRelease)
-                self.logger.info("Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
+                self.logger.info(
+                    "Added Position [" + str(csvPosition) + "] Release [" + str(release) + "] To Collection")
             self.collection.lastUpdated = arrow.utcnow().datetime
             self.dbSession.commit()
             return True
         except:
             self.logger.exception("Error Importing Collection [" + self.collection.name + "]")
+            self.dbSession.rollback()
             return False

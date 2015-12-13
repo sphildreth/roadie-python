@@ -26,13 +26,13 @@ class Convertor(ProcessorBase):
         if fileExtension == ".flac" or \
                         fileExtension == ".wav":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
-            exitValue = os.system("ffmpeg -y -loglevel error -i \"" + file + "\" -q:a 0 \"" + outputFilename + "\"")
+            exitValue = os.system("avconv -y -loglevel error -i \"" + file + "\" -q:a 0 \"" + outputFilename + "\"")
 
         elif fileExtension == ".m4a" or \
                         fileExtension == ".ogg":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
             exitValue = os.system(
-                "ffmpeg -y -loglevel error -i \"" + file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
+                "avconv -y -loglevel error -i \"" + file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
 
         if exitValue == 0:
             if 'ROADIE_CONVERTING' in self.config and 'DoDeleteAfter' in self.config['ROADIE_CONVERTING']:
