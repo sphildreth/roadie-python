@@ -90,7 +90,7 @@ class iTunes(SearchEngineBase):
                                     cleanedTitle = createCleanedName(a.title)
                                     if cleanedTitle not in a.alternateNames and cleanedTitle != a.title:
                                         a.alternateNames.append(cleanedTitle)
-                                    images = self.imageSearcher.itunesSearchArtistAlbumImages(artist.name, a.title)
+                                    images = self.imageSearcher.itunesSearchArtistReleaseImages(artist.name, a.title)
                                     if images:
                                         a.images = []
                                         for i in images:
