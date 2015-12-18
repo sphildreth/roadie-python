@@ -11,6 +11,15 @@ a {
 
 .player-container {
     margin-bottom: 5px;
+    background-color: #272b30;
+    z-index: 9999;
+    border-bottom: 1px solid #ffffff;
+}
+
+.player-container.sticky {
+    position: fixed;
+    top: 0;
+    padding-top: 5px;
 }
 
 img.thumb {

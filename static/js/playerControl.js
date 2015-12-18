@@ -1,5 +1,7 @@
 var playerControl = (function(window, undefined) {
     var _element = null;
+    var _loadedPercent = 0;
+    var _loadTimer = null;
 
     function _trackLi(trackId) {
         return $(document).find("li[data-track-id='" + trackId + "']");
@@ -12,37 +14,66 @@ var playerControl = (function(window, undefined) {
     function _updateTrackPlayingIcon() {
         var html = "";
         if(playerControl.isPlaying) {
-            html = "<i class='fa fa-play-circle fa-2x'></i>";
+            iconClass = "fa-play-circle";
         } else {
-            html = "<i class='fa fa-pause-circle fa-2x'></i>";
+            iconClass = "fa-pause-circle";
         }
         var $t = _trackLi(playerControl.playingTrackId);
-        $t.find(".playing-status").html(html);
-        $t.addClass("playing");
+        $t.find(".playing-status i")
+          .removeClass("fa-play-circle")
+          .removeClass("fa-pause-circle")
+          .addClass(iconClass);
+         $t.addClass("playing");
     }
 
     function setup(data) {
         _element = data.element;
+
+        _loadTimer = setInterval(function() {
+          if (_element.readyState > 1) {
+
+          }
+        }, 10);
+
+        var $window = $(window),
+            $stickyEl = $('.player-container'),
+            elTop = $stickyEl.offset().top;
+
+        $window.scroll(function() {
+            $stickyEl.toggleClass('sticky', $window.scrollTop() > elTop);
+        })
+
         playerControl.play($(document).find("li[data-track-id]:first").data("track-id"));
 
         _element.addEventListener('progress', function(e) {
         });
 
         _element.addEventListener('error', function(e) {
-            debugger;
+        });
+
+        _element.addEventListener('loadstart', function(e) {
+            _loadTimer = setInterval(function() {
+                var buffered = _element.buffered;
+                if (buffered.length) {
+                    _loadedPercent = 100 * buffered.end(0) / _element.duration;
+                    $(".play-progress-bar .progress-bar.loaded").css('width', _loadedPercent+'%').attr('aria-valuenow', _loadedPercent);
+                    if (_loadedPercent == 100) {
+                        clearInterval(_loadTimer);
+                    }
+                }
+            }, 10);
         });
 
         _element.addEventListener('loadeddata', function(e) {
             var m = Math.floor(this.duration / 60);
             var s = Math.floor(this.duration % 60);
-            //container[audiojs].helpers.removeClass(this.wrapper, player.loadingClass);
             $(".track-time").text((m<10?'0':'')+m+':'+(s<10?'0':'')+s);
         });
 
         _element.addEventListener('timeupdate', function(e) {
            var percent = this.currentTime / this.duration;
            var pbPercent = percent * 100;
-           $(".play-progress-bar .progress-bar").css('width', pbPercent+'%').attr('aria-valuenow', pbPercent);
+           $(".play-progress-bar .progress-bar.playing").css('width', pbPercent+'%').attr('aria-valuenow', pbPercent);
            var p = this.duration * percent;
            var m = Math.floor(p / 60);
            var s = Math.floor(p % 60);
@@ -52,7 +83,25 @@ var playerControl = (function(window, undefined) {
         });
 
         _element.addEventListener('ended', function(e) {
-            playerControl.playNext();
+            playerControl.playForward();
+        });
+
+        $(".play-progress-bar .progress").on("click", function(e) {
+            var $this = $(this);
+            var percentageClick =  e.offsetX / $this.width();
+            if(percentageClick > _loadedPercent) {
+                percentageClick = _loadedPercent;
+            }
+            _element.currentTime = _element.duration * percentageClick;
+        });
+
+        $("ol.track-list span.playing-status").on("click", function(e) {
+            var $this = $(this);
+            if ($this.parent().hasClass("playing")) {
+                playerControl.pause();
+            } else {
+                playerControl.play($this.parent().data("track-id"));
+            }
         });
         
 /*        // Keyboard shortcuts-->
