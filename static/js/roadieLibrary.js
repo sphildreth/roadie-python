@@ -35,16 +35,9 @@ var roadieLibrary = (function(window, undefined) {
 
     function playLoader(url, html) {
         var width = 750;
-        var height = 265;
+        var height = 450;
         if (window.user.doUseHtmlPlayer) {
-            var win = window.open(url, 'roadiePlayer',
-                'toolbar=no,location=no,status=no,menubar=no,scrollbars=no,resizable=yes,width=' +
-                width + ',height=' + height);
-            if (html) {
-                win.document.open();
-                win.document.write(html);
-                win.document.close();
-            }
+            window.open(url);
         } else {
             var frameName = "playlistloader";
             var element = document.getElementById(frameName);

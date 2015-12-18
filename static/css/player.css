@@ -1,0 +1,121 @@
+body.player {
+  margin: 5px 15px;
+  padding: 0;
+  font-size: 16px;
+}
+
+a {
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.player-container {
+    margin-bottom: 5px;
+}
+
+img.thumb {
+    max-height: 40px;
+    max-width: 40px;
+}
+
+img.release-cover {
+    margin: auto;
+    display: block;
+}
+
+.player-container .track-number  {
+    padding-left: 23px;
+}
+
+.track-list .track-number {
+    padding-left: 15px;
+}
+
+.player-details-container img.artist-thumb {
+    max-height: 30px;
+    max-width: 30px;
+    margin-left: 11px;
+    margin-right: 7px;
+}
+
+@font-face {
+  font-family: 'Digital';
+  src: url('open_24_hour.ttf') format('truetype');
+}
+
+
+.digital {
+    font-family: 'Digital';
+    font-size: 26px;
+    color: lightblue;
+    width: 90px;
+    display: inline-block;
+}
+
+
+.info-container div {
+    margin: 4px 0;
+}
+
+ol.track-list {
+    list-style: none;
+    padding-left:0;
+}
+
+ol.track-list li {
+    height: 75px;
+    margin: 6px 0;
+    padding: 3px 0;
+    border-bottom: 1px solid #ffffff;
+}
+
+ol.track-list li.playing {
+    background-color: #000000;
+}
+
+.track-list img.release-thumb {
+    max-height: 60px;
+    max-width: 60px;
+}
+
+.track-list img.artist-thumb {
+    max-height: 20px;
+    max-width: 20px;
+    margin-left: 8px;
+    margin-right: 7px;
+}
+
+.track-list .artist-info-container, .track-list .release-info-container {
+    font-size: smaller;
+}
+
+.track-list .release-thumb {
+    margin-right: 4px;
+}
+
+.track-list .release-thumb-container {
+}
+
+.track-list .artist-info-container {
+    display: inline-block;
+}
+
+.track-list .release-info-container {
+}
+
+.track-list .playing-status {
+    width: 36px;
+    display:inline-block;
+    height: 100%;
+    cursor: pointer;
+}
+
+.track-list .playing-status .fa {
+    margin-top: 14px;
+}
+
+.player-container .progress {
+    margin-bottom: 1px;
+}
+
+

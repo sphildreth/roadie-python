@@ -2,6 +2,8 @@ import io
 import math
 from flask import request
 
+from resources.jinjaFilters import *
+
 
 class M3U(object):
     @staticmethod
@@ -21,6 +23,7 @@ class M3U(object):
             return None
         return {
             'Length': str(math.ceil(track.duration)),
+            'LengthFormatted': format_tracktime(track.duration),
             'ArtistId': str(release.artist.roadieId) if not track.artist else str(track.artist.roadieId),
             'ArtistName': release.artist.name if not track.artist else track.artist.name,
             'ReleaseMediaNumber': track.releasemedia.releaseMediaNumber,

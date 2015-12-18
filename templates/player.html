@@ -4,178 +4,92 @@
     <title>Roadie : Player</title>
     <meta name="robots" content="noindex"/>
     <meta name="viewport" content="width=500, initial-scale=1">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/bar-ui.css') }}"/>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/player.css') }}">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" href="//bootswatch.com/slate/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 </head>
-<body>
-<style>
-    body {
-        padding: 0;
-    }
-    .sm2-bar-ui {
-        font-size: 18px;
-    }
-    .sm2-bar-ui .sm2-main-controls,
-    .sm2-bar-ui .sm2-playlist-drawer {
-        background-color: #6f7980;
-    }
-    .sm2-bar-ui .sm2-inline-texture {
-        background: transparent;
-    }
-    img.artist-thumb, img.release-thumb {
-        display:inline-block;
-        height: 25px;
-        margin: 0 5px;
-    }
-    span.artist-label, span.release-label, span.track-label{
-        display: inline-block;
-        text-align: left;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .sm2-playlist-bd span.label {
-        vertical-align: middle;
-    }
-    span.artist-label {
-        font-weight: bold;
-        width: 30%;
-    }
-    span.release-label {
-        width: 34%;
-    }
-    span.track-label {
-        width: 34%;
-        height: 24px;
-    }
-
-
-</style>
-<div class="sm2-bar-ui playlist-open full-width">
-    <div class="bd sm2-main-controls">
-        <div class="sm2-inline-texture"></div>
-        <div class="sm2-inline-gradient"></div>
-        <div class="sm2-inline-element sm2-button-element">
-            <div class="sm2-button-bd">
-                <a href="#play" class="sm2-inline-button play-pause">Play / pause</a>
-            </div>
-        </div>
-        <div class="sm2-inline-element sm2-inline-status">
-            <div class="sm2-playlist">
-                <div class="sm2-playlist-target">
-                    <noscript><p>JavaScript is required.</p></noscript>
-                </div>
-            </div>
-            <div class="sm2-progress">
-                <div class="sm2-row">
-                    <div class="sm2-inline-time">0:00</div>
-                    <div class="sm2-progress-bd">
-                        <div class="sm2-progress-track">
-                            <div class="sm2-progress-bar"></div>
-                            <div class="sm2-progress-ball">
-                                <div class="icon-overlay"></div>
-                            </div>
+<body class="player">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 player-container">
+                <div class="row">
+                    <div class="col-xs-7 col-md-5 col-lg-3 player-controls-container">
+                        <div class="btn-group">
+                            <button id="btnPlayPrevious" onclick="javascript:playerControl.playPrevious();" class="btn btn-default btn-lg" title="Play Previous"><i class="fa fa-backward"></i></button>
+                            <button id="btnPlay" onclick="javascript:playerControl.play();"  class="btn btn-primary btn-lg" title="Play"><i class="fa fa-play"></i></button>
+                            <button id="btnPause" onclick="javascript:playerControl.pause();" class="btn btn-default btn-lg" title="Pause0"><i class="fa fa-pause"></i></button>
+                            <button id="btnPlayForward" onclick="javascript:playerControl.playForward();" class="btn btn-default btn-lg" title="Play Next"><i class="fa fa-forward"></i></button>
+                            <button id="btnRepeat" onclick="javascript:playerControl.toggleRepeat();"  class="btn btn-default btn-lg" title="Repeat"><i class="fa fa-repeat"></i></button>
                         </div>
                     </div>
-                    <div class="sm2-inline-duration">0:00</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="sm2-inline-element sm2-button-element sm2-volume">
-            <div class="sm2-button-bd">
-                <span class="sm2-inline-button sm2-volume-control volume-shade"></span>
-                <a href="#volume" class="sm2-inline-button sm2-volume-control">volume</a>
-            </div>
-        </div>
-
-        <div class="sm2-inline-element sm2-button-element">
-            <div class="sm2-button-bd">
-                <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
-            </div>
-        </div>
-
-        <div class="sm2-inline-element sm2-button-element">
-            <div class="sm2-button-bd">
-                <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
-            </div>
-        </div>
-
-        <div class="sm2-inline-element sm2-button-element">
-            <div class="sm2-button-bd">
-                <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="bd sm2-playlist-drawer sm2-element">
-
-        <div class="sm2-inline-texture">
-            <div class="sm2-box-shadow"></div>
-        </div>
-
-        <div class="sm2-playlist-wrapper">
-            <ul class="sm2-playlist-bd">
-                {% for track in tracks %}
-                <li data-artist-id="{{ track.ArtistId }}"
-                    data-artist-name="{{ track.ArtistName }}"
-                    data-track-id="{{ track.TrackId }}"
-                    data-track-title="{{ track.Title }}"
-                    data-release-title="{{ track.ReleaseTitle }}"
-                    data-release-year="{{ track.ReleaseYear }}">
-                    <a href="{{ track.StreamUrl }}.mp3">
-                        <span class="artist-label">
-                        <img class="release-thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
-                                alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}
-                        </span>
-                        <span class="release-label">
-                            <img
-                                class="release-thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
-                                alt="{{ track.ReleaseTitle }}"/>&nbsp;<span class="label label-default">{{ track.ReleaseYear }}</span> {{ track.ReleaseTitle }}
-                        </span>
-                        <span class="track-label">
-                            <span class="trackNumber label label-primary">{{ '%02d' % track.TrackNumber }}</span>
-                            {{ track.Title }}
-                        </span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-
-        </div>
-
-        <div class="sm2-extra-controls">
-
-            <div class="bd">
-
-                <div class="sm2-inline-element sm2-button-element">
-                    <a href="#prev" title="Previous" class="sm2-inline-button previous">&lt; previous</a>
-                </div>
-
-                <div class="sm2-inline-element sm2-button-element">
-                    <a href="#next" title="Next" class="sm2-inline-button next">&gt; next</a>
-                </div>
-
-                <div class="sm2-inline-element sm2-button-element disabled">
-                    <div class="sm2-button-bd">
-                        <a href="#repeat" title="Repeat playlist" class="sm2-inline-button repeat">&infin; repeat</a>
+                    <div class="col-xs-5 col-md-7 col-lg-9">
+                        <div class="play-progress-bar">
+                            <div class="progress">
+                              <div class="progress-bar" role="progressbar"
+                                   aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
+                                   style="width: 0%;">
+                                <span class="sr-only">0% Complete</span>
+                              </div>
+                            </div>
+                        </div>
+                        <div class="times-container">
+                            <span class="digital current-time">00:00</span>
+                            <span class="digital track-time">00:00</span>
+                        </div>
                     </div>
                 </div>
-
-                <div class="sm2-inline-element sm2-button-element disabled">
-                    <a href="#shuffle" title="Shuffle" class="sm2-inline-button shuffle">shuffle</a>
+                <div>
+                    <audio id="audioPlayer" preload autoplay></audio>
                 </div>
-
             </div>
-
         </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-12">
+                <ol class="track-list">
+                    {% for track in tracks %}
+                    <li data-track-id="{{ track.TrackId }}"
+                        data-track-url="{{ track.StreamUrl }}"
+                        data-track-duration="{{ track.LengthFormatted }}">
 
+                        <span class="playing-status pull-left"><i class="fa fa-play-circle-o fa-2x"></i></span>
+                        <div class="release-thumb-container pull-left">
+                            <img class="release-thumb thumb" src="/images/release/thumbnail/{{ track.ReleaseId }}"
+                                 alt="{{ track.ReleaseTitle }}"/>
+                        </div>
+                        <a href="/artist/{{ track.ArtistId }}" target="roadie" title="View Artist: {{ track.ArtistName }}">
+                            <div class="artist-info-container">
+                                <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
+                                     alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}
+
+                            </div>
+                        </a>
+                        <a href="/release/{{ track.ReleaseId }}" target="roadie" title="View Release: {{ track.ReleaseTitle }}">
+                            <div class="release-info-container">
+                                 <span class="label label-primary">{{ track.ReleaseYear }}</span> {{ track.ReleaseTitle }}
+                            </div>
+                            <div class="track-info-container">
+                                <span class="label label-primary track-number">{{ '%02d' % track.TrackNumber }}</span> {{ track.Title }}
+                            </div>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ol>
+            </div>
+        </div>
     </div>
-</div>
-<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/soundmanager2-jsmin.js') }}"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='js/bar-ui.js') }}"></script>
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/playerControl.js') }}"></script>
+    <script>
+
+      $(function() {
+
+        playerControl.setup({
+            element: document.getElementById("audioPlayer")
+        });
+
+      });
+    </script>
 </body>
 </html>
