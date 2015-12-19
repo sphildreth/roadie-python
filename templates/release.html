@@ -848,6 +848,11 @@
         });
 
         $("#findCoverArt").on("click", function(e) {
+            if($(this).hasClass("clicked")) {
+                return false;
+            }
+            var $that = $(this);
+            $that.addClass("clicked");
             $.ajax({
                 type: 'POST',
                 url: '/images/find/r/' + releaseId,
@@ -858,7 +863,10 @@
                             buttons: {
                                 cancel: {
                                     label: "Cancel",
-                                    className: "btn-default"
+                                    className: "btn-default",
+                                    callback: function() {
+                                        $that.removeClass("clicked");
+                                    }
                                 },
                                 save: {
                                     label: "Save",
@@ -873,6 +881,7 @@
                                                     if(data.message == "OK") {
                                                         $(".release-detail-container .title img.thumb.release-thumb").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
                                                     }
+                                                    $that.removeClass("clicked");
                                                 },
                                                 error:function(jq, st, error){
                                                     roadieLibrary.showErrorMessage(error);

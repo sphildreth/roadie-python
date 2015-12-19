@@ -1299,18 +1299,22 @@ def setCoverViaUrl(release_id):
             setCoverViaUrlRelease.thumbnail = b.getvalue()
             setCoverViaUrlRelease.lastUpdated = arrow.utcnow().datetime
             dbSession.commit()
-            # ID3 Tags should be 300x300 to render proper in media players
-            tagImageSize = 300, 300
-            img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
-            img.resize(tagImageSize)
-            b = io.BytesIO()
-            img.save(b, "JPEG")
-            tagImage = b.getvalue()
-            for media in setCoverViaUrlRelease.media:
-                for track in media.tracks:
-                    trackPath = pathToTrack(track)
-                    id3 = ID3(trackPath, config)
-                    id3.setCoverImage(tagImage)
+            try:
+                # ID3 Tags should be 300x300 to render proper in media players
+                tagImageSize = 300, 300
+                img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
+                img.resize(tagImageSize)
+                b = io.BytesIO()
+                img.save(b, "JPEG")
+                tagImage = b.getvalue()
+                for media in setCoverViaUrlRelease.media:
+                    for track in media.tracks:
+                        trackPath = pathToTrack(track)
+                        id3 = ID3(trackPath, config)
+                        id3.setCoverImage(tagImage)
+            except:
+                logger.exception("Error Setting Tracks Image via Url")
+                pass
         return jsonify(message="OK")
     except:
         logger.exception("Error Setting Release Image via Url")
@@ -1831,8 +1835,10 @@ def playStats(option):
     user = getUser()
     tracks = []
     if option == "top25songs":
-        for track in dbSession.query(Track).filter(Track.rating > 0).order_by(desc(Track.rating)).order_by(
-                Track.title).limit(25):
+        for track in dbSession.query(Track).filter(Track.rating > 0)\
+                .order_by(desc(Track.rating))\
+                .order_by(Track.title)\
+                .limit(25):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks
@@ -1841,8 +1847,10 @@ def playStats(option):
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
     if option == "top10Albums":
-        for track in dbSession.query(Release).filter(Release.rating > 0).order_by(desc(Release.rating)).order_by(
-                Release.title).limit(10):
+        for track in dbSession.query(Release).filter(Release.rating > 0)\
+                .order_by(desc(Release.rating))\
+                .order_by(Release.title)\
+                .limit(10):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
             session['tracks'] = tracks
