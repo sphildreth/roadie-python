@@ -27,6 +27,8 @@ class Track(Base):
     amgId = Column(String(100))
     spotifyId = Column(String(100))
     title = Column(String(250), nullable=False, index=True)
+    # https://en.wikipedia.org/wiki/International_Standard_Recording_Code
+    isrc = Column(String(15), unique=True)
     alternateNames = Column(ScalarListType(separator="|"))
     trackNumber = Column(SmallInteger(), nullable=False)
     # Seconds long
