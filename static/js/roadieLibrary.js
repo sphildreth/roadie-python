@@ -37,7 +37,7 @@ var roadieLibrary = (function(window, undefined) {
         var width = 750;
         var height = 450;
         if (window.user.doUseHtmlPlayer) {
-            window.open(url);
+            window.open(url, 'roadiePlayer');
         } else {
             var frameName = "playlistloader";
             var element = document.getElementById(frameName);

@@ -26,6 +26,23 @@ var playerControl = (function(window, undefined) {
          $t.addClass("playing");
     }
 
+    function _scrollToView(element){
+        var offset = element.offset().top;
+        if(!element.is(":visible")) {
+            element.css({"visibility":"hidden"}).show();
+            var offset = element.offset().top;
+            element.css({"visibility":"", "display":""});
+        }
+        var visible_area_start = $(window).scrollTop();
+        var visible_area_end = visible_area_start + window.innerHeight;
+        if(offset < visible_area_start || offset > visible_area_end){
+             // Not in view so scroll to it
+             $('html,body').animate({scrollTop: offset - window.innerHeight/3}, 1000);
+             return false;
+        }
+        return true;
+    }
+
     function setup(data) {
         _element = data.element;
 
@@ -49,6 +66,24 @@ var playerControl = (function(window, undefined) {
         });
 
         _element.addEventListener('error', function(e) {
+            switch (e.target.error.code) {
+             case e.target.error.MEDIA_ERR_ABORTED:
+               console.log('Aborted the video playback.');
+               break;
+             case e.target.error.MEDIA_ERR_NETWORK:
+               console.log('A network error caused the audio download to fail.');
+               break;
+             case e.target.error.MEDIA_ERR_DECODE:
+               console.log('The audio playback was aborted due to a corruption problem or because the video used features your browser did not support.');
+               break;
+             case e.target.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+               console.log('The video audio not be loaded, either because the server or network failed or because the format is not supported.');
+               break;
+             default:
+               console.log('An unknown error occurred.');
+               break;
+            }
+            playerControl.playForward();
         });
 
         _element.addEventListener('loadstart', function(e) {
@@ -104,29 +139,30 @@ var playerControl = (function(window, undefined) {
             }
         });
         
-/*        // Keyboard shortcuts-->
-        $(document).keydown(function(e) {-->
+        $(document).keydown(function(e) {
           var unicode = e.charCode ? e.charCode : e.keyCode;
-             // right arrow
           if (unicode == 39) {
-            var next = $('li.playing').next();
-            if (!next.length) next = $('ol li').first();
-            next.click();
-            // back arrow
+            e.preventDefault();
+            playerControl.playForward();
           } else if (unicode == 37) {
-            var prev = $('li.playing').prev();
-            if (!prev.length) prev = $('ol li').last();
-            prev.click();
-            // spacebar
+            e.preventDefault();
+            playerControl.playPrevious();
           } else if (unicode == 32) {
-            audio.playPause();
+            e.preventDefault();
+            if(playerControl.isPlaying) {
+                playerControl.pause();
+            } else {
+                playerControl.play();
+                playerControl.play();
+            }
           }
-        }); */
+        });
     }
 
     function play(trackId) {
         if(trackId) {
             $(".playing-status .fa-play-circle").removeClass("fa-play-circle").addClass("fa-play-circle-o");
+            _scrollToView(_trackLi(trackId));
             $("li.playing").removeClass("playing");
             $(".play-progress-bar .progress-bar").css('width', '0%').attr('aria-valuenow', 0);
             _element.setAttribute("src",_trackLi(trackId).data("track-url"));
