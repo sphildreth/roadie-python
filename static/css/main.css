@@ -39,9 +39,19 @@ body.roadie .breadcrumb {
     cursor: pointer;
 }
 
-ul.dropdown-menu a {
-    text-align:left;
+@media (max-width: 768px) {
+    ul.dropdown-menu {
+        font-size: 1.75rem;
+    }
 }
+
+    ul.dropdown-menu li i {
+        margin-right: 3px;
+    }
+
+    ul.dropdown-menu a {
+        text-align:left;
+    }
 
 li.username, td.username {
   text-transform: capitalize;
@@ -882,3 +892,4 @@ ul.six-column li {
 .checked-release-options {
     margin: 10px;
 }
+
