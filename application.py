@@ -2220,6 +2220,7 @@ def collections():
             'roadieId': c.roadieId,
             'name': c.name,
             'releaseCount': releaseCount,
+            'type': c.collectionType,
             'collectionCount': collectionCount,
             'percentageComplete': percentageComplete
         })
@@ -2282,6 +2283,8 @@ def editCollection(collection_id):
         form = request.form
         editCollectionCollection.name = form['name']
         editCollectionCollection.edition = form['edition']
+        editCollectionCollection.collectionCount = int(form['collectionCount'])
+        editCollectionCollection.collectionType = form['collectionType']
         editCollectionCollection.listInCSVFormat = form['listInCSVFormat']
         editCollectionCollection.listInCSV = form['listInCSV']
         editCollectionCollection.description = form['description']

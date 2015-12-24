@@ -22,7 +22,7 @@
             <h4>
                 <span title="Found {{ collection.releaseCount }} Releases of {{ collection.collectionCount }} in Library"
                       class="label label-{{ 'info' if collection.percentageComplete != 100 else 'success' }}">{{ '%04d' % collection.releaseCount }}</span>
-                <span class="label label-default">{{ collection.name }}</span>
+                <span class="label label-default">{{ collection.name }} <i class="fa {{ 'fa-trophy' if collection.type == 'Rank' else 'fa-list-alt' }}"></i></span>
             </h4>
         </a>
     </div>

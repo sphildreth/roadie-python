@@ -2,6 +2,7 @@ var playerControl = (function(window, undefined) {
     var _element = null;
     var _loadedPercent = 0;
     var _loadTimer = null;
+    var _lastTrackText = null;
 
     function _trackLi(trackId) {
         return $(document).find("li[data-track-id='" + trackId + "']");
@@ -41,6 +42,12 @@ var playerControl = (function(window, undefined) {
              return false;
         }
         return true;
+    }
+
+    function _updateTrackLength(duration) {
+        var m = Math.floor(duration / 60);
+        var s = Math.floor(duration % 60);
+        $(".track-time").text((m<10?'0':'')+m+':'+(s<10?'0':'')+s);
     }
 
     function setup(data) {
@@ -100,9 +107,7 @@ var playerControl = (function(window, undefined) {
         });
 
         _element.addEventListener('loadeddata', function(e) {
-            var m = Math.floor(this.duration / 60);
-            var s = Math.floor(this.duration % 60);
-            $(".track-time").text((m<10?'0':'')+m+':'+(s<10?'0':'')+s);
+            _updateTrackLength(this.duration);
         });
 
         _element.addEventListener('timeupdate', function(e) {
@@ -114,7 +119,11 @@ var playerControl = (function(window, undefined) {
            var s = Math.floor(p % 60);
            m = m || 0;
            s = s || 0;
-           $(".current-time").text((m<10?'0':'')+m+':'+(s<10?'0':'')+s);
+           var trackText = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+           if(_lastTrackText != trackText) {
+                $(".current-time").text(trackText);
+                _lastTrackText = trackText;
+            }
         });
 
         _element.addEventListener('ended', function(e) {
@@ -161,11 +170,13 @@ var playerControl = (function(window, undefined) {
 
     function play(trackId) {
         if(trackId) {
+            _lastTrackText = null;
             $(".playing-status .fa-play-circle").removeClass("fa-play-circle").addClass("fa-play-circle-o");
             _scrollToView(_trackLi(trackId));
             $("li.playing").removeClass("playing");
             $(".play-progress-bar .progress-bar").css('width', '0%').attr('aria-valuenow', 0);
             _element.setAttribute("src",_trackLi(trackId).data("track-url"));
+            _updateTrackLength(parseFloat(_trackLi(trackId).data("track-duration"))/1000);
             _element.load();
             playerControl.playingTrackId = trackId;
         }
@@ -178,6 +189,7 @@ var playerControl = (function(window, undefined) {
 
     function stop() {
         $(".player-controls-container button").removeClass("btn-primary").addClass("btn-default");
+        playerControl.isPlaying = false;
     }
 
     function playPrevious() {
