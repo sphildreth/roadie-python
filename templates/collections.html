@@ -16,7 +16,7 @@
         <li role="presentation" class="active"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab">Collections</a></li>
         <li role="presentation">
             <a href="#collectionRankings" aria-controls="collectionRankings" role="tab" data-toggle="tab">
-            All Collection Rankings <i class="fa fa-question-circle" title="Collective ranking of Releases across all collections, smallest number is highest ranked."></i>
+            All Collection Rankings <i class="fa fa-question-circle" title="Collective ranking of Releases across all collections."></i>
             </a>
         </li>
       </ul>
@@ -39,14 +39,15 @@
             {% endfor %}
         </div>
         <div role="tabpanel" class="tab-pane collection-container" id="collectionRankings">
-             {%for rankedRelease in rankings %}
+            {% set count = 1 %}
+            {%for rankedRelease in rankings %}
                 <div class="collection-release pull-left" data-release-id="{{ rankedRelease['roadieId'] }}">
                     <a href="/release/{{ rankedRelease['roadieId'] }}">
                         <div class="thumbnail-container pull-left">
                             <img class="release-thumb" src="/images/release/thumbnail/{{ rankedRelease['roadieId'] }}"
                                  alt="{{ rankedRelease['title'] }}"/>
                         </div>
-                        <h4><span class="label label-primary pull-left">{{ "%0.4f" % rankedRelease['rank']  }}</span></h4>
+                        <h4><span class="label label-primary pull-left" title="{{ "%0.4f" % rankedRelease['rank'] }}">{{ '%02d' % count }}</span></h4>
                     </a>
                     <div class="artist-info">
                         <a title="View Artist" href="/artist/{{ rankedRelease['artistId'] }}">
@@ -71,7 +72,8 @@
                         </h3>
                     </a>
                 </div>
-             {% endfor %}
+                {% set count = count + 1 %}
+            {% endfor %}
         </div>
       </div>
     </div>
