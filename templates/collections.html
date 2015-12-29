@@ -5,46 +5,103 @@
 {% block body_content %}
 <div class="collections-container">
     {% if current_user.is_editor() %}
-    <div>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
         <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-plus"></i> Add</a>
         <a id="updateAllCollections" class="btn btn-warning" href="javascript:void(0);"><i class="fa fa-bolt"></i>
-            Update All</a>
+        Update All</a>
     </div>
     {% endif %}
-    <h4><span class="label label-primary">Collections</span></h4>
-    {% for collection in collections %}
-    <div class="row collection">
-        <a href="/collection/{{ collection.roadieId }}">
-            <div class="thumbnail-container pull-left">
-                <img class="thumb" src="/images/collection/thumbnail/{{ collection.roadieId }}"
-                     alt="{{ collection.name }}"/>
+    <div class="row">
+      <ul class="nav nav-tabs" role="tablist">
+        <li role="presentation" class="active"><a href="#collections" aria-controls="collections" role="tab" data-toggle="tab">Collections</a></li>
+        <li role="presentation">
+            <a href="#collectionRankings" aria-controls="collectionRankings" role="tab" data-toggle="tab">
+            All Collection Rankings <i class="fa fa-question-circle" title="Collective ranking of Releases across all collection, smallest number is highest ranked."></i>
+            </a>
+        </li>
+      </ul>
+      <div class="tab-content">
+        <div role="tabpanel" class="tab-pane active" id="collections">
+            {% for collection in collections %}
+            <div class="row collection">
+                <a href="/collection/{{ collection.roadieId }}">
+                    <div class="thumbnail-container pull-left">
+                        <img class="thumb" src="/images/collection/thumbnail/{{ collection.roadieId }}"
+                             alt="{{ collection.name }}"/>
+                    </div>
+                    <h4>
+                        <span title="Found {{ collection.releaseCount }} Releases of {{ collection.collectionCount }} in Library"
+                              class="label label-{{ 'info' if collection.percentageComplete != 100 else 'success' }}">{{ '%04d' % collection.releaseCount }}</span>
+                        <span class="label label-default">{{ collection.name }} <i class="fa {{ 'fa-trophy' if collection.type == 'Rank' else 'fa-list-alt' }}"></i></span>
+                    </h4>
+                </a>
             </div>
-            <h4>
-                <span title="Found {{ collection.releaseCount }} Releases of {{ collection.collectionCount }} in Library"
-                      class="label label-{{ 'info' if collection.percentageComplete != 100 else 'success' }}">{{ '%04d' % collection.releaseCount }}</span>
-                <span class="label label-default">{{ collection.name }} <i class="fa {{ 'fa-trophy' if collection.type == 'Rank' else 'fa-list-alt' }}"></i></span>
-            </h4>
-        </a>
+            {% endfor %}
+        </div>
+        <div role="tabpanel" class="tab-pane collection-container" id="collectionRankings">
+             {%for rankedRelease in rankings %}
+                <div class="collection-release pull-left" data-release-id="{{ rankedRelease['roadieId'] }}">
+                    <a href="/release/{{ rankedRelease['roadieId'] }}">
+                        <div class="thumbnail-container pull-left">
+                            <img class="release-thumb" src="/images/release/thumbnail/{{ rankedRelease['roadieId'] }}"
+                                 alt="{{ rankedRelease['title'] }}"/>
+                        </div>
+                        <h4><span class="label label-primary pull-left">{{ "%0.4f" % rankedRelease['rank']  }}</span></h4>
+                    </a>
+                    <div class="artist-info">
+                        <a title="View Artist" href="/artist/{{ rankedRelease['artistId'] }}">
+                        <img class="thumb pull-left"
+                             src="/images/artist/thumbnail/{{ rankedRelease['artistId'] }}"
+                             alt="{{ rankedRelease['artistName'] }}"/>
+                        <h5><span data-toggle="tooltip"
+                                  data-placement="top"
+                                  title="{{ rankedRelease['artistName']}}"
+                                  class="label label-info">{{ rankedRelease['artistName'] }}</span></h5>
+                        </a>
+                    </div>
+                    <div class="release-rating-container">
+                        <input type="hidden" class="rating" data-readonly value="{{ rankedRelease['releaseRating'] }}"/>
+                    </div>
+                    <a href="/release/{{ rankedRelease['roadieId'] }}">
+                        <h3 class="album-title">
+                            <span data-toggle="tooltip"
+                                  data-placement="top"
+                                  title="{{ rankedRelease['title'] }}"
+                                  class="label label-default">{{ rankedRelease['title'] }}</span>
+                        </h3>
+                    </a>
+                </div>
+             {% endfor %}
+        </div>
+      </div>
     </div>
-    {% endfor %}
+
     {% if notFoundEntryInfos %}
     <div class="bordered">
-        {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
-        <div class="row not-found">
-            <div class="col-md-4">
-                [{{ notFoundEntryInfo['artist'] }}]
-            </div>
-            <div class="col-md-4">
-                [{{ notFoundEntryInfo['release'] }}]
-            </div>
-            <div class="col-md-3">
-                [{{ notFoundEntryInfo['col'] }}]
-            </div>
-            <div class="col-md-1">
-                [{{ notFoundEntryInfo['position'] }}]
+        <div class="row">
+            <div class="table-responsive">
+                <table class="table-track-info table table-striped table-condensed table-responsive">
+                    <thead>
+                    <tr>
+                        <td>Artist</td>
+                        <td>Release</td>
+                        <td>Collection</td>
+                        <td>Position</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for notFoundEntryInfo in notFoundEntryInfos|sort(attribute='artist') %}
+                        <tr>
+                            <td>[{{ notFoundEntryInfo['artist'] }}]</td>
+                            <td>[{{ notFoundEntryInfo['release'] }}]</td>
+                            <td>[{{ notFoundEntryInfo['col'] }}]</td>
+                            <td>[{{ notFoundEntryInfo['position'] }}]</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% endfor %}
     </div>
     {% endif %}
 </div>

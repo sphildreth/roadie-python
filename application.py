@@ -22,7 +22,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.ioloop import IOLoop
 from werkzeug.datastructures import Headers
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, desc, String, event, exc, select
+from sqlalchemy import Integer, desc, Numeric, String, event, exc, select
 from sqlalchemy.exc import DisconnectionError
 from sqlalchemy.sql import text, func
 from flask_login import LoginManager, login_user, logout_user, \
@@ -2228,9 +2228,23 @@ def collections():
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
+    rankings = conn.execute(text(
+        "SELECT r.title, r.roadieId, a.roadieId as artistId, a.name as artistName, r.rating as releaseRating, "
+        " sum(listNumber)/POW(count(cr.id),3) as rank " +
+        "FROM `collectionrelease` cr  " +
+        "JOIN `release` r on (r.id = cr.releaseId) " +
+        "JOIN `collection` c on (c.id = cr.collectionId) " +
+        "JOIN `artist` a on (a.id = r.artistId) " +
+        "where c.collectionType = 'Rank' " +
+        "group by r.title, r.roadieId  " +
+        "order by rank asc, count(cr.id)  " +
+        "desc  LIMIT 50; ", autocommit=True)
+                          .columns(releaseTitle=String, roadieId=String, artistId=String,
+                                   artistName=String, releaseRating=Numeric, rank=Numeric))
     return render_template('collections.html',
                            collections=sorted(dbCollections, key=lambda x: (x['percentageComplete'], x['name'])),
-                           notFoundEntryInfos=notFoundEntryInfos)
+                           notFoundEntryInfos=notFoundEntryInfos,
+                           rankings=rankings)
 
 
 @app.route('/collection/<collection_id>')
