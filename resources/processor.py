@@ -339,12 +339,11 @@ class Processor(ProcessorBase):
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
                         scanner.scan(releaseFolder, artist, release)
-                        if release.status == 1:
-                            # Sync  the counts as some releases where added by the processor
-                            release.mediaCount = len(release.media)
-                            for media in release.media:
-                                media.trackCount = len(media.tracks)
-                                release.trackCount = len(media.tracks)
+                        # Sync  the counts as some releases where added by the processor
+                        release.mediaCount = len(release.media)
+                        for media in release.media:
+                            media.trackCount = len(media.tracks)
+                            release.trackCount = len(media.tracks)
                     if not self.readOnly and artist and release:
                         if self.shouldDeleteFolder(mp3Folder):
                             try:
