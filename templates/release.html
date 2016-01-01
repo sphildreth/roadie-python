@@ -708,7 +708,7 @@
             var $r = $(this).siblings("input.track-rating");
             $.ajax({
                 type: 'POST',
-                url: '/user/track/setrating/' + releaseId + '/' + $(this).closest("div.track").data("track-id") + '/0',
+                url: '/user/track/setrating/' + $(this).closest("div.track").data("track-id") + '/0',
                 contentType: "application/javascript",
                 success: function(data) {
                     if(data.message == "OK") {
