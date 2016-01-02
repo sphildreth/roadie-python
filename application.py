@@ -2345,6 +2345,21 @@ def playCollection(collection_id):
                      attachment_filename=collection.Name + ".m3u")
 
 
+@app.route("/collection/delete/<collection_id>", methods=["POST"])
+def deleteCollection(collection_id):
+    try:
+        deleteCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
+        if not deleteCollectionCollection:
+            return jsonify(message="ERROR")
+        dbSession.delete(deleteCollectionCollection)
+        dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Deleting Collection")
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
 @app.route("/collections/updateall", methods=['POST'])
 def updateAllCollections():
     try:

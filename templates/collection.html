@@ -23,7 +23,7 @@
             <a href="/collection/edit/{{ collection.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             {% if not collection.isLocked %}
-            <a id="delete-collection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+            <a id="deleteCollection" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
             {% if collection.listInCSVFormat and collection.listInCSV %}
             <a id="updateCollection" class="btn btn-warning"><i class="fa fa-bolt"></i> Update</a>
             {% endif %}
@@ -186,6 +186,29 @@
                 }
             });
         });
+
+        $("#deleteCollection").on("click", function(e) {
+            bootbox.confirm("Continue To Delete Collection?", function(result) {
+                if(result) {
+                    $(".loader").fadeIn("slow", function() {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/collection/delete/' + collectionId,
+                            contentType: "application/javascript",
+                            success: function(data) {
+                                if(data.message == "OK") {
+                                    window.location.href = '/collections';
+                                }
+                            },
+                            error:function(jq, st, error){
+                                roadieLibrary.showErrorMessage(error);
+                            }
+                        });
+                    });
+                }
+            });
+        });
+
     });
 
 </script>
