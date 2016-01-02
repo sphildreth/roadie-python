@@ -118,6 +118,7 @@ FlaskSession(app)
 
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
+NEW_ID = "__new__"
 
 def generate_csrf_token():
     if '_csrf_token' not in session:
@@ -2285,9 +2286,15 @@ def collection(collection_id):
 @login_required
 def editCollection(collection_id):
     try:
+        isAddingNew = collection_id == NEW_ID
         editCollectionCollection = dbSession.query(Collection).filter(Collection.roadieId == collection_id).first()
-        if not editCollectionCollection:
+        if not editCollectionCollection and not isAddingNew:
             return render_template('404.html'), 404
+        if isAddingNew:
+            editCollectionCollection = Collection()
+            editCollectionCollection.name = ""
+            editCollectionCollection.roadieId = NEW_ID
+            editCollectionCollection.user = getUser()
         if request.method == 'GET':
             return render_template('collectionEdit.html', collection=editCollectionCollection)
         token = session.pop('_csrf_token', None)
@@ -2316,11 +2323,16 @@ def editCollection(collection_id):
             if formUrls:
                 for url in formUrls.split('|'):
                     editCollectionCollection.urls.append(url)
-        editCollectionCollection.lastUpdated = now
+        if not isAddingNew:
+            editCollectionCollection.lastUpdated = now
+        else:
+            editCollectionCollection.roadieId = str(uuid.uuid4())
+            collection_id = editCollectionCollection.roadieId
+            dbSession.add(editCollectionCollection)
         dbSession.commit()
-        flash('Collection Edited successfully')
+        flash('Collection ' + 'Added' if isAddingNew else 'Edited' + ' successfully')
     except:
-        logger.exception("Error Editing Collection")
+        logger.exception("Error" + 'Adding' if isAddingNew else 'Editing' + " Collection")
         dbSession.rollback()
     return redirect("/collection/" + collection_id)
 

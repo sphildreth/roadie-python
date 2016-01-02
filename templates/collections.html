@@ -6,7 +6,7 @@
 <div class="collections-container">
     {% if current_user.is_editor() %}
     <div class="btn-toolbar edit-toolbar" role="toolbar">
-        <a class="btn btn-primary" href="/admin/collection/new/?url=/collections"><i class="fa fa-plus"></i> Add</a>
+        <a class="btn btn-primary" href="/collection/edit/__new__"><i class="fa fa-plus"></i> Add</a>
         <a id="updateAllCollections" class="btn btn-warning" href="javascript:void(0);"><i class="fa fa-bolt"></i>
         Update All</a>
     </div>
