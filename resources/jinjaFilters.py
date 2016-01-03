@@ -5,6 +5,15 @@ from math import floor
 from babel.dates import get_timezone, UTC, format_datetime
 
 
+def get_user_track_rating(trackRatings, user):
+    if not trackRatings:
+        return 0
+    for trackRating in trackRatings:
+        if trackRating.userId == user.id:
+            return trackRating.rating
+    return 0
+
+
 def format_age_from_date(value):
     now = datetime.datetime.utcnow()
     now = now.date()

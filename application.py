@@ -64,7 +64,7 @@ from resources.validator import Validator
 from resources.nocache import nocache
 from resources.jinjaFilters import format_tracktime, format_timedelta, calculate_release_tracks_Length, \
     group_release_tracks_filepaths, format_age_from_date, calculate_release_discs, count_new_lines, \
-    format_datetime_for_user
+    format_datetime_for_user, get_user_track_rating
 from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
 from viewModels.RoadieReleaseModelView import RoadieReleaseModelView
 from viewModels.RoadieCollectionModelView import RoadieCollectionModelView
@@ -90,6 +90,8 @@ app.jinja_env.filters['format_age_from_date'] = format_age_from_date
 app.jinja_env.filters['calculate_release_discs'] = calculate_release_discs
 app.jinja_env.filters['count_new_lines'] = count_new_lines
 app.jinja_env.filters['format_datetime_for_user'] = format_datetime_for_user
+app.jinja_env.filters['get_user_track_rating'] = get_user_track_rating
+
 
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
@@ -1283,6 +1285,30 @@ def setReleaseImage(release_id, image_id):
         return jsonify(message="ERROR")
 
 
+@app.route("/artist/setImageViaUrl/<artist_id>", methods=['POST'])
+def setImageViaUrl(artist_id):
+    try:
+        setImageViaUrlArtist = getArtist(artist_id)
+        if not setImageViaUrlArtist:
+            return jsonify(message="ERROR")
+        url = request.form['url']
+        searcher = ImageSearcher(request.url_root)
+        imageBytes = searcher.getImageBytesForUrl(url)
+        if imageBytes:
+            img = PILImage.open(io.BytesIO(imageBytes)).convert('RGB')
+            img.thumbnail(thumbnailSize)
+            b = io.BytesIO()
+            img.save(b, "JPEG")
+            setImageViaUrlArtist.thumbnail = b.getvalue()
+            setImageViaUrlArtist.lastUpdated = arrow.utcnow().datetime
+            dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        logger.exception("Error Setting Artist Image via Url")
+        dbSession.rollback()
+        return jsonify(message="ERROR")
+
+
 @app.route("/release/setCoverViaUrl/<release_id>", methods=['POST'])
 def setCoverViaUrl(release_id):
     try:
@@ -1999,7 +2025,18 @@ def findImageForType(type, type_id):
         return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
                         mimetype="application/json")
     elif type == 'a':  # artist
-        return jsonify(message="ERROR")
+        findImageForTypeArtist = getArtist(type_id)
+        if not findImageForTypeArtist:
+            return jsonify(message="ERROR")
+        searcher = ImageSearcher(request.remote_addr, request.url_root)
+        query = findImageForTypeArtist.name
+        if 'query' in request.form:
+            query = request.form['query']
+        data = searcher.searchForReleaseImages(findImageForTypeArtist.name,
+                                               "Band",
+                                               query)
+        return Response(json.dumps({'message': "OK", 'query': query, 'data': data}, default=jdefault),
+                        mimetype="application/json")
     else:
         return jsonify(message="ERROR")
 

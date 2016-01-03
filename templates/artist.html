@@ -39,6 +39,7 @@
         <div class="btn-group">
             <a href="/artist/edit/{{ artist.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
+            <a id="findArtistArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Artist Image</a>
             {% if artist.isLocked == False %}
             <div class="btn-group">
                 <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
@@ -361,6 +362,21 @@
 {% block script_content %}
 <script type="text/javascript">
     var artistId = '{{ artist.roadieId }}';
+    var selectedCoverUrl = null;
+
+    var buildHtmlForImageSearch = function(data) {
+        var html = '<div class="image-search-results">';
+        html += '<div class="image-search-query form-group"><input class="form-control" onKeyDown="doImageSearch(event)" id="query" type="text" value="' + decodeURIComponent(data.query) + '" /></div>';
+        $.each(data.data, function(i,d) {
+            html += '<div class="image-search-result pull-left"><a href="#">';
+            html += '<img src="' + d.url + '" />';
+            html += '<div><span class="label label-default">' + d.width + 'x' + d.height + '</span></div></div>';
+        });
+        html += '</div>';
+        html += '<script>$(".image-search-results").on("click", ".image-search-result a", function(e) { var $t = $(this); selectedCoverUrl = $t.find("img").attr("src"); $(".image-search-result").removeClass("selected"); $t.closest("div").addClass("selected"); });<\/script>';
+        return html;
+    };
+
 
     var showInsaneMessage = function(message) {
         $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
@@ -684,6 +700,61 @@
                     }
                 });
             }
+        });
+
+        $("#findArtistArt").on("click", function(e) {
+            if($(this).hasClass("clicked")) {
+                return false;
+            }
+            var $that = $(this);
+            $that.addClass("clicked");
+            $.ajax({
+                type: 'POST',
+                url: '/images/find/a/' + artistId,
+                contentType: "application/javascript",
+                success: function(data) {
+                    if(data.message == "OK") {
+                        bootbox.dialog({
+                            buttons: {
+                                cancel: {
+                                    label: "Cancel",
+                                    className: "btn-default",
+                                    callback: function() {
+                                        $that.removeClass("clicked");
+                                    }
+                                },
+                                save: {
+                                    label: "Save",
+                                    className: "btn-success",
+                                    callback: function() {
+                                        if(selectedCoverUrl) {
+                                            $.ajax({
+                                                type: 'POST',
+                                                url: '/artist/setImageViaUrl/' + artistId,
+                                                data: { "url": encodeURIComponent(selectedCoverUrl) },
+                                                success: function(data) {
+                                                    if(data.message == "OK") {
+                                                        $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
+                                                    }
+                                                    $that.removeClass("clicked");
+                                                },
+                                                error:function(jq, st, error){
+                                                    roadieLibrary.showErrorMessage(error);
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            },
+                            title: "Image Search Results",
+                            message: buildHtmlForImageSearch(data)
+                        });
+                    }
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
         });
 
     });

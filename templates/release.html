@@ -383,7 +383,7 @@
                             <span class="user-rating-container">
                                 <span class="reset-rating fa fa-square" title="Remove Rating"></span>
                                 <input type="hidden" class="track-rating user-rating rating"
-                                       value="{{ track.userRatings[0].rating if track.userRatings else 0 }}"/>
+                                       value="{{ track.userRatings|get_user_track_rating(user=g.user) }}"/>
                             </span>
                 </div>
             </div>

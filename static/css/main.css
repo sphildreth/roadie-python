@@ -66,7 +66,7 @@ li.username, td.username {
 }
 
 .release-counts-container {
-    height: 46px;
+    margin-bottom: 10px;
     font-size: 14px;
     text-align:right;
     background-color: #5882FA;
