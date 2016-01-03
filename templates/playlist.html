@@ -12,10 +12,16 @@
     </div>
     <div class="btn-toolbar edit-toolbar" role="toolbar">
         <div class="btn-group">
-            <button id="playAll" type="button" class="btn btn-default" aria-haspopup="true" aria-expanded="false">
-                <i class="fa fa-play"></i> Play All
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                <i class="fa fa-play"></i> Play <span class="caret"></span>
             </button>
+            <ul class="dropdown-menu">
+                <li><a id="playAll" href="#">Play All</a></li>
+                <li><a id="playAllShuffle" href="#">Play All (Shuffle)</a></li>
+            </ul>
         </div>
+
        <div class="btn-group">
             {% if current_user.is_editor() %}
             <a href="/admin/playlist/edit/?id={{ playlist.id }}&url=/playlist/{{ playlist.roadieId }}"
@@ -84,7 +90,10 @@
     var playlistId = '{{ playlist.roadieId }}';
     $(function() {
         $("#playAll").on("click", function(e) {
-            roadieLibrary.playLoader("/playlist/play/" + playlistId);
+            roadieLibrary.playLoader("/playlist/play/" + playlistId + "/0");
+        });
+        $("#playAllShuffle").on("click", function(e) {
+            roadieLibrary.playLoader("/playlist/play/" + playlistId + "/1");
         });
         $("#delete-playlist").on("click", function(e) {
             bootbox.confirm("Continue To Delete Playlist?", function(result) {

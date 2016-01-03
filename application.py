@@ -2189,9 +2189,9 @@ def playlist(playlist_id):
     return render_template('playlist.html', playlist=indexPlaylist, tracks=tracks, counts=counts)
 
 
-@app.route("/playlist/play/<playlist_id>")
+@app.route("/playlist/play/<playlist_id>/<doShuffle>")
 @login_required
-def playPlaylist(playlist_id):
+def playPlaylist(playlist_id, doShuffle):
     playPlaylistPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
     if not playPlaylistPlaylist:
         return render_template('404.html'), 404
@@ -2201,6 +2201,8 @@ def playPlaylist(playlist_id):
     m3uTracks = []
     for track in tracks:
         m3uTracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
+    if doShuffle == "1":
+        random.shuffle(m3uTracks)
     if user.doUseHtmlPlayer:
         session['tracks'] = m3uTracks
         return player()
