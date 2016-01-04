@@ -1049,7 +1049,10 @@
                             $(".loader").fadeIn("slow", function() {
                                 $.ajax({
                                     type: 'POST',
-                                    url: '/release/setTitle/' + releaseId + '/' + encodeURIComponent(newTitle) + '/' + doSetTracksTitle + '/' + doCreateAlternateName,
+                                    url: '/release/setTitle/' + releaseId,
+                                    data: { "tracksToMove": encodeURIComponent(newTitle),
+                                            "doSetTracksTitle": doSetTracksTitle,
+                                            "doCreateAlternateName": doCreateAlternateName },
                                     success: function(data) {
                                         if(data.message == "OK") {
                                             location.reload(true);

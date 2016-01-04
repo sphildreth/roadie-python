@@ -339,12 +339,15 @@ def setReleaseDate(roadieId, new_release_date, set_tracks_year):
         return jsonify(message="ERROR")
 
 
-@app.route("/release/setTitle/<roadieId>/<new_title>/<set_tracks_title>/<create_alternate_name>", methods=['POST'])
-def setReleaseTitle(roadieId, new_title, set_tracks_title, create_alternate_name):
+@app.route("/release/setTitle/<roadieId>", methods=['POST'])
+def setReleaseTitle(roadieId):
     try:
         setReleaseTitleRelease = getRelease(roadieId)
         user = getUser()
         now = arrow.utcnow().datetime
+        new_title = request.form['tracksToMove']
+        create_alternate_name = request.form['doCreateAlternateName']
+        set_tracks_title = request.form['doSetTracksTitle']
         if not setReleaseTitleRelease or not user or not new_title:
             return jsonify(message="ERROR")
         oldTitle = setReleaseTitleRelease.title
