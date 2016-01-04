@@ -1,5 +1,7 @@
 import os
 import math
+import urllib
+
 import pytz
 import simplejson as json
 import hashlib
@@ -345,7 +347,7 @@ def setReleaseTitle(roadieId):
         setReleaseTitleRelease = getRelease(roadieId)
         user = getUser()
         now = arrow.utcnow().datetime
-        new_title = request.form['tracksToMove']
+        new_title = urllib.parse.unquote(request.form['tracksToMove'])
         create_alternate_name = request.form['doCreateAlternateName']
         set_tracks_title = request.form['doSetTracksTitle']
         if not setReleaseTitleRelease or not user or not new_title:

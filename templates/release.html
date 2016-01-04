@@ -300,24 +300,6 @@
         </div>
     </div>
     <div class="row tracks bordered">
-        {% if current_user.is_editor() and release.artist.isLocked == False %}
-        <div class="row insane-quick-edit">
-            <div class="btn-group">
-                <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle disabled"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fa fa-edit"></i> With Checked<span class="caret"></span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a data-selected-cd="1" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
-                        CD1</a></li>
-                    <li><a data-selected-cd="2" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
-                        CD2</a></li>
-                    <li><a data-selected-cd="3" class="moveSelectedToCD" href="#"><i class="fa fa-suitcase"></i> Move To
-                        CD3</a></li>
-                </ul>
-            </div>
-        </div>
-        {% endif %}
         {% for media in release.media|sort(attribute='releaseMediaNumber') %}
         <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-releasemediatrackcount="{{ media.trackCount }}">
             <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
@@ -911,33 +893,6 @@
             }
         });
 
-        $("a.moveSelectedToCD").on("click", function(e) {
-            var $this = $(this);
-            var selectedToCD = $this.data("selected-cd");
-            bootbox.confirm("Continue To Move Selected To CD" + selectedToCD + "?", function(result) {
-                if(result) {
-                    var tracksToMove = [];
-                    $.each($("input.track-select:checked"), function(i,d) {
-                        tracksToMove.push($(d).parents(".track").data("track-id"));
-                    });
-                    $(".loader").fadeIn("slow", function() {
-                        $.ajax({
-                            type: 'POST',
-                            url: '/release/movetrackstocd/' + releaseId + '/' + selectedToCD,
-                            data: { "tracksToMove": tracksToMove.join(",") },
-                            success: function(data) {
-                                if(data.message == "OK") {
-                                    location.reload(true);
-                                }
-                            },
-                            error:function(jq, st, error){
-                                roadieLibrary.showErrorMessage(error);
-                            }
-                        });
-                    });
-                }
-            });
-        });
 
         $("#searchInternetArtist").on("click", function() {
             roadieLibrary.doInternetSearch($("span.release-artist-name").text() + " Band");
