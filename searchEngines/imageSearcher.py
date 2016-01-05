@@ -41,7 +41,7 @@ class ImageSearcher(object):
             return result
 
         try:
-            bingResult = self.bingSearchImages(artistName + " " + releaseTitle)
+            bingResult = self.bingSearchImages(query if query else artistName + " " + releaseTitle)
             if bingResult:
                 for br in bingResult:
                     result.append(br)

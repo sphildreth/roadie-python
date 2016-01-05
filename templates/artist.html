@@ -377,6 +377,26 @@
         return html;
     };
 
+    var doImageSearch = function(e) {
+        if(e.keyCode == 13){
+			e.preventDefault();
+			e.stopPropagation();
+            var query = $(e.target).val();
+            $.ajax({
+                type: 'POST',
+                url: '/images/find/a/' + artistId,
+                data: { "query": encodeURIComponent(query) },
+                success: function(data) {
+                    if(data.message == "OK") {
+                        $(".image-search-results").html(buildHtmlForImageSearch(data));
+                    }
+                },
+                error:function(jq, st, error){
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
+        }
+    };
 
     var showInsaneMessage = function(message) {
         $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
