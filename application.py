@@ -937,11 +937,12 @@ def toggleUserReleaseDislike(release_id, toggle):
         if not toggleUserReleaseDislikeRelease or not user:
             return jsonify(message="ERROR")
         now = arrow.utcnow().datetime
-        userRelease = getUserReleaseRating(toggleUserReleaseDislikeRelease.id)
-        userRelease.isDisliked = toggle.lower() == "true"
-        if toggleUserReleaseDislikeRelease.userRatings.isDisliked:
-            toggleUserReleaseDislikeRelease.userRatings.Rating = 0
-        userRelease.lastUpdated = now
+        userReleaseRating = getUserReleaseRating(toggleUserReleaseDislikeRelease.id)
+        userReleaseRating.isDisliked = toggle.lower() == "true"
+        if userReleaseRating.isDisliked:
+            userReleaseRating.Rating = 0
+            userReleaseRating.isFavorite = False
+        userReleaseRating.lastUpdated = now
         dbSession.commit()
         releaseAverage = dbSession.query(func.avg(UserRelease.rating)). \
             filter(UserRelease.releaseId == toggleUserReleaseDislikeRelease.id).scalar()
@@ -963,12 +964,12 @@ def toggleUserReleaseFavorite(release_id, toggle):
         user = getUser()
         if not toggleUserReleaseFavoriteRelease or not user:
             return jsonify(message="ERROR")
-        if not toggleUserReleaseFavoriteRelease.userRatings:
-            toggleUserReleaseFavoriteRelease.userRatings = UserRelease()
-            toggleUserReleaseFavoriteRelease.userRatings.releaseId = toggleUserReleaseFavoriteRelease.id
-            toggleUserReleaseFavoriteRelease.userRatings.userId = user.id
-        toggleUserReleaseFavoriteRelease.userRatings.IsFavorite = toggle.lower() == "true"
-        toggleUserReleaseFavoriteRelease.userRatings.LastUpdated = arrow.utcnow().datetime
+        now = arrow.utcnow().datetime
+        userReleaseRating = getUserReleaseRating(toggleUserReleaseFavoriteRelease.id)
+        userReleaseRating.isFavorite = toggle.lower() == "true"
+        if userReleaseRating.isFavorite:
+            userReleaseRating.isDisliked = False
+        userReleaseRating.lastUpdated = now
         dbSession.commit()
         return jsonify(message="OK")
     except:
