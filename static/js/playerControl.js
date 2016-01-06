@@ -3,9 +3,15 @@ var playerControl = (function(window, undefined) {
     var _loadedPercent = 0;
     var _loadTimer = null;
     var _lastTrackText = null;
+    var _originalWindowTitle = null;
 
     function _trackLi(trackId) {
         return $(document).find("li[data-track-id='" + trackId + "']");
+    }
+
+    function _artistNameAndTrackTitle(trackId) {
+        var $t = _trackLi(trackId);
+        return $t.find(".artist-name").text() + " | " + $t.find(".track-title").text();
     }
 
     function _isRepeatSet() {
@@ -52,12 +58,7 @@ var playerControl = (function(window, undefined) {
 
     function setup(data) {
         _element = data.element;
-
-        _loadTimer = setInterval(function() {
-          if (_element.readyState > 1) {
-
-          }
-        }, 10);
+        _originalWindowTitle = document.title;
 
         var $window = $(window),
             $stickyEl = $('.player-container'),
@@ -179,6 +180,7 @@ var playerControl = (function(window, undefined) {
             _updateTrackLength(parseFloat(_trackLi(trackId).data("track-duration"))/1000);
             _element.load();
             playerControl.playingTrackId = trackId;
+            document.title = _artistNameAndTrackTitle(trackId);
         }
         $("#btnPause").removeClass("btn-primary").addClass("btn-default");
         $("#btnPlay").addClass("btn-primary");
@@ -189,6 +191,7 @@ var playerControl = (function(window, undefined) {
 
     function stop() {
         $(".player-controls-container button").removeClass("btn-primary").addClass("btn-default");
+        document.title = _originalWindowTitle;
         playerControl.isPlaying = false;
     }
 

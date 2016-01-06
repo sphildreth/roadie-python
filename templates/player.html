@@ -71,16 +71,18 @@
                         <a href="/artist/{{ track.ArtistId }}" target="roadie" title="View Artist: {{ track.ArtistName }}">
                             <div class="artist-info-container">
                                 <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ track.ArtistId }}"
-                                     alt="{{ track.ArtistName }}"/> {{ track.ArtistName }}
+                                     alt="{{ track.ArtistName }}"/> <span class="artist-name">{{ track.ArtistName }}</span>
 
                             </div>
                         </a>
                         <a href="/release/{{ track.ReleaseId }}" target="roadie" title="View Release: {{ track.ReleaseTitle }}">
                             <div class="release-info-container">
-                                 <span class="label label-primary">{{ track.ReleaseYear }}</span> {{ track.ReleaseTitle }}
+                                 <span class="label label-primary release-year">{{ track.ReleaseYear }}</span>
+                                  <span class="release-title">{{ track.ReleaseTitle }}</span>
                             </div>
                             <div class="track-info-container">
-                                <span class="label label-primary track-number">{{ '%02d' % track.TrackNumber }}</span> {{ track.Title }}
+                                <span class="label label-primary track-number">{{ '%02d' % track.TrackNumber }}</span>
+                                 <span class="track-title">{{ track.Title }}</span>
                             </div>
                         </a>
                     </li>
