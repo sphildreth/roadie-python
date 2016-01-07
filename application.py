@@ -94,7 +94,6 @@ app.jinja_env.filters['count_new_lines'] = count_new_lines
 app.jinja_env.filters['format_datetime_for_user'] = format_datetime_for_user
 app.jinja_env.filters['get_user_track_rating'] = get_user_track_rating
 
-
 with open(os.path.join(app.root_path, "settings.json"), "r") as rf:
     config = json.load(rf)
 if not config:
@@ -123,6 +122,7 @@ FlaskSession(app)
 ALLOWED_IMAGE_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
 NEW_ID = "__new__"
+
 
 def generate_csrf_token():
     if '_csrf_token' not in session:
@@ -284,7 +284,7 @@ def index():
             'ReleaseTitle': ut.track.releasemedia.release.title,
             'ReleaseThumbnail': "/images/release/thumbnail/" + str(ut.track.releasemedia.release.roadieId),
             'ArtistId': str(ut.track.releasemedia.release.artist.roadieId) if not ut.track.artist else str(
-                ut.track.artist.roadieId),
+                    ut.track.artist.roadieId),
             'ArtistName': ut.track.releasemedia.release.artist.name if not ut.track.artist else ut.track.artist.name,
             'ArtistThumbnail': artistThumbnail,
             'UserId': str(ut.user.roadieId),
@@ -362,7 +362,7 @@ def setReleaseTitle(roadieId):
                 oldAlternateTitles.append(oldTitle.replace("'", "''"))
             # I cannot get setting the release alternateNames working so I did this direct update
             t = text("UPDATE `release` set alternateNames = '" + "|".join(oldAlternateTitles) + "' WHERE id = " + str(
-                setReleaseTitleRelease.id) + ";")
+                    setReleaseTitleRelease.id) + ";")
             conn.execute(t)
         setReleaseTitleRelease.lastUpdated = now
         dbSession.commit()
@@ -387,7 +387,7 @@ def mergeReleases(release_roadie_id_to_merge, release_roadie_id_to_merge_into, a
             return jsonify(message="ERROR")
         releaseToMerge = dbSession.query(Release).filter(Release.roadieId == release_roadie_id_to_merge).first()
         releaseToMergeInto = dbSession.query(Release).filter(
-            Release.roadieId == release_roadie_id_to_merge_into).first()
+                Release.roadieId == release_roadie_id_to_merge_into).first()
         if not releaseToMerge or not releaseToMergeInto:
             return jsonify(message="ERROR")
         if add_as_media == "True":
@@ -454,9 +454,48 @@ def randomizer(random_type):
         return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
-        for track in dbSession.query(Track).filter(Track.filePath is not None and Track.fileName is not None).order_by(
-                func.random()).limit(35):
-            t = M3U.makeTrackInfo(user, track.releasemedia.release, track)
+        for trackRow in conn.execute(
+                text("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, " +
+                             "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, " +
+                             " ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, " +
+                             " a.roadieId as artistRoadieId, a.name as artistName, " +
+                             " rm.releaseMediaNumber " +
+                             "FROM `track` t " +
+                             "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) " +
+                             "JOIN `release` r on (r.id = rm.releaseId) " +
+                             "JOIN `artist` a on (a.id = r.artistId) " +
+                             "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
+                             "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = 1) " +
+                             "LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = 1) " +
+                             "WHERE (RAND()<(SELECT ((1/COUNT(*))*100) FROM `track`)) " +
+                             "AND (hash IS NOT NULL) " +
+                             "AND ((ur.id is null OR ur.isDisliked = 0) AND (ua.id is null or ua.isDisliked = 0)) " +
+                             "ORDER BY RAND()  " +
+                             "LIMIT 50;")):
+
+            track = Track()
+            track.id = trackRow.id
+            track.roadieId = trackRow.roadieId
+            track.duration = trackRow.duration
+            track.title = trackRow.title
+            track.trackNumber = trackRow.trackNumber
+            if track.artistId:
+                track = Release()
+                track.artist = Artist()
+                track.artist.id = trackRow.artistId
+                track.artist.roadieId = trackRow.trackArtistRoadieId
+                track.artist.name = trackRow.trackArtistName
+            release = Release()
+            release.roadieId = trackRow.releaseRoadieId
+            release.artist = Artist()
+            release.artist.id = trackRow.artistId
+            release.artist.roadieId = trackRow.artistRoadieId
+            release.artist.name = trackRow.artistName
+            release.title = trackRow.releaseTitle
+            release.releaseDate = trackRow.releaseDate
+            track.releasemedia = ReleaseMedia()
+            track.releasemedia.releaseMediaNumber = trackRow.releaseMediaNumber
+            t = M3U.makeTrackInfo(user, release, track)
             if t:
                 tracks.append(t)
         if user.doUseHtmlPlayer:
@@ -474,42 +513,42 @@ def labelDetail(label_id):
     if not label:
         return render_template('404.html'), 404
     labelSummaries = conn.execute(text(
-        "SELECT ac.artistCount, r.releaseCount, rm.releaseMediaCount, ts.trackCount, ts.duration, ts.size " +
-        " FROM `label` l " +
-        " INNER JOIN " +
-        " ( " +
-        " 	select rl.labelId as labelId, count(rm.id) as releaseMediaCount " +
-        " 	From `releasemedia` rm " +
-        " 	join `release` r on rm.releaseId = r.id " +
-        " 	join `releaselabel` rl on rl.releaseId = r.id " +
-        " 	group by rl.labelId " +
-        " ) as rm ON rm.labelId = l.id " +
-        " INNER JOIN " +
-        " ( " +
-        " 	select rl.labelId as labelId, count(r.id) as releaseCount " +
-        " 	from `release` r " +
-        " 	join `releaselabel` rl on rl.releaseId = r.id " +
-        " 	group by rl.labelId " +
-        " ) as r ON r.labelId = l.id " +
-        " INNER JOIN " +
-        " ( " +
-        " 	SELECT rl.labelId as labelId, COUNT(1) AS trackCount, " +
-        "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
-        " 	FROM `track` t " +
-        " 	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        " 	JOIN `release` r ON r.id = rm.releaseId " +
-        " 	join `releaselabel` rl on rl.releaseId = r.id " +
-        " 	WHERE t.fileName IS NOT NULL " +
-        " 	GROUP BY rl.labelId " +
-        " 	) AS ts ON ts.labelId = l.id " +
-        " INNER JOIN " +
-        " ( " +
-        " 	select rl.labelId as labelId, count(DISTINCT r.artistId) as artistCount " +
-        " 	from `release` r " +
-        " 	join `releaselabel` rl on rl.releaseId = r.id " +
-        " 	group by rl.labelId " +
-        " ) as ac ON ac.labelId = l.id " +
-        " WHERE l.roadieId = '" + label_id + "';", autocommit=True)
+            "SELECT ac.artistCount, r.releaseCount, rm.releaseMediaCount, ts.trackCount, ts.duration, ts.size " +
+            " FROM `label` l " +
+            " INNER JOIN " +
+            " ( " +
+            " 	select rl.labelId as labelId, count(rm.id) as releaseMediaCount " +
+            " 	From `releasemedia` rm " +
+            " 	join `release` r on rm.releaseId = r.id " +
+            " 	join `releaselabel` rl on rl.releaseId = r.id " +
+            " 	group by rl.labelId " +
+            " ) as rm ON rm.labelId = l.id " +
+            " INNER JOIN " +
+            " ( " +
+            " 	select rl.labelId as labelId, count(r.id) as releaseCount " +
+            " 	from `release` r " +
+            " 	join `releaselabel` rl on rl.releaseId = r.id " +
+            " 	group by rl.labelId " +
+            " ) as r ON r.labelId = l.id " +
+            " INNER JOIN " +
+            " ( " +
+            " 	SELECT rl.labelId as labelId, COUNT(1) AS trackCount, " +
+            "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
+            " 	FROM `track` t " +
+            " 	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+            " 	JOIN `release` r ON r.id = rm.releaseId " +
+            " 	join `releaselabel` rl on rl.releaseId = r.id " +
+            " 	WHERE t.fileName IS NOT NULL " +
+            " 	GROUP BY rl.labelId " +
+            " 	) AS ts ON ts.labelId = l.id " +
+            " INNER JOIN " +
+            " ( " +
+            " 	select rl.labelId as labelId, count(DISTINCT r.artistId) as artistCount " +
+            " 	from `release` r " +
+            " 	join `releaselabel` rl on rl.releaseId = r.id " +
+            " 	group by rl.labelId " +
+            " ) as ac ON ac.labelId = l.id " +
+            " WHERE l.roadieId = '" + label_id + "';", autocommit=True)
                                   .columns(artistCount=Integer,
                                            releaseCount=Integer,
                                            releaseMediaCount=Integer,
@@ -526,14 +565,14 @@ def labelDetail(label_id):
               'fileSize': sizeof_fmt(labelSummaries[5]) if labelSummaries else "0",
               }
     labelArtists = conn.execute(text(
-        "SELECT a.id, a.roadieId, a.name, count(r.id) as releaseCount " +
-        "FROM `artist` a " +
-        "join `release` r on r.artistId = a.id " +
-        "join `releaselabel` rl on rl.releaseId = r.id " +
-        "join `label` l on l.id = rl.labelId " +
-        "where l.roadieId = '" + label_id + "' " +
-        "group by a.id " +
-        "order by a.name;", autocommit=True)
+            "SELECT a.id, a.roadieId, a.name, count(r.id) as releaseCount " +
+            "FROM `artist` a " +
+            "join `release` r on r.artistId = a.id " +
+            "join `releaselabel` rl on rl.releaseId = r.id " +
+            "join `label` l on l.id = rl.labelId " +
+            "where l.roadieId = '" + label_id + "' " +
+            "group by a.id " +
+            "order by a.name;", autocommit=True)
                                 .columns(artistId=Integer,
                                          artistRoadieId=String,
                                          artistName=String,
@@ -550,46 +589,46 @@ def artistDetail(artist_id):
         return render_template('404.html'), 404
     user = getUser()
     userArtist = dbSession.query(UserArtist).filter(UserArtist.userId == user.id).filter(
-        UserArtist.artistId == artist.id).first()
+            UserArtist.artistId == artist.id).first()
     artistSummaries = conn.execute(text(
-        "SELECT rm.releaseMediaCount, r.releaseCount, ts.trackCount, ts.duration, " +
-        "ts.size, mts.trackCount AS missingTracks " +
-        "FROM `artist` a " +
-        "INNER JOIN  " +
-        "( " +
-        "	select a.id as artistId, count(rm.id) as releaseMediaCount " +
-        "	From `releasemedia` rm " +
-        "	join `release` r on rm.releaseId = r.id " +
-        "	join `artist` a on r.artistId = a.id " +
-        "	group by a.id " +
-        ") as rm ON rm.artistId = a.id " +
-        "INNER JOIN  " +
-        "( " +
-        "	select a.id as artistId, count(r.id) as releaseCount " +
-        "	from `release` r  " +
-        "	join `artist` a on r.artistId = a.id " +
-        "	group by a.id " +
-        ") as r ON r.artistId = a.id " +
-        "INNER JOIN  " +
-        " ( " +
-        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
-        "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	WHERE t.fileName IS NOT NULL " +
-        "	GROUP BY r.artistId  " +
-        "	) AS ts ON ts.artistId = a.id " +
-        "LEFT JOIN  " +
-        " ( " +
-        "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	WHERE t.fileName IS NULL " +
-        "	GROUP BY r.artistId  " +
-        "	) AS mts ON mts.artistId = a.id " +
-        "WHERE a.roadieId = '" + artist_id + "';", autocommit=True)
+            "SELECT rm.releaseMediaCount, r.releaseCount, ts.trackCount, ts.duration, " +
+            "ts.size, mts.trackCount AS missingTracks " +
+            "FROM `artist` a " +
+            "INNER JOIN  " +
+            "( " +
+            "	select a.id as artistId, count(rm.id) as releaseMediaCount " +
+            "	From `releasemedia` rm " +
+            "	join `release` r on rm.releaseId = r.id " +
+            "	join `artist` a on r.artistId = a.id " +
+            "	group by a.id " +
+            ") as rm ON rm.artistId = a.id " +
+            "INNER JOIN  " +
+            "( " +
+            "	select a.id as artistId, count(r.id) as releaseCount " +
+            "	from `release` r  " +
+            "	join `artist` a on r.artistId = a.id " +
+            "	group by a.id " +
+            ") as r ON r.artistId = a.id " +
+            "INNER JOIN  " +
+            " ( " +
+            "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
+            "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
+            "	FROM `track` t " +
+            "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+            "	JOIN `release` r ON r.id = rm.releaseId " +
+            "	WHERE t.fileName IS NOT NULL " +
+            "	GROUP BY r.artistId  " +
+            "	) AS ts ON ts.artistId = a.id " +
+            "LEFT JOIN  " +
+            " ( " +
+            "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
+            "	FROM `track` t " +
+            "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+            "	JOIN `release` r ON r.id = rm.releaseId " +
+            "	WHERE t.fileName IS NULL " +
+            "	GROUP BY r.artistId  " +
+            "	) AS mts ON mts.artistId = a.id " +
+            "WHERE a.roadieId = '" + artist_id + "';", autocommit=True)
                                    .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
                                             releaseTrackTime=Integer, releaseTrackFileSize=Integer,
                                             missingTrackCount=Integer)) \
@@ -602,15 +641,15 @@ def artistDetail(artist_id):
               'missingTrackCount': artistSummaries[5] if artistSummaries else 0}
 
     artistFolders = conn.execute(text(
-        "select r.title, t.filePath " +
-        "from `track` t " +
-        "join `releasemedia` rm on rm.id = t.releaseMediaId " +
-        "join `release` r on r.id = rm.releaseId " +
-        "join `artist` a on a.id = r.artistId " +
-        "where a.id = " + str(artist.id) + " " +
-        "group by t.filePath, r.title " +
-        "order by r.title, t.filePath;"
-        , autocommit=True).columns(releaseTitle=String, filePath=String))
+            "select r.title, t.filePath " +
+            "from `track` t " +
+            "join `releasemedia` rm on rm.id = t.releaseMediaId " +
+            "join `release` r on r.id = rm.releaseId " +
+            "join `artist` a on a.id = r.artistId " +
+            "where a.id = " + str(artist.id) + " " +
+            "group by t.filePath, r.title " +
+            "order by r.title, t.filePath;"
+            , autocommit=True).columns(releaseTitle=String, filePath=String))
 
     compilations = dbSession.query(Release) \
         .join(ReleaseMedia, ReleaseMedia.releaseId == Release.id) \
@@ -1381,15 +1420,15 @@ def releaseDetail(roadieId):
     if not indexRelease:
         return render_template('404.html'), 404
     releaseSummaries = conn.execute(text(
-        "SELECT count(1) as trackCount, "
-        "max(rm.releaseMediaNumber) as releaseMediaCount, "
-        "sum(t.duration) as releaseTrackTime, "
-        "sum(t.fileSize) as releaseTrackFileSize "
-        "FROM `track` t "
-        "join `releasemedia` rm on t.releaseMediaId = rm.id "
-        "join `release` r on rm.releaseId = r.id "
-        "where r.roadieId = '" + roadieId + "' "
-                                            "and t.fileName is not null;", autocommit=True)
+            "SELECT count(1) as trackCount, "
+            "max(rm.releaseMediaNumber) as releaseMediaCount, "
+            "sum(t.duration) as releaseTrackTime, "
+            "sum(t.fileSize) as releaseTrackFileSize "
+            "FROM `track` t "
+            "join `releasemedia` rm on t.releaseMediaId = rm.id "
+            "join `release` r on rm.releaseId = r.id "
+            "where r.roadieId = '" + roadieId + "' "
+                                                "and t.fileName is not null;", autocommit=True)
                                     .columns(trackCount=Integer, releaseMediaCount=Integer, releaseTrackTime=Integer,
                                              releaseTrackFileSize=Integer)) \
         .fetchone()
@@ -1415,15 +1454,15 @@ def editRelease(roadieId):
         if request.method == 'GET':
             releaseLabels = '|'.join(map(lambda x: x.label.name, release.releaseLabels))
             releaseSummaries = conn.execute(text(
-                "SELECT count(1) as trackCount, "
-                "max(rm.releaseMediaNumber) as releaseMediaCount, "
-                "sum(t.duration) as releaseTrackTime, "
-                "sum(t.fileSize) as releaseTrackFileSize "
-                "FROM `track` t "
-                "join `releasemedia` rm on t.releaseMediaId = rm.id "
-                "join `release` r on rm.releaseId = r.id "
-                "where r.roadieId = '" + roadieId + "' "
-                                                    "and t.fileName is not null;", autocommit=True)
+                    "SELECT count(1) as trackCount, "
+                    "max(rm.releaseMediaNumber) as releaseMediaCount, "
+                    "sum(t.duration) as releaseTrackTime, "
+                    "sum(t.fileSize) as releaseTrackFileSize "
+                    "FROM `track` t "
+                    "join `releasemedia` rm on t.releaseMediaId = rm.id "
+                    "join `release` r on rm.releaseId = r.id "
+                    "where r.roadieId = '" + roadieId + "' "
+                                                        "and t.fileName is not null;", autocommit=True)
                                             .columns(trackCount=Integer, releaseMediaCount=Integer,
                                                      releaseTrackTime=Integer,
                                                      releaseTrackFileSize=Integer)) \
@@ -1559,7 +1598,7 @@ def editRelease(roadieId):
             if releaseLabelInfos:
                 for releaseLabelInfo in releaseLabelInfos:
                     labelForReleaseLabel = dbSession.query(Label).filter(
-                        Label.name == releaseLabelInfo['labelName']).first()
+                            Label.name == releaseLabelInfo['labelName']).first()
                     if labelForReleaseLabel:
                         rl = ReleaseLabel()
                         rl.roadieId = str(uuid.uuid4())
@@ -1765,11 +1804,11 @@ def streamTrack(user_id, track_id):
                                              'ReleaseId': str(track.releasemedia.release.roadieId),
                                              'ReleaseTitle': track.releasemedia.release.title,
                                              'ReleaseThumbnail': "/images/release/thumbnail/" + str(
-                                                 track.releasemedia.release.roadieId),
+                                                     track.releasemedia.release.roadieId),
                                              'ArtistId': str(track.releasemedia.release.artist.roadieId),
                                              'ArtistName': track.releasemedia.release.artist.name,
                                              'ArtistThumbnail': "/images/artist/thumbnail/" + str(
-                                                 track.releasemedia.release.artist.roadieId),
+                                                     track.releasemedia.release.artist.roadieId),
                                              'UserId': str(user.roadieId),
                                              'Username': user.username,
                                              'UserThumbnail': "/images/user/avatar/" + str(user.roadieId),
@@ -1792,8 +1831,9 @@ def streamTrack(user_id, track_id):
     response.set_etag('%s%s' % (track.id, ctime))
     response.make_conditional(request)
     logger.debug(
-        "Streaming To Ip [" + request.remote_addr + "] Mp3 [" + mp3File + "], Size [" + str(size) + "], Begin [" + str(
-            begin) + "] End [" + str(end) + "]")
+            "Streaming To Ip [" + request.remote_addr + "] Mp3 [" + mp3File + "], Size [" + str(
+                    size) + "], Begin [" + str(
+                    begin) + "] End [" + str(end) + "]")
     return response
 
 
@@ -1803,56 +1843,56 @@ def streamTrack(user_id, track_id):
 def stats():
     dbSession.expire_all()
     counts = conn.execute(text(
-        "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
-        "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount " +
-        "FROM `artist` a " +
-        "inner join ( " +
-        "	SELECT COUNT(1) AS trackCount, SUM(t.duration)/1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	JOIN `artist` a ON a.id = r.artistId " +
-        "   WHERE t.fileName is not null) ts " +
-        "inner join ( " +
-        "		SELECT COUNT(1) AS artistCount " +
-        "		FROM `artist`) ac " +
-        "inner join ( " +
-        "		SELECT COUNT(1) AS labelCount " +
-        "		FROM `label`) lc " +
-        "JOIN `release` r ON r.artistId = a.id " +
-        "left JOIN `releasemedia` rm ON rm.releaseId = r.id", autocommit=True)
+            "SELECT COUNT(rm.releaseMediaNumber) AS releaseMediaCount, COUNT(r.roadieId) AS releaseCount, " +
+            "ts.trackCount, ts.trackDuration, ts.trackSize, ac.artistCount, lc.labelCount " +
+            "FROM `artist` a " +
+            "inner join ( " +
+            "	SELECT COUNT(1) AS trackCount, SUM(t.duration)/1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
+            "	FROM `track` t " +
+            "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+            "	JOIN `release` r ON r.id = rm.releaseId " +
+            "	JOIN `artist` a ON a.id = r.artistId " +
+            "   WHERE t.fileName is not null) ts " +
+            "inner join ( " +
+            "		SELECT COUNT(1) AS artistCount " +
+            "		FROM `artist`) ac " +
+            "inner join ( " +
+            "		SELECT COUNT(1) AS labelCount " +
+            "		FROM `label`) lc " +
+            "JOIN `release` r ON r.artistId = a.id " +
+            "left JOIN `releasemedia` rm ON rm.releaseId = r.id", autocommit=True)
                           .columns(releaseMediaCount=Integer, releaseCount=Integer, trackCount=Integer,
                                    trackDuration=Integer, trackSize=Integer, artistCount=Integer,
                                    labelCount=Integer)).first()
 
     top10Artists = conn.execute(text(
-        "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
-        "FROM `artist` a " +
-        "join `release` r on r.artistId = a.id " +
-        "WHERE a.artistType != 'Other' " +
-        "GROUP BY a.id " +
-        "ORDER BY COUNT(1) desc " +
-        "LIMIT 10;", autocommit=True)
+            "SELECT a.roadieId as roadieId, a.name, count(r.roadieId) as count " +
+            "FROM `artist` a " +
+            "join `release` r on r.artistId = a.id " +
+            "WHERE a.artistType != 'Other' " +
+            "GROUP BY a.id " +
+            "ORDER BY COUNT(1) desc " +
+            "LIMIT 10;", autocommit=True)
                                 .columns(roadieId=String, name=String, count=Integer))
 
     top10ArtistsTracks = conn.execute(text(
-        "SELECT a.roadieId as roadieId, a.name, count(t.roadieId) as count " +
-        "FROM `artist` a " +
-        "join `release` r on r.artistId = a.id " +
-        "left join `releasemedia` rm on rm.releaseId = r.id " +
-        "left join `track` t on t.releaseMediaId = rm.id " +
-        "where t.fileName is not null " +
-        "AND a.artistType != 'Other' " +
-        "GROUP BY a.id " +
-        "ORDER BY COUNT(1) desc " +
-        "LIMIT 10;", autocommit=True)
+            "SELECT a.roadieId as roadieId, a.name, count(t.roadieId) as count " +
+            "FROM `artist` a " +
+            "join `release` r on r.artistId = a.id " +
+            "left join `releasemedia` rm on rm.releaseId = r.id " +
+            "left join `track` t on t.releaseMediaId = rm.id " +
+            "where t.fileName is not null " +
+            "AND a.artistType != 'Other' " +
+            "GROUP BY a.id " +
+            "ORDER BY COUNT(1) desc " +
+            "LIMIT 10;", autocommit=True)
                                       .columns(roadieId=String, name=String, count=Integer))
 
     topRatedReleases = dbSession.query(Release).filter(Release.rating > 0).order_by(desc(Release.rating)).order_by(
-        Release.title).limit(10)
+            Release.title).limit(10)
 
     topRatedTracks = dbSession.query(Track).filter(Track.rating > 0).order_by(desc(Track.rating)).order_by(
-        Track.title).limit(25)
+            Track.title).limit(25)
 
     mostRecentReleases = dbSession.query(Release).order_by(desc(Release.createdDate)).order_by(Release.title).limit(25)
 
@@ -1868,9 +1908,9 @@ def playStats(option):
     user = getUser()
     tracks = []
     if option == "top25songs":
-        for track in dbSession.query(Track).filter(Track.rating > 0)\
-                .order_by(desc(Track.rating))\
-                .order_by(Track.title)\
+        for track in dbSession.query(Track).filter(Track.rating > 0) \
+                .order_by(desc(Track.rating)) \
+                .order_by(Track.title) \
                 .limit(25):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
@@ -1880,9 +1920,9 @@ def playStats(option):
                          as_attachment=True,
                          attachment_filename="playlist.m3u")
     if option == "top10Albums":
-        for track in dbSession.query(Release).filter(Release.rating > 0)\
-                .order_by(desc(Release.rating))\
-                .order_by(Release.title)\
+        for track in dbSession.query(Release).filter(Release.rating > 0) \
+                .order_by(desc(Release.rating)) \
+                .order_by(Release.title) \
                 .limit(10):
             tracks.append(M3U.makeTrackInfo(user, track.releasemedia.release, track))
         if user.doUseHtmlPlayer:
@@ -1917,7 +1957,7 @@ def getAndReturnImage(imageId, height, width, notFoundReplacement):
             img.save(b, "JPEG")
             ba = b.getvalue()
             etag = hashlib.sha1(
-                ('%s%s' % (releaseImage.roadieId, releaseImage.lastUpdated)).encode('utf-8')).hexdigest()
+                    ('%s%s' % (releaseImage.roadieId, releaseImage.lastUpdated)).encode('utf-8')).hexdigest()
             return makeImageResponse(ba, releaseImage.lastUpdated, releaseImage.roadieId, etag)
     except:
         logger.exception("getAndReturnImage [" + str(imageId) + "]")
@@ -1938,14 +1978,14 @@ def getArtistImage(image_id, height, width):
 @app.route("/images/collection/thumbnail/<collection_id>")
 def getCollectionThumbnailImage(collection_id):
     getCollectionThumbnailImageCollection = dbSession.query(Collection).filter(
-        Collection.roadieId == collection_id).first()
+            Collection.roadieId == collection_id).first()
     try:
         if getCollectionThumbnailImageCollection:
             etag = hashlib.sha1(
-                ('%s%s' % (
-                    getCollectionThumbnailImageCollection.id,
-                    getCollectionThumbnailImageCollection.LastUpdated)).encode(
-                    'utf-8')).hexdigest()
+                    ('%s%s' % (
+                        getCollectionThumbnailImageCollection.id,
+                        getCollectionThumbnailImageCollection.LastUpdated)).encode(
+                            'utf-8')).hexdigest()
             return makeImageResponse(getCollectionThumbnailImageCollection.thumbnail,
                                      getCollectionThumbnailImageCollection.lastUpdated,
                                      "a_tn_" + str(getCollectionThumbnailImageCollection.id) + ".jpg", etag)
@@ -1956,14 +1996,14 @@ def getCollectionThumbnailImage(collection_id):
 @app.route("/images/playlist/thumbnail/<playlist_id>")
 def getPlaylistThumbnailImage(playlist_id):
     getPlaylistThumbnailImageCollection = dbSession.query(Playlist).filter(
-        Playlist.roadieId == playlist_id).first()
+            Playlist.roadieId == playlist_id).first()
     try:
         if getPlaylistThumbnailImageCollection:
             etag = hashlib.sha1(
-                ('%s%s' % (
-                    getPlaylistThumbnailImageCollection.id,
-                    getPlaylistThumbnailImageCollection.LastUpdated)).encode(
-                    'utf-8')).hexdigest()
+                    ('%s%s' % (
+                        getPlaylistThumbnailImageCollection.id,
+                        getPlaylistThumbnailImageCollection.LastUpdated)).encode(
+                            'utf-8')).hexdigest()
             return makeImageResponse(getPlaylistThumbnailImageCollection.thumbnail,
                                      getPlaylistThumbnailImageCollection.lastUpdated,
                                      "a_tn_" + str(getPlaylistThumbnailImageCollection.id) + ".jpg", etag)
@@ -1999,8 +2039,8 @@ def getReleaseThumbnailImage(roadieId):
             return send_file("static/img/release.gif")
         if getReleaseThumbnailImageRelease:
             etag = hashlib.sha1(
-                ('%s%s' % (getReleaseThumbnailImageRelease.id, getReleaseThumbnailImageRelease.lastUpdated)).encode(
-                    'utf-8')).hexdigest()
+                    ('%s%s' % (getReleaseThumbnailImageRelease.id, getReleaseThumbnailImageRelease.lastUpdated)).encode(
+                            'utf-8')).hexdigest()
             return makeImageResponse(getReleaseThumbnailImageRelease.thumbnail,
                                      getReleaseThumbnailImageRelease.lastUpdated,
                                      "r_tn_" + str(getReleaseThumbnailImageRelease.roadieId) + ".jpg",
@@ -2182,12 +2222,12 @@ def playlist(playlist_id):
     if not indexPlaylist:
         return render_template('404.html'), 404
     counts = conn.execute(text(
-        "SELECT COUNT(1) AS trackCount, SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
-        "FROM `track` t " +
-        "JOIN `playlisttrack` plt on t.id = plt.trackId " +
-        "JOIN `playlist` pl on pl.id = plt.playListId " +
-        "WHERE pl.roadieId = '" + playlist_id + "' " +
-        "AND t.fileName IS NOT NULL;", autocommit=True)
+            "SELECT COUNT(1) AS trackCount, SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
+            "FROM `track` t " +
+            "JOIN `playlisttrack` plt on t.id = plt.trackId " +
+            "JOIN `playlist` pl on pl.id = plt.playListId " +
+            "WHERE pl.roadieId = '" + playlist_id + "' " +
+            "AND t.fileName IS NOT NULL;", autocommit=True)
                           .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer)) \
         .fetchone()
     trackIds = list(map(lambda pt: pt.trackId, sorted(indexPlaylist.tracks, key=lambda pt: pt.listNumber)))
@@ -2275,18 +2315,18 @@ def collections():
         notFoundEntryInfos = session['notFoundEntryInfos']
         session['notFoundEntryInfos'] = None
     rankings = conn.execute(text(
-        "SELECT r.title, r.roadieId, a.roadieId as artistId, a.name as artistName, r.rating as releaseRating, "
-        " sum(listNumber)/POW(count(cr.id),3) as rank " +
-        "FROM `collectionrelease` cr  " +
-        "JOIN `release` r on (r.id = cr.releaseId) " +
-        "JOIN `collection` c on (c.id = cr.collectionId) " +
-        "JOIN `artist` a on (a.id = r.artistId) " +
-        "where c.collectionType = 'Rank' " +
-        "group by r.title, r.roadieId  " +
-        "order by rank asc, count(cr.id)  " +
-        "desc  LIMIT 50; ", autocommit=True)
-                          .columns(releaseTitle=String, roadieId=String, artistId=String,
-                                   artistName=String, releaseRating=Numeric, rank=Numeric))
+            "SELECT r.title, r.roadieId, a.roadieId as artistId, a.name as artistName, r.rating as releaseRating, "
+            " sum(listNumber)/POW(count(cr.id),3) as rank " +
+            "FROM `collectionrelease` cr  " +
+            "JOIN `release` r on (r.id = cr.releaseId) " +
+            "JOIN `collection` c on (c.id = cr.collectionId) " +
+            "JOIN `artist` a on (a.id = r.artistId) " +
+            "where c.collectionType = 'Rank' " +
+            "group by r.title, r.roadieId  " +
+            "order by rank asc, count(cr.id)  " +
+            "desc  LIMIT 50; ", autocommit=True)
+                            .columns(releaseTitle=String, roadieId=String, artistId=String,
+                                     artistName=String, releaseRating=Numeric, rank=Numeric))
     return render_template('collections.html',
                            collections=sorted(dbCollections, key=lambda x: (x['percentageComplete'], x['name'])),
                            notFoundEntryInfos=notFoundEntryInfos,
@@ -2300,21 +2340,21 @@ def collection(collection_id):
     if not indexCollection:
         return render_template('404.html'), 404
     counts = conn.execute(text(
-        "select count(r.id) as releaseCount, ts.trackCount, ts.trackDuration, ts.trackSize " +
-        "from `collection` c " +
-        "join `collectionrelease` cr on cr.collectionId = c.id " +
-        "join `release` r on r.id = cr.releaseId " +
-        "INNER JOIN ( " +
-        "	SELECT cr.collectionId as collectionId, COUNT(1) AS trackCount, " +
-        "          SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
-        "	FROM `track` t " +
-        "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
-        "	JOIN `release` r ON r.id = rm.releaseId " +
-        "	join `collectionrelease` cr on cr.releaseId = r.id " +
-        "	WHERE t.fileName IS NOT NULL " +
-        "   GROUP BY cr.collectionId "
-        "	) ts on ts.collectionId = c.id " +
-        "where c.roadieId = '" + collection_id + "';", autocommit=True)
+            "select count(r.id) as releaseCount, ts.trackCount, ts.trackDuration, ts.trackSize " +
+            "from `collection` c " +
+            "join `collectionrelease` cr on cr.collectionId = c.id " +
+            "join `release` r on r.id = cr.releaseId " +
+            "INNER JOIN ( " +
+            "	SELECT cr.collectionId as collectionId, COUNT(1) AS trackCount, " +
+            "          SUM(t.duration) / 1000 AS trackDuration, SUM(t.fileSize) AS trackSize " +
+            "	FROM `track` t " +
+            "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+            "	JOIN `release` r ON r.id = rm.releaseId " +
+            "	join `collectionrelease` cr on cr.releaseId = r.id " +
+            "	WHERE t.fileName IS NOT NULL " +
+            "   GROUP BY cr.collectionId "
+            "	) ts on ts.collectionId = c.id " +
+            "where c.roadieId = '" + collection_id + "';", autocommit=True)
                           .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer,
                                    releaseCount=Integer)) \
         .fetchone()
@@ -2469,12 +2509,12 @@ def singleTrackReleaseFinder(count):
 @login_required
 def dupFinder():
     potentialDuplicateArtists = conn.execute(text(
-        "select a.id, a.name, a.roadieId, a2.id, a2.name, a2.roadieId " +
-        "FROM `artist` a " +
-        "join `artist` a2 on substring(a2.name,1, length(a.name)) = a.name " +
-        "where a2.id != a.id " +
-        "and length(a.name) > 1 " +
-        "order by a.name", autocommit=True)
+            "select a.id, a.name, a.roadieId, a2.id, a2.name, a2.roadieId " +
+            "FROM `artist` a " +
+            "join `artist` a2 on substring(a2.name,1, length(a.name)) = a.name " +
+            "where a2.id != a.id " +
+            "and length(a.name) > 1 " +
+            "order by a.name", autocommit=True)
                                              .columns(leftArtistId=Integer, leftArtistName=String, leftRoadieId=String,
                                                       rightArtistId=Integer, rightArtistName=String,
                                                       rightRoadieId=String))
@@ -2506,11 +2546,11 @@ def mergeArtists(merge_into_id, merge_id):
         now = arrow.utcnow().datetime
 
         dbSession.query(Release).filter(Release.artistId == artistToMerge.id).update(
-            {Release.artistId: artist.id, Release.lastUpdated: now},
-            syncronize_session=False)
+                {Release.artistId: artist.id, Release.lastUpdated: now},
+                syncronize_session=False)
         dbSession.query(UserArtist).filter(UserArtist == artistToMerge.id).update(
-            {UserArtist.artistId: artist.id, UserArtist.lastUpdated: now},
-            syncronize_session=False)
+                {UserArtist.artistId: artist.id, UserArtist.lastUpdated: now},
+                syncronize_session=False)
         for altName in artistToMerge.alternateNames:
             if altName not in artist.alternateNames:
                 artist.alternateNames.append(altName)
