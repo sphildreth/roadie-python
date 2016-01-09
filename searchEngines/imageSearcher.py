@@ -36,8 +36,9 @@ class ImageSearcher(object):
     def searchForReleaseImages(self, artistName, releaseTitle, query=None):
 
         result = []
+        query = parse.unquote(query)
         if query and self.regex.match(parse.unquote(query)):
-            result.append(ImageSearchResult(0, 0, parse.unquote(query)))
+            result.append(ImageSearchResult(0, 0, query))
             return result
 
         try:
