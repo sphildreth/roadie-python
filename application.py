@@ -1719,7 +1719,9 @@ def saveQue(que_name):
             dbSession.commit()
         # adding tracks to an existing playlist
         pl.tracks = pl.tracks or []
-        looper = 1
+        looper = len(pl.tracks)
+        if looper < 1:
+            looper = 1
         for track in tracks:
             existingInPlaylist = [x for x in pl.tracks if x.trackId == track.id]
             if not existingInPlaylist:
@@ -2230,9 +2232,23 @@ def playlist(playlist_id):
             "AND t.fileName IS NOT NULL;", autocommit=True)
                           .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer)) \
         .fetchone()
+    duplicates = conn.execute(text(
+        "SELECT plt.roadieId as id, t.roadieId as trackId, t.title as trackTitle, r.title as releaseTitle, "
+        " a.name as artistName, COUNT(t.id) as count "
+        "FROM `playlisttrack` plt "
+        "JOIN `playlist` pl ON (pl.id = plt.playListId) "
+        "JOIN `track` t on (t.id = plt.trackId) "
+        "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+        "JOIN `release` r on (r.id = rm.releaseId) "
+        "JOIN `artist` a on (a.id = r.artistId) "
+        "WHERE pl.roadieId = '" + playlist_id + "' " +
+        "GROUP BY t.title, a.name "
+        "HAVING COUNT(t.roadieId) > 1 "
+        "ORDER BY t.title;", autocommit=True)
+    ).fetchall()
     trackIds = list(map(lambda pt: pt.trackId, sorted(indexPlaylist.tracks, key=lambda pt: pt.listNumber)))
     tracks = dbSession.query(Track).filter(Track.id.in_(trackIds))
-    return render_template('playlist.html', playlist=indexPlaylist, tracks=tracks, counts=counts)
+    return render_template('playlist.html', playlist=indexPlaylist, tracks=tracks, counts=counts, duplicates=duplicates)
 
 
 @app.route("/playlist/play/<playlist_id>/<doShuffle>")
@@ -2268,7 +2284,8 @@ def deletePlaylistTracks(playlist_id):
             return jsonify(message="ERROR")
         for trackToDelete in tracksToDelete.split(','):
             playListTrack = dbSession.query(PlaylistTrack).filter(PlaylistTrack.roadieId == trackToDelete).first()
-            dbSession.delete(playListTrack)
+            if playListTrack:
+                dbSession.delete(playListTrack)
         dbSession.commit()
         return jsonify(message="OK")
     except:
