@@ -180,7 +180,9 @@ class Scanner(ProcessorBase):
                         track.status = 1
                         track.partTitles = []
                         if id3.hasTrackArtist():
-                            shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast" and artist.name != "Score"
+                            shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast" \
+                                                         and artist.name != "Original Cast" \
+                                                         and artist.name != "Score"
                             trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id
