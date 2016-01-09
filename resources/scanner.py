@@ -102,7 +102,7 @@ class Scanner(ProcessorBase):
                         except:
                             pass
             self.logger.debug(
-                "-- Checked [" + str(existingTracksChecked) + "] Existing Tracks for [" + str(trackFilePath) + "]")
+                    "-- Checked [" + str(existingTracksChecked) + "] Existing Tracks for [" + str(trackFilePath) + "]")
 
         # For each file found in folder get ID3 info and insert record into Track DB
         foundReleaseTracks = 0
@@ -180,7 +180,7 @@ class Scanner(ProcessorBase):
                         track.status = 1
                         track.partTitles = []
                         if id3.hasTrackArtist():
-                            shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast"
+                            shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast" and artist.name != "Score"
                             trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id
@@ -218,11 +218,11 @@ class Scanner(ProcessorBase):
                                 track.alternateNames.append(cleanedTitle)
                             self.logger.info("* Updated Track [" + str(track.info()) + "]: " +
                                              "isFilePathSame [" + str(
-                                isFilePathSame) + "] (" + str(trackFullPath) + ":" + str(mp3) + ") " +
+                                    isFilePathSame) + "] (" + str(trackFullPath) + ":" + str(mp3) + ") " +
                                              "isFileSizeSame [" + str(
-                                isFileSizeSame) + "] (" + str(track.fileSize) + ":" + str(mp3FileSize) + ") " +
+                                    isFileSizeSame) + "] (" + str(track.fileSize) + ":" + str(mp3FileSize) + ") " +
                                              "isHashSame [" + str(
-                                isHashSame) + "] (" + str(track.hash) + ":" + str(trackHash) + ") ")
+                                    isHashSame) + "] (" + str(track.hash) + ":" + str(trackHash) + ") ")
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
