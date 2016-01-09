@@ -23,16 +23,17 @@ class Convertor(ProcessorBase):
         exitValue = 1
         fileExtension = os.path.splitext(file)[1].lower()
         outputFilename = os.path.splitext(file)[0] + ".mp3"
-        if fileExtension == ".flac" or \
-                        fileExtension == ".wav":
+        if fileExtension == ".flac" \
+                or fileExtension == ".wav":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
             exitValue = os.system("avconv -y -loglevel error -i \"" + file + "\" -q:a 0 \"" + outputFilename + "\"")
 
-        elif fileExtension == ".m4a" or \
-                        fileExtension == ".ogg":
+        elif fileExtension == ".m4a" \
+                or fileExtension == ".ogg" \
+                or fileExtension == ".wma":
             self.logger.info("* Converting " + fileExtension + " [" + file + "] to MP3")
             exitValue = os.system(
-                "avconv -y -loglevel error -i \"" + file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
+                    "avconv -y -loglevel error -i \"" + file + "\" -acodec libmp3lame -q:a 0 \"" + outputFilename + "\"")
 
         if exitValue == 0:
             if 'ROADIE_CONVERTING' in self.config and 'DoDeleteAfter' in self.config['ROADIE_CONVERTING']:
