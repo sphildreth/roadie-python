@@ -45,7 +45,7 @@
     var doDeleteTracks = function(selectedTracks) {
         $.ajax({
             type: 'POST',
-            url: '/playlist/deletetracks/' + playlistRoadieId,
+            url: '/playlist/deletetracks/' + playlistId,
             data: { "selected": selectedTracks.join(",") },
             success: function(data) {
                 if(data.message == "OK") {
