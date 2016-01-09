@@ -687,6 +687,13 @@ img.thumb.track-artist {
     display: block;
 }
 
+.home-container .recently-played-container .release-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    max-width: 70%;
+}
+
 .home-container td.track .title {
     height: 22px;
 }
