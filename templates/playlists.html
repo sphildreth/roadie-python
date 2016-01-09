@@ -16,7 +16,7 @@
             <div class="thumbnail-container pull-left">
                 <img class="thumb" src="/images/playlist/thumbnail/{{ playlist.roadieId }}" alt="{{ playlist.name }}"/>
             </div>
-            <h4><span class="label label-default">{{ playlist.name }}</span></h4>
+            <h4><span class="label label-default">{{ playlist.name }} ({{ '%04d' % playlist.tracks|length }})</span></h4>
         </a>
     </div>
     {% endfor %}

@@ -691,14 +691,14 @@ img.thumb.track-artist {
     height: 22px;
 }
 
-.home-container .track > .hover-on {
+.track > .hover-on {
     display: none;
     cursor: pointer;
     padding-left: 3px;
     padding-right: 3px;
 }
 
-.home-container .track:hover > .hover-on {
+.track:hover > .hover-on {
     display: inherit;
 }
 

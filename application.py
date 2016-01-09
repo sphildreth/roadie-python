@@ -58,6 +58,7 @@ from resources.trackListApi import TrackListApi
 from resources.userListApi import UserListApi
 from resources.genreListApi import GenreListApi
 from resources.labelListApi import LabelListApi
+from resources.playlistTrackListApi import PlaylistTrackListApi
 from resources.processor import Processor
 from resources.logger import Logger
 from resources.id3 import ID3
@@ -454,25 +455,23 @@ def randomizer(random_type):
         return playRelease(randomizerRelease.roadieId)
     elif random_type == "tracks":
         tracks = []
-        for trackRow in conn.execute(
-                text("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, " +
-                             "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, " +
-                             " ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, " +
-                             " a.roadieId as artistRoadieId, a.name as artistName, " +
-                             " rm.releaseMediaNumber " +
-                             "FROM `track` t " +
-                             "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) " +
-                             "JOIN `release` r on (r.id = rm.releaseId) " +
-                             "JOIN `artist` a on (a.id = r.artistId) " +
-                             "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
-                             "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = 1) " +
-                             "LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = 1) " +
-                             "WHERE (RAND()<(SELECT ((1/COUNT(*))*100) FROM `track`)) " +
-                             "AND (hash IS NOT NULL) " +
-                             "AND ((ur.id is null OR ur.isDisliked = 0) AND (ua.id is null or ua.isDisliked = 0)) " +
-                             "ORDER BY RAND()  " +
-                             "LIMIT 50;")):
-
+        t = text("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
+                 "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
+                 "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
+                 "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
+                 "FROM `track` t "
+                 "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+                 "JOIN `release` r on (r.id = rm.releaseId) "
+                 "JOIN `artist` a on (a.id = r.artistId) "
+                 "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
+                 "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
+                 ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
+                 ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100) FROM `track`)) "
+                 "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
+                 "AND (ua.id is null or ua.isDisliked = 0)) "
+                 "ORDER BY RAND() "
+                 "LIMIT 50;")
+        for trackRow in conn.execute(t):
             track = Track()
             track.id = trackRow.id
             track.roadieId = trackRow.roadieId
@@ -1726,6 +1725,7 @@ def saveQue(que_name):
             if not existingInPlaylist:
                 plt = PlaylistTrack()
                 plt.trackId = track.id
+                plt.roadieId = str(uuid.uuid4())
                 plt.listNumber = looper
                 pl.tracks.append(plt)
             looper += 1
@@ -2257,6 +2257,26 @@ def playPlaylist(playlist_id, doShuffle):
                      attachment_filename=collection.Name + ".m3u")
 
 
+@app.route("/playlist/deletetracks/<playlist_id>", methods=['POST'])
+def deletePlaylistTracks(playlist_id):
+    deletePlaylistTracksPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
+    if not deletePlaylistTracksPlaylist:
+        return jsonify(message="ERROR")
+    try:
+        tracksToDelete = request.form['selected']
+        if not tracksToDelete:
+            return jsonify(message="ERROR")
+        for trackToDelete in tracksToDelete.split(','):
+            playListTrack = dbSession.query(PlaylistTrack).filter(PlaylistTrack.roadieId == trackToDelete).first()
+            dbSession.delete(playListTrack)
+        dbSession.commit()
+        return jsonify(message="OK")
+    except:
+        dbSession.rollback()
+        logger.exception("Error Deleting Playlist Tracks")
+        return jsonify(message="ERROR")
+
+
 @app.route("/playlist/delete/<playlist_id>", methods=['POST'])
 def deletePlaylist(playlist_id):
     deletePlaylistPlaylist = dbSession.query(Playlist).filter(Playlist.roadieId == playlist_id).first()
@@ -2620,6 +2640,7 @@ api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbCon
 api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(GenreListApi, '/api/v1.0/genres', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(LabelListApi, '/api/v1.0/labels', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(PlaylistTrackListApi, '/api/v1.0/playlistTracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 
 login_manager = LoginManager()
 login_manager.init_app(app)

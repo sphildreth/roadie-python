@@ -39,13 +39,13 @@
                 roadieLibrary.showErrorMessage(error);
             }
         });
-    }
+    };
 
     var getIdSelections = function() {
         return $.map($table.bootstrapTable('getSelections'), function (row) {
             return row.id
         });
-    }
+    };
 
     var mergeSelected = function() {
         alert("Merge WIP");

@@ -6,7 +6,7 @@
 <div class="playlist-container" data-playlist-id="{{ playlist.roadieId }}">
     <div class="release-counts-container pull-right">
         <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                                                title="Total Tracks of Playlist">{{ counts.trackCount }}</span></span>
+                                                title="Total Tracks of Playlist">{{ '%04d' % counts.trackCount }}</span></span>
         <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                title="Total Playtime of Playlist">{{ counts.trackDuration|format_timedelta("{days}:{hours2}:{minutes2}:{seconds2}") }}</span></span>
     </div>
@@ -23,11 +23,8 @@
         </div>
 
        <div class="btn-group">
-            {% if current_user.is_editor() %}
-            <a href="/admin/playlist/edit/?id={{ playlist.id }}&url=/playlist/{{ playlist.roadieId }}"
-               type="button" class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
-            {% endif %}
-            <a id="delete-playlist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+            <a id="delete-playlist" title="Delete This Playlist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete</a>
+           <a id="delete-selected" title="Delete Selected Tracks From This Playlist" class="btn btn-warning"><i class="fa fa-trash-o"></i> Delete Selected</a>
         </div>
     </div>
     <div class="row title bordered">
@@ -35,59 +32,56 @@
              alt="{{ playlist.title }}"/>
         <h2><span class="label label-default">{{ playlist.name }}</span></h2>
     </div>
-    <div class="row">
-        <div class="table-responsive">
-            <table id="playlistTracks" class="table-track-info table table-striped table-condensed table-responsive">
-                <thead>
-                <tr>
-                    <td>Track</td>
-                    <td>Release</td>
-                    <td>Artist</td>
-                </tr>
-                </thead>
-                <tbody>
-                {%for track in tracks %}
-                <tr>
-                    <td class="track" data-track-id="{{ track.roadieId }}">
-                        <span class="title label label-default pull-left">{{ track.title }}</span>
-                        <span class="hover-on play-track" title="Play Track"><i class="fa fa-play"></i></span>
-                        <span class="hover-on que-track" title="Que Track"><i class="fa fa-plus"></i></span>
-
-                        <div class="clearfix"></div>
-                            <span class="user-rating-container">
-                                <input type="hidden" class="track-rating user-rating rating"
-                                       value="{{ track.userRatings.rating }}"/>
-                            </span>
-                    </td>
-                    <td class="release" data-release-id="{{ track.releasemedia.release.roadieId }}">
-                        <a href="/release/{{ track.releasemedia.release.roadieId }}">
-                            <div class="thumbnail-container pull-left">
-                                <img class="release-thumb" src="/images/release/thumbnail/{{ track.releasemedia.release.roadieId }}"
-                                     alt="{{ track.releasemedia.release.title }}"/>
-                            </div>
-                            <span class="label label-default">{{ track.releasemedia.release.title }}</span>
-                        </a>
-                    </td>
-                    <td class="artist" data-artist-id="{{ track.releasemedia.release.artist }}">
-                        <a href="/artist/{{ track.releasemedia.release.artist.roadieId }}">
-                            <div class="thumbnail-container pull-left">
-                                <img class="artist-thumb" src="/images/artist/thumbnail/{{ track.releasemedia.release.artist.roadieId }}"
-                                     alt="{{ track.releasemedia.release.artist.name }}"/>
-                            </div>
-                            <span class="label label-default">{{  track.releasemedia.release.artist.name}}</span>
-                        </a>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <table id="playlistGrid"></table>
 </div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
     var playlistId = '{{ playlist.roadieId }}';
+    var playlistDbId = '{{ playlist.id }}';
+
+    var $table = $('#playlistGrid');
+
+    var doDeleteTracks = function(selectedTracks) {
+        $.ajax({
+            type: 'POST',
+            url: '/playlist/deletetracks/' + playlistRoadieId,
+            data: { "selected": selectedTracks.join(",") },
+            success: function(data) {
+                if(data.message == "OK") {
+                    $table.bootstrapTable("refresh");
+                }
+            },
+            error:function(jq, st, error){
+                roadieLibrary.showErrorMessage(error);
+            }
+        });
+    };
+
+    var getIdSelections = function() {
+        return $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id
+        });
+    };
+
+    var deleteSelected = function() {
+        var selectedTracks = getIdSelections();
+        if(selectedTracks.length < 1) {
+            bootbox.alert("No Tracks Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Delete Selected Tracks?", function(result) {
+            if(result) {
+                doDeleteTracks(selectedTracks,false);
+            }
+        });
+    };
+
+    var playTrack = function(releaseId, trackId) {
+        roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackId);
+    };
+
+
     $(function() {
         $("#playAll").on("click", function(e) {
             roadieLibrary.playLoader("/playlist/play/" + playlistId + "/0");
@@ -116,6 +110,65 @@
                 }
             });
         });
+        $("#delete-selected").on("click", deleteSelected);
+
+        $table.bootstrapTable({
+            ajax: function(params) {
+                sort = params.data.sort ? params.data.sort : "";
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/playlistTracks?playListId=' + playlistDbId + '&sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=None&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                            params.complete();
+                        }
+                    },
+                    error:function(jq, st, error){
+                        roadieLibrary.showErrorMessage(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            showExport: true,
+            exportDataType: 'all',
+            pageList: [25, 50, 100, 500, 5000],
+            pageSize: 50,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "title",
+            sortOrder: "asc",
+            columns: [
+                { field: 'id', visible: false },
+                { field: 'state', checkbox: true, align: 'center', valign: 'middle' },
+                { field: 'title', title: 'Track', sortable: true, formatter: function(value,row,index) {
+                    return '<div class="track"><span class="title label label-default pull-left">' + row.title + '</span><span class="hover-on play-track" onclick="javascript:playTrack(\'' + row.releaseId + '\',\'' + row.trackId + '\');" title="Play Track"><i class="fa fa-play"></i></span></div>';
+                }},
+                { field: 'releaseTitle', sortable: true, title: 'Release', formatter: function(value,row, index) {
+                    var thumbnail = "/images/release/thumbnail/" + row.releaseId;
+                    return '<a href="/release/' + row.releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.releaseTitle  + '" /></div><span class="label label-default">' + row.releaseTitle + '</span></a>';
+                }},
+                { field: 'artistName', sortable: true, title: 'Artist', formatter: function(value,row, index) {
+                    var thumbnail = "/images/artist/thumbnail/" + row.artistId;
+                    return '<a href="/artist/' + row.artistId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + row.artistName  + '" /></div><span class="label label-default">' + row.artistName + '</span></a>';
+                }}
+            ]
+        });
+
+
     });
 
 </script>
