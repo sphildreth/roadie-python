@@ -182,12 +182,17 @@ class Scanner(ProcessorBase):
                         track.partTitles = []
                         if id3.hasTrackArtist():
                             shouldMakeArtistIfNotFound = not release.isCastRecording()
-                            trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
+                            ta = id3.getTrackArtist()
+                            trackArtist = self.artistFactory.get(ta, shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id
                             elif not shouldMakeArtistIfNotFound:
-                                track.partTitles.append(id3.getTrackArtist())
-                                self.logger.info("+ Added Track PartTitle [" + str(id3.getTrackArtist()) + "]")
+                                track.partTitles.append(ta)
+                                self.logger.info("+ Added Track PartTitle [" + str(ta) + "]")
+                            if id3.artists:
+                                ta = "/".join(id3.artists)
+                                track.partTitles.append(ta)
+                                self.logger.info("+ Added Track PartTitle [" + str(ta) + "]")
                         track.tags = []
                         track.alternateNames = []
                         if cleanedTitle != id3.title.lower().strip():
