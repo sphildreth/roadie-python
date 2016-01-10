@@ -3,6 +3,7 @@ import hashlib
 import uuid
 from sqlalchemy import update
 from resources.common import *
+from resources.models.Release import Release
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track
 from resources.id3 import ID3
@@ -180,9 +181,7 @@ class Scanner(ProcessorBase):
                         track.status = 1
                         track.partTitles = []
                         if id3.hasTrackArtist():
-                            shouldMakeArtistIfNotFound = artist.name != "Original Broadway Cast" \
-                                                         and artist.name != "Original Cast" \
-                                                         and artist.name != "Score"
+                            shouldMakeArtistIfNotFound = not release.isCastRecording()
                             trackArtist = self.artistFactory.get(id3.getTrackArtist(), shouldMakeArtistIfNotFound)
                             if trackArtist:
                                 track.artistId = trackArtist.id

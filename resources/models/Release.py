@@ -58,17 +58,56 @@ class Release(Base):
 
     def isLiveOrCompilation(self):
         """
-        Determine if the release is a Live or Compilation album
+        Determine if the release is a Live or Compilation release
 
         """
+        return self._isReleaseTypeOf("Live", False) or self._isReleaseTypeOf("Compilation", False)
+
+    def isVariousArtists(self):
+        """
+        Determine if the release is a Various Artists release
+        :return: bool
+        """
+        return self._isReleaseTypeOf("Various Artist", True)
+
+    def isSoundTrackRecording(self):
+        """
+        Determine if the release is a SoundTrack release
+        :return: bool
+        """
+        return self._isReleaseTypeOf("Sound Track", True)
+
+    def isCastRecording(self):
+        """
+        Determine if the release is a Cast Recording release
+        :return: bool
+        """
+        return self._isReleaseTypeOf("Original Broadway Cast", True) or self._isReleaseTypeOf("Original Cast", True)
+
+    def _isReleaseTypeOf(self, releaseType, doCheckTitles=False):
+        """
+        Determine if the release is a type of the given type
+        :return: bool
+        """
+        releaseType = releaseType.lower()
         try:
+            if doCheckTitles:
+                if self.artist:
+                    if releaseType in self.artist.name.lower():
+                        return True
+                if releaseType in self.title.lower():
+                    return True
+                if self.alternateNames:
+                    for alternateName in self.alternateNames:
+                        if alternateName and (alternateName.lower() == releaseType):
+                            return True
             if self.tags:
                 for tag in self.tags:
-                    if tag and (tag.lower() == "live" or tag.lower() == "compilation"):
+                    if tag and (tag.lower() == releaseType):
                         return True
             if self.genres:
                 for genre in self.genres:
-                    if genre and (genre.name.lower() == "live" or genre.name.lower() == "compilation"):
+                    if genre and (genre.name.lower() == releaseType):
                         return True
         except:
             pass

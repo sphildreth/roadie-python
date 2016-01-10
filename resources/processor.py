@@ -232,7 +232,13 @@ class Processor(ProcessorBase):
                                     artist = None
                                 if not artist:
                                     lastID3Artist = id3.getReleaseArtist()
-                                    artist = self.artistFactory.get(id3.getReleaseArtist())
+                                    r = release
+                                    if not r:
+                                        r = Release()
+                                        r.title = id3.album
+                                        r.artist = Artist()
+                                        r.artist.name = id3.getReleaseArtist()
+                                    artist = self.artistFactory.get(id3.getReleaseArtist(), not r.isCastRecording())
                                 if artist and artist.isLocked:
                                     self.logger.debug(
                                         "Skipping Processing Track [" + printableMp3 + "], Artist [" + str(

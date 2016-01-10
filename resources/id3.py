@@ -139,6 +139,7 @@ class ID3(object):
     def _load(self, filename, config):
         self.dirty = False
         self.artist = ''
+        self.artists = []
         self.albumArtist = ''
         self.album = ''
         self.track = ''
@@ -159,6 +160,17 @@ class ID3(object):
             comments.append('')
             self.album = string.capwords(short_tags.get('album', [''])[0])
             self.artist = string.capwords(short_tags.get('artist', [''])[0])
+            try:
+                # id3v2.3.0, 4.2.1   TPE1    [#TPE1 Lead performer(s)/Soloist(s)]
+                if self.artist and "/" in self.artist:
+                    self.artists = []
+                    for aa in self.artists.split("/"):
+                        if aa:
+                            self.artists.append(aa.strip())
+                    if len(self.artists) > 0:
+                        self.artist = self.artists[0]
+            except:
+                pass
             try:
                 self.albumArtist = full_tags['TPE2'].text[0]
             except:

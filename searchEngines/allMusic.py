@@ -51,8 +51,8 @@ class AllMusicGuide(SearchEngineBase):
                 if not fetchReleases:
                     include = "images,aliases,associatedwith,groupmembers,musicstyles"
                 url = "http://api.rovicorp.com/search/v2.1/music/search?apikey=" + self.API_KEY + "&sig=" + str(
-                    self._sig()) + "&query=" + parse.quote_plus(
-                    name) + "&entitytype=artist&include=" + include + "&size=1"
+                        self._sig()) + "&query=" + parse.quote_plus(
+                        name) + "&entitytype=artist&include=" + include + "&size=1"
                 rq = request.Request(url=url)
                 rq.add_header('Referer', self.referer)
                 self.logger.debug("Performing All Music Guide Lookup For Artist")
@@ -61,7 +61,9 @@ class AllMusicGuide(SearchEngineBase):
                         s = StringIO((f.read().decode('utf-8')))
                         o = json.load(s)
                         if o:
-                            if not 'searchResponse' in o or not 'results' in o['searchResponse']:
+                            if 'searchResponse' not in o \
+                                    or 'results' not in o['searchResponse'] \
+                                    or not o['searchResponse']['results'][0]:
                                 return None
                             amgArtist = o['searchResponse']['results'][0]['name']
                             if amgArtist:
@@ -147,7 +149,7 @@ class AllMusicGuide(SearchEngineBase):
         try:
             release = None
             url = "http://api.rovicorp.com/data/v1.1/album/info?apikey=" + self.API_KEY + "&sig=" + str(
-                self._sig()) + "&include=images,releases,styles,tracks&albumid=" + amgId
+                    self._sig()) + "&include=images,releases,styles,tracks&albumid=" + amgId
             rq = request.Request(url=url)
             rq.add_header('Referer', self.referer)
             self.logger.debug("Performing All Music Guide Lookup For Release(s)")
