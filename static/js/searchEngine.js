@@ -113,25 +113,45 @@ var searchEngine = ( function( window, undefined ) {
                 return false;
             }
             searchEngine.clearSearchResults();
-            searchEngine.artistSearchEngine.search(qry, function(){}, function(datums) {
-                if(datums.length > 0) {
-                    var timeDiff = new Date() - startTime;
-                    searchEngine.showSearchResults(datums, 'artist', "Artists:", 'artist', timeDiff);
-                }
-            });
-            searchEngine.releaseSearchEngine.search(qry, function(){}, function(datums) {
-                if(datums.length > 0) {
-                    var timeDiff = new Date() - startTime;
-                    searchEngine.showSearchResults(datums, 'release', "Releases:", 'release', timeDiff);
-                }
-            });
-            searchEngine.trackSearchEngine.search(qry, function(){}, function(datums) {
-                if(datums.length > 0) {
-                    var timeDiff = new Date() - startTime;
-                    searchEngine.showSearchResults(datums, 'track', "Tracks:", 'release', timeDiff);
-                }
-            });
-        }, 500));
+
+            var isArtistSearch = _.startsWith(qry, '~a');
+            if(isArtistSearch) {
+                qry = qry.replace("~a", "");
+            }
+            var isReleaseSearch = _.startsWith(qry, '~r');
+            if(isReleaseSearch) {
+                qry = qry.replace("~r", "");
+            }
+            var isTrackSearch = _.startsWith(qry, '~t');
+            if(isTrackSearch) {
+                qry = qry.replace("~t", "");
+            }
+            if(!isReleaseSearch && !isTrackSearch) {
+                searchEngine.artistSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        var timeDiff = new Date() - startTime;
+                        searchEngine.showSearchResults(datums, 'artist', "Artists:", 'artist', timeDiff);
+                    }
+                });
+            }
+            if(!isArtistSearch && !isTrackSearch) {
+                searchEngine.releaseSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        var timeDiff = new Date() - startTime;
+                        searchEngine.showSearchResults(datums, 'release', "Releases:", 'release', timeDiff);
+                    }
+                });
+            }
+            if(!isArtistSearch && !isReleaseSearch) {
+                searchEngine.trackSearchEngine.search(qry, function(){}, function(datums) {
+                    if(datums.length > 0) {
+                        var timeDiff = new Date() - startTime;
+                        searchEngine.showSearchResults(datums, 'track', "Tracks:", 'release', timeDiff);
+                    }
+                });
+            }
+
+        }, 750));
 
     };
 
