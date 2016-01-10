@@ -164,7 +164,7 @@ class ID3(object):
                 # id3v2.3.0, 4.2.1   TPE1    [#TPE1 Lead performer(s)/Soloist(s)]
                 if self.artist and "/" in self.artist:
                     self.artists = []
-                    for aa in self.artists.split("/"):
+                    for aa in self.artist.split("/"):
                         if aa:
                             self.artists.append(aa.strip())
                     if len(self.artists) > 0:

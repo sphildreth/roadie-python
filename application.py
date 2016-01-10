@@ -796,6 +796,7 @@ def editArtist(artist_id):
         flash('Artist Edited successfully')
     except:
         logger.exception("Error Editing Artist")
+        flash('Error Editing Artist')
         dbSession.rollback()
     return redirect("/artist/" + artist_id)
 
