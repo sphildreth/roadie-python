@@ -49,7 +49,7 @@
                                                                                                         data-placement="bottom"
                                                                                                         title="Count Of Tracking Being Played">{{ '%03d' % tracks|length }}</span></span>
                             <span class="length-total">Time: <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                                                                   title="Total Playtime of Tracks">{{ totalTime|format_timedelta("{hours2}:{minutes2}:{seconds2}") }}</span></span>
+                                                                   title="Total Playtime of Tracks">{{ totalTime|format_tracktime() }}</span></span>
                         </div>
                         <div class="times-container">
                             <span class="digital current-time">00:00</span>
