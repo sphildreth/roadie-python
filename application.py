@@ -2635,7 +2635,8 @@ def mergeArtists(merge_into_id, merge_id):
 @login_required
 def player():
     tracks = session['tracks']
-    return render_template('player.html', tracks=tracks)
+    totalTime = sum([int(t['Length']) for t in tracks])
+    return render_template('player.html', tracks=tracks, totalTime=totalTime)
 
 
 class WebSocket(WebSocketHandler):

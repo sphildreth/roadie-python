@@ -128,4 +128,13 @@ ol.track-list li.playing {
     margin-bottom: 1px;
 }
 
+.playlist-counts-container {
+    margin-top: 9px;
+}
+
+@media screen and (max-width: 1024px) {
+    .playlist-counts-container {
+        display: none !important;
+    }
+}
 
