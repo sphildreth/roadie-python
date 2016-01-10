@@ -166,7 +166,7 @@ class ID3(object):
                     self.artists = []
                     for aa in self.artist.split("/"):
                         if aa:
-                            self.artists.append(aa.strip())
+                            self.artists.append(string.capwords(aa.strip()))
                     if len(self.artists) > 0:
                         self.artist = self.artists[0]
             except:
