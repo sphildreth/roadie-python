@@ -171,6 +171,11 @@ div.collection-container h3.missing-number {
     text-align: right;
 }
 
+.artist-detail-container .bioContext-container, .artist-detail-container .profile-container {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
 #labelPicker {
     height: 30px;
     padding-top: 6px;
