@@ -20,14 +20,29 @@
     </div>
     <div class="breadcrumb-container">
         <ol class="breadcrumb">
-           {% for releaseLabel in release.releaseLabels %}
+           {% if releaseLabels|length > 0 %}
            <li>
-               <a href="/label/{{ releaseLabel.label.roadieId }}">
-                <img class="label-thumb thumb" src="/images/label/thumbnail/{{ releaseLabel.label.roadieId }}"
-                 alt="{{ releaseLabel.label.name }}"/>
-                   <span class="label label-default release-label-name">{{ releaseLabel.label.name }}</span></a>
+               {% if releaseLabels|length == 1 %}
+                {% for releaseLabel in releaseLabels %}
+                   <a href="/label/{{ releaseLabel.label.roadieId }}">
+                    <img class="label-thumb thumb" src="/images/label/thumbnail/{{ releaseLabel.label.roadieId }}"
+                     alt="{{ releaseLabel.label.name }}"/>
+                       <span class="label label-default release-label-name">{{ releaseLabel.label.name }}</span></a>
+                {% endfor %}
+               {% else %}
+               <select id="labelPicker" class="form-control">
+                   <option value="" disabled selected hidden>Labels</option>
+                {% for releaseLabel in releaseLabels|sort(attribute='label.name') %}
+                   <option value="{{ releaseLabel.label.roadieId }}">
+                        <img class="label-thumb thumb" src="/images/label/thumbnail/{{ releaseLabel.label.roadieId }}"
+                            alt="{{ releaseLabel.label.name }}"/>
+                       <span class="label label-default release-label-name">{{ releaseLabel.label.name }}</span>
+                    </option>
+                {% endfor %}
+               </select>
+               {% endif %}
            </li>
-           {% endfor %}
+           {% endif %}
            <li>
                <a href="/artist/{{ release.artist.roadieId }}">
                 <img class="artist-thumb thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
@@ -559,6 +574,11 @@
     $(function() {
 
         $(".tokenfield-readonly").tokenfield();
+
+        $("#labelPicker").on("change", function(i,d){
+            window.location = '/label/' + $(this).find("option:selected").val();
+        });
+
 
         $("#alternateNamesTokenfield").tokenfield({
             delimiter: '|',

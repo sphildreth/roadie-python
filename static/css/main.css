@@ -171,6 +171,10 @@ div.collection-container h3.missing-number {
     text-align: right;
 }
 
+#labelPicker {
+    height: 30px;
+    padding-top: 6px;
+}
 
 .release-detail-container span.track-count-indicator,
 .artist-detail-container span.release-sane-indicator,

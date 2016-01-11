@@ -1434,10 +1434,15 @@ def releaseDetail(roadieId):
         .fetchone()
     userRelease = [x for x in indexRelease.userRatings if x.userId == user.id]
 
+    releaseLabels = []
+    for releaseLabel in indexRelease.releaseLabels:
+        releaseLabels.append(releaseLabel)
+
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
                            userRelease=userRelease[0] if userRelease else None,
+                           releaseLabels=releaseLabels,
                            trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
