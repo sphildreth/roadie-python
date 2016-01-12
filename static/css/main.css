@@ -396,6 +396,11 @@ ul.urls li {
     display: inline-block;
 }
 
+.artist-detail-container .artist-image-container img {
+    height: 100px;
+}
+
+
 .recent-releases h3 {
     margin-top: 0;
 }

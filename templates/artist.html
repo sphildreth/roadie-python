@@ -95,13 +95,13 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-6 artist-image-container">
             {% for image in artist.images %}
             <div class="col-xs-4 col-sm-3 col-md-3 image-container">
                 <a href="javascript:void(0);"
                    data-title="{{ image.caption }}"
                    data-url="/images/artist/{{ image.roadieId }}/2048/2048"
-                   target="_blank" class="thumbnail">
+                   class="thumbnail">
                     <img data-image-id="{{ image.roadieId }}" data-toggle="context"
                          data-target="#context-menu-{{ image.roadieId }}"
                          src="/images/artist/{{ image.roadieId }}/512/512" alt="Image"/>
@@ -541,6 +541,7 @@
             roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
         });
         $(".artist-detail-container a.thumbnail").on("click", function(e) {
+            e.preventDefault();
             var $t = $(this);
             bootbox.dialog({
                 title: $t.data("title"),
