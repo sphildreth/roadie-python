@@ -241,6 +241,8 @@ class Scanner(ProcessorBase):
         mp3FilesInFolder = self.mp3FileCountForFolder(folder)
         if matches:
             release.libraryStatus = 'Complete'
+            if release.trackCount == 0:
+                release.trackCount = mp3FilesInFolder
         elif not mp3FilesInFolder:
             release.libraryStatus = 'Missing'
         elif mp3FilesInFolder != releaseMediaTrackCount:
