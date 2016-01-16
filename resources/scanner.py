@@ -29,6 +29,11 @@ class Scanner(ProcessorBase):
                 if os.path.splitext(filename)[1] == ".mp3":
                     yield os.path.join(root, filename)
 
+    @staticmethod
+    def mp3FileCountForFolder(folder):
+        return len([f for f in os.listdir(folder)
+                    if f.endswith('.mp3') and os.path.isfile(os.path.join(folder, f))])
+
     def _markTrackMissing(self, trackId, title, fileName):
         if not self.readOnly:
             stmt = update(Track.__table__) \
@@ -233,11 +238,12 @@ class Scanner(ProcessorBase):
 
         elapsedTime = arrow.utcnow().datetime - startTime
         matches = releaseMediaTrackCount == (createdReleaseTracks + foundReleaseTracks)
+        mp3FilesInFolder = self.mp3FileCountForFolder(folder)
         if matches:
             release.libraryStatus = 'Complete'
-        elif scannedMp3Files == 0:
+        elif not mp3FilesInFolder:
             release.libraryStatus = 'Missing'
-        else:
+        elif mp3FilesInFolder != releaseMediaTrackCount:
             release.libraryStatus = 'Incomplete'
 
         self.logger.info("<- Scanning Folder [" + str(folder.encode('utf-8')) + "] " +
