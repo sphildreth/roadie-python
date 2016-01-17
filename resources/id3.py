@@ -248,5 +248,5 @@ class ID3(object):
         except:
             self.logger.exception()
 
-id3 = ID3("C:/temp/01.mp3")
-print(id3)
+# id3 = ID3("C:/temp/01.mp3")
+# print(id3)
