@@ -237,15 +237,14 @@ class Scanner(ProcessorBase):
                     scannedMp3Files += 1
 
         elapsedTime = arrow.utcnow().datetime - startTime
-        matches = releaseMediaTrackCount == (createdReleaseTracks + foundReleaseTracks)
         mp3FilesInFolder = self.mp3FileCountForFolder(folder)
-        if matches:
+        if mp3FilesInFolder == releaseMediaTrackCount:
             release.libraryStatus = 'Complete'
             if release.trackCount == 0:
                 release.trackCount = mp3FilesInFolder
         elif not mp3FilesInFolder:
             release.libraryStatus = 'Missing'
-        elif mp3FilesInFolder != releaseMediaTrackCount:
+        else:
             release.libraryStatus = 'Incomplete'
 
         self.logger.info("<- Scanning Folder [" + str(folder.encode('utf-8')) + "] " +
