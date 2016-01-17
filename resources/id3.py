@@ -209,7 +209,7 @@ class ID3(object):
                     self.year = myfile.tag.year[:4]
             try:
                 if not self.year:
-                    self.year = full_tags.tags._DictProxy__dict['TDRL'].text[0]
+                    self.year = full_tags.tags._DictProxy__dict['TDRL'].text[0].text
             except:
                 pass
             self.title = string.capwords(short_tags.get('title', [''])[0])
@@ -248,5 +248,5 @@ class ID3(object):
         except:
             self.logger.exception()
 
-# id3 = ID3("C:/temp/01.mp3")
-# print(id3)
+id3 = ID3("C:/temp/01.mp3")
+print(id3)
