@@ -185,8 +185,14 @@ class ID3(object):
                     self.track = int(trackNumber)
             except:
                 pass
-            self.length = full_tags.info.length
-            self.bitrate = full_tags.info.bitrate
+            try:
+                self.length = full_tags.info.length
+            except:
+                pass
+            try:
+                self.bitrate = full_tags.info.bitrate
+            except:
+                pass
             discNumber = short_tags.get('discnumber', [''])[0]
             self.disc = 0
             try:
@@ -201,6 +207,11 @@ class ID3(object):
                 myfile = mpeg.Mpeg(filename)
                 if myfile:
                     self.year = myfile.tag.year[:4]
+            try:
+                if not self.year:
+                    self.year = full_tags.tags._DictProxy__dict['TDRL'].text[0]
+            except:
+                pass
             self.title = string.capwords(short_tags.get('title', [''])[0])
             if self.title and config:
                 if 'TitleReplacements' in config:
@@ -236,3 +247,6 @@ class ID3(object):
                 pass
         except:
             self.logger.exception()
+
+id3 = ID3("C:/temp/01.mp3")
+print(id3)
