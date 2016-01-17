@@ -251,6 +251,6 @@ class Scanner(ProcessorBase):
                          "Complete, Scanned [" + ('%02d' % scannedMp3Files) + "] " +
                          "Mp3 Files: Created [" + str(createdReleaseTracks) + "] Release Tracks, " +
                          "Found [" + str(foundReleaseTracks) + "] Release Tracks. " +
-                         "Sane Counts [" + str(matches) + "] " +
+                         "Exist in Release Folder [" + str(mp3FilesInFolder) + "] " +
                          "Elapsed Time [" + str(elapsedTime) + "]")
         return foundGoodMp3s
