@@ -31,8 +31,12 @@ class Scanner(ProcessorBase):
 
     @staticmethod
     def mp3FileCountForFolder(folder):
-        return len([f for f in os.listdir(folder)
-                    if f.endswith('.mp3') and os.path.isfile(os.path.join(folder, f))])
+        try:
+            return len([f for f in os.listdir(folder)
+                        if f.endswith('.mp3') and os.path.isfile(os.path.join(folder, f))])
+        except:
+            pass
+        return 0
 
     def _markTrackMissing(self, trackId, title, fileName):
         if not self.readOnly:
