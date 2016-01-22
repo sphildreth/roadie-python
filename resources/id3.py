@@ -78,7 +78,27 @@ class ID3(object):
                     desc=u'Cover',
                     data=image
         ))
-        tags.save(self.filename, v2_version=3) # this is for Windows Media Player compatiblity
+        tags.save(self.filename, v2_version=3) # this is for Windows Media Player compatibility
+
+    def updateFromTrack(self, track):
+        """
+        Update the ID3 Track with the given Track values
+        :param track: Track
+        :return:
+        """
+        try:
+            tags = mutagenID3(self.filename)
+        except ID3NoHeaderError:
+            tags = mutagenID3()
+        tags["TIT2"] = TIT2(encoding=3, text=track.title)
+        if track.artist:
+            tags["TPE1"] = TPE1(encoding=3, text=track.artist.name)
+        tags["TRCK"] = TRCK(encoding=3, text=str(track.trackNumber))
+        if self.config:
+            if 'DoClearComments' in self.config:
+                if self.config['DoClearComments'].lower() == "true":
+                    tags.delall(u"COMM::'en'")
+        tags.save(self.filename)
 
     def updateFromRelease(self, release, track):
         """

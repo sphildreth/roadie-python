@@ -748,7 +748,7 @@
         });
         $("div.tracks a.edit-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
-            window.location.href = "/admin/track/edit/?id=" + trackid + "&url=/release/" + releaseId;
+            window.location.href = "/track/edit/" + trackid + "/" + releaseId;
         });
         $("div.tracks a.deleteRelease-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");

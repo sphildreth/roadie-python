@@ -1449,6 +1449,69 @@ def releaseDetail(roadieId):
                            releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
 
 
+@app.route("/track/edit/<roadieId>/<releaseId>", methods=['GET', 'POST'])
+@login_required
+def editTrack(roadieId, releaseId):
+    try:
+        track = getTrack(roadieId)
+        release = getRelease(releaseId)
+        if not track or not release:
+            return render_template('404.html'), 404
+        if request.method == 'GET':
+            return render_template('trackEdit.html', track=track, releaseRoadieId=releaseId)
+        token = session.pop('_csrf_token', None)
+        if not token or token != request.form.get('_csrf_token'):
+            abort(400)
+        now = arrow.utcnow().datetime
+        form = request.form
+        track.isLocked = False
+        originalTitle = track.title
+        originalTrackNumber = track.trackNumber
+        if 'isLocked' in form and form['isLocked'] == "on":
+            track.isLocked = True
+        track.title = form['title']
+        track.rating = int(form['rating'])
+        track.playedCount = int(form['playedCount'])
+        track.trackNumber = int(form['trackNumber'])
+        track.musicBrainzId = form['musicBrainzId']
+        track.amgId = form['amgId']
+        track.spotifyId = form['spotifyId']
+        track.isrc = form['isrc']
+        track.tags = []
+        if 'tagsTokenfield' in form:
+            formtags = form['tagsTokenfield']
+            if formtags:
+                for tag in formtags.split('|'):
+                    track.tags.append(tag)
+        track.alternateNames = []
+        if not isEqual(originalTitle, track.title):
+            track.alternateNames.append(originalTitle)
+        if 'alternateNamesTokenfield' in form:
+            formAlternateNames = form['alternateNamesTokenfield']
+            if formAlternateNames:
+                for alternateName in formAlternateNames.split('|'):
+                    if not isEqual(originalTitle, alternateName):
+                        track.alternateNames.append(alternateName)
+        track.partTitles = []
+        if 'partTitles' in form:
+            formPartTitles = form['partTitles']
+            if formPartTitles:
+                for partTitle in formPartTitles.split('\n'):
+                    track.partTitles.append(partTitle)
+        track.lastUpdated = now
+        release.lastUpdated = now
+        dbSession.commit()
+        if not isEqual(originalTitle, track.title) or not isEqual(originalTrackNumber, track.trackNumber):
+            trackPath = pathToTrack(track)
+            id3 = ID3(trackPath, config)
+            id3.updateFromTrack(track)
+        flash('Track Edited successfully')
+    except:
+        logger.exception("Error Editing Track")
+        dbSession.rollback()
+    return redirect("/release/" + releaseId)
+
+
 @app.route("/release/edit/<roadieId>", methods=['GET', 'POST'])
 @login_required
 def editRelease(roadieId):
@@ -2342,17 +2405,21 @@ def redirect_back(endpoint, **values):
 def collections():
     dbCollections = []
     for c in dbSession.query(Collection).order_by(Collection.name):
-        releaseCount = len(c.collectionReleases)
-        collectionCount = len(c.listInCSV.splitlines())
-        percentageComplete = int(100 / float(collectionCount) * float(releaseCount))
-        dbCollections.append({
-            'roadieId': c.roadieId,
-            'name': c.name,
-            'releaseCount': releaseCount,
-            'type': c.collectionType,
-            'collectionCount': collectionCount,
-            'percentageComplete': percentageComplete
-        })
+        try:
+            releaseCount = len(c.collectionReleases)
+            collectionCount = len(c.listInCSV.splitlines())
+            percentageComplete = int(100 / float(collectionCount) * float(releaseCount))
+            dbCollections.append({
+                'roadieId': c.roadieId,
+                'name': c.name,
+                'releaseCount': releaseCount,
+                'type': c.collectionType,
+                'collectionCount': collectionCount,
+                'percentageComplete': percentageComplete
+            })
+        except:
+            logger.exception("Error Reading Playlist [" + c.name + "]")
+            pass
     notFoundEntryInfos = []
     if 'notFoundEntryInfos' in session:
         notFoundEntryInfos = session['notFoundEntryInfos']
@@ -2683,7 +2750,6 @@ if __name__ == '__main__':
     admin.add_view(RoadieModelView(Label, dbSession))
     admin.add_view(RoadiePlaylistModelView(Playlist, dbSession))
     admin.add_view(RoadieReleaseModelView(Release, dbSession))
-    # admin.add_view(RoadieTrackModelView(Track, session))
     admin.add_view(RoadieModelAdminRequiredView(User, category='User', session=dbSession))
     admin.add_view(RoadieUserArtistModelView(UserArtist, category='User', session=dbSession))
     admin.add_view(RoadieUserReleaseModelView(UserRelease, category='User', session=dbSession))

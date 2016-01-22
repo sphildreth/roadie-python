@@ -1,0 +1,178 @@
+{% extends "layout.html" %}
+{% block title %}{{ 'Edit: ' + track.title }}{% endblock %}
+{% block header_content %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-switch.min.css') }}">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/css/select2.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/css/bootstrap-datepicker.min.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote-bs3.min.css">
+{% endblock %}
+{% block body_content %}
+<style type="text/css">
+    #partTitles {
+        width: 100%;
+        height: 100px;
+        overflow: auto;
+    }
+</style>
+<div class="track-edit-container" data-track-id="{{track.roadieId }}" data-db-id="{{track.id }}">
+    <h3>Editing: {{ track.title }}</h3>
+    <form id="demo-form2" enctype="multipart/form-data" action="/track/edit/{{track.roadieId }}/{{ releaseRoadieId }}" method="post" class="form-horizontal form-label-left validate">
+        <input name=_csrf_token type=hidden value="{{ csrf_token() }}">
+        <div class="details bordered">
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="isLocked">Locked</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="isLocked" name="isLocked" type="checkbox" class="bootswitch" data-off-text="No"
+                           data-on-text="Yes" {{ 'checked' if track.isLocked else '' }}>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12"
+                       for="title">Title <span class="required">*</span>
+                </label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input type="text" id="title" name="title"
+                           required="required"
+                           data-parsley-maxlength="250"
+                           class="form-control col-md-7 col-xs-12" value="{{track.title }}">
+                </div>
+            </div>
+        </div>
+        <div class="bordered track-media-details">
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="trackNumber">Track Number</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="trackNumber" name="trackNumber" type="number" min="0" max="999" value="{{ track.trackNumber }}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="rating">Rating</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="rating" name="rating" type="number" min="0" max="5" value="{{ track.rating }}" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-md-3 col-sm-3 col-xs-12" for="playedCount">Played Count</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="playedCount" name="playedCount" type="number" min="0" max="99999" value="{{ track.playedCount }}" />
+                </div>
+            </div>
+        </div>
+        <div class="text-areas bordered">
+            <div class="form-group">
+                <label for="partTitles" class="control-label col-md-3 col-sm-3 col-xs-12">Part Titles</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <textarea id="partTitles" name="partTitles">{{ track.partTitles|join('\n') if track.partTitles else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="lists bordered">
+            <div class="form-group">
+                <label for="alternateNamesTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Alternate Names</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
+                       id="alternateNamesTokenfield" name="alternateNamesTokenfield"
+                   value="{{ track.alternateNames|sort|join('|') if track.alternateNames else '' }}" >
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="tagsTokenfield" class="control-label col-md-3 col-sm-3 col-xs-12">Tags</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                <input type="text" class="form-control col-md-7 col-xs-12 auto-tokenfield tokenfield"
+                       id="tagsTokenfield" name="tagsTokenfield"
+                   value="{{ track.tags|sort|join('|') if track.tags else '' }}" >
+                </div>
+            </div>
+        </div>
+        <div class="third-party-ids bordered">
+            <div class="form-group">
+                <label for="musicBrainzId" class="control-label col-md-3 col-sm-3 col-xs-12">MusicBrainz Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="musicBrainzId" name="musicBrainzId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{track.musicBrainzId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="amgId" class="control-label col-md-3 col-sm-3 col-xs-12">AllMusicGuide Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="amgId" name="amgId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{track.amgId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="spotifyId" class="control-label col-md-3 col-sm-3 col-xs-12">Spotify Id</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="spotifyId" name="spotifyId"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{track.spotifyId or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="spotifyId" class="control-label col-md-3 col-sm-3 col-xs-12">ISRC</label>
+                <div class="col-md-6 col-sm-6 col-xs-12">
+                    <input id="isrc" name="isrc"
+                           data-parsley-maxlength="100"
+                           class="form-control col-md-7 col-xs-12" type="text" value="{{track.isrc or '' }}">
+                </div>
+            </div>
+        </div>
+        <div class="ln_solid"></div>
+        <div class="form-group">
+            <div class="col-md-6 col-sm-6 col-xs-12 col-md-offset-3">
+                <a href="/release/{{ releaseRoadieId }}"class="btn btn-primary">Cancel</a>
+                <button type="submit" class="btn btn-success">Submit</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block script_content %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/bootstrap-switch.min.js') }}"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/select2.full.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.0/js/i18n/en.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.5.0/js/bootstrap-datepicker.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/summernote/0.6.16/summernote.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/parsley.js/2.1.2/parsley.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/bloodhound-adapters.js') }}"></script>
+
+<script>
+    var trackId = '{{track.roadieId }}';
+    var releaseId = '{{releaseRoadieId}}'
+    var newId = 0;
+
+    $(function() {
+
+        $(".bootswitch").bootstrapSwitch();
+        $(".select2").select2();
+        $(".date-picker").datepicker({
+            format: "yyyy-mm-dd",
+            clearBtn: true,
+            autoclose: true,
+            todayHighlight: true
+        });
+        $('.wysiwyg').summernote();
+        $(".auto-tokenfield").tokenfield({
+            delimiter: '|',
+            delay: 100,
+            beautify: false,
+        }).on('tokenfield:createtoken', function(event) {
+            var existingTokens = $(this).tokenfield('getTokens');
+            $.each(existingTokens, function(index, token) {
+                if (token.value === event.attrs.value)
+                    event.preventDefault();
+            });
+        });
+
+        $('.validate').parsley();
+        $("form").on('submit', function(e) {
+            $.each($(".wysiwyg"), function(i,d) {
+                $("input[name='" + $(d).attr("id") + "']").val($(d).code());
+            });
+        });
+    });
+
+</script>
+{% endblock %}
