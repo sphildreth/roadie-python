@@ -344,12 +344,6 @@ class Processor(ProcessorBase):
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
-                        scanner.scan(releaseFolder, artist, release)
-                        # Sync  the counts as some releases where added by the processor
-                        release.mediaCount = len(release.media)
-                        for media in release.media:
-                            media.trackCount = len(media.tracks)
-                            release.trackCount = len(media.tracks)
                     if not self.readOnly and artist and release:
                         if self.shouldDeleteFolder(mp3Folder):
                             try:
@@ -364,6 +358,12 @@ class Processor(ProcessorBase):
                 except:
                     self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")
                     self.session.rollback()
+            scanner.scan(releaseFolder, artist, release)
+            # Sync  the counts as some release media and release tracks where added by the processor
+            release.mediaCount = len(release.media)
+            for media in release.media:
+                media.trackCount = len(media.tracks)
+                release.trackCount = len(media.tracks)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")

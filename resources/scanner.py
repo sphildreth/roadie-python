@@ -60,7 +60,7 @@ class Scanner(ProcessorBase):
         :param folder: str
         :param artist: Artist
         :param release: Release
-        :return:
+        :return: int
         """
         if self.readOnly:
             self.logger.debug("[Read Only] Would Process Folder [" + folder + "] With Artist [" + str(artist) + "]")
@@ -77,7 +77,6 @@ class Scanner(ProcessorBase):
         folderHead, folderTail = os.path.split(folder)
         folderHeadNoLibrary = folderHead.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
         trackFilePath = os.path.join(folderHeadNoLibrary, folderTail)
-        foundGoodMp3s = False
         startTime = arrow.utcnow().datetime
         self.logger.info("-> Scanning Folder [" + folder + "] " +
                          "Artist Folder [" + self.artistFolder(artist) + "] ")
@@ -126,7 +125,6 @@ class Scanner(ProcessorBase):
                 if not id3.isValid():
                     self.logger.warn("! Track Has Invalid or Missing ID3 Tags [" + mp3 + "]")
                 else:
-                    foundGoodMp3s = True
                     head, tail = os.path.split(mp3)
                     headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
                     trackHash = self._makeTrackHash(artist.roadieId, str(id3))
@@ -257,4 +255,4 @@ class Scanner(ProcessorBase):
                          "Found [" + str(foundReleaseTracks) + "] Release Tracks. " +
                          "Exist in Release Folder [" + str(mp3FilesInFolder) + "] " +
                          "Elapsed Time [" + str(elapsedTime) + "]")
-        return foundGoodMp3s
+        return scannedMp3Files
