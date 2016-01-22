@@ -33,3 +33,11 @@ Please see [the wiki](https://github.com/sphildreth/roadie/wiki/Installation)
 License
 -------
 MIT
+
+Acknowledgments
+-------
+
+![Pycharm Logo](http://www.jetbrains.com/pycharm/docs/logo_pycharm.png)
+
+Roadie committers get a free license for PyCharm Professional Edition, courtesy
+of JetBrains.
