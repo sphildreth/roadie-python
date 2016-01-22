@@ -35,10 +35,9 @@ License
 MIT
 
 Acknowledgments
-===============
+-------
 
-.. image:: http://www.jetbrains.com/pycharm/docs/logo_pycharm.png
-        :target: http://www.jetbrains.com/pycharm/
+![Pycharm Logo](http://www.jetbrains.com/pycharm/docs/logo_pycharm.png)
 
 Roadie committers get a free license for PyCharm Professional Edition, courtesy
 of JetBrains.
