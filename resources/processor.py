@@ -190,7 +190,6 @@ class Processor(ProcessorBase):
             lastID3Album = None
             artist = None
             release = None
-            releaseFolder = None
             mp3FoldersProcessed = []
             # Get all the folder in the InboundFolder
             for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
@@ -359,13 +358,14 @@ class Processor(ProcessorBase):
                 except:
                     self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")
                     self.session.rollback()
-            if releaseFolder:
-                scanner.scan(releaseFolder, artist, release)
-                # Sync  the counts as some release media and release tracks where added by the processor
-                release.mediaCount = len(release.media)
-                for media in release.media:
-                    media.trackCount = len(media.tracks)
-                    release.trackCount = len(media.tracks)
+                if releaseFolder:
+                    scanner.scan(releaseFolder, artist, release)
+                    # Sync  the counts as some release media and release tracks where added by the processor
+                    release.mediaCount = len(release.media)
+                    for media in release.media:
+                        media.trackCount = len(media.tracks)
+                        release.trackCount = len(media.tracks)
+                    releaseFolder = None
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
