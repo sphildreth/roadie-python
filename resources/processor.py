@@ -191,6 +191,7 @@ class Processor(ProcessorBase):
             artist = None
             release = None
             mp3FoldersProcessed = []
+            releaseFolder = None
             # Get all the folder in the InboundFolder
             for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
                 try:
