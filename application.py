@@ -2667,6 +2667,17 @@ def purgeSelectedReleases(do_purge):
     return jsonify(message="OK")
 
 
+@app.route('/release/rescanselected', methods=['POST'])
+@login_required
+def rescanSelectedReleases():
+    releasesToRescan = request.form['selected']
+    if not releasesToRescan:
+        return jsonify(message="ERROR")
+    for releaseToRescanId in releasesToRescan.split(','):
+        rescanRelease(releaseToRescanId)
+    return jsonify(message="OK")
+
+
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
 @login_required
 def mergeArtists(merge_into_id, merge_id):

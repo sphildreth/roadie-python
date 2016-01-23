@@ -13,7 +13,8 @@
         <ul class="dropdown-menu">
             <li title="Prompt For Details and Merge"><a data-selected-cd="1" class="merge" href="javascript:mergeSelected();"><i class="fa fa-suitcase"></i> Merge</a></li>
             <li title="Delete Releases (not Files)"><a data-selected-cd="2" class="delete" href="javascript:deleteSelected();"><i class="fa fa-trash-o" ></i> Delete</a></li>
-            <li title="Delete Releases (AND Files)"><a data-selected-cd="3" class="purge" href="javascript:purgeSelected();"><i class="fa fa-suitcase"></i> Purge</a></li>
+            <li title="Delete Releases (AND Files)"><a data-selected-cd="3" class="purge" href="javascript:purgeSelected();"><i class="fa fa-trash"></i> Purge</a></li>
+            <li title="Rescan Releases"><a data-selected-cd="4" class="rescan" href="javascript:rescanSelected();"><i class="fa fa-hdd-o"></i> Rescan</a></li>
         </ul>
     </div>
     {% endif %}
@@ -41,6 +42,24 @@
         });
     };
 
+    var doRescan = function(selectedReleases) {
+        $(".loader").fadeIn("slow", function() {
+            $.ajax({
+                type: 'POST',
+                url: '/release/rescanselected',
+                data: {"selected": selectedReleases.join(",")},
+                success: function (data) {
+                    if (data.message == "OK") {
+                        location.reload(true);
+                    }
+                },
+                error: function (jq, st, error) {
+                    roadieLibrary.showErrorMessage(error);
+                }
+            });
+        });
+    };
+
     var getIdSelections = function() {
         return $.map($table.bootstrapTable('getSelections'), function (row) {
             return row.id
@@ -48,13 +67,13 @@
     };
 
     var mergeSelected = function() {
-        alert("Merge WIP");
+        bootbox.alert("Merge WIP");
     };
 
     var deleteSelected = function() {
         var selectedReleases = getIdSelections();
         if(selectedReleases.length < 1) {
-            alert("No Releases Selected!");
+            bootbox.alert("No Releases Selected!");
             return false;
         }
         bootbox.confirm("Continue To Delete (Delete Releases not Files)?", function(result) {
@@ -67,12 +86,25 @@
     var purgeSelected = function() {
         var selectedReleases = getIdSelections();
         if(selectedReleases.length < 1) {
-            alert("No Releases Selected!");
+            bootbox.alert("No Releases Selected!");
             return false;
         }
         bootbox.confirm("Continue To Purge (Delete Releases and Files)?", function(result) {
             if(result) {
                 doDelete(selectedReleases,true);
+            }
+        });
+    };
+
+    var rescanSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            bootbox.alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Rescan?", function(result) {
+            if(result) {
+                doRescan(selectedReleases,true);
             }
         });
     };

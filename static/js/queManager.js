@@ -25,7 +25,7 @@ var queManager = ( function( window, undefined ) {
 
     };
     function editQue() {
-        alert('edit que');
+        bootbox.alert('edit que');
     };
     function saveQue() {
         bootbox.prompt("Que will be saved/append as/to a Playlist. Enter a playlist name:", function(result) {
