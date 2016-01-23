@@ -453,9 +453,10 @@ def randomizer(random_type):
     elif random_type == "release":
         randomizerRelease = dbSession.query(Release).order_by(func.random()).first()
         return playRelease(randomizerRelease.roadieId)
-    elif random_type == "tracks":
-        tracks = []
-        t = text("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
+    elif random_type == "tracksrandom" or random_type == "tracksrated":
+        sql = None
+        if random_type == "tracksrandom":
+            sql = ("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
                  "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
                  "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
                  "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
@@ -471,6 +472,27 @@ def randomizer(random_type):
                  "AND (ua.id is null or ua.isDisliked = 0)) "
                  "ORDER BY RAND() "
                  "LIMIT 50;")
+        elif random_type == "tracksrated":
+            sql = ("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
+                 "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
+                 "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
+                 "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
+                 "FROM `track` t "
+                 "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+                 "JOIN `release` r on (r.id = rm.releaseId) "
+                 "JOIN `artist` a on (a.id = r.artistId) "
+                 "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
+                 "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
+                 ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
+                 ") JOIN `usertrack` ut on (ut.trackId = t.id AND ut.userId = " + str(user.id) +
+                 ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100000) FROM `track`)) "
+                 "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
+                 "AND (ua.id is null or ua.isDisliked = 0) "
+                 "AND (ut.rating > 0)) "
+                 "ORDER BY RAND() "
+                 "LIMIT 50;")
+        tracks = []
+        t = text(sql)
         for trackRow in conn.execute(t):
             track = Track()
             track.id = trackRow.id
