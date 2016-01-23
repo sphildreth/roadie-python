@@ -49,12 +49,10 @@ class Validator(ProcessorBase):
                         "X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
                     continue
                 releaseTrackCount = 0
-                releaseMediaCount = 0
                 # If release is not already complete, set to complete unless its found otherwise
-                if release.libraryStatus != 'Complete':
-                    release.libraryStatus = 'Complete'
+                release.libraryStatus = 'Complete'
+                releaseMediaWithTracks = []
                 for releaseMedia in release.media:
-                    releaseMediaCount += 1
                     releaseMediaTrackCount = 0
                     for track in sorted(releaseMedia.tracks, key=lambda tt: tt.trackNumber):
                         try:
@@ -85,10 +83,12 @@ class Validator(ProcessorBase):
                             self.logger.exception()
                             issuesFound = True
                             pass
-                    if not self.readOnly:
-                        releaseMedia.trackCount = releaseMediaTrackCount
+                    releaseMedia.trackCount = releaseMediaTrackCount
+                    if releaseMedia.trackCount > 0:
+                        releaseMediaWithTracks.append(releaseMedia)
                 if not self.readOnly:
-                    release.mediaCount = releaseMediaCount
+                    release.media = releaseMediaWithTracks
+                    release.mediaCount = len(releaseMediaWithTracks)
                     # Seems not likely that a release only has a single track; more likely missing unknown tracks
                     if releaseTrackCount > 1:
                         release.trackCount = releaseTrackCount
