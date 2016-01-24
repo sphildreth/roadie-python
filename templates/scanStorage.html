@@ -2,26 +2,44 @@
 {% block header_content %}
 {% endblock %}
 {% block body_content %}
-<div id="scan-container" class="container"></div>
+
+<style>
+    .pre {
+        font-family: courier, monospace;
+    }
+    .log-messages .info {
+        color: blue;
+    }
+    .log-messages .warn {
+        color: yellow;
+    }
+    .log-messages .error, .log-messages .critical, .log-messages .exception {
+        color: red;
+    }
+</style>
+<div class="container-fluid">
+    <h4><span class="label label-primary">Incomplete Releases</span></h4>
+     <div class="checked-release-options btn-group">
+        <a id="beginScan" class="btn btn-primary" href="javascript:void(0);"><i class="fa fa-hdd-o"></i> Begin Scanl</a>
+    </div>
+    <div class="pre log-messages">
+    </div>
+</div>
 {% endblock %}
 {% block script_content %}
 <script type="text/javascript">
     var socket = null;
     $(function() {
-        socket = new WebSocket("ws://" + document.domain + ":5000/scanner/");
+        ws = new WebSocket("{{ wsRoot }}websocket/");
+        var $pre = $("div.pre");
+        ws.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            $pre.append("<div class='row " + data.message.logType + "'>" + data.message.logMessage + "</div>");
+        };
 
-        socket.onopen = function() {
-            socket.send("Joined");
-        };
-        socket.onmessage = function(message) {
-            var txt = message.data;
-            $(".container").append("<p>" + txt + "</p>");
-        };
-        function submit() {
-            var text = $("input#message").val();
-            socket.send(text);
-            $("input#message").val('');              
-        };
+        $("#beginScan").on('click', function() {
+            $.get('/startScanStorage');
+        });
     });
 
 </script>

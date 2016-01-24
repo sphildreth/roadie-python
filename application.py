@@ -125,7 +125,6 @@ ALLOWED_IMAGE_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
 NEW_ID = "__new__"
 
-
 def generate_csrf_token():
     if '_csrf_token' not in session:
         session['_csrf_token'] = str(uuid.uuid4())
@@ -1916,6 +1915,7 @@ def streamTrack(user_id, track_id):
             try:
                 if clients:
                     wsData = json.dumps({'message': "OK",
+                                         'type': 'lastPlayedInfo',
                                          'lastPlayedInfo': {
                                              'TrackId': str(track.roadieId),
                                              'TrackTitle': track.title,
@@ -2322,7 +2322,31 @@ def public_endpoint(function):
 
 @app.route('/scanStorage')
 def scanStorage():
-    return render_template('scanStorage.html')
+    return render_template('scanStorage.html', wsRoot = request.url_root.replace("http://", "ws://"))
+
+
+@app.route('/startScanStorage')
+def startScanStorage():
+    try:
+        logger.ee.on("log", sendLogMessageToWebClients)
+        processor = Processor(config, conn, dbSession, False, True, logger)
+        processor.process(forceFolderScan=True)
+        return jsonify(message="OK")
+    except:
+        dbSession.rollback()
+        logger.exception("Error Rescanning Artist")
+        return jsonify(message="ERROR")
+
+
+def sendLogMessageToWebClients(logType, logMessage):
+    if clients:
+        wsData = json.dumps({'type': 'scanStorage',
+                             'message': {
+                                 'logType': logType,
+                                 'logMessage': logMessage
+                             }})
+        for client in clients:
+            client.write_message(wsData)
 
 
 @app.route('/playlists')

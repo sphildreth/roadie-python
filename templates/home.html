@@ -159,9 +159,11 @@
         ws = new WebSocket("{{ wsRoot }}websocket/");
         ws.onmessage = function(e) {
             var data = JSON.parse(e.data);
-            var html = Mustache.render(template, data)
-            $("#lastPlayedTracks > tbody > tr:first").before(html);
-            $("#lastPlayedTracks").find("input.rating").rating();
+            if(data.type === 'lastPlayedInfo') {
+                var html = Mustache.render(template, data)
+                $("#lastPlayedTracks > tbody > tr:first").before(html);
+                $("#lastPlayedTracks").find("input.rating").rating();
+            }
         };
 
         $(".home-container").on("click", ".release button", function(e) {

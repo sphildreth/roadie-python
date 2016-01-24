@@ -30,14 +30,14 @@ from resources.validator import Validator
 
 
 class Processor(ProcessorBase):
-    def __init__(self, config, dbConn, dbSession, readOnly, dontDeleteInboundFolders, flushBefore=False):
+    def __init__(self, config, dbConn, dbSession, readOnly, dontDeleteInboundFolders, flushBefore=False, logger=None):
         self.config = config
         self.InboundFolder = self.config['ROADIE_INBOUND_FOLDER']
         # TODO if set then process music files; like clear comments
         self.processingOptions = self.config['ROADIE_PROCESSING']
         self.conn = dbConn
         self.session = dbSession
-        self.logger = Logger()
+        self.logger = logger or Logger()
         self.thumbnailSize = self.config['ROADIE_THUMBNAILS']['Height'], self.config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
         self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
