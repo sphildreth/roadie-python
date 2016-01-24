@@ -688,13 +688,18 @@ def allowed_image_file(filename):
            filename.rsplit('.', 1)[1] in ALLOWED_IMAGE_EXTENSIONS
 
 
-@app.route("/artist/edit/<artist_id>", methods=['GET', 'POST'])
+@app.route("/artist/edit/<roadieId>", methods=['GET', 'POST'])
 @login_required
-def editArtist(artist_id):
+def editArtist(roadieId):
     try:
-        artist = getArtist(artist_id)
-        if not artist:
+        isAddingNew = roadieId == NEW_ID
+        artist = getArtist(roadieId)
+        if not artist and not isAddingNew:
             return render_template('404.html'), 404
+        if isAddingNew:
+            artist = Artist()
+            artist.name = ""
+            artist.roadieId = NEW_ID
         if request.method == 'GET':
             return render_template('artistEdit.html', artist=artist)
         token = session.pop('_csrf_token', None)
@@ -727,36 +732,37 @@ def editArtist(artist_id):
         artist.name = form['name']
         artist.sortName = form['sortName']
         artistFolder = processorBase.artistFolder(artist)
-        if not isEqual(originalArtistFolder, artistFolder):
-            for src_dir, dirs, files in os.walk(originalArtistFolder):
-                dst_dir = src_dir.replace(originalArtistFolder, artistFolder, 1)
-                if not os.path.exists(dst_dir):
-                    os.mkdir(dst_dir)
-                for file_ in files:
-                    src_file = os.path.join(src_dir, file_)
-                    dst_file = os.path.join(dst_dir, file_)
-                    if os.path.exists(dst_file):
-                        os.remove(dst_file)
-                    shutil.move(src_file, dst_dir)
-                if not os.listdir(src_dir):
+        if not isAddingNew:
+            if not isEqual(originalArtistFolder, artistFolder):
+                for src_dir, dirs, files in os.walk(originalArtistFolder):
+                    dst_dir = src_dir.replace(originalArtistFolder, artistFolder, 1)
+                    if not os.path.exists(dst_dir):
+                        os.mkdir(dst_dir)
+                    for file_ in files:
+                        src_file = os.path.join(src_dir, file_)
+                        dst_file = os.path.join(dst_dir, file_)
+                        if os.path.exists(dst_file):
+                            os.remove(dst_file)
+                        shutil.move(src_file, dst_dir)
+                    if not os.listdir(src_dir):
+                        try:
+                            shutil.rmtree(src_dir)
+                        except:
+                            logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
+                            pass
+                if not os.listdir(originalArtistFolder):
                     try:
-                        shutil.rmtree(src_dir)
+                        shutil.rmtree(originalArtistFolder)
                     except:
-                        logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
+                        logger.warn("Unable to Remove Empty Folder [" + originalArtistFolder + "]")
                         pass
-            if not os.listdir(originalArtistFolder):
-                try:
-                    shutil.rmtree(originalArtistFolder)
-                except:
-                    logger.warn("Unable to Remove Empty Folder [" + originalArtistFolder + "]")
-                    pass
-            dbOriginalArtistFolder = originalArtistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
-            dbArtistFolder = artistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
-            for release in artist.releases:
-                for media in release.media:
-                    for track in media.tracks:
-                        track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
-                        track.lastUpdated = now
+                dbOriginalArtistFolder = originalArtistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+                dbArtistFolder = artistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+                for release in artist.releases:
+                    for media in release.media:
+                        for track in media.tracks:
+                            track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
+                            track.lastUpdated = now
         artist.realName = form['realName']
         artist.musicBrainzId = form['musicBrainzId']
         artist.iTunesId = form['iTunesId']
@@ -813,14 +819,20 @@ def editArtist(artist_id):
                     genre = dbSession.query(Genre).filter(Genre.name == formGenresToken).first()
                     if genre:
                         artist.genres.append(genre)
-        artist.lastUpdated = now
+
+        if not isAddingNew:
+            artist.lastUpdated = now
+        else:
+            artist.roadieId = str(uuid.uuid4())
+            roadieId = artist.roadieId
+            dbSession.add(artist)
         dbSession.commit()
         flash('Artist Edited successfully')
     except:
         logger.exception("Error Editing Artist")
         flash('Error Editing Artist')
         dbSession.rollback()
-    return redirect("/artist/" + artist_id)
+    return redirect("/artist/" + roadieId)
 
 
 @app.route("/user/artist/setrating/<artist_id>/<rating>", methods=['POST'])
@@ -1599,37 +1611,41 @@ def editRelease(roadieId):
         releaseYear = release.releaseDate.strftime('%Y')
         releaseFolder = processorBase.albumFolder(release.artist, releaseYear, release.title)
         if not isEqual(originalReleaseFolder, releaseFolder):
-            for src_dir, dirs, files in os.walk(originalReleaseFolder):
-                dst_dir = src_dir.replace(originalReleaseFolder, releaseFolder, 1)
-                if not os.path.exists(dst_dir):
-                    os.mkdir(dst_dir)
-                for file_ in files:
-                    src_file = os.path.join(src_dir, file_)
-                    dst_file = os.path.join(dst_dir, file_)
-                    if os.path.exists(dst_file):
-                        os.remove(dst_file)
-                    shutil.move(src_file, dst_dir)
-                if not os.listdir(src_dir):
-                    try:
-                        shutil.rmtree(src_dir)
-                    except:
-                        logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
-                        pass
             try:
-                if not os.listdir(originalReleaseFolder):
-                    try:
-                        shutil.rmtree(originalReleaseFolder)
-                    except:
-                        logger.warn("Unable to Remove Empty Folder [" + originalReleaseFolder + "]")
-                        pass
+                for src_dir, dirs, files in os.walk(originalReleaseFolder):
+                    dst_dir = src_dir.replace(originalReleaseFolder, releaseFolder, 1)
+                    if not os.path.exists(dst_dir):
+                        os.mkdir(dst_dir)
+                    for file_ in files:
+                        src_file = os.path.join(src_dir, file_)
+                        dst_file = os.path.join(dst_dir, file_)
+                        if os.path.exists(dst_file):
+                            os.remove(dst_file)
+                        shutil.move(src_file, dst_dir)
+                    if not os.listdir(src_dir):
+                        try:
+                            shutil.rmtree(src_dir)
+                        except:
+                            logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
+                            pass
+                try:
+                    if not os.listdir(originalReleaseFolder):
+                        try:
+                            shutil.rmtree(originalReleaseFolder)
+                        except:
+                            logger.warn("Unable to Remove Empty Folder [" + originalReleaseFolder + "]")
+                            pass
+                except:
+                    pass
+                dbOriginalReleaseFolder = originalReleaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+                dbReleaseFolder = releaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
+                for media in release.media:
+                    for track in media.tracks:
+                        track.filePath = track.filePath.replace(dbOriginalReleaseFolder, dbReleaseFolder, 1)
+                        track.lastUpdated = now
             except:
+                logger.warn("Error Moving Files From Folder [" + originalReleaseFolder + "] To Folder [" + releaseFolder + "]")
                 pass
-            dbOriginalReleaseFolder = originalReleaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
-            dbReleaseFolder = releaseFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
-            for media in release.media:
-                for track in media.tracks:
-                    track.filePath = track.filePath.replace(dbOriginalReleaseFolder, dbReleaseFolder, 1)
-                    track.lastUpdated = now
         if not isEqual(originalTitle,
                        release.title) or originalArtistId != release.artist.id or originalReleaseYear != releaseYear:
             for media in release.media:

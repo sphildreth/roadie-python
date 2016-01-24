@@ -4,6 +4,11 @@
 {% endblock %}
 {% block body_content %}
 <div class="browse-artist-container">
+    {% if current_user.is_editor() %}
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <a class="btn btn-primary" href="/artist/edit/__new__"><i class="fa fa-plus"></i> Add</a>
+    </div>
+    {% endif %}
     <table id="browseArtistsGrid"></table>
 </div>
 {% endblock %}
