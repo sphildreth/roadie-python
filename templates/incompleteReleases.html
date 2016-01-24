@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+{% block title %}Incomplete Releases{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+<style>
+    th.sort-header::-moz-selection { background:transparent; }
+    th.sort-header::selection      { background:transparent; }
+    th.sort-header { cursor:pointer; }
+    table th.sort-header:after {
+      content:'';
+      float:right;
+      margin-top:7px;
+      border-width:0 4px 4px;
+      border-style:solid;
+      border-color:#404040 transparent;
+      visibility:hidden;
+      }
+    table th.sort-header:hover:after {
+      visibility:visible;
+      }
+    table th.sort-up:after,
+    table th.sort-down:after,
+    table th.sort-down:hover:after {
+      visibility:visible;
+      opacity:0.4;
+      }
+    table th.sort-up:after {
+      border-bottom:none;
+      border-width:4px 4px 0;
+      }
+</style>
+<div class="duplicates-container">
+    <h4><span class="label label-primary">Incomplete Releases</span></h4>
+        <div class="table-responsive">
+            <table id="incompleteReleases" class="table-track-info table table-striped table-condensed table-responsive">
+                <thead>
+                <tr>
+                    <th>Artist</th>
+                    <th>Release</th>
+                    <th>Last Modified</th>
+                    <th>Tracks</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for release in releases %}
+                    <tr>
+                        <td data-artist-id="{{ release.artist.roadieId }}">
+                            <a href="/artist/{{ release.artist.roadieId }}">
+                                <div class="thumbnail-container pull-left">
+                                    <img class="artist-thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
+                                         alt="{{ release.artist.name }}"/>
+                                </div>
+                                <span class="label label-default artist-name">{{ release.artist.name }}</span>
+                            </a>
+                        </td>
+                        <td data-release-id="{{ release.roadieId }}">
+                            <a href="/release/{{ release.roadieId }}">
+                                <div class="thumbnail-container pull-left">
+                                    <img class="release-thumb" src="/images/release/thumbnail/{{ release.roadieId }}"
+                                         alt="{{ release.title }}"/>
+                                </div>
+                                <span class="label label-default release-title">{{ release.title }}</span>
+                            </a>
+                        </td>
+                        <td>
+                            {{ release.lastUpdated }}
+                        </td>
+                        <td>
+                            {{ release.trackCount }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+</div>
+{% endblock %}
+{% block script_content %}
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tablesort/4.0.0/tablesort.min.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tablesort/4.0.0/src/sorts/tablesort.date.js"></script>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tablesort/4.0.0/src/sorts/tablesort.number.js"></script>
+<script type="text/javascript">
+    $(function() {
+        new Tablesort(document.getElementById('incompleteReleases'));
+    });
+
+</script>
+{% endblock %}

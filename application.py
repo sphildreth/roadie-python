@@ -457,40 +457,40 @@ def randomizer(random_type):
         sql = None
         if random_type == "tracksrandom":
             sql = ("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
-                 "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
-                 "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
-                 "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
-                 "FROM `track` t "
-                 "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
-                 "JOIN `release` r on (r.id = rm.releaseId) "
-                 "JOIN `artist` a on (a.id = r.artistId) "
-                 "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
-                 "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
-                 ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
-                 ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100) FROM `track`)) "
-                 "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
-                 "AND (ua.id is null or ua.isDisliked = 0)) "
-                 "ORDER BY RAND() "
-                 "LIMIT 50;")
+                   "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
+                   "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
+                   "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
+                   "FROM `track` t "
+                   "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+                   "JOIN `release` r on (r.id = rm.releaseId) "
+                   "JOIN `artist` a on (a.id = r.artistId) "
+                   "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
+                   "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
+                   ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
+                   ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100) FROM `track`)) "
+                   "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
+                   "AND (ua.id is null or ua.isDisliked = 0)) "
+                   "ORDER BY RAND() "
+                   "LIMIT 50;")
         elif random_type == "tracksrated":
             sql = ("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
-                 "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
-                 "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
-                 "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
-                 "FROM `track` t "
-                 "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
-                 "JOIN `release` r on (r.id = rm.releaseId) "
-                 "JOIN `artist` a on (a.id = r.artistId) "
-                 "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
-                 "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
-                 ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
-                 ") JOIN `usertrack` ut on (ut.trackId = t.id AND ut.userId = " + str(user.id) +
-                 ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100000) FROM `track`)) "
-                 "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
-                 "AND (ua.id is null or ua.isDisliked = 0) "
-                 "AND (ut.rating > 0)) "
-                 "ORDER BY RAND() "
-                 "LIMIT 50;")
+                   "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
+                   "ta.roadieId as trackArtistRoadieId, ta.name as trackArtistName, a.id as artistId, "
+                   "a.roadieId as artistRoadieId, a.name as artistName, rm.releaseMediaNumber "
+                   "FROM `track` t "
+                   "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+                   "JOIN `release` r on (r.id = rm.releaseId) "
+                   "JOIN `artist` a on (a.id = r.artistId) "
+                   "LEFT JOIN `artist` ta on (ta.id = t.artistId) "
+                   "LEFT JOIN `userrelease` ur on (ur.releaseId= r.id AND ur.userId = " + str(user.id) +
+                   ") LEFT JOIN `userartist` ua on (ua.artistId = r.artistId AND ua.userId = " + str(user.id) +
+                   ") JOIN `usertrack` ut on (ut.trackId = t.id AND ut.userId = " + str(user.id) +
+                   ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100000) FROM `track`)) "
+                   "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
+                   "AND (ua.id is null or ua.isDisliked = 0) "
+                   "AND (ut.rating > 0)) "
+                   "ORDER BY RAND() "
+                   "LIMIT 50;")
         tracks = []
         t = text(sql)
         for trackRow in conn.execute(t):
@@ -1644,7 +1644,8 @@ def editRelease(roadieId):
                         track.filePath = track.filePath.replace(dbOriginalReleaseFolder, dbReleaseFolder, 1)
                         track.lastUpdated = now
             except:
-                logger.warn("Error Moving Files From Folder [" + originalReleaseFolder + "] To Folder [" + releaseFolder + "]")
+                logger.warn(
+                    "Error Moving Files From Folder [" + originalReleaseFolder + "] To Folder [" + releaseFolder + "]")
                 pass
         if not isEqual(originalTitle,
                        release.title) or originalArtistId != release.artist.id or originalReleaseYear != releaseYear:
@@ -2340,18 +2341,18 @@ def playlist(playlist_id):
                           .columns(trackCount=Integer, trackDuration=Integer, trackSize=Integer)) \
         .fetchone()
     duplicates = conn.execute(text(
-        "SELECT plt.roadieId as id, t.roadieId as trackId, t.title as trackTitle, r.title as releaseTitle, "
-        " a.name as artistName, COUNT(t.id) as count "
-        "FROM `playlisttrack` plt "
-        "JOIN `playlist` pl ON (pl.id = plt.playListId) "
-        "JOIN `track` t on (t.id = plt.trackId) "
-        "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
-        "JOIN `release` r on (r.id = rm.releaseId) "
-        "JOIN `artist` a on (a.id = r.artistId) "
-        "WHERE pl.roadieId = '" + playlist_id + "' " +
-        "GROUP BY t.title, a.name "
-        "HAVING COUNT(t.roadieId) > 1 "
-        "ORDER BY t.title;", autocommit=True)
+            "SELECT plt.roadieId as id, t.roadieId as trackId, t.title as trackTitle, r.title as releaseTitle, "
+            " a.name as artistName, COUNT(t.id) as count "
+            "FROM `playlisttrack` plt "
+            "JOIN `playlist` pl ON (pl.id = plt.playListId) "
+            "JOIN `track` t on (t.id = plt.trackId) "
+            "JOIN `releasemedia` rm on (rm.id = t.releaseMediaId) "
+            "JOIN `release` r on (r.id = rm.releaseId) "
+            "JOIN `artist` a on (a.id = r.artistId) "
+            "WHERE pl.roadieId = '" + playlist_id + "' " +
+            "GROUP BY t.title, a.name "
+            "HAVING COUNT(t.roadieId) > 1 "
+            "ORDER BY t.title;", autocommit=True)
     ).fetchall()
     trackIds = list(map(lambda pt: pt.trackId, sorted(indexPlaylist.tracks, key=lambda pt: pt.listNumber)))
     tracks = dbSession.query(Track).filter(Track.id.in_(trackIds))
@@ -2653,6 +2654,14 @@ def singleTrackReleaseFinder(count):
                            singleTrackReleases=singleTrackReleases.limit(count))
 
 
+@app.route('/incompletereleases/<limit>')
+@login_required
+def incompleteReleases(limit):
+    releases = dbSession.query(Release).filter(Release.libraryStatus != 'Complete').order_by(Release.artistId,
+                                                                                             Release.title).limit(limit)
+    return render_template('incompleteReleases.html', releases=releases)
+
+
 @app.route('/dupfinder')
 @login_required
 def dupFinder():
@@ -2780,7 +2789,8 @@ api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbCon
 api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(GenreListApi, '/api/v1.0/genres', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(LabelListApi, '/api/v1.0/labels', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
-api.add_resource(PlaylistTrackListApi, '/api/v1.0/playlistTracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(PlaylistTrackListApi, '/api/v1.0/playlistTracks',
+                 resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 
 login_manager = LoginManager()
 login_manager.init_app(app)
