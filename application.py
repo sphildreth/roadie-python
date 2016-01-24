@@ -60,6 +60,7 @@ from resources.genreListApi import GenreListApi
 from resources.labelListApi import LabelListApi
 from resources.playlistTrackListApi import PlaylistTrackListApi
 from resources.processor import Processor
+from resources.scanner import Scanner
 from resources.logger import Logger
 from resources.id3 import ID3
 from resources.m3u import M3U
@@ -1472,6 +1473,12 @@ def releaseDetail(roadieId):
     for releaseLabel in indexRelease.releaseLabels:
         releaseLabels.append(releaseLabel)
 
+    processor = Processor(config, conn, dbSession, False, True)
+    releaseFolder = processor.albumFolder(indexRelease.artist,
+                                          indexRelease.releaseDate.strftime('%Y'),
+                                          indexRelease.title)
+    numberOfMp3FilesInFolder = Scanner.mp3FileCountForFolder(releaseFolder)
+
     return render_template('release.html',
                            release=indexRelease,
                            collectionReleases=indexRelease.collections,
@@ -1480,7 +1487,8 @@ def releaseDetail(roadieId):
                            trackCount=releaseSummaries[0],
                            releaseMediaCount=releaseSummaries[1] or 0,
                            releaseTrackTime=formatTimeMillisecondsNoDays(releaseSummaries[2]),
-                           releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]))
+                           releaseTrackFileSize=sizeof_fmt(releaseSummaries[3]),
+                           numberOfMp3FilesInFolder=numberOfMp3FilesInFolder)
 
 
 @app.route("/track/edit/<roadieId>/<releaseId>", methods=['GET', 'POST'])

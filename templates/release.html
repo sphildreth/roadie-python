@@ -170,6 +170,8 @@
             <div>
                 <h4><span class="label label-primary">Track Count</span></h4>
                 <span id="releaseTrackCount" class="label label-default">{{ release.trackCount }}</span>
+                <span title="Number of MP3 Files In Release Folder"
+                      class="label {{ 'label-success' if numberOfMp3FilesInFolder == release.trackCount else 'label-warning' }}">{{ numberOfMp3FilesInFolder}}</span>
             </div>
             <div>
                 <h4><span class="label label-primary">Media Count</span></h4>
@@ -400,6 +402,7 @@
     var artistId = '{{ release.artist.roadieId }}';
     var releaseId = '{{ release.roadieId }}';
     var selectedCoverUrl = null;
+    var numberOfMp3FilesInFolder = {{ numberOfMp3FilesInFolder}};
 
     var showInsaneMessage = function(message) {
         $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
@@ -468,7 +471,7 @@
     var doTrackCountsMatch = function() {
         var releaseTrackCount = parseInt($("#releaseTrackCount").text());
         var foundTracks = parseInt($("span.track-count").data("track-count"));
-        var sane = releaseTrackCount === foundTracks;
+        var sane = releaseTrackCount === foundTracks && numberOfMp3FilesInFolder === foundTracks;
         if (!sane) {
             $("#releaseTrackCount").removeClass("label-default").addClass("label-danger");
             showInsaneMessage("Release Track Count [" + releaseTrackCount + "], Does Not Match Found Tracks [" + foundTracks + "]");
