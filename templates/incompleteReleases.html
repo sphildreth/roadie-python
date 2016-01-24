@@ -32,10 +32,23 @@
 </style>
 <div class="duplicates-container">
     <h4><span class="label label-primary">Incomplete Releases</span></h4>
-        <div class="table-responsive">
+     <div class="checked-release-options btn-group">
+        <a id="selectAll" class="btn btn-primary"><i class="fa fa-check-square-o"></i> Select All</a>
+        <button id="withSelected" type="button" class="btn btn-warning dropdown-toggle"
+                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-edit"></i> With Checked<span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li title="Delete Releases (not Files)"><a data-selected-cd="2" class="delete" href="javascript:deleteSelected();"><i class="fa fa-trash-o" ></i> Delete</a></li>
+            <li title="Delete Releases (AND Files)"><a data-selected-cd="3" class="purge" href="javascript:purgeSelected();"><i class="fa fa-trash"></i> Purge</a></li>
+            <li title="Rescan Releases"><a data-selected-cd="4" class="rescan" href="javascript:rescanSelected();"><i class="fa fa-hdd-o"></i> Rescan</a></li>
+        </ul>
+    </div>
+    <div class="table-responsive">
             <table id="incompleteReleases" class="table-track-info table table-striped table-condensed table-responsive">
                 <thead>
                 <tr>
+                    <th></th>
                     <th>Artist</th>
                     <th>Release</th>
                     <th>Last Modified</th>
@@ -45,7 +58,13 @@
                 <tbody>
                 {% for release in releases %}
                     <tr>
-                        <td data-artist-id="{{ release.artist.roadieId }}">
+                        <td>
+                           <input class="checkbox"
+                                  type="checkbox"
+                                  data-artist-id="{{ release.artist.roadieId }}"
+                                  data-release-id="{{ release.roadieId }}"/>
+                        </td>
+                        <td>
                             <a href="/artist/{{ release.artist.roadieId }}">
                                 <div class="thumbnail-container pull-left">
                                     <img class="artist-thumb" src="/images/artist/thumbnail/{{ release.artist.roadieId }}"
@@ -54,7 +73,7 @@
                                 <span class="label label-default artist-name">{{ release.artist.name }}</span>
                             </a>
                         </td>
-                        <td data-release-id="{{ release.roadieId }}">
+                        <td>
                             <a href="/release/{{ release.roadieId }}">
                                 <div class="thumbnail-container pull-left">
                                     <img class="release-thumb" src="/images/release/thumbnail/{{ release.roadieId }}"
@@ -81,8 +100,55 @@
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tablesort/4.0.0/src/sorts/tablesort.date.js"></script>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/tablesort/4.0.0/src/sorts/tablesort.number.js"></script>
 <script type="text/javascript">
+
+    var getIdSelections = function() {
+        return $.map($("#incompleteReleases input.checkbox:checked"), function (ele) {
+            return $(ele).data("release-id");
+        });
+    };
+
+    var deleteSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            bootbox.alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Delete (Delete Releases not Files)?", function(result) {
+            if(result) {
+                roadieLibrary.deleteSelectedReleases(selectedReleases,false);
+            }
+        });
+    };
+    var purgeSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            bootbox.alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Purge (Delete Releases and Files)?", function(result) {
+            if(result) {
+                roadieLibrary.deleteSelectedReleases(selectedReleases,true);
+            }
+        });
+    };
+
+    var rescanSelected = function() {
+        var selectedReleases = getIdSelections();
+        if(selectedReleases.length < 1) {
+            bootbox.alert("No Releases Selected!");
+            return false;
+        }
+        bootbox.confirm("Continue To Rescan?", function(result) {
+            if(result) {
+                roadieLibrary.rescanSelectedReleases(selectedReleases);
+            }
+        });
+    };
     $(function() {
         new Tablesort(document.getElementById('incompleteReleases'));
+        $("#selectAll").on("click", function(e) {
+           $("input.checkbox").attr("checked", true).trigger("change");
+        });
     });
 
 </script>
