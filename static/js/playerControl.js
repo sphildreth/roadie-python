@@ -177,6 +177,7 @@ var playerControl = (function(window, undefined) {
             $("li.playing").removeClass("playing");
             $(".play-progress-bar .progress-bar").css('width', '0%').attr('aria-valuenow', 0);
             _element.setAttribute("src",_trackLi(trackId).data("track-url"));
+            roadieLibrary.setFavIcon(null, _trackLi(trackId).find("img.release-thumb")[0]);
             _updateTrackLength(parseFloat(_trackLi(trackId).data("track-duration"))/1000);
             _element.load();
             playerControl.playingTrackId = trackId;

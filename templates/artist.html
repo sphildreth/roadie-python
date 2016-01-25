@@ -61,7 +61,7 @@
     </div>
     <div class="row title bordered">
         <div class="thumbnail-container pull-left">
-            <img class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}"/>
+            <img id="artist-thumbnail" class="thumb " src="/images/artist/thumbnail/{{ artist.roadieId }}" alt="{{ artist.name }}"/>
         </div>
         <div class="rating-container">
             <input type="hidden" class="rating" data-readonly value="{{ artist.rating }}"/>
@@ -450,6 +450,8 @@
             delimiter: "|"
         });
 
+        roadieLibrary.setFavIcon("artist-thumbnail");
+
         doArtistSanityChecks();
 
         $(".user-rating-container a.dislike").on("click", function(e) {
@@ -755,7 +757,8 @@
                                                 data: { "url": encodeURIComponent(selectedCoverUrl) },
                                                 success: function(data) {
                                                     if(data.message == "OK") {
-                                                        $(".artist-detail-container .title img.thumb").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
+                                                        $("#artist-thumbnail").attr("src", "/images/artist/thumbnail/" + artistId + "?" + new Date().getTime());
+                                                        roadieLibrary.setFavIcon("artist-thumbnail");
                                                     }
                                                     $that.removeClass("clicked");
                                                 },

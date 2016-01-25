@@ -89,6 +89,12 @@ var roadieLibrary = (function(window, undefined) {
         });
     }
 
+    function setFavIcon(elementId,img) {
+        var favicon=new Favico();
+        var image=img || document.getElementById(elementId);
+        favicon.image(image);
+    }
+
     return {
         lpad: lpad,
         playLoader: playLoader,
@@ -97,6 +103,7 @@ var roadieLibrary = (function(window, undefined) {
         downloadRelease: downloadRelease,
         doInternetSearch: doInternetSearch,
         deleteSelectedReleases: deleteSelectedReleases,
-        rescanSelectedReleases: rescanSelectedReleases
+        rescanSelectedReleases: rescanSelectedReleases,
+        setFavIcon: setFavIcon
     };
 })(window);

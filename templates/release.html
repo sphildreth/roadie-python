@@ -101,7 +101,7 @@
     </div>
     <div class="row title bordered">
         <div class="col-md-12">
-            <img class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
+            <img id="release-thumbnail" class="release-thumb thumb pull-left" src="/images/release/thumbnail/{{ release.roadieId }}"
                  alt="{{ release.title }}"/>
             <div class="release-rating-container pull-left">
                 <input type="hidden" class="rating" data-readonly value="{{ release.rating }}"/>
@@ -581,6 +581,7 @@
             window.location = '/label/' + $(this).find("option:selected").val();
         });
 
+        roadieLibrary.setFavIcon("release-thumbnail");
 
         $("#alternateNamesTokenfield").tokenfield({
             delimiter: '|',
@@ -800,7 +801,8 @@
                 url: '/release/setimage/' + releaseId + '/' + imageId,
                 contentType: "application/javascript",
                 success: function(data) {
-                    $(".release-detail-container .title img.thumb.release-thumb").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                    $("#release-thumbnail").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                    roadieLibrary.setFavIcon("release-thumbnail");
                 },
                 error:function(jq, st, error){
                     roadieLibrary.showErrorMessage(error);
@@ -883,7 +885,8 @@
                                                 data: { "url": encodeURIComponent(selectedCoverUrl) },
                                                 success: function(data) {
                                                     if(data.message == "OK") {
-                                                        $(".release-detail-container .title img.thumb.release-thumb").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                                                        $("#release-thumbnail").attr("src", "/images/release/thumbnail/" + releaseId + "?" + new Date().getTime());
+                                                        roadieLibrary.setFavIcon("release-thumbnail");
                                                     }
                                                     $that.removeClass("clicked");
                                                 },
