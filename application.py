@@ -1078,6 +1078,9 @@ def rescanRelease(release_id):
         rescanReleaseRelease = getRelease(release_id)
         if not rescanReleaseRelease:
             return jsonify(message="ERROR")
+        if not rescanReleaseRelease.artist:
+            logger.exception("Release Id [" + str(rescanReleaseRelease.id) + "] Has No Artist");
+            return jsonify(message="ERROR")
         # Update Database with folders found in Library
         processor = Processor(config, conn, dbSession, False, True)
         releaseFolder = processor.albumFolder(rescanReleaseRelease.artist,
