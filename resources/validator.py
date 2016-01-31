@@ -43,7 +43,7 @@ class Validator(ProcessorBase):
                     folderExists = False
                 if not folderExists:
                     if not self.readOnly:
-                        for media in release.mediaC:
+                        for media in release.media:
                             for track in media.tracks:
                                 track.filePath = None
                                 track.fileName = None

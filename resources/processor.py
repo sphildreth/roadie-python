@@ -195,8 +195,12 @@ class Processor(ProcessorBase):
             # Get all the folder in the InboundFolder
             for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
                 try:
-                    mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(mp3Folder))
-                    if not self._doProcessFolder(mp3Folder, mp3FolderMtime, forceFolderScan):
+                    try:
+                        mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(mp3Folder))
+                    except:
+                        mp3FolderMtime = None
+                        pass
+                    if mp3FolderMtime and not self._doProcessFolder(mp3Folder, mp3FolderMtime, forceFolderScan):
                         self.logger.info("Skipping Folder [" + mp3Folder + "] No Changes Detected")
                         continue
 
