@@ -43,10 +43,15 @@ class Validator(ProcessorBase):
                     folderExists = False
                 if not folderExists:
                     if not self.readOnly:
-                        release.genres = []
-                        self.session.delete(release)
+                        for media in release.mediaC:
+                            for track in media.tracks:
+                                track.filePath = None
+                                track.fileName = None
+                                track.fileSize = 0
+                                track.hash = None
+                    release.libraryStatus = 'Incomplete'
                     self.logger.warn(
-                        "X Deleting Release [" + str(release) + "] Folder [" + releaseFolder + "] Not Found")
+                        "X Maring Release Release [" + str(release) + "] Missing Folder [" + releaseFolder + "] Not Found")
                     continue
                 releaseTrackCount = 0
                 # If release is not already complete, set to complete unless its found otherwise
@@ -94,7 +99,7 @@ class Validator(ProcessorBase):
                     release.media = releaseMediaWithTracks
                     release.mediaCount = len(releaseMediaWithTracks)
                     # Seems not likely that a release only has a single track; more likely missing unknown tracks
-                    if releaseTrackCount > 1:
+                    if releaseTrackCount > 1 and release.trackCount < 2:
                         release.trackCount = releaseTrackCount
                     release.lastUpdated = arrow.utcnow().datetime
                 self.logger.info("Validated Artist [" + str(artist) + "], " +
