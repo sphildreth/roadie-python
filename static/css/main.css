@@ -171,6 +171,10 @@ div.collection-container h3.missing-number {
     text-align: right;
 }
 
+.librarystatus_incomplete h2.release-title-container {
+    background: url('/static/img/not_complete.png') no-repeat top right, 0px 0px;
+}
+
 .artist-detail-container .bioContext-container, .artist-detail-container .profile-container {
     max-height: 350px;
     overflow-y: auto;
