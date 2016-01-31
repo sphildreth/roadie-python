@@ -38,17 +38,14 @@ class Scanner(ProcessorBase):
             pass
         return 0
 
-    def _markTrackMissing(self, trackId, title, fileName):
+    def _markTrackMissing(self, track, fileName):
         if not self.readOnly:
-            stmt = update(Track.__table__) \
-                .where(Track.id == trackId) \
-                .values(fileName=None,
-                        filePath=None,
-                        fileSize=0,
-                        lastUpdated=arrow.utcnow().datetime,
-                        hash=None)
-            self.conn.execute(stmt)
-        self.logger.warn("x Marked Track Missing [" + title + "]: File [" + fileName + "] Not Found.")
+            track.filePath = None
+            track.fileName = None
+            track.fileSize = 0
+            track.hash = None
+            track.lastUpdated = arrow.utcnow().datetime
+        self.logger.warn("x Marked Track Missing [" + track.title + "]: File [" + fileName + "] Not Found.")
 
     @staticmethod
     def _makeTrackHash(artistId, id3String):
@@ -56,7 +53,7 @@ class Scanner(ProcessorBase):
 
     def scan(self, folder, artist, release):
         """
-        Scan the given folder and update, insert or delete track information
+        Scan the given folder and update, insert or mark missing track information
         :param folder: str
         :param artist: Artist
         :param release: Release
@@ -80,7 +77,7 @@ class Scanner(ProcessorBase):
         startTime = arrow.utcnow().datetime
         self.logger.info("-> Scanning Folder [" + folder + "] " +
                          "Artist Folder [" + self.artistFolder(artist) + "] ")
-        # Get any existing tracks for folder and verify; update if ID3 tags are different or delete if not found
+        # Get any existing tracks for folder and verify; update if ID3 tags are different
         if not self.readOnly:
             existingTracksChecked = 0
             for track in self.dbSession.query(Track).filter(Track.filePath == trackFilePath).all():
@@ -89,7 +86,7 @@ class Scanner(ProcessorBase):
                 # File no longer exists for track
                 if not os.path.isfile(filename):
                     if not self.readOnly:
-                        self._markTrackMissing(track.id, track.title, filename)
+                        self._markTrackMissing(track, filename)
                 else:
                     id3 = ID3(filename)
                     # File has invalid ID3 tags now
@@ -100,14 +97,14 @@ class Scanner(ProcessorBase):
                                 os.remove(filename)
                             except OSError:
                                 pass
-                            self._markTrackMissing(track.id, track.title, filename)
+                            self._markTrackMissing(track, filename)
                     else:
                         try:
                             id3Hash = self._makeTrackHash(artist.roadieId, str(id3))
                             if id3Hash != track.Hash:
                                 if not self.readOnly:
-                                    self.logger.warn("x Hash Mismattch [" + track.Title + "]")
-                                    self._markTrackMissing(track.id, track.title, filename)
+                                    self.logger.warn("x Hash Mismatch [" + track.Title + "]")
+                                    self._markTrackMissing(track, filename)
                         except:
                             pass
             self.logger.debug(

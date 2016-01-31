@@ -31,6 +31,7 @@ class Validator(ProcessorBase):
             raise RuntimeError("Invalid Configuration")
         if not self.libraryFolder:
             raise RuntimeError("Invalid Configuration: Library Folder Not Set")
+        now = arrow.utcnow().datetime
         try:
             for release in artist.releases:
                 issuesFound = False
@@ -49,9 +50,11 @@ class Validator(ProcessorBase):
                                 track.fileName = None
                                 track.fileSize = 0
                                 track.hash = None
+                                track.lastUpdated = now
                     release.libraryStatus = 'Incomplete'
                     self.logger.warn(
-                        "X Maring Release Release [" + str(release) + "] Missing Folder [" + releaseFolder + "] Not Found")
+                        "X Marking Release Release [" + str(
+                            release) + "] Missing Folder [" + releaseFolder + "] Not Found")
                     continue
                 releaseTrackCount = 0
                 # If release is not already complete, set to complete unless its found otherwise
@@ -74,6 +77,7 @@ class Validator(ProcessorBase):
                                     track.fileName = None
                                     track.fileSize = 0
                                     track.hash = None
+                                    track.lastUpdated = now
                                 self.logger.warn(
                                     "X Missing Track [" + str(track.info(includePathInfo=True)) + "] File [" + str(
                                         trackFilename) + "]")
@@ -101,7 +105,7 @@ class Validator(ProcessorBase):
                     # Seems not likely that a release only has a single track; more likely missing unknown tracks
                     if releaseTrackCount > 1 and release.trackCount < 2:
                         release.trackCount = releaseTrackCount
-                    release.lastUpdated = arrow.utcnow().datetime
+                    release.lastUpdated = now
                 self.logger.info("Validated Artist [" + str(artist) + "], " +
                                  "Release [" + str(release) + "], " +
                                  "IssuesFound [" + str(issuesFound) + "]")
