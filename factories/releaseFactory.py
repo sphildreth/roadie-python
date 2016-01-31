@@ -1,9 +1,11 @@
 import os
-import random
 import uuid
-from sqlalchemy.sql import func, and_, or_, text
+
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.sql import func, and_, or_, text
+
 from resources.common import *
+from resources.logger import Logger
 from resources.models.Artist import Artist
 from resources.models.Genre import Genre
 from resources.models.Image import Image
@@ -12,7 +14,6 @@ from resources.models.Release import Release
 from resources.models.ReleaseLabel import ReleaseLabel
 from resources.models.ReleaseMedia import ReleaseMedia
 from resources.models.Track import Track
-from resources.logger import Logger
 from searchEngines.artistSearcher import ArtistSearcher
 from searchEngines.models.Release import ReleaseType as SearchReleaseType
 
@@ -29,8 +30,8 @@ class ReleaseFactory(object):
     def getAllForArtist(self, artist, forceRefresh=False):
         """
         Query Database for a release with the given title, if not found search and if found save and return results
+        :param artist: Artist
         :param forceRefresh: bool
-        :type artist: Artist
         """
         if not artist:
             return None
@@ -62,8 +63,8 @@ class ReleaseFactory(object):
         :param forceRefresh: bool
         :param doFindIfNotInDB: bool
         :rtype : Release
-        :type artist: Artist
-        :type title: str
+        :param artist: Artist
+        :param title: str
         """
         try:
             if not title or not artist:
@@ -292,7 +293,8 @@ class ReleaseFactory(object):
         name = name.lower().strip()
         stmt = or_(func.lower(Label.name) == name,
                    text("(lower(alternateNames) = '" + name.replace("'", "''") + "'" + ""
-                                                                    " OR alternateNames like '" + name.replace("'", "''") + "|%'" +
+                                                                                       " OR alternateNames like '" + name.replace(
+                       "'", "''") + "|%'" +
                         " OR alternateNames like '%|" + name.replace("'", "''") + "|%'" +
                         " OR alternateNames like '%|" + name.replace("'", "''") + "')"))
         return self.session.query(Label).filter(stmt).first()
@@ -361,4 +363,3 @@ class ReleaseFactory(object):
             self.session.rollback()
             self.logger.exception("Error Deleting Release")
         return False
-

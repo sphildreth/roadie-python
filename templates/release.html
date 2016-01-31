@@ -78,7 +78,7 @@
             <a href="/release/edit/{{ release.roadieId }}"
                class="btn btn-warning"><i class="fa fa-edit"></i> Edit</a>
             <a id="findCoverArt" class="btn btn-warning"><i class="fa fa-picture-o"></i> Find Cover</a>
-            {% if release.artist.isLocked == False %}
+            {% if release.artist.isLocked == False or (release.artist.isLocked and release.libraryStatus != 'Complete')  %}
             <div class="btn-group">
                 <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
                         aria-expanded="false">

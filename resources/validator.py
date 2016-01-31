@@ -12,7 +12,7 @@ class Validator(ProcessorBase):
         self.logger = Logger()
         self.conn = dbConn
         self.session = dbSession
-        super().__init__(config)
+        super().__init__(config, self.logger)
 
     def validateArtists(self):
         for artist in self.session.query(Artist).all():
@@ -46,16 +46,27 @@ class Validator(ProcessorBase):
                     if not self.readOnly:
                         for media in release.media:
                             for track in media.tracks:
-                                track.filePath = None
-                                track.fileName = None
-                                track.fileSize = 0
-                                track.hash = None
+                                locatedTrackInfo = self.tryToFindFileForTrack(artist, track)
+                                if locatedTrackInfo:
+                                    movedFile = self.moveToLibrary(artist, locatedTrackInfo['id3'],
+                                                                   locatedTrackInfo['fileName'])
+                                    if movedFile:
+                                        self.logger.warn(
+                                            "! Moved File From [" + locatedTrackInfo[
+                                                'fileName'] + "] To [" + movedFile + "]")
+                                        folderExists = True
+                                else:
+                                    track.filePath = None
+                                    track.fileName = None
+                                    track.fileSize = 0
+                                    track.hash = None
                                 track.lastUpdated = now
-                    release.libraryStatus = 'Incomplete'
-                    self.logger.warn(
-                        "X Marking Release Release [" + str(
-                            release) + "] Missing Folder [" + releaseFolder + "] Not Found")
-                    continue
+                    if not folderExists:
+                        release.libraryStatus = 'Incomplete'
+                        self.logger.warn(
+                            "X Marking Release Missing [" + str(
+                                release) + "] Missing Folder [" + releaseFolder + "] Not Found")
+                        continue
                 releaseTrackCount = 0
                 # If release is not already complete, set to complete unless its found otherwise
                 release.libraryStatus = 'Complete'
@@ -72,18 +83,38 @@ class Validator(ProcessorBase):
                                 except:
                                     pass
                             if not isTrackFilePresent:
+                                # See if track exists in another folder and title was renamed so folder no longer
+                                #   matches what it is expected to be
                                 if not self.readOnly:
-                                    track.filePath = None
-                                    track.fileName = None
-                                    track.fileSize = 0
-                                    track.hash = None
-                                    track.lastUpdated = now
-                                self.logger.warn(
-                                    "X Missing Track [" + str(track.info(includePathInfo=True)) + "] File [" + str(
-                                        trackFilename) + "]")
-                                issuesFound = True
-                                release.libraryStatus = 'Incomplete'
-                            else:
+                                    locatedTrackInfo = self.tryToFindFileForTrack(artist, track)
+                                    if locatedTrackInfo:
+                                        movedFile = self.moveToLibrary(artist, locatedTrackInfo['id3'],
+                                                                       locatedTrackInfo['fileName'])
+                                        if movedFile:
+                                            head, tail = os.path.split(movedFile)
+                                            headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
+                                            trackHash = self.makeTrackHash(artist.roadieId, movedFile)
+                                            track.fileName = tail
+                                            track.filePath = headNoLibrary
+                                            track.hash = trackHash
+                                            track.fileSize = os.path.getsize(movedFile)
+                                            track.lastUpdated = now
+                                            self.logger.warn(
+                                                "! Located Track [" + str(track.info(includePathInfo=True)) + "]")
+                                            isTrackFilePresent = True
+                                    else:
+                                        track.filePath = None
+                                        track.fileName = None
+                                        track.fileSize = 0
+                                        track.hash = None
+                                        track.lastUpdated = now
+                                        self.logger.warn(
+                                            "X Missing Track [" + str(
+                                                track.info(includePathInfo=True)) + "] File [" + str(
+                                                trackFilename) + "]")
+                                        issuesFound = True
+                                        release.libraryStatus = 'Incomplete'
+                            if isTrackFilePresent:
                                 releaseMediaTrackCount += 1
                                 releaseTrackCount += 1
                                 if not isEqual(track.trackNumber, releaseMediaTrackCount):

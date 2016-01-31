@@ -1,5 +1,4 @@
 import os
-import hashlib
 import uuid
 from sqlalchemy import update
 from resources.common import *
@@ -12,15 +11,15 @@ from resources.processingBase import ProcessorBase
 
 
 class Scanner(ProcessorBase):
-    def __init__(self, config, dbConn, dbSession, artistFactory, readOnly):
+    def __init__(self, config, dbConn, dbSession, artistFactory, readOnly, logger=None):
         self.config = config
         self.artistFactory = artistFactory
         self.thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
-        self.logger = Logger()
+        self.logger = logger or Logger()
         self.conn = dbConn
         self.dbSession = dbSession
-        super().__init__(config)
+        super().__init__(config, self.logger)
 
     @staticmethod
     def inboundMp3Files(folder):
@@ -46,10 +45,6 @@ class Scanner(ProcessorBase):
             track.hash = None
             track.lastUpdated = arrow.utcnow().datetime
         self.logger.warn("x Marked Track Missing [" + track.title + "]: File [" + fileName + "] Not Found.")
-
-    @staticmethod
-    def _makeTrackHash(artistId, id3String):
-        return hashlib.md5((str(artistId) + str(id3String)).encode('utf-8')).hexdigest()
 
     def scan(self, folder, artist, release):
         """
@@ -100,7 +95,7 @@ class Scanner(ProcessorBase):
                             self._markTrackMissing(track, filename)
                     else:
                         try:
-                            id3Hash = self._makeTrackHash(artist.roadieId, str(id3))
+                            id3Hash = self.makeTrackHash(artist.roadieId, str(id3))
                             if id3Hash != track.Hash:
                                 if not self.readOnly:
                                     self.logger.warn("x Hash Mismatch [" + track.Title + "]")
@@ -124,7 +119,7 @@ class Scanner(ProcessorBase):
                 else:
                     head, tail = os.path.split(mp3)
                     headNoLibrary = head.replace(self.config['ROADIE_LIBRARY_FOLDER'], "")
-                    trackHash = self._makeTrackHash(artist.roadieId, str(id3))
+                    trackHash = self.makeTrackHash(artist.roadieId, str(id3))
                     track = None
                     mp3FileSize = os.path.getsize(mp3)
                     id3MediaNumber = id3.disc

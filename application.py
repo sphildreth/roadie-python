@@ -705,7 +705,7 @@ def editArtist(roadieId):
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             abort(400)
-        processorBase = ProcessorBase(config)
+        processorBase = ProcessorBase(config, logger)
         now = arrow.utcnow().datetime
         form = request.form
         formFiles = request.files.getlist("fileinput[]")
@@ -1583,7 +1583,7 @@ def editRelease(roadieId):
         token = session.pop('_csrf_token', None)
         if not token or token != request.form.get('_csrf_token'):
             abort(400)
-        processorBase = ProcessorBase(config)
+        processorBase = ProcessorBase(config, logger)
         now = arrow.utcnow().datetime
         form = request.form
         formFiles = request.files.getlist("fileinput[]")

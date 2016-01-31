@@ -6,7 +6,7 @@ import shutil
 import string
 import sqlite3
 import hashlib
-from shutil import move
+
 import arrow
 from PIL import Image
 import gc
@@ -37,9 +37,9 @@ class Processor(ProcessorBase):
         self.processingOptions = self.config['ROADIE_PROCESSING']
         self.conn = dbConn
         self.session = dbSession
-        self.logger = logger or Logger()
         self.thumbnailSize = self.config['ROADIE_THUMBNAILS']['Height'], self.config['ROADIE_THUMBNAILS']['Width']
         self.readOnly = readOnly or False
+        self.logger = logger or Logger()
         self.dontDeleteInboundFolders = dontDeleteInboundFolders or False
         self.flushBefore = flushBefore
         self.artistFactory = ArtistFactory(dbConn, dbSession)
@@ -48,7 +48,7 @@ class Processor(ProcessorBase):
         self.folderDB.execute("CREATE TABLE IF NOT EXISTS `folder` (namehash text, mtime real);")
         self.folderDB.execute("CREATE INDEX IF NOT EXISTS `idx_folder_namehash` on `folder`(namehash);")
         self.folderDB.commit()
-        super().__init__(config)
+        super().__init__(config, self.logger)
 
     def _doProcessFolder(self, name, mtime, forceFolderScan):
         try:
@@ -125,44 +125,6 @@ class Processor(ProcessorBase):
             self.logger.exception("shouldMoveToLibrary: Id3 [" + str(id3) + "]")
             return False
 
-    def moveToLibrary(self, artist, id3, mp3):
-        """
-        If should be moved then move over and return new filename
-        :param artist: Artist
-        :param id3: ID3
-        :param mp3: str
-        :return:
-        """
-        try:
-            newFilename = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album),
-                                       ProcessorBase.trackName(id3.track, id3.title))
-            isMp3File = os.path.isfile(mp3)
-            isNewFilenameFile = os.path.isfile(newFilename)
-            # If it already exists delete it as the shouldMove function determines if
-            # the file should be overwritten or not
-            if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
-                try:
-                    self.logger.warn("x Deleting Existing [" + newFilename + "]")
-                    os.remove(newFilename)
-                except OSError:
-                    self.logger.exception("Error Moving Track")
-                    pass
-
-            isNewFilenameFile = os.path.isfile(newFilename)
-            if isMp3File:
-                if (isNewFilenameFile and not os.path.samefile(mp3, newFilename)) or not isNewFilenameFile:
-                    try:
-                        self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
-                        move(mp3, newFilename)
-                    except OSError:
-                        self.logger.exception("Error Moving Track")
-                        pass
-
-            return newFilename
-        except:
-            self.logger.exception()
-            return None
-
     def processArtists(self, dontValidate):
         """
 
@@ -213,14 +175,17 @@ class Processor(ProcessorBase):
                         Convertor(mp3Folder)
 
                     # Delete any empty folder if enabled
-                    if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
-                        try:
-                            self.logger.warn("X Deleted Empty Folder [" + mp3Folder + "]")
-                            if not self.readOnly:
-                                os.rmdir(mp3Folder)
-                        except OSError:
-                            self.logger.error("Error Deleting [" + mp3Folder + "]")
-                        continue
+                    try:
+                        if not os.listdir(mp3Folder) and not self.dontDeleteInboundFolders:
+                            try:
+                                self.logger.warn("X Deleted Empty Folder [" + mp3Folder + "]")
+                                if not self.readOnly:
+                                    os.rmdir(mp3Folder)
+                            except OSError:
+                                self.logger.error("Error Deleting [" + mp3Folder + "]")
+                            continue
+                    except:
+                        pass
 
                     # Get all the MP3 files in the Folder and process
                     for rootFolder, mp3 in ProcessorBase.folderMp3Files(mp3Folder):

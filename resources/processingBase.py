@@ -1,18 +1,28 @@
 import os
 import string
+import hashlib
 
+from shutil import move
 from goldfinch import validFileName as vfn
 
+from resources.id3 import ID3
 from resources.pathInfo import PathInfo
+from resources.common import *
+from resources.logger import Logger
 
 
 class ProcessorBase(object):
-    def __init__(self, config):
+    def __init__(self, config, logger):
         self.config = config
+        self.logger = logger or Logger()
         self.libraryFolder = config['ROADIE_LIBRARY_FOLDER']
         self.trackPathReplace = None
         if 'ROADIE_TRACK_PATH_REPLACE' in config:
             self.trackPathReplace = config['ROADIE_TRACK_PATH_REPLACE']
+
+    @staticmethod
+    def makeTrackHash(artistId, id3String):
+        return hashlib.md5((str(artistId) + str(id3String)).encode('utf-8')).hexdigest()
 
     def artistFolder(self, artist):
         result = artist.sortName or artist.name
@@ -21,6 +31,67 @@ class ProcessorBase(object):
     def albumFolder(self, artist, year, albumTitle):
         return os.path.join(self.artistFolder(artist),
                             "[" + year.zfill(4)[:4] + "] " + ProcessorBase.makeFileFriendly(albumTitle))
+
+    def tryToFindFileForTrack(self, artist, track):
+        """
+        Try to find given track in artists folder. This is useful is the track is not where expected based on album tag info
+        :param artist: Artist
+        :param track: Track
+        """
+        try:
+            for folder in self.allDirectoriesInDirectory(self.artistFolder(artist), False):
+                for rootFolder, mp3 in ProcessorBase.folderMp3Files(folder):
+                    mp3Id3 = ID3(mp3, self.config)
+                    if mp3Id3 is not None:
+                        if isEqual(mp3Id3.title, track.title) and isEqual(mp3Id3.track, track.trackNumber):
+                            return {
+                                'folderName': folder,
+                                'fileName': mp3,
+                                'id3': mp3Id3
+                            }
+        except:
+            pass
+        return None
+
+    def moveToLibrary(self, artist, id3, mp3):
+        """
+        If should be moved then move over and return new filename
+        :param artist: Artist
+        :param id3: ID3
+        :param mp3: str
+        :return:
+        """
+        try:
+            albumFolder = os.path.join(self.artistFolder(artist), self.albumFolder(artist, id3.year, id3.album))
+            newFilename = os.path.join(albumFolder,
+                                       ProcessorBase.trackName(id3.track, id3.title))
+            isMp3File = os.path.isfile(mp3)
+            isNewFilenameFile = os.path.isfile(newFilename)
+            # If it already exists delete it as the shouldMove function determines if
+            # the file should be overwritten or not
+            if isMp3File and isNewFilenameFile and not os.path.samefile(mp3, newFilename):
+                try:
+                    self.logger.warn("x Deleting Existing [" + newFilename + "]")
+                    os.remove(newFilename)
+                except OSError:
+                    self.logger.exception("Error Moving Track")
+                    pass
+
+            isNewFilenameFile = os.path.isfile(newFilename)
+            if isMp3File:
+                if (isNewFilenameFile and not os.path.samefile(mp3, newFilename)) or not isNewFilenameFile:
+                    try:
+                        os.makedirs(albumFolder)
+                        self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
+                        move(mp3, newFilename)
+                    except OSError:
+                        self.logger.exception("Error Moving Track")
+                        pass
+
+            return newFilename
+        except:
+            self.logger.exception()
+            return None
 
     def pathToTrack(self, track):
         """
