@@ -365,11 +365,12 @@ class Processor(ProcessorBase):
                     self.session.rollback()
                 if releaseFolder:
                     scanner.scan(releaseFolder, artist, release)
-                    # Sync  the counts as some release media and release tracks where added by the processor
+                    # Sync the counts as some release media and release tracks where added by the processor
                     release.mediaCount = len(release.media)
+                    release.trackCount = 0
                     for media in release.media:
                         media.trackCount = len(media.tracks)
-                        release.trackCount = len(media.tracks)
+                        release.trackCount += len(media.tracks)
                     releaseFolder = None
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
