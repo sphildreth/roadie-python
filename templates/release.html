@@ -169,7 +169,8 @@
         <div class="col-md-3">
             <div>
                 <h4><span class="label label-primary">Track Count</span></h4>
-                <span id="releaseTrackCount" class="label label-default">{{ release.trackCount }}</span>
+                <span id="releaseTrackCount" title="Number of Tracks For Release"
+                      class="label label-default">{{ release.trackCount }}</span>
                 <span title="Number of MP3 Files In Release Folder"
                       class="label {{ 'label-success' if numberOfMp3FilesInFolder == release.trackCount else 'label-warning' }}">{{ numberOfMp3FilesInFolder}}</span>
             </div>

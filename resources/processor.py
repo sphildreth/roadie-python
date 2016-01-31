@@ -145,6 +145,7 @@ class Processor(ProcessorBase):
                     self.logger.warn("x Deleting Existing [" + newFilename + "]")
                     os.remove(newFilename)
                 except OSError:
+                    self.logger.exception("Error Moving Track")
                     pass
 
             isNewFilenameFile = os.path.isfile(newFilename)
@@ -154,6 +155,7 @@ class Processor(ProcessorBase):
                         self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
                         move(mp3, newFilename)
                     except OSError:
+                        self.logger.exception("Error Moving Track")
                         pass
 
             return newFilename
