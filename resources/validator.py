@@ -65,11 +65,15 @@ class Validator(ProcessorBase):
                                     pass
                             if not isTrackFilePresent:
                                 if not self.readOnly:
-                                    self.session.delete(track)
+                                    track.filePath = None
+                                    track.fileName = None
+                                    track.fileSize = 0
+                                    track.hash = None
                                 self.logger.warn(
-                                    "X Deleting Track [" + str(track.info(includePathInfo=True)) + "] File [" + str(
-                                        trackFilename) + "] not found")
+                                    "X Missing Track [" + str(track.info(includePathInfo=True)) + "] File [" + str(
+                                        trackFilename) + "]")
                                 issuesFound = True
+                                release.libraryStatus = 'Incomplete'
                             else:
                                 releaseMediaTrackCount += 1
                                 releaseTrackCount += 1
