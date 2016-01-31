@@ -81,11 +81,13 @@ class ProcessorBase(object):
             if isMp3File:
                 if (isNewFilenameFile and not os.path.samefile(mp3, newFilename)) or not isNewFilenameFile:
                     try:
-                        os.makedirs(albumFolder)
+                        if not os.path.exists(albumFolder):
+                            os.makedirs(albumFolder)
                         self.logger.info("= Moving [" + mp3 + "] => [" + newFilename + "]")
                         move(mp3, newFilename)
                     except OSError:
                         self.logger.exception("Error Moving Track")
+                        newFilename = None
                         pass
 
             return newFilename
