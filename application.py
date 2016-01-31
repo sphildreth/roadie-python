@@ -2689,11 +2689,13 @@ def singleTrackReleaseFinder(count):
                            singleTrackReleases=singleTrackReleases.limit(count))
 
 
-@app.route('/incompletereleases/<limit>')
+@app.route('/incompletereleases/<skip>/<limit>')
 @login_required
-def incompleteReleases(limit):
-    releases = dbSession.query(Release).filter(Release.libraryStatus != 'Complete').order_by(Release.artistId,
-                                                                                             Release.title).limit(limit)
+def incompleteReleases(skip, limit):
+    releases = dbSession.query(Release).filter(Release.libraryStatus != 'Complete')\
+        .order_by(Release.artistId, Release.title)\
+        .offset(skip)\
+        .limit(limit)
     return render_template('incompleteReleases.html', releases=releases)
 
 
