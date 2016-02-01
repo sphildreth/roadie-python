@@ -35,7 +35,7 @@ class Scanner(ProcessorBase):
             checkedFolders = []
             for media in release.media:
                 for track in media.tracks:
-                    fullMediaPath = os.path.join(artistFolder, track.filePath) + "\\"
+                    fullMediaPath = os.path.join(artistFolder, track.filePath)
                     if fullMediaPath not in checkedFolders:
                         mp3FileCountForRelease += Scanner.mp3FileCountForFolder(fullMediaPath)
                         checkedFolders.append(fullMediaPath)
