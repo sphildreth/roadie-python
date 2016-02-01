@@ -1475,8 +1475,7 @@ def releaseDetail(roadieId):
     for releaseLabel in indexRelease.releaseLabels:
         releaseLabels.append(releaseLabel)
 
-    processor = Processor(config, conn, dbSession, False, True)
-    numberOfMp3FilesInFolder = Scanner.mp3FileCountForRelease(processor.artistFolder(indexRelease.artist), indexRelease)
+    numberOfMp3FilesInFolder = Scanner.mp3FileCountForRelease(config['ROADIE_LIBRARY_FOLDER'], indexRelease)
 
     return render_template('release.html',
                            release=indexRelease,
