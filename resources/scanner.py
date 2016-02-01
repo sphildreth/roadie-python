@@ -29,6 +29,22 @@ class Scanner(ProcessorBase):
                     yield os.path.join(root, filename)
 
     @staticmethod
+    def mp3FileCountForRelease(artistFolder, release):
+        try:
+            mp3FileCountForRelease = 0
+            checkedFolders = []
+            for media in release.media:
+                for track in media.tracks:
+                    fullMediaPath = os.path.join(artistFolder, track.filePath)
+                    if fullMediaPath not in checkedFolders:
+                        mp3FileCountForRelease += Scanner.mp3FileCountForFolder(fullMediaPath)
+                        checkedFolders.append(fullMediaPath)
+            return mp3FileCountForRelease
+        except:
+            pass
+        return 0
+
+    @staticmethod
     def mp3FileCountForFolder(folder):
         try:
             return len([f for f in os.listdir(folder)
