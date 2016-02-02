@@ -233,6 +233,9 @@ class Scanner(ProcessorBase):
                             track.fileSize = mp3FileSize
                             track.hash = trackHash
                             track.lastUpdated = arrow.utcnow().datetime
+                            release.lastUpdated = track.lastUpdated
+                            if releaseMedia:
+                                releaseMedia.lastUpdated = track.lastUpdated
                             if not track.alternateNames:
                                 track.alternateNames = []
                             if cleanedTitle != track.title.lower().strip() and cleanedTitle not in track.alternateNames:
