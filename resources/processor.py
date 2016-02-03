@@ -157,7 +157,7 @@ class Processor(ProcessorBase):
             release = None
             mp3FoldersProcessed = []
             artistsProcessed = []
-            validator = Validator(self.config, self.conn, self.dbSession, self.readOnly)
+            validator = Validator(self.config, self.conn, self.session, self.readOnly)
             releaseFolder = None
             # Get all the folder in the InboundFolder
             for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
