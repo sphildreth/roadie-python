@@ -45,8 +45,8 @@ class Processor(ProcessorBase):
         self.artistFactory = ArtistFactory(dbConn, dbSession)
         self.releaseFactory = ReleaseFactory(dbConn, dbSession)
         self.folderDB = sqlite3.connect("processorFolder.db")
-        self.folderDB.execute("CREATE TABLE IF NOT EXISTS `folder` (namehash text, mtime real);")
-        self.folderDB.execute("CREATE INDEX IF NOT EXISTS `idx_folder_namehash` on `folder`(namehash);")
+        self.folderDB.execute("CREATE TABLE IF NOT EXISTS `folder` (namehash TEXT, mtime REAL);")
+        self.folderDB.execute("CREATE INDEX IF NOT EXISTS `idx_folder_namehash` ON `folder`(namehash);")
         self.folderDB.commit()
         super().__init__(config, self.logger)
 
@@ -103,7 +103,8 @@ class Processor(ProcessorBase):
             fileFolderLibPath = self.albumFolder(artist, id3.year, id3.album)
             os.makedirs(fileFolderLibPath, exist_ok=True)
             fullFileLibPath = os.path.join(fileFolderLibPath,
-                                           ProcessorBase.makeFileFriendly(ProcessorBase.trackName(id3.track, id3.title)))
+                                           ProcessorBase.makeFileFriendly(
+                                               ProcessorBase.trackName(id3.track, id3.title)))
             if not os.path.isfile(fullFileLibPath):
                 # Does not exist copy it over
                 return True
@@ -155,6 +156,8 @@ class Processor(ProcessorBase):
             artist = None
             release = None
             mp3FoldersProcessed = []
+            artistsProcessed = []
+            validator = Validator(self.config, self.conn, self.dbSession, self.readOnly)
             releaseFolder = None
             # Get all the folder in the InboundFolder
             for mp3Folder in ProcessorBase.allDirectoriesInDirectory(inboundFolder, isReleaseFolder):
@@ -231,6 +234,8 @@ class Processor(ProcessorBase):
                                     self.logger.warn(
                                         "! Unable to Find Artist [" + id3.getReleaseArtist() + "] for Mp3 [" + printableMp3 + "]")
                                     continue
+                                if artist not in artistsProcessed:
+                                    artistsProcessed.append(artist)
                                 # Get the Release
                                 if lastID3Album != id3.album:
                                     release = None
@@ -339,6 +344,10 @@ class Processor(ProcessorBase):
                         media.trackCount = len(media.tracks)
                         release.trackCount += len(media.tracks)
                     releaseFolder = None
+            if artistsProcessed:
+                self.logger.info("Validating [" + str(len(artistsProcessed)) + "] Artists")
+                for artist in artistsProcessed:
+                    validator.validate(artist)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.session.commit()
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
