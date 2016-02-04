@@ -344,12 +344,12 @@ class Processor(ProcessorBase):
                         media.trackCount = len(media.tracks)
                         release.trackCount += len(media.tracks)
                     releaseFolder = None
+            self.session.commit()
             if artistsProcessed:
                 self.logger.info("Validating [" + str(len(artistsProcessed)) + "] Artists")
                 for artist in artistsProcessed:
                     validator.validate(artist)
             elapsedTime = arrow.utcnow().datetime - startTime
-            self.session.commit()
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
         except:
             self.logger.exception("Processing Exception Occurred, Rolling Back Session Transactions")

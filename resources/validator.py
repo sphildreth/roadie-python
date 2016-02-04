@@ -81,13 +81,14 @@ class Validator(ProcessorBase):
                                 try:
                                     isTrackFilePresent = os.path.isfile(trackFilename)
                                 except:
+                                    self.logger.exception()
                                     pass
                             if not isTrackFilePresent:
                                 # See if track exists in another folder and title was renamed so folder no longer
                                 #   matches what it is expected to be
                                 if not self.readOnly:
                                     locatedTrackInfo = self.tryToFindFileForTrack(artist, track)
-                                    if locatedTrackInfo:
+                                    if locatedTrackInfo and not isEqual(trackFilename, locatedTrackInfo['fileName']):
                                         movedFile = self.moveToLibrary(artist, locatedTrackInfo['id3'],
                                                                        locatedTrackInfo['fileName'])
                                         if movedFile:
