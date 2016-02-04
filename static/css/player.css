@@ -132,8 +132,27 @@ ol.track-list li.playing {
     margin-top: 9px;
 }
 
+.track-counts-container .badge {
+    color: black;
+}
+.track-counts-container .badge.rating-1 {
+    background-color: royalblue;
+}
+.track-counts-container .badge.rating-2 {
+    background-color: darkcyan;
+}
+.track-counts-container .badge.rating-3 {
+    background-color: darkgoldenrod;
+}
+.track-counts-container .badge.rating-4 {
+    background-color: limegreen;
+}
+.track-counts-container .badge.rating-5 {
+    background-color: greenyellow;
+}
+
 @media screen and (max-width: 1024px) {
-    .playlist-counts-container {
+    .playlist-counts-container, .track-counts-container {
         display: none !important;
     }
 }

@@ -34,5 +34,7 @@ class M3U(object):
             'ReleaseId': str(release.roadieId),
             'UserId': str(user.roadieId),
             'TrackId': str(track.roadieId),
+            'Rating': track.rating,
+            'PlayedCount': track.playedCount,
             'StreamUrl': request.url_root + "stream/track/" + str(user.roadieId) + "/" + str(track.roadieId)
         }

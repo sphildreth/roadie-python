@@ -500,6 +500,8 @@ def randomizer(random_type):
             track.duration = trackRow.duration
             track.title = trackRow.title
             track.trackNumber = trackRow.trackNumber
+            track.rating = trackRow.rating
+            track.playedCount = trackRow.playedCount
             if track.artistId:
                 track = Release()
                 track.artist = Artist()
@@ -1728,9 +1730,9 @@ def editRelease(roadieId):
     return redirect("/release/" + roadieId)
 
 
-@app.route("/artist/play/<artist_id>/<doShuffle>")
+@app.route("/artist/play/<artist_id>/<action>")
 @login_required
-def playArtist(artist_id, doShuffle):
+def playArtist(artist_id, action):
     artist = getArtist(artist_id)
     if not artist:
         return render_template('404.html'), 404
@@ -1741,8 +1743,12 @@ def playArtist(artist_id, doShuffle):
             for track in sorted(media.tracks, key=lambda tt: tt.trackNumber):
                 if track.fileName and track.filePath:
                     tracks.append(M3U.makeTrackInfo(user, playArtistRelease, track))
-    if doShuffle == "1":
+    if action == "1":   # Shuffle
         random.shuffle(tracks)
+    elif action == "2":  # Top Rated
+        tracks = sorted([x for x in tracks if x['Rating'] > 0], key=lambda tt: tt['Rating'], reverse=True)
+    elif action == "3":  # Most Popular
+        tracks = sorted([x for x in tracks if x['PlayedCount'] > 0], key=lambda tt: tt['PlayedCount'], reverse=True)
     if user.doUseHtmlPlayer:
         session['tracks'] = tracks
         return player()

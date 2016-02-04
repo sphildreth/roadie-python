@@ -542,6 +542,12 @@
         $("#playAllShuffle").on("click", function(e) {
             roadieLibrary.playLoader("/artist/play/" + artistId + "/1");
         });
+        $("#playTopRated").on("click", function(e) {
+            roadieLibrary.playLoader("/artist/play/" + artistId + "/2");
+        });
+        $("#playMostPopular").on("click", function(e) {
+            roadieLibrary.playLoader("/artist/play/" + artistId + "/3");
+        });
         $(".artist-detail-container a.thumbnail").on("click", function(e) {
             e.preventDefault();
             var $t = $(this);
