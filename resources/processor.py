@@ -360,7 +360,7 @@ class Processor(ProcessorBase):
                     if mp3FolderMtime and not self._doProcessFolder(artistFolder, mp3FolderMtime, forceFolderScan):
                         self.logger.info("== Skipping Artist Folder [" + artistFolder + "] No Changes Detected")
                         continue
-                    for artistReleaseToValidate in artistProcessed.iteritems():
+                    for artistReleaseToValidate in artistToValidate.iteritems():
                         validator.validate(artistToValidate, artistReleaseToValidate)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
