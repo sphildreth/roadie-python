@@ -248,13 +248,16 @@ def pathToTrack(track):
     :param track: Track
     :return: str
     """
-    path = os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath, track.fileName)
-    if trackPathReplace:
-        for rpl in trackPathReplace:
-            for key, val in rpl.items():
-                path = path.replace(key, val)
-    return path
-
+    try:
+        path = os.path.join(config["ROADIE_LIBRARY_FOLDER"], track.filePath, track.fileName)
+        if trackPathReplace:
+            for rpl in trackPathReplace:
+                for key, val in rpl.items():
+                    path = path.replace(key, val)
+        return path
+    except:
+        pass
+    return None
 
 @app.before_request
 def before_request():
@@ -1162,12 +1165,13 @@ def deleteRelease(release_id, delete_files):
                 for deleteReleaseMedia in deleteReleaseRelease.media:
                     for track in deleteReleaseMedia.tracks:
                         trackPath = pathToTrack(track)
-                        trackFolder = os.path.dirname(trackPath)
-                        os.remove(trackPath)
-                        # if the folder is empty then delete the folder as well
-                        if trackFolder:
-                            if not os.listdir(trackFolder):
-                                os.rmdir(trackFolder)
+                        if trackPath:
+                            trackFolder = os.path.dirname(trackPath)
+                            os.remove(trackPath)
+                            # if the folder is empty then delete the folder as well
+                            if trackFolder:
+                                if not os.listdir(trackFolder):
+                                    os.rmdir(trackFolder)
             except OSError:
                 pass
         deleteReleaseRelease.genres = []

@@ -47,7 +47,7 @@ class Validator(ProcessorBase):
                         for media in release.media:
                             for track in media.tracks:
                                 locatedTrackInfo = self.tryToFindFileForTrack(artist, track)
-                                if locatedTrackInfo:
+                                if locatedTrackInfo and not os.path.exists(track.fullPath()):
                                     movedFile = self.moveToLibrary(artist, locatedTrackInfo['id3'],
                                                                    locatedTrackInfo['fileName'])
                                     if movedFile:
