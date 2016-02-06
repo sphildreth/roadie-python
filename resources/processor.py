@@ -10,6 +10,7 @@ import hashlib
 import arrow
 from PIL import Image
 import gc
+from collections import defaultdict
 from resources.common import *
 from resources.pathInfo import PathInfo
 from resources.models.Artist import Artist
@@ -157,7 +158,7 @@ class Processor(ProcessorBase):
             artist = None
             release = None
             mp3FoldersProcessed = []
-            artistsProcessed = []
+            artistsReleasesProcessed = defaultdict(list)
             validator = Validator(self.config, self.conn, self.session, self.readOnly)
             releaseFolder = None
             # Get all the folder in the InboundFolder
@@ -235,8 +236,6 @@ class Processor(ProcessorBase):
                                     self.logger.warn(
                                         "! Unable to Find Artist [" + id3.getReleaseArtist() + "] for Mp3 [" + printableMp3 + "]")
                                     continue
-                                if artist not in artistsProcessed:
-                                    artistsProcessed.append(artist)
                                 # Get the Release
                                 if lastID3Album != id3.album:
                                     release = None
@@ -322,6 +321,8 @@ class Processor(ProcessorBase):
                                     self.logger.exception("Error Copying File [" + coverImage + "]")
                                     pass
                             mp3FoldersProcessed.append(newMp3Folder)
+                        if release not in artistsReleasesProcessed[artist]:
+                            artistsReleasesProcessed[artist].append(release)
                     if not self.readOnly and artist and release:
                         if self.shouldDeleteFolder(mp3Folder):
                             try:
@@ -330,6 +331,7 @@ class Processor(ProcessorBase):
                             except OSError:
                                 self.logger.warn("Could Not Delete Folder [" + mp3Folder + "]")
                                 pass
+
                     self.session.commit()
                     gc.collect()
 
@@ -346,20 +348,20 @@ class Processor(ProcessorBase):
                         release.trackCount += len(media.tracks)
                     releaseFolder = None
             self.session.commit()
-            if artistsProcessed and doValidateArtist:
-                self.logger.info("Validating [" + str(len(artistsProcessed)) + "] Artists")
-                for artist in artistsProcessed:
-                    artistFolder = self.artistFolder(artist)
+            if artistsReleasesProcessed and doValidateArtist:
+                self.logger.info("Validating [" + str(len(artistsReleasesProcessed)) + "] Artists")
+                for artistToValidate in artistsReleasesProcessed:
+                    artistFolder = self.artistFolder(artistToValidate)
                     try:
                         mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(artistFolder))
                     except:
                         mp3FolderMtime = None
                         pass
                     if mp3FolderMtime and not self._doProcessFolder(artistFolder, mp3FolderMtime, forceFolderScan):
-                        self.logger.info("Skipping Artist Folder [" + mp3Folder + "] No Changes Detected")
+                        self.logger.info("== Skipping Artist Folder [" + artistFolder + "] No Changes Detected")
                         continue
-                    else:
-                        validator.validate(artist)
+                    for artistReleaseToValidate in artistProcessed.iteritems():
+                        validator.validate(artistToValidate, artistReleaseToValidate)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
         except:
