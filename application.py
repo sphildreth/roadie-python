@@ -1236,7 +1236,8 @@ def deleteReleaseTrack(release_id, track_id, flag):
                 dbSession.delete(track)
                 dbSession.commit()
                 trackPath = pathToTrack(track)
-                trackFolder = os.path.dirname(trackPath)
+                if trackPath:
+                    trackFolder = os.path.dirname(trackPath)
 
         if flag == "f":
             # Delete the file
@@ -1249,7 +1250,7 @@ def deleteReleaseTrack(release_id, track_id, flag):
                         os.rmdir(trackFolder)
             except OSError:
                 pass
-
+        logger.info("X Deleted Track [" + deleteReleaseTrackRelease.info() + "] Delete Flag [" + str(flag) + "]")
         return jsonify(message="OK")
     except:
         dbSession.rollback()
