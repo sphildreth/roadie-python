@@ -471,7 +471,7 @@ def randomizer(random_type):
                    "AND (hash IS NOT NULL) AND ((ur.id is null OR ur.isDisliked = 0) "
                    "AND (ua.id is null or ua.isDisliked = 0)) "
                    "ORDER BY RAND() "
-                   "LIMIT 50;")
+                   "LIMIT 100;")
         elif random_type == "tracksrated":
             sql = ("select t.*, r.roadieId as releaseRoadieId, r.title as releaseTitle, "
                    "rm.releaseMediaNumber as releaseMediaNumber, r.releaseDate as releaseDate, "
@@ -490,7 +490,7 @@ def randomizer(random_type):
                    "AND (ua.id is null or ua.isDisliked = 0) "
                    "AND (ut.rating > 0)) "
                    "ORDER BY RAND() "
-                   "LIMIT 50;")
+                   "LIMIT 100;")
         tracks = []
         t = text(sql)
         for trackRow in conn.execute(t):
