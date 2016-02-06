@@ -1178,6 +1178,7 @@ def deleteRelease(release_id, delete_files):
         dbSession.commit()
         dbSession.delete(deleteReleaseRelease)
         dbSession.commit()
+        logger.info("X Deleted Release [" + deleteReleaseRelease.info() + "] Delete Files Flag [" + str(delete_files) + "]")
         return jsonify(message="OK")
     except:
         dbSession.rollback()
