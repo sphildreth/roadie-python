@@ -1091,7 +1091,7 @@ def rescanRelease(release_id):
         releaseFolder = processor.albumFolder(rescanReleaseRelease.artist,
                                               rescanReleaseRelease.releaseDate.strftime('%Y'),
                                               rescanReleaseRelease.title)
-        processor.process(folder=releaseFolder, isReleaseFolder=True, forceFolderScan=True)
+        processor.process(folder=releaseFolder, isReleaseFolder=True, forceFolderScan=True, doValidateArtist=False)
         validator = Validator(config, conn, dbSession, False)
         validator.validate(rescanReleaseRelease.artist, rescanReleaseRelease)
         return jsonify(message="OK")

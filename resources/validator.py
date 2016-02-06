@@ -32,6 +32,8 @@ class Validator(ProcessorBase):
         if not self.libraryFolder:
             raise RuntimeError("Invalid Configuration: Library Folder Not Set")
         now = arrow.utcnow().datetime
+        self.logger.info("Validating Artist [" + artist.name + "] Release Set [" + str(
+            onlyValidateRelease is None) + "]")
         try:
             for release in artist.releases:
                 issuesFound = False

@@ -147,6 +147,7 @@ class Processor(ProcessorBase):
             inboundFolder = kwargs.pop('folder', self.InboundFolder)
             forceFolderScan = kwargs.pop('forceFolderScan', False)
             isReleaseFolder = kwargs.pop('isReleaseFolder', False)
+            doValidateArtist = kwargs.pop('doValidateArtist', True)
             self.logger.info("Processing Folder [" + inboundFolder + "] Flush [" + str(self.flushBefore) + "]")
             scanner = Scanner(self.config, self.conn, self.session, self.artistFactory, self.readOnly)
             startTime = arrow.utcnow().datetime
@@ -345,7 +346,7 @@ class Processor(ProcessorBase):
                         release.trackCount += len(media.tracks)
                     releaseFolder = None
             self.session.commit()
-            if artistsProcessed:
+            if artistsProcessed and doValidateArtist:
                 self.logger.info("Validating [" + str(len(artistsProcessed)) + "] Artists")
                 for artist in artistsProcessed:
                     artistFolder = self.artistFolder(artist)
