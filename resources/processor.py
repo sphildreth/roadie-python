@@ -350,7 +350,7 @@ class Processor(ProcessorBase):
             self.session.commit()
             if artistsReleasesProcessed and doValidateArtist:
                 self.logger.info("Validating [" + str(len(artistsReleasesProcessed)) + "] Artists")
-                for artistToValidate in artistsReleasesProcessed:
+                for artistToValidate, artistReleasesToValidate in artistsReleasesProcessed:
                     artistFolder = self.artistFolder(artistToValidate)
                     try:
                         mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(artistFolder))
@@ -360,7 +360,7 @@ class Processor(ProcessorBase):
                     if mp3FolderMtime and not self._doProcessFolder(artistFolder, mp3FolderMtime, forceFolderScan):
                         self.logger.info("== Skipping Artist Folder [" + artistFolder + "] No Changes Detected")
                         continue
-                    for artistReleaseToValidate in artistToValidate.items():
+                    for artistReleaseToValidate in artistReleasesToValidate:
                         validator.validate(artistToValidate, artistReleaseToValidate)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
