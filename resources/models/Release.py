@@ -1,3 +1,5 @@
+import base64
+
 from sqlalchemy import Column, Enum, ForeignKey, Index, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
@@ -204,6 +206,47 @@ class Release(Base):
                 result.trackCount += len(media.tracks or [])
                 result.mediaCount += 1
         return result
+
+    def serialize(self, includes):
+        releaseMedia = []
+        if includes and 'tracks' in includes:
+            for media in sorted(self.media, key=lambda mm: mm.releaseMediaNumber):
+                releaseMedia.append(media.serialize(includes))
+        releaseLabels = []
+        if includes and 'labels' in includes:
+            for label in sorted(self.releaseLabels, key=lambda l: l.label.name):
+                releaseLabels.append(label.serialize(includes))
+        releaseGenres = []
+        for genre in self.genres:
+            releaseGenres.append(genre.name)
+        return {
+            'id': self.roadieId,
+            'artistId': self.artist.roadieId,
+            'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
+            'amgId': self.amgId,
+            'createdDate': self.createdDate.isoformat(),
+            'genres': releaseGenres,
+            'isVirtual': self.isVirtual,
+            'iTunesId': self.iTunesId,
+            'lastFMId': self.lastFMId,
+            'lastFMSummary': self.lastFMSummary,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'libraryStatus': self.libraryStatus,
+            'mediaCount': self.mediaCount,
+            'musicBrainzId': self.musicBrainzId,
+            'profile': self.profile,
+            'rating': self.rating,
+            'releaseDate': "" if not self.releaseDate else self.releaseDate.isoformat(),
+            'releaseType': self.releaseType,
+            'spotifyId': self.spotifyId,
+            'tags': "" if not self.tags else '|'.join(self.tags),
+            'thumbnail': "" if not self.thumbnail else base64.b64encode(self.thumbnail).decode('utf-8'),
+            'title': self.title,
+            'trackCount': self.trackCount,
+            'urls': "" if not self.urls else '|'.join(self.urls),
+            'labels': releaseLabels,
+            'media': releaseMedia
+        }
 
 
 Index("idx_releaseArtistAndTitle", Release.artistId, Release.title, unique=True)

@@ -27,3 +27,18 @@ class ReleaseMedia(Base):
 
     def __str__(self):
         return self.release.title + " " + str(self.releaseMediaNumber)
+
+    def serialize(self, includes):
+        mediaTracks = []
+        for track in sorted(self.tracks, key=lambda t: t.trackNumber):
+            mediaTracks.append(track.serialize(includes))
+        return {
+            'id': self.roadieId,
+            'releaseId': self.release.roadieId,
+            'createdDate': self.createdDate.isoformat(),
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'releaseMediaNumber': self.releaseMediaNumber,
+            'releaseSubTitle': self.releaseSubTitle,
+            'trackCount': self.trackCount,
+            'tracks': mediaTracks
+        }

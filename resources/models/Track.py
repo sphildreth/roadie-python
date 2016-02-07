@@ -72,5 +72,37 @@ class Track(Base):
             return None
         return os.path.join(self.filePath, self.fileName)
 
+    def serialize(self, includes):
+        trackArtist = None
+        if includes and 'artist' in includes:
+            if self.artistId:
+                trackArtist = self.artist.serialize(None)
+            else:
+                trackArtist = self.releasemedia.release.artist.serialize(None)
+        return {
+            'id': self.roadieId,
+            'artistId': self.artist.roadieId if self.artist else self.releasemedia.release.artist.roadieId,
+            'mediaId': self.releasemedia.roadieId,
+            'isValid': True if self.hash else False,
+            'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
+            'amgId': self.amgId,
+            'createdDate': self.createdDate.isoformat(),
+            'duration': self.duration,
+            'fileSize': self.fileSize,
+            'hash': self.hash,
+            'isrc': self.isrc,
+            'lastPlayed': "" if not self.lastPlayed else self.lastPlayed.isoformat(),
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'musicBrainzId': self.musicBrainzId,
+            'partTitles': "" if not self.partTitles else '|'.join(self.partTitles),
+            'playedCount': self.playedCount,
+            'rating': self.rating,
+            'spotifyId': self.spotifyId,
+            'tags': "" if not self.tags else '|'.join(self.tags),
+            'title': self.title,
+            'trackNumber': self.trackNumber,
+            'trackArtist': trackArtist
+        }
+
 
 Index("idx_track_unique_to_eleasemedia", Track.releaseMediaId, Track.trackNumber, unique=True)

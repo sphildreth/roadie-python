@@ -29,3 +29,18 @@ class Label(Base):
     def __repr__(self):
         return self.name
 
+    def serialize(self, includes):
+        return {
+            'id': self.roadieId,
+            'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
+            'beginDate': "" if not self.beginDate else self.beginDate.isoformat(),
+            'createdDate': self.createdDate.isoformat(),
+            'endDate': "" if not self.endDate else self.endDate.isoformat(),
+            'imageUrl': self.imageUrl,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'musicBrainzId': self.musicBrainzId,
+            'name': self.name,
+            'sortName': self.sortName,
+            'tags': "" if not self.tags else '|'.join(self.tags),
+            'urls': "" if not self.urls else '|'.join(self.urls)
+        }

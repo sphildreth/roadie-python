@@ -1,3 +1,4 @@
+import base64
 from sqlalchemy import Column, ForeignKey, Index, Table, SmallInteger, Integer, BLOB, String, Date, Text, Enum
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
@@ -94,3 +95,35 @@ class Artist(Base):
             len(self.images or [])) + "] Genres [" +
                 "|".join(map(lambda x: x.name, self.genres or [])) + "] Associated Artist [" + str(
             len(self.associatedArtists or [])) + "]").encode('ascii', 'ignore').decode('utf-8')
+
+    def serialize(self, includes):
+        artistReleases = []
+        if includes and 'releases' in includes:
+            for release in sorted(self.releases, key=lambda r: r.releaseDate):
+                artistReleases.append(release.serialize(includes))
+        return {
+            'id': self.roadieId,
+            'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
+            'amgId': self.amgId,
+            'artistType': self.artistType,
+            'createdDate': self.createdDate.isoformat(),
+            'beginDate': "" if not self.beginDate else self.beginDate.isoformat(),
+            'bioContext': self.bioContext,
+            'birthDate': "" if not self.birthDate else self.birthDate.isoformat(),
+            'endDate': "" if not self.endDate else self.endDate.isoformat(),
+            'isniList': "" if not self.isniList else '|'.join(self.isniList),
+            'iTunesId': self.iTunesId,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'musicBrainzId': self.musicBrainzId,
+            'name': self.name,
+            'profile': self.profile,
+            'rating': self.rating,
+            'realName': self.realName,
+            'releaseCount': len(self.releases),
+            'sortName': self.sortName,
+            'spotifyId': self.spotifyId,
+            'tags': "" if not self.tags else '|'.join(self.tags),
+            'thumbnail': "" if not self.thumbnail else base64.b64encode(self.thumbnail).decode('utf-8'),
+            'urls': "" if not self.urls else '|'.join(self.urls),
+            'releases': artistReleases,
+        }
