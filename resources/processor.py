@@ -350,7 +350,7 @@ class Processor(ProcessorBase):
             self.session.commit()
             if artistsReleasesProcessed and doValidateArtist:
                 self.logger.info("Validating [" + str(len(artistsReleasesProcessed)) + "] Artists")
-                for artistToValidate, artistReleasesToValidate in artistsReleasesProcessed.item():
+                for artistToValidate, artistReleasesToValidate in artistsReleasesProcessed.items():
                     artistFolder = self.artistFolder(artistToValidate)
                     try:
                         mp3FolderMtime = max(os.path.getmtime(root) for root, _, _ in os.walk(artistFolder))
