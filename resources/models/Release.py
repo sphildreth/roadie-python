@@ -221,11 +221,12 @@ class Release(Base):
             releaseGenres.append(genre.name)
         return {
             'id': self.roadieId,
-            'artistId': self.artist.roadieId,
             'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
             'amgId': self.amgId,
+            'artistId': self.artist.roadieId,
             'createdDate': self.createdDate.isoformat(),
             'genres': releaseGenres,
+            'isLocked': self.isLocked,
             'isVirtual': self.isVirtual,
             'iTunesId': self.iTunesId,
             'lastFMId': self.lastFMId,
@@ -239,6 +240,7 @@ class Release(Base):
             'releaseDate': "" if not self.releaseDate else self.releaseDate.isoformat(),
             'releaseType': self.releaseType,
             'spotifyId': self.spotifyId,
+            'status': self.status,
             'tags': "" if not self.tags else '|'.join(self.tags),
             'thumbnail': "" if not self.thumbnail else base64.b64encode(self.thumbnail).decode('utf-8'),
             'title': self.title,

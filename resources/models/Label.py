@@ -37,10 +37,12 @@ class Label(Base):
             'createdDate': self.createdDate.isoformat(),
             'endDate': "" if not self.endDate else self.endDate.isoformat(),
             'imageUrl': self.imageUrl,
+            'isLocked': self.isLocked,
             'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
             'musicBrainzId': self.musicBrainzId,
             'name': self.name,
             'sortName': self.sortName,
+            'status': self.status,
             'tags': "" if not self.tags else '|'.join(self.tags),
             'urls': "" if not self.urls else '|'.join(self.urls)
         }

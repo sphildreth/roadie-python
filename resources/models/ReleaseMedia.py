@@ -34,11 +34,13 @@ class ReleaseMedia(Base):
             mediaTracks.append(track.serialize(includes))
         return {
             'id': self.roadieId,
-            'releaseId': self.release.roadieId,
             'createdDate': self.createdDate.isoformat(),
+            'isLocked': self.isLocked,
             'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'releaseId': self.release.roadieId,
             'releaseMediaNumber': self.releaseMediaNumber,
             'releaseSubTitle': self.releaseSubTitle,
+            'status': self.status,
             'trackCount': self.trackCount,
             'tracks': mediaTracks
         }
