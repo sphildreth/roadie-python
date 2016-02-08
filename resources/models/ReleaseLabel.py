@@ -20,3 +20,15 @@ class ReleaseLabel(Base):
         if not self.label:
             return "---"
         return self.label.name + " (" + self.beginDate.strfttime('%Y') + ")" if self.beginDate else "---"
+
+    def serialize(self, includes):
+        return {
+            'id': self.roadieId,
+            'beginDate': "" if not self.beginDate else self.beginDate.isoformat(),
+            'catalogNumber' : self.catalogNumber,
+            'createdDate': self.createdDate.isoformat(),
+            'endDate': "" if not self.endDate else self.endDate.isoformat(),
+            'isLocked': self.isLocked,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'label': self.label.serialize(includes)
+        }

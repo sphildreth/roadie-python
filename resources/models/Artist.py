@@ -1,7 +1,11 @@
 import base64
+
+from resources.common import *
+
 from sqlalchemy import Column, ForeignKey, Index, Table, SmallInteger, Integer, BLOB, String, Date, Text, Enum
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
 from resources.models.Release import Release
@@ -60,10 +64,10 @@ class Artist(Base):
                                       backref="associatedArtists")
 
     associated_with_artists = relationship("Artist",
-                                         secondary="artistAssociation",
-                                         primaryjoin="Artist.id==artistAssociation.c.associatedArtistId",
-                                         secondaryjoin="Artist.id==artistAssociation.c.artistId",
-                                         backref="associatedWithArtists")
+                                           secondary="artistAssociation",
+                                           primaryjoin="Artist.id==artistAssociation.c.associatedArtistId",
+                                           secondaryjoin="Artist.id==artistAssociation.c.artistId",
+                                           backref="associatedWithArtists")
 
     def __str__(self):
         return self.name
@@ -96,11 +100,65 @@ class Artist(Base):
                 "|".join(map(lambda x: x.name, self.genres or [])) + "] Associated Artist [" + str(
             len(self.associatedArtists or [])) + "]").encode('ascii', 'ignore').decode('utf-8')
 
-    def serialize(self, includes):
+    def serialize(self, includes, conn):
         artistReleases = []
+        doIncludeThumbnails = includes and 'thumbnails' in includes
         if includes and 'releases' in includes:
             for release in sorted(self.releases, key=lambda r: r.releaseDate):
-                artistReleases.append(release.serialize(includes))
+                artistReleases.append(release.serialize(includes, conn))
+        stats = None
+        if includes and 'stats' in includes:
+            artistSummaries = conn.execute(text(
+                "SELECT rm.releaseMediaCount, r.releaseCount, ts.trackCount, ts.duration, " +
+                "ts.size, mts.trackCount AS missingTracks " +
+                "FROM `artist` a " +
+                "INNER JOIN  " +
+                "( " +
+                "	select a.id as artistId, count(rm.id) as releaseMediaCount " +
+                "	From `releasemedia` rm " +
+                "	join `release` r on rm.releaseId = r.id " +
+                "	join `artist` a on r.artistId = a.id " +
+                "	group by a.id " +
+                ") as rm ON rm.artistId = a.id " +
+                "INNER JOIN  " +
+                "( " +
+                "	select a.id as artistId, count(r.id) as releaseCount " +
+                "	from `release` r  " +
+                "	join `artist` a on r.artistId = a.id " +
+                "	group by a.id " +
+                ") as r ON r.artistId = a.id " +
+                "INNER JOIN  " +
+                " ( " +
+                "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount, " +
+                "      SUM(t.duration) AS duration, SUM(t.fileSize) AS size " +
+                "	FROM `track` t " +
+                "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+                "	JOIN `release` r ON r.id = rm.releaseId " +
+                "	WHERE t.fileName IS NOT NULL " +
+                "	GROUP BY r.artistId  " +
+                "	) AS ts ON ts.artistId = a.id " +
+                "LEFT JOIN  " +
+                " ( " +
+                "	SELECT r.artistId AS artistId, COUNT(1) AS trackCount " +
+                "	FROM `track` t " +
+                "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId " +
+                "	JOIN `release` r ON r.id = rm.releaseId " +
+                "	WHERE t.fileName IS NULL " +
+                "	GROUP BY r.artistId  " +
+                "	) AS mts ON mts.artistId = a.id " +
+                "WHERE a.roadieId = '" + self.roadieId + "';", autocommit=True)
+                                           .columns(trackCount=Integer, releaseMediaCount=Integer, releaseCount=Integer,
+                                                    releaseTrackTime=Integer, releaseTrackFileSize=Integer,
+                                                    missingTrackCount=Integer)) \
+                .fetchone()
+            stats = {
+                'tracks': artistSummaries[2] if artistSummaries else 0,
+                 'releaseMedia': artistSummaries[0] if artistSummaries else 0,
+                 'releases': artistSummaries[1] if artistSummaries else 0,
+                 'length': formatTimeMillisecondsNoDays(artistSummaries[3]) if artistSummaries else "--:--",
+                 'fileSize': sizeof_fmt(artistSummaries[4]) if artistSummaries else "0",
+                 'missingTrackCount': (artistSummaries[5] if artistSummaries else 0) or 0
+            }
         return {
             'id': self.roadieId,
             'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
@@ -120,12 +178,13 @@ class Artist(Base):
             'profile': self.profile,
             'rating': self.rating,
             'realName': self.realName,
-            'releaseCount': len(self.releases),
             'sortName': self.sortName,
             'spotifyId': self.spotifyId,
             'status': self.status,
+            'stats': stats,
             'tags': "" if not self.tags else '|'.join(self.tags),
-            'thumbnail': "" if not self.thumbnail else base64.b64encode(self.thumbnail).decode('utf-8'),
+            'thumbnail': "" if not doIncludeThumbnails or not self.thumbnail else base64.b64encode(
+                self.thumbnail).decode('utf-8'),
             'urls': "" if not self.urls else '|'.join(self.urls),
             'releases': artistReleases,
         }

@@ -98,6 +98,7 @@ class Track(Base):
             'partTitles': "" if not self.partTitles else '|'.join(self.partTitles),
             'playedCount': self.playedCount,
             'rating': self.rating,
+            'releaseId': self.releasemedia.release.roadieId,
             'spotifyId': self.spotifyId,
             'status': self.status,
             'tags': "" if not self.tags else '|'.join(self.tags),

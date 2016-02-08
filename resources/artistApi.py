@@ -21,8 +21,8 @@ class ArtistApi(Resource):
     def get(self, artistId):
         self.abort_if_artist_doesnt_exist(artistId)
         args = self.reqparse.parse_args()
-        includes = args.inc or 'releases,tracks'
-        return self.artist.serialize(includes)
+        includes = args.inc or 'labels,releases,tracks,thumbnails,stats'
+        return self.artist.serialize(includes, self.dbConn)
 
 
 

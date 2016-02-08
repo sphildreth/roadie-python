@@ -3,6 +3,7 @@ import base64
 from sqlalchemy import Column, Enum, ForeignKey, Index, Table, Integer, SmallInteger, Boolean, BLOB, String, Date, Text
 from sqlalchemy_utils import ScalarListType
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
 from resources.common import *
 from resources.models.ModelBase import Base
 from resources.models.Genre import Genre
@@ -53,7 +54,6 @@ class Release(Base):
     images = relationship(Image, cascade="all, delete-orphan", backref="release")
     userRatings = relationship(UserRelease, cascade="all, delete-orphan", backref="release")
     collections = relationship(CollectionRelease, cascade="all, delete-orphan", backref="release")
-
 
     def get_id(self):
         return self.roadieId
@@ -207,7 +207,8 @@ class Release(Base):
                 result.mediaCount += 1
         return result
 
-    def serialize(self, includes):
+    def serialize(self, includes, conn):
+        doIncludeThumbnails = includes and 'thumbnails' in includes
         releaseMedia = []
         if includes and 'tracks' in includes:
             for media in sorted(self.media, key=lambda mm: mm.releaseMediaNumber):
@@ -219,6 +220,47 @@ class Release(Base):
         releaseGenres = []
         for genre in self.genres:
             releaseGenres.append(genre.name)
+        stats = None
+        if includes and 'stats' in includes:
+            releaseSummaries = conn.execute(text(
+                "SELECT count(1) AS trackCount, "
+                "max(rm.releaseMediaNumber) AS releaseMediaCount, "
+                "sum(t.duration) AS releaseTrackTime, "
+                "sum(t.fileSize) AS releaseTrackFileSize, "
+                "COALESCE(mts.trackCount,0) AS missingTracks, "
+                "COALESCE(ptc.playedCount, 0) as trackPlayedCount "
+                "FROM `track` t "
+                "join `releasemedia` rm ON t.releaseMediaId = rm.id "
+                "join `release` r ON rm.releaseId = r.id "
+                "LEFT JOIN  "
+                " ( "
+                "	SELECT r.id AS releaseId, COUNT(1) AS trackCount "
+                "	FROM `track` t "
+                "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId "
+                "	JOIN `release` r ON r.id = rm.releaseId "
+                "	WHERE t.fileName IS NULL "
+                "	GROUP BY r.id  "
+                "	) AS mts ON mts.releaseId = r.id "
+                "LEFT JOIN ("
+                "	SELECT r.id AS releaseId, SUM(t.playedCount) as playedCount"
+                "	FROM `track` t "
+                "	JOIN `releasemedia` rm ON rm.id = t.releaseMediaId"
+                "	JOIN `release` r ON r.id = rm.releaseId "
+                "	GROUP BY r.id) AS ptc ON ptc.releaseId = r.id "
+                "where r.roadieId = '" + self.roadieId + "' "
+                                                         "AND t.fileName IS NOT NULL;", autocommit=True)
+                                            .columns(trackCount=Integer, releaseMediaCount=Integer,
+                                                     releaseTrackTime=Integer,
+                                                     releaseTrackFileSize=Integer)) \
+                .fetchone()
+            stats = {
+                'trackCount': releaseSummaries[0],
+                'releaseMediaCount': releaseSummaries[1] or 0,
+                'releaseTrackTime': formatTimeMillisecondsNoDays(releaseSummaries[2]),
+                'releaseTrackFileSize': sizeof_fmt(releaseSummaries[3]),
+                'missingTrackCount': releaseSummaries[4] if releaseSummaries else 0,
+                'trackPlayedCount': int(releaseSummaries[5] if releaseSummaries else 0)
+            }
         return {
             'id': self.roadieId,
             'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
@@ -241,8 +283,10 @@ class Release(Base):
             'releaseType': self.releaseType,
             'spotifyId': self.spotifyId,
             'status': self.status,
+            'stats': stats,
             'tags': "" if not self.tags else '|'.join(self.tags),
-            'thumbnail': "" if not self.thumbnail else base64.b64encode(self.thumbnail).decode('utf-8'),
+            'thumbnail': "" if not doIncludeThumbnails or not self.thumbnail else base64.b64encode(
+                self.thumbnail).decode('utf-8'),
             'title': self.title,
             'trackCount': self.trackCount,
             'urls': "" if not self.urls else '|'.join(self.urls),
