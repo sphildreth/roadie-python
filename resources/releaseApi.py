@@ -21,7 +21,7 @@ class ReleaseApi(Resource):
     def get(self, releaseId):
         self.abort_if_release_doesnt_exist(releaseId)
         args = self.reqparse.parse_args()
-        includes = args.inc or 'labels,stats,tracks'
+        includes = args.inc or 'labels,stats,thumbnails,tracks'
         return self.release.serialize(includes, self.dbConn)
 
 
