@@ -12,7 +12,7 @@
         <span class="track-count">Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                 title="Total Tracks of Artist">{{ '%03d' % (counts.tracks or 0) }}</span></span>
         {% if counts.missingTrackCount %}
-        <span class="missing-track-count">Missing Tracks: <span class="label label-default label-as-badge label-danger"
+        <span onclick="javascript:$('#showMissingItems').click();" class="missing-track-count clickable">Missing Tracks: <span class="label label-default label-as-badge label-danger"
                                                                 data-toggle="tooltip" data-placement="bottom"
                                                                 title="Missing Tracks of Artist">{{ '%03d' % counts.missingTrackCount }}</span></span>
         {% endif %}
@@ -262,6 +262,18 @@
               </ul>
               <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="releases">
+                    <div class="release-options">
+                        <input placeholder="Filter" class="release-filter form-control pull-right" id="artistReleaseFilter" type="text" title="Filter Artist Release And Tracks" />
+                        <div class="btn-group" data-toggle="buttons">
+                            <label class="btn btn-primary active" title="Sort Releases By Release Date">
+                                <input type="radio" id="sortReleasesByReleaseYear" name="releaseSort" checked="checked" value="year" /><i class="fa fa-sort-numeric-asc"></i> Release Date
+                            </label>
+                            <label class="btn btn-primary" title="Sort Releases By Release Title">
+                                <input type="radio" id="sortReleasesByTitle" name="releaseSort" value="title" /><i class="fa fa-sort-alpha-asc"></i> Title
+                            </label>
+                        </div>
+                        <button id="showMissingItems" class="btn btn-primary"><i class="fa fa-filter"></i> Show Missing</button>
+                    </div>
                    {% for release in releases %}
                     <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
                         <div>
@@ -273,6 +285,7 @@
                                           data-placement="top"
                                           title="{{ release.title }}"
                                           class="release-title label {{ 'label-danger' if (release.media.trackCount == 0) else 'label-default' }} releasetitle">{{ release.title }}</span>
+                                    <span class="hidden rating">{{ release.rating }}</span>
                                 </h4>
                             </a>
                         </div>
@@ -287,7 +300,7 @@
                                 </h5>
                                 <ul class="tracks no-list-style">
                                     {% for track in media.tracks|sort(attribute='trackNumber') %}
-                                    <li>
+                                    <li class="track">
                                         <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
                                         <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
                                               class="title label label-default">{{ track.title }}</span>
@@ -411,6 +424,7 @@
         isSane = isSane && noTracksAreMissing();
         if(isSane) {
             $c.append("<span class='release-sane-indicator release-sane label label-success' title='Artist Seems Sane!'><i class='fa fa-check-square-o fa-2x'></i></span>");
+            $("#showMissingItems").hide();
         } else {
             $c.append("<span class='release-sane-indicator release-insane label label-danger' title='Artist Has Issues'><i class='fa fa-square-o fa-2x'></i></span>");
         }
@@ -442,6 +456,16 @@
             showInsaneMessage("Found Invalid Releases");
         }
         return r;
+    };
+
+    var sortReleases = function(sortBy) {
+        var releaseDivs = $(".release-info-container .tab-content .release");
+        releaseDivs.sort(function(a, b) {
+            var aTitle =  $(a).find(sortBy).text();
+            var bTitle = $(b).find(sortBy).text();
+            return (aTitle < bTitle) ? -1 : (aTitle > bTitle) ? 1 : 0;
+        });
+        $(".release-info-container .tab-content").remove(".release").append(releaseDivs);
     };
 
     $(function() {
@@ -787,6 +811,59 @@
             });
         });
 
+        $("#artistReleaseFilter").on("keydown", function(e) {
+            if(e.keyCode == 13) {
+            e.preventDefault();
+            return false;
+        }
+        }).on("keyup", _.debounce(function(e) {
+            e.preventDefault()
+            e.stopPropagation();
+            var filter = $(this).val();
+            if(filter) {
+                $(".release").fadeOut();
+                $("ul.tracks li").fadeOut();
+                // Find any release that matches filter
+                $.each($(".release .release-title"), function (i,d) {
+                    if ($(d).text().toLowerCase().indexOf(filter.toLowerCase()) > -1) {
+                        $(this).closest("div.release").fadeIn();
+                    }
+                });
+                // Find any track that matches filter
+                $.each($("ul.tracks li"), function (i,d) {
+                    if ($(d).text().toLowerCase().indexOf(filter.toLowerCase()) > -1) {
+                        $(this).fadeIn().closest("div.release").fadeIn();
+                    }
+                });
+            } else {
+                $(".release").fadeIn();
+                $("ul.tracks li").fadeIn();
+            }
+
+        }, 250));
+
+        $("#showMissingItems").on("click", function(e) {
+            var $this = $(this);
+            $(".no-missing-releases").hide();
+            if($this.hasClass("showing-missing")) {
+                $this.html("<i class='fa fa-filter'></i> Show Missing").attr("title", "Show Only Missing Releases and Tracks");
+                $(".release").fadeIn();
+                $("ul.tracks li").fadeIn();
+            } else {
+                $this.html("<i class='fa fa-list-ol'></i> Show All").attr("title", "Show All Releases and Tracks");
+                $(".release").fadeOut();
+                $("ul.tracks li").fadeOut();
+                $(".release .release-title.label-danger").parents(".release").fadeIn();
+                $("ul.tracks li.track .trackNumber.missing").parents("li").fadeIn();
+            }
+            $this.toggleClass("showing-missing");
+        });
+        $("#sortReleasesByTitle").on("change", function(e) {
+            sortReleases(".release-title");
+        });
+        $("#sortReleasesByReleaseYear").on("change", function(e) {
+            sortReleases(".releasedate");
+        });
     });
 
 </script>

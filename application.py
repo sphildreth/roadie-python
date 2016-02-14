@@ -363,8 +363,12 @@ def setReleaseTitle(roadieId):
             for media in setReleaseTitleRelease.media:
                 for track in media.tracks:
                     trackPath = pathToTrack(track)
-                    id3 = ID3(trackPath, config)
-                    id3.updateFromRelease(setReleaseTitleRelease, track)
+                    try:
+                        id3 = ID3(trackPath, config)
+                        id3.updateFromRelease(setReleaseTitleRelease, track)
+                    except:
+                        logger.exception("Error in SetReleaseTitle Updating MP3 [" + track.roadieId + "]")
+                        pass
         return jsonify(message="OK")
     except:
         logger.exception("Error In Set Release Title")

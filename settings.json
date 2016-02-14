@@ -8,7 +8,7 @@
     "Height": 80,
     "Width": 80
   },
-  "ROADIE_DATABASE_URL": "mysql+pymysql://roadie:MenAtW0rk668@192.168.2.254/roadie?charset=utf8",
+  "ROADIE_DATABASE_URL": "mysql+pymysql://roadie:MenAtW0rk668@192.168.1.254/roadie?charset=utf8",
   "ROADIE_CONVERTING": {
     "DoDeleteAfter": "True"
   },

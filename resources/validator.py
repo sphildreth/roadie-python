@@ -49,7 +49,8 @@ class Validator(ProcessorBase):
                         for media in release.media:
                             for track in media.tracks:
                                 locatedTrackInfo = self.tryToFindFileForTrack(artist, track)
-                                if locatedTrackInfo and not os.path.exists(track.fullPath()):
+                                trackFullPath = track.fullPath()
+                                if locatedTrackInfo and trackFullPath and not os.path.exists(trackFullPath):
                                     movedFile = self.moveToLibrary(artist, locatedTrackInfo['id3'],
                                                                    locatedTrackInfo['fileName'])
                                     if movedFile:
@@ -121,7 +122,7 @@ class Validator(ProcessorBase):
                                 releaseMediaTrackCount += 1
                                 releaseTrackCount += 1
                                 if not isEqual(track.trackNumber, releaseMediaTrackCount):
-                                    self.logger.warn("! Track Number Sequence InCorrect Is [" +
+                                    self.logger.warn("! Track Number Sequence Incorrect Is [" +
                                                      str(track.trackNumber) + "] Expected [" +
                                                      str(releaseMediaTrackCount) + "]")
                                     release.libraryStatus = 'Incomplete'
