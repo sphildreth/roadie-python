@@ -275,7 +275,10 @@
                         <button id="showMissingItems" class="btn btn-primary"><i class="fa fa-filter"></i> Show Missing</button>
                     </div>
                    {% for release in releases %}
-                    <div class="release pull-left" draggable="true" data-release-id="{{ release.roadieId }}">
+                    <div class="release pull-left"
+                         draggable="true"
+                         data-release-id="{{ release.roadieId }}"
+                         data-release-track-count="{{ release.trackCount }}">
                         <div>
                             <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
                                  alt="{{ release.title }}"/>
@@ -435,17 +438,31 @@
     };
 
     var checkReleaseMediaTrackCount = function() {
-        $.each($(".release-media"), function(i, d) {
-            var $t = $(this);
-            var tracksFound = $t.find("li").length;
-            var trackCount = parseInt($t.data('track-count'));
-            var hasMissingTracks = $t.find("span.trackNumber.missing").length;
-            if (tracksFound !== trackCount || hasMissingTracks > 0) {
-                var $r = $t.closest("div.release").find(".release-title")
-                var releaseName = $r.text();
-                showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
-                $r.addClass("label-danger").removeClass("label-default");
+        $.each($(".release"), function(i,r)
+        {
+            var $release = $(r);
+            var foundMediaTrackCount = 0;
+            $.each($release.find(".release-media"), function (i, d) {
+                var $t = $(this);
+                var tracksFound = $t.find("li").length;
+                foundMediaTrackCount += tracksFound;
+                var trackCount = parseInt($t.data('track-count'));
+                var hasMissingTracks = $t.find("span.trackNumber.missing").length;
+                if (tracksFound !== trackCount || hasMissingTracks > 0) {
+                    var $r = $t.closest("div.release").find(".release-title");
+                    var releaseName = $r.text();
+                    showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: tracksFound [" + tracksFound + "], trackCount [" + trackCount + "], hasMissingTracks [" + hasMissingTracks + "]");
+                    $r.addClass("label-danger").removeClass("label-default");
 
+                }
+            });
+            var releaseTrackCount = parseInt($release.data("release-track-count"));
+            if(releaseTrackCount !== foundMediaTrackCount) {
+                debugger;
+                var $r = $release.find(".release-title");
+                var releaseName = $r.text();
+                showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: mediaTracksFound [" + foundMediaTrackCount + "], releaseTrackCount [" + releaseTrackCount + "]");
+                $(this).find(".release-title").addClass("label-danger").removeClass("label-default");
             }
         });
     };
