@@ -65,7 +65,7 @@ li.username, td.username {
     font-size: 16px;
 }
 
-.navbar li.username img {
+.navbar img.avatar {
     height: 19px;
 }
 

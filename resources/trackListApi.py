@@ -2,6 +2,7 @@ import datetime
 from flask_restful import Resource, reqparse
 from flask import jsonify
 from resources.models.Track import Track
+from resources.models.UserTrack import UserTrack
 from resources.models.Release import Release
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -20,6 +21,7 @@ class TrackListApi(Resource):
         self.reqparse.add_argument('filter', type=str)
         self.reqparse.add_argument('sort', type=str)
         self.reqparse.add_argument('order', type=str)
+        self.reqparse.add_argument('userId', type=str)
         super(TrackListApi, self).__init__()
 
     def get(self):

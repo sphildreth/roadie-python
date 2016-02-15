@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+{% block title %}{{ user.username }}{% endblock %}
+{% block header_content %}
+{% endblock %}
+{% block body_content %}
+<div class="user-container" data-user-id="{{ user.roadieId }}" data-db-id="{{ user.id }}">
+    <div class="release-counts-container pull-right">
+        <span class="track-count">Rated Artists: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Artists Rated By User">{{ '%04d' % counts.ratedArtistCount }}</span></span>
+        <span class="track-count">Rated Releases: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Releases Rated By User">{{ '%05d' % counts.ratedReleaseCount }}</span></span>
+        <span class="track-count">Rated Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Tracks Rated By User">{{ '%05d' % counts.ratedTrackCount }}</span></span>
+        <span class="track-count">Played Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
+                                                title="Total Tracks Rated By User">{{ '%06d' % counts.tracksPlayed }}</span></span>
+    </div>
+    <div class="btn-toolbar edit-toolbar" role="toolbar">
+        <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                <i class="fa fa-play"></i> Play <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a id="playRatedArtists" href="#">Play Rated Artists</a></li>
+                <li><a id="playRatedReleases" href="#">Play Rated Releases</a></li>
+                <li><a id="playRatedTracks" href="#">Play Rated Tracks</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="row title bordered">
+        <img class="user-thumb thumb pull-left" src="/images/user/avatar/{{ user.roadieId }}"
+             alt="{{ user.username }}"/>
+        <h2><span class="label label-default">{{ user.username }}</span></h2>
+    </div>
+        <div class="row bordered">
+            <div>
+              <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#recentlyPlayed" aria-controls="releases" role="tab" data-toggle="tab"><i class="fa fa-play-circle"></i> Recently Played</a></li>
+                <li role="presentation"><a href="#ratedArtists" aria-controls="ratedArtists" role="tab" data-toggle="tab"><i class="fa fa-star-half-o"></i> Rated Artists</a></li>
+                <li role="presentation"><a href="#ratedReleases" aria-controls="ratedReleases" role="tab" data-toggle="tab"><i class="fa fa-star-half-o"></i> Rated Releases</a></li>
+                  <li role="presentation"><a href="#ratedTracks" aria-controls="ratedTracks" role="tab" data-toggle="tab"><i class="fa fa-star-half-o"></i> Rated Tracks</a></li>
+              </ul>
+              <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="recentlyPlayed">
+                    Recently Played WIP
+                </div>
+                <div role="tabpanel" class="tab-pane" id="ratedArtists">
+                    Rated Artists WIP
+                </div>
+                <div role="tabpanel" class="tab-pane" id="ratedReleases">
+                    Rated Releases WIP
+                </div>
+                <div role="tabpanel" class="tab-pane" id="ratedTracks">
+                    Rated Tracks WIP
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+{% block script_content %}
+<script type="text/javascript">
+    var userId = '{{ user.roadieId }}';
+
+    $(function() {
+        $("#playRatedArtists, #playRatedReleases, #playRatedTracks").on("click", function(e) {
+           bootbox.alert("WIP");
+        });
+    });
+
+</script>
+{% endblock %}

@@ -1,3 +1,4 @@
+import base64
 import arrow
 from sqlalchemy import Column, ForeignKey, Table, Integer, Boolean, BLOB, String, DateTime
 from sqlalchemy.orm import relationship
@@ -60,3 +61,23 @@ class User(Base):
 
     def __unicode__(self):
         return self.username
+
+    def serialize(self, includes):
+        doIncludeThumbnails = includes and 'thumbnails' in includes
+        return {
+            'id': self.roadieId,
+            'createdDate': self.createdDate.isoformat(),
+            'isLocked': self.isLocked,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'status': self.status,
+            'username': self.username,
+            'email': self.email,
+            'timezone': self.timezone,
+            'registeredOn': "" if not self.registeredOn else self.registeredOn.isoformat(),
+            'lastLogin': "" if not self.lastLogin else self.lastLogin.isoformat(),
+            'isActive': self.isActive,
+            'avatar': "" if not doIncludeThumbnails or not self.avatar else base64.b64encode(
+                self.avatar).decode('utf-8'),
+            'doUseHtmlPlayer': self.doUseHtmlPlayer
+            # 'roles': "" if not self.roles else '|'.join(self.roles)
+        }

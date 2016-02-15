@@ -17,3 +17,21 @@ class UserTrack(Base):
 
     def __unicode__(self):
         return self.user.name + "::" + self.track.title
+
+    def serialize(self, includes):
+        track = None
+        if includes and 'track' in includes:
+            track = "" if not self.track else self.track.serialize(includes)
+        return {
+            'id': self.roadieId,
+            'createdDate': self.createdDate.isoformat(),
+            'isLocked': self.isLocked,
+            'lastUpdated': "" if not self.lastUpdated else self.lastUpdated.isoformat(),
+            'status': self.status,
+            'isFavorite': self.isFavorite,
+            'isDisliked': self.isDisliked,
+            'rating': self.rating,
+            'playedCount': self.playedCount,
+            'lastPlayed': "" if not self.lastPlayed else self.lastPlayed.isoformat(),
+            'track': track
+        }

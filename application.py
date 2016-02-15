@@ -66,10 +66,12 @@ from resources.playlistTrackListApi import PlaylistTrackListApi
 from resources.processingBase import ProcessorBase
 from resources.processor import Processor
 from resources.releaseListApi import ReleaseListApi
+from resources.playHistoryApi import PlayHistoryApi
 from resources.scanner import Scanner
 from resources.trackListApi import TrackListApi
 from resources.trackApi import TrackApi
 from resources.userListApi import UserListApi
+from resources.userApi import UserApi
 from searchEngines.imageSearcher import ImageSearcher
 from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
 from viewModels.RoadieUserArtistModelView import RoadieUserArtistModelView
@@ -1447,6 +1449,45 @@ def deleteReleaseImage(release_id, image_id):
         return jsonify(message="ERROR")
 
 
+@app.route('/user/<roadieId>')
+@login_required
+def userDetail(roadieId):
+    indexUser = getUser(roadieId)
+    user = getUser()
+    if not indexUser:
+        return render_template('404.html'), 404
+    counts = conn.execute(text(
+        "SELECT COUNT(ut.id) AS ratedTrackCount, "
+        "  SUM(ut.playedCount) AS tracksPlayed, "
+        "  COALESCE(rr.ratedReleaseCount,0) AS ratedReleaseCount,"
+        "  COALESCE(ra.ratedArtistCount,0) AS ratedArtistCount "
+        "FROM `user` u "
+        "join `usertrack` ut ON (ut.userId = u.id) "
+        "join `track` t ON (ut.trackId = t.id) "
+        "INNER JOIN (SELECT ur.id AS userId,  COUNT(ur.releaseId) AS ratedReleaseCount "
+        "	FROM `userrelease` ur "
+        "	JOIN `release` r ON (r.id = ur.releaseId) "
+        "	JOIN `releasemedia` rm ON (rm.releaseId = r.id) "
+        "	JOIN `track` t ON (t.releaseMediaId = rm.id) "
+        "	WHERE ur.rating > 0 "
+        "	AND t.hash IS NOT NULL "
+        "   GROUP BY ur.releaseId) rr ON rr.userId = u.id "
+        "INNER JOIN ( "
+        "	SELECT ua.userId AS userId, COUNT(ua.id) AS ratedArtistCount "
+        "	FROM `userartist` ua "
+        "	WHERE ua.rating > 0 "
+        ") ra ON ra.userId = u.id "
+        "where u.roadieId = '" + roadieId + "' "
+                                            "AND (ut.rating IS NULL OR ut.rating > 0) "
+                                            "AND t.hash IS NOT NULL;", autocommit=True)
+                          .columns(ratedTrackCount=Integer, tracksPlayed=Integer, ratedReleaseCount=Integer,
+                                   ratedArtistCount=Integer)) \
+        .fetchone()
+    return render_template('user.html',
+                           user=indexUser,
+                           counts=counts)
+
+
 @app.route('/release/<roadieId>')
 @login_required
 def releaseDetail(roadieId):
@@ -2821,8 +2862,10 @@ api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'d
 api.add_resource(ReleaseApi, '/api/v1.0/release/<releaseId>',
                  resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(PlayHistoryApi, '/api/v1.0/playhistory', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackApi, '/api/v1.0/track/<trackId>', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(UserApi, '/api/v1.0/user/<userId>', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(GenreListApi, '/api/v1.0/genres', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(LabelListApi, '/api/v1.0/labels', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(PlaylistTrackListApi, '/api/v1.0/playlistTracks',
