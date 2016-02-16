@@ -72,13 +72,19 @@ class Track(Base):
             return None
         return os.path.join(self.filePath, self.fileName)
 
-    def serialize(self, includes):
+    def serialize(self, includes, conn):
         trackArtist = None
+        trackRelease = None
+        trackReleaseMedia = None
+        if includes and 'releaseMedia' in includes:
+            trackReleaseMedia = self.releasemedia.serialize(None, conn)
         if includes and 'artist' in includes:
             if self.artistId:
-                trackArtist = self.artist.serialize(None)
+                trackArtist = self.artist.serialize(None, conn)
             else:
-                trackArtist = self.releasemedia.release.artist.serialize(None)
+                trackArtist = self.releasemedia.release.artist.serialize(None, conn)
+        if includes and 'release' in includes:
+            trackRelease = self.releasemedia.release.serialize(None, conn)
         return {
             'id': self.roadieId,
             'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
@@ -104,7 +110,9 @@ class Track(Base):
             'tags': "" if not self.tags else '|'.join(self.tags),
             'title': self.title,
             'trackNumber': self.trackNumber,
-            'trackArtist': trackArtist
+            'releaseMedia': trackReleaseMedia,
+            'release': trackRelease,
+            'artist': trackArtist
         }
 
 

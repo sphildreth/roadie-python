@@ -22,7 +22,7 @@ class TrackApi(Resource):
         self.abort_if_track_doesnt_exist(trackId)
         args = self.reqparse.parse_args()
         includes = args.inc
-        return self.track.serialize(includes)
+        return self.track.serialize(includes, self.dbConn)
 
 
 

@@ -71,6 +71,9 @@ from resources.scanner import Scanner
 from resources.trackListApi import TrackListApi
 from resources.trackApi import TrackApi
 from resources.userListApi import UserListApi
+from resources.userArtistListApi import UserArtistListApi
+from resources.userReleaseListApi import UserReleaseListApi
+from resources.userTracklistApi import UserTrackListApi
 from resources.userApi import UserApi
 from searchEngines.imageSearcher import ImageSearcher
 from viewModels.RoadieModelView import RoadieModelView, RoadieModelAdminRequiredView
@@ -1457,29 +1460,37 @@ def userDetail(roadieId):
     if not indexUser:
         return render_template('404.html'), 404
     counts = conn.execute(text(
-        "SELECT COUNT(ut.id) AS ratedTrackCount, "
-        "  SUM(ut.playedCount) AS tracksPlayed, "
-        "  COALESCE(rr.ratedReleaseCount,0) AS ratedReleaseCount,"
-        "  COALESCE(ra.ratedArtistCount,0) AS ratedArtistCount "
+        "SELECT "
+        "    COALESCE(tr.ratedCount,0) AS ratedTrackCount, "
+        "    COALESCE(pc.playedCount,0) AS tracksPlayed, "
+        "    COALESCE(rr.ratedReleaseCount,0) AS ratedReleaseCount, "
+        "    COALESCE(ra.ratedArtistCount,0) AS ratedArtistCount "
         "FROM `user` u "
-        "join `usertrack` ut ON (ut.userId = u.id) "
-        "join `track` t ON (ut.trackId = t.id) "
-        "INNER JOIN (SELECT ur.id AS userId,  COUNT(ur.releaseId) AS ratedReleaseCount "
-        "	FROM `userrelease` ur "
-        "	JOIN `release` r ON (r.id = ur.releaseId) "
-        "	JOIN `releasemedia` rm ON (rm.releaseId = r.id) "
-        "	JOIN `track` t ON (t.releaseMediaId = rm.id) "
-        "	WHERE ur.rating > 0 "
-        "	AND t.hash IS NOT NULL "
-        "   GROUP BY ur.releaseId) rr ON rr.userId = u.id "
-        "INNER JOIN ( "
-        "	SELECT ua.userId AS userId, COUNT(ua.id) AS ratedArtistCount "
-        "	FROM `userartist` ua "
-        "	WHERE ua.rating > 0 "
+        "LEFT JOIN ( "
+        "    SELECT ur.userId AS userId,  COUNT(ur.releaseId) AS ratedReleaseCount "
+        "    FROM `userrelease` ur "
+        ") rr ON rr.userId = u.id "
+        "LEFT JOIN ( "
+        "    SELECT ua.userId AS userId, COUNT(ua.id) AS ratedArtistCount "
+        "    FROM `userartist` ua "
+        "    GROUP BY ua.userId "
         ") ra ON ra.userId = u.id "
-        "where u.roadieId = '" + roadieId + "' "
-                                            "AND (ut.rating IS NULL OR ut.rating > 0) "
-                                            "AND t.hash IS NOT NULL;", autocommit=True)
+        "LEFT JOIN ( "
+        "    SELECT ut.userId, COUNT(ut.id) AS playedCount "
+        "    FROM `usertrack` ut "
+        "    JOIN `track` t ON (ut.trackId = t.id) "
+        "    WHERE t.hash IS NOT NULL "
+        "    GROUP BY ut.userId "
+        ") pc ON pc.userId = u.id "
+        "LEFT JOIN ( "
+        "    SELECT ut.userId, COUNT(ut.id) AS ratedCount "
+        "    FROM `usertrack` ut "
+        "    JOIN `track` t ON (t.id = ut.trackId) "
+        "    WHERE ut.rating > 0 "
+        "    AND (t.hash IS NOT NULL) "
+        "    GROUP BY ut.userId "
+        ") tr ON tr.userId = u.id "
+        "where u.roadieId = '" + roadieId + "';", autocommit=True)
                           .columns(ratedTrackCount=Integer, tracksPlayed=Integer, ratedReleaseCount=Integer,
                                    ratedArtistCount=Integer)) \
         .fetchone()
@@ -2862,9 +2873,16 @@ api.add_resource(ReleaseListApi, '/api/v1.0/releases', resource_class_kwargs={'d
 api.add_resource(ReleaseApi, '/api/v1.0/release/<releaseId>',
                  resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackListApi, '/api/v1.0/tracks', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
-api.add_resource(PlayHistoryApi, '/api/v1.0/playhistory', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(PlayHistoryApi, '/api/v1.0/user/<userId>/playhistory',
+                 resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(TrackApi, '/api/v1.0/track/<trackId>', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(UserListApi, '/api/v1.0/users', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(UserArtistListApi, '/api/v1.0/user/<userId>/ratedartists',
+                 resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(UserReleaseListApi, '/api/v1.0/user/<userId>/ratedreleases',
+                 resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
+api.add_resource(UserTrackListApi, '/api/v1.0/user/<userId>/ratedtracks',
+                 resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(UserApi, '/api/v1.0/user/<userId>', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(GenreListApi, '/api/v1.0/genres', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})
 api.add_resource(LabelListApi, '/api/v1.0/labels', resource_class_kwargs={'dbConn': conn, 'dbSession': dbSession})

@@ -12,7 +12,7 @@
         <span class="track-count">Rated Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
                                                 title="Total Tracks Rated By User">{{ '%05d' % counts.ratedTrackCount }}</span></span>
         <span class="track-count">Played Tracks: <span class="badge" data-toggle="tooltip" data-placement="bottom"
-                                                title="Total Tracks Rated By User">{{ '%06d' % counts.tracksPlayed }}</span></span>
+                                                title="Total Tracks Rated By User">{{ '%06d' % (counts.tracksPlayed or 0) }}</span></span>
     </div>
     <div class="btn-toolbar edit-toolbar" role="toolbar">
         <div class="btn-group">
@@ -42,7 +42,7 @@
               </ul>
               <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="recentlyPlayed">
-                    Recently Played WIP
+                    <table id="recentlyPlayedGrid"></table>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="ratedArtists">
                     Rated Artists WIP
@@ -64,10 +64,70 @@
 <script type="text/javascript">
     var userId = '{{ user.roadieId }}';
 
+    var $tRecentlyPlayedGrid = $('#recentlyPlayedGrid');
+
     $(function() {
         $("#playRatedArtists, #playRatedReleases, #playRatedTracks").on("click", function(e) {
            bootbox.alert("WIP");
         });
+
+        $tRecentlyPlayedGrid.bootstrapTable({
+            ajax: function(params) {
+                sort = params.data.sort ? params.data.sort : "";
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/user/' + userId + '/playhistory?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=track,releaseMedia,release,artist&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                            params.complete();
+                        }
+                    },
+                    error:function(jq, st, error){
+                        roadieLibrary.showErrorMessage(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            showExport: true,
+            exportDataType: 'all',
+            pageSize: 25,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "lastPlayed",
+            sortOrder: "desc",
+            columns: [
+                { field: 'id', visible: false },
+                { field: 'track.title', title: 'Title', sortable: true},
+                { field: 'track.release.title', sortName:'track.release.title', sortable: true, title: 'Release', formatter: function(value,row,index) {
+                    var releaseId = row.track.releaseId;
+                    var title = row.track.release.title;
+                    var thumbnail = "/images/release/thumbnail/" + releaseId;
+                    return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
+                }},
+                { field: 'track.artist.name', sortName: 'track.artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
+                    var artistId = row.track.artist.id;
+                    var name = row.track.artist.name;
+                    var thumbnail = "/images/artist/thumbnail/" + row.track.artist.id;
+                    return '<a href="/artist/' + artistId + '"><div class="thumbnail-container pull-left"><img class="artist-thumb" src="' + thumbnail + '" alt="' + name + '" /></div><span class="label label-default">' + name + '</span></a>';
+                }},
+                { field: 'lastPlayed', title: 'Played', sortable: true},
+            ]
+        });
+
     });
 
 </script>

@@ -458,7 +458,6 @@
             });
             var releaseTrackCount = parseInt($release.data("release-track-count"));
             if(releaseTrackCount !== foundMediaTrackCount) {
-                debugger;
                 var $r = $release.find(".release-title");
                 var releaseName = $r.text();
                 showInsaneMessage("Release Counts Insane!, Release [" + releaseName + "]: mediaTracksFound [" + foundMediaTrackCount + "], releaseTrackCount [" + releaseTrackCount + "]");

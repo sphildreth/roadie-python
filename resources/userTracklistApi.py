@@ -1,17 +1,14 @@
 from flask_restful import abort, Resource, reqparse
 from flask import jsonify
-from sqlalchemy import and_, or_
+from sqlalchemy import and_
 from resources.models.User import User
 from resources.models.Track import Track
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Release import Release
 from resources.models.UserTrack import UserTrack
-from resources.models.Artist import Artist
 
 from sqlalchemy.sql import func
 
 
-class PlayHistoryApi(Resource):
+class UserTrackListApi(Resource):
     user = None
 
     def __init__(self, **kwargs):
@@ -37,8 +34,6 @@ class PlayHistoryApi(Resource):
         get_limit = args.limit or 25
         get_skip = args.skip or 0
         sort = args.sort or 'usertrack.lastPlayed'
-        if sort == 'lastPlayed':
-            sort = 'usertrack.lastPlayed'
         order = args.order or 'desc'
         if userId:
             self.abort_if_user_doesnt_exist(userId)
@@ -53,26 +48,16 @@ class PlayHistoryApi(Resource):
             total_records = self.dbSession\
                 .query(func.count(UserTrack.id))\
                 .join(Track, UserTrack.trackId == Track.id)\
-                .join(ReleaseMedia, Track.releaseMediaId == ReleaseMedia.id)\
-                .join(Release, ReleaseMedia.releaseId == Release.id)\
-                .join(Artist, Release.artistId == Artist.id)\
                 .filter(Track.hash != None)\
                 .filter(UserTrack.userId == self.user.id)\
-                .filter(or_(Track.title.like("%" + args.filter + "%"),
-                            Release.title.like("%" + args.filter + "%"),
-                            Artist.name.like("%" + args.filter + "%")))\
+                .filter(UserTrack.track.like("%" + args.filter + "%"))\
                 .scalar()
             tracks = self.dbSession\
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
-                .join(ReleaseMedia, Track.releaseMediaId == ReleaseMedia.id)\
-                .join(Release, ReleaseMedia.releaseId == Release.id)\
-                .join(Artist, Release.artistId == Artist.id)\
                 .filter(Track.hash != None)\
                 .filter(UserTrack.userId == self.user.id)\
-                .filter(or_(Track.title.like("%" + args.filter + "%"),
-                            Release.title.like("%" + args.filter + "%"),
-                            Artist.name.like("%" + args.filter + "%")))\
+                .filter(UserTrack.track.title.like("%" + args.filter + "%"))\
                 .order_by(order + sort)\
                 .slice(get_skip, get_skip + get_limit)
         else:

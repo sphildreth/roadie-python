@@ -74,11 +74,13 @@
                         </a>
                     </td>
                     <td class="username" data-user-id="{{ lastPlayedInfo.UserId }}">
-                        <div class="thumbnail-container pull-left">
-                            <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}"
-                                 alt="{{ lastPlayedInfo.Username }}"/>
-                        </div>
-                        <span class="label label-default">{{ lastPlayedInfo.Username }}</span>
+                        <a href="/user/{{ lastPlayedInfo.UserId }}">
+                            <div class="thumbnail-container pull-left">
+                                <img class="user-thumb" src="{{ lastPlayedInfo.UserThumbnail }}"
+                                     alt="{{ lastPlayedInfo.Username }}"/>
+                            </div>
+                            <span class="label label-default">{{ lastPlayedInfo.Username }}</span>
+                        </a>
                     </td>
                     <td>
                         <span class="label label-default">{{ lastPlayedInfo.LastPlayed }}</span>

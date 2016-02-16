@@ -212,7 +212,7 @@ class Release(Base):
         releaseMedia = []
         if includes and 'tracks' in includes:
             for media in sorted(self.media, key=lambda mm: mm.releaseMediaNumber):
-                releaseMedia.append(media.serialize(includes))
+                releaseMedia.append(media.serialize(includes, conn))
         releaseLabels = []
         if includes and 'labels' in includes:
             for label in sorted(self.releaseLabels, key=lambda l: l.label.name):
