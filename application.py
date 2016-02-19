@@ -30,6 +30,7 @@ from tornado.websocket import WebSocketHandler
 from tornado.wsgi import WSGIContainer
 from werkzeug.datastructures import Headers
 
+from factories.artistFactory import ArtistFactory
 from factories.releaseFactory import ReleaseFactory
 from flask_session import Session as FlaskSession
 from importers.collectionImporter import CollectionImporter
@@ -2784,6 +2785,62 @@ def rescanSelectedReleases():
     for releaseToRescanId in releasesToRescan.split(','):
         rescanRelease(releaseToRescanId)
     return jsonify(message="OK")
+
+
+@app.route('/listReleaseChecker', methods=['GET', 'POST'])
+@login_required
+def listReleaseChecker():
+    if request.method == 'GET':
+        return render_template('listReleaseChecker.html')
+    formFiles = request.files.getlist("fileinput[]")
+    if formFiles:
+        artistFactory = ArtistFactory(conn, dbSession)
+        releaseFactory = ReleaseFactory(conn, dbSession)
+        uploadedFile = formFiles[0]
+        result = []
+        for line in str(uploadedFile.read()).split('\\r\\n'):
+            if not line or line == "'b\\'\\''" or line == "'b\\'\\'":
+                continue
+            try:
+                parts = str(line).replace("_", "").split('-')
+                artistName = parts[0].strip()
+                releaseTitle = parts[1].strip()
+                artist = artistFactory.get(artistName, False)
+                release = None
+                if artist:
+                    release = releaseFactory.get(artist, releaseTitle, False, False)
+                if not artist and not release:
+                    result.append({
+                        'line': '',
+                        'class': 'warning',
+                        'status': 'Not Found: Artist [' + artistName + '] Release [' + releaseTitle + ']'
+                    })
+                elif not artist:
+                    result.append({
+                        'line': '',
+                        'class': 'warning',
+                        'status': 'Artist [' + artistName + '] Not Found'
+                    })
+                elif not release:
+                    result.append({
+                        'line': '',
+                        'class': 'warning',
+                        'status': 'Release [' + releaseTitle + '] Not Found For  Artist [' + artistName + ']'
+                    })
+                elif release.libraryStatus != "Complete":
+                    result.append({
+                        'line': 'Artist [' + artistName + '] Release [' + releaseTitle + ']',
+                        'class': '',
+                        'status': release.libraryStatus
+                    })
+            except:
+                result.append({
+                    'line': line,
+                    'class': 'error',
+                    'status': 'Unable To Split Artist And Release'
+                })
+                pass
+    return render_template('listReleaseChecker.html', result=result)
 
 
 @app.route('/artist/merge/<merge_into_id>/<merge_id>', methods=['POST'])
