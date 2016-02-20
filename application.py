@@ -2740,7 +2740,7 @@ def singleTrackReleaseFinder(count):
 @login_required
 def incompleteReleases(skip, limit):
     releases = dbSession.query(Release).filter(Release.libraryStatus != 'Complete') \
-        .order_by(Release.lastUpdated, Release.artistId, Release.title) \
+        .order_by(desc(Release.lastUpdated), Release.artistId, Release.title) \
         .offset(skip) \
         .limit(limit)
     return render_template('incompleteReleases.html', releases=releases)
