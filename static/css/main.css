@@ -944,3 +944,6 @@ ul.six-column li {
     margin: 10px;
 }
 
+.user-container .disliked-rating, .user-container .liked-rating {
+    margin-right: 5px;
+}

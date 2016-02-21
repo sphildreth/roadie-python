@@ -209,6 +209,9 @@ class Release(Base):
 
     def serialize(self, includes, conn):
         doIncludeThumbnails = includes and 'thumbnails' in includes
+        artist = None
+        if includes and 'artist' in includes:
+            artist = self.artist.serialize(None, conn)
         releaseMedia = []
         if includes and 'tracks' in includes:
             for media in sorted(self.media, key=lambda mm: mm.releaseMediaNumber):
@@ -266,6 +269,7 @@ class Release(Base):
             'alternateNames': "" if not self.alternateNames else '|'.join(self.alternateNames),
             'amgId': self.amgId,
             'artistId': self.artist.roadieId,
+            'artist': artist,
             'createdDate': self.createdDate.isoformat(),
             'genres': releaseGenres,
             'isLocked': self.isLocked,

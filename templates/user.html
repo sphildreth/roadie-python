@@ -21,9 +21,9 @@
                 <i class="fa fa-play"></i> Play <span class="caret"></span>
             </button>
             <ul class="dropdown-menu">
-                <li><a id="playRatedArtists" href="#">Play Rated Artists</a></li>
-                <li><a id="playRatedReleases" href="#">Play Rated Releases</a></li>
-                <li><a id="playRatedTracks" href="#">Play Rated Tracks</a></li>
+                <li><a id="playRatedArtists" data-type="artist" href="javascript:void(0);">Play Random Rated Artist</a></li>
+                <li><a id="playRatedReleases" data-type="release" href="javascript:void(0);">Play Random Rated Release</a></li>
+                <li><a id="playRatedTracks" data-type="tracks" href="javascript:void(0);">Play Random Rated Tracks</a></li>
             </ul>
         </div>
     </div>
@@ -45,13 +45,13 @@
                     <table id="recentlyPlayedGrid"></table>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="ratedArtists">
-                    Rated Artists WIP
+                    <table id="userRatedArtistsGrid"></table>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="ratedReleases">
-                    Rated Releases WIP
+                    <table id="userRatedReleasesGrid"></table>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="ratedTracks">
-                    Rated Tracks WIP
+                    <table id="userRatedTracksGrid"></table>
                 </div>
               </div>
             </div>
@@ -65,10 +65,18 @@
     var userId = '{{ user.roadieId }}';
 
     var $tRecentlyPlayedGrid = $('#recentlyPlayedGrid');
+    var $tUserRatedArtistsGrid = $("#userRatedArtistsGrid");
+    var $tUserRatedReleasesGrid = $("#userRatedReleasesGrid");
+    var $tUserRatedTracksGrid = $("#userRatedTracksGrid");
+
+    var setupUserRatings = function() {
+        $(".user-container").find("input.rating").rating();
+    };
 
     $(function() {
-        $("#playRatedArtists, #playRatedReleases, #playRatedTracks").on("click", function(e) {
-           bootbox.alert("WIP");
+
+        $("#playRatedArtists,#playRatedReleases,#playRatedTracks").on("click", function() {
+           roadieLibrary.playLoader('/user/' + userId + '/randomizer/' + $(this).data("type"));
         });
 
         $tRecentlyPlayedGrid.bootstrapTable({
@@ -77,14 +85,13 @@
                 order = params.data.order ? params.data.order : "";
                 search = params.data.search ? params.data.search : "";
                 $.ajax({
-                    url: '/api/v1.0/user/' + userId + '/playhistory?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=track,releaseMedia,release,artist&filter=' + search,
+                    url: '/api/v1.0/user/' + userId + '/playhistory?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=releaseMedia,release,artist&filter=' + search,
                     success: function(data) {
                         if(data.message === "OK") {
                             params.success({
                                 total: data.total,
                                 rows: data.rows
                             });
-                            params.complete();
                         }
                     },
                     error:function(jq, st, error){
@@ -112,13 +119,13 @@
             columns: [
                 { field: 'id', visible: false },
                 { field: 'track.title', title: 'Title', sortable: true},
-                { field: 'track.release.title', sortName:'track.release.title', sortable: true, title: 'Release', formatter: function(value,row,index) {
+                { field: 'track.release.title', sortable: true, title: 'Release', formatter: function(value,row,index) {
                     var releaseId = row.track.releaseId;
                     var title = row.track.release.title;
                     var thumbnail = "/images/release/thumbnail/" + releaseId;
                     return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
                 }},
-                { field: 'track.artist.name', sortName: 'track.artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
+                { field: 'track.artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
                     var artistId = row.track.artist.id;
                     var name = row.track.artist.name;
                     var thumbnail = "/images/artist/thumbnail/" + row.track.artist.id;
@@ -127,6 +134,203 @@
                 { field: 'lastPlayed', title: 'Played', sortable: true},
             ]
         });
+
+        $tUserRatedArtistsGrid.bootstrapTable({
+            ajax: function(params) {
+                var c = _.find(this.columns, function(col) {
+                    return col.field == params.data.sort;
+                });
+                sort = c && c.sortName ? c.sortName : (params.data.sort ? params.data.sort : "");
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/user/' + userId + '/ratedartists?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=artist&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                        }
+                    },
+                    error:function(jq, st, error){
+                        roadieLibrary.showErrorMessage(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            showExport: true,
+            exportDataType: 'all',
+            pageSize: 25,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            onPostBody: function(table) {
+              setupUserRatings();
+            },
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "rating",
+            sortOrder: "desc",
+            columns: [
+                { field: 'artistId', visible: false },
+                { field: 'artist.name', sortName: 'artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
+                    var artistId = row.artist.id;
+                    var name = row.artist.name;
+                    var thumbnail = "/images/artist/thumbnail/" + row.artist.id;
+                    return '<a href="/artist/' + artistId + '"><div class="thumbnail-container pull-left"><img class="artist-thumb" src="' + thumbnail + '" alt="' + name + '" /></div><span class="label label-default">' + name + '</span></a>';
+                }},
+                { field: 'rating', title: 'Liked / Rating', sortable: true, formatter: function(value,row,index) {
+                    var part = '';
+                    if(row.isDisliked) {
+                        part = '<div class="pull-left disliked-rating" title="Disliked"><i class="fa fa-thumbs-down fa-2x"></i></div>'
+                    } else if(row.isFavorite){
+                        part = '<div class="pull-left liked-rating" title="Favorited"><i class="fa fa-heart fa-2x"></i></div>'
+                    }
+                    return part + '<div class="release-rating-container pull-left"><input type="hidden" class="rating" data-readonly value="' + row.rating + '"/></div>';
+                }},
+                { field: 'lastUpdated', title: 'Last Updated', sortable: true}
+            ]
+        });
+
+        $tUserRatedReleasesGrid.bootstrapTable({
+            ajax: function(params) {
+                sort = params.data.sort ? params.data.sort : "";
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/user/' + userId + '/ratedreleases?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=artist&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                        }
+                    },
+                    error:function(jq, st, error){
+                        roadieLibrary.showErrorMessage(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            showExport: true,
+            exportDataType: 'all',
+            pageSize: 25,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            onPostBody: function(table) {
+              setupUserRatings();
+            },
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "rating",
+            sortOrder: "desc",
+            columns: [
+                { field: 'releaseId', visible: false },
+                { field: 'release.title', sortName:'release.title', sortable: true, title: 'Release', formatter: function(value,row,index) {
+                    var releaseId = row.release.id;
+                    var title = row.release.title;
+                    var thumbnail = "/images/release/thumbnail/" + releaseId;
+                    return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
+                }},
+                { field: 'release.artist.name', sortName: 'release.artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
+                    var artistId = row.release.artist.id;
+                    var name = row.release.artist.name;
+                    var thumbnail = "/images/artist/thumbnail/" + row.release.artist.id;
+                    return '<a href="/artist/' + artistId + '"><div class="thumbnail-container pull-left"><img class="artist-thumb" src="' + thumbnail + '" alt="' + name + '" /></div><span class="label label-default">' + name + '</span></a>';
+                }},
+                { field: 'rating', title: 'Liked / Rating', sortable: true, formatter: function(value,row,index) {
+                    var part = '';
+                    if(row.isDisliked) {
+                        part = '<div class="pull-left disliked-rating" title="Disliked"><i class="fa fa-thumbs-down fa-2x"></i></div>'
+                    } else if(row.isFavorite){
+                        part = '<div class="pull-left liked-rating" title="Favorited"><i class="fa fa-heart fa-2x"></i></div>'
+                    }
+                    return part + '<div class="release-rating-container pull-left"><input type="hidden" class="rating" data-readonly value="' + row.rating + '"/></div>';
+                }},
+                { field: 'lastUpdated', title: 'Last Updated', sortable: true}
+            ]
+        });
+
+        $tUserRatedTracksGrid.bootstrapTable({
+            ajax: function(params) {
+                sort = params.data.sort ? params.data.sort : "";
+                order = params.data.order ? params.data.order : "";
+                search = params.data.search ? params.data.search : "";
+                $.ajax({
+                    url: '/api/v1.0/user/' + userId + '/ratedtracks?sort='+ sort + '&order=' + order + '&limit=' + params.data.limit + '&skip=' + params.data.offset + '&inc=release,artist&filter=' + search,
+                    success: function(data) {
+                        if(data.message === "OK") {
+                            params.success({
+                                total: data.total,
+                                rows: data.rows
+                            });
+                        }
+                    },
+                    error:function(jq, st, error){
+                        roadieLibrary.showErrorMessage(error);
+                    }
+                });
+            },
+            idField: 'id',
+            search: true,
+            showExport: true,
+            exportDataType: 'all',
+            pageSize: 25,
+            pagination: true,
+            sidePagination: 'server',
+            detailView: true,
+            detailFormatter: function(index,row) {
+               var html = [];
+                $.each(row, function (key, value) {
+                    html.push('<p><b>' + key + ':</b> ' + value + '</p>');
+                });
+                return html.join('');
+            },
+            sortName: "usertrack.rating",
+            sortOrder: "desc",
+            columns: [
+                { field: 'id', visible: false },
+                { field: 'track.title', title: 'Title', sortable: true},
+                { field: 'release.title', sortName:'track.release.title', sortable: true, title: 'Release', formatter: function(value,row,index) {
+                    var releaseId = row.track.releaseId;
+                    var title = row.track.release.title;
+                    var thumbnail = "/images/release/thumbnail/" + releaseId;
+                    return '<a href="/release/' + releaseId + '"><div class="thumbnail-container pull-left"><img class="release-thumb" src="' + thumbnail + '" alt="' + title + '" /></div><span class="label label-default">' + title + '</span></a>';
+                }},
+                { field: 'artist.name', sortName: 'track.artist.name', sortable: true, title: 'Artist', formatter: function(value,row,index) {
+                    var artistId = row.track.artist.id;
+                    var name = row.track.artist.name;
+                    var thumbnail = "/images/artist/thumbnail/" + row.track.artist.id;
+                    return '<a href="/artist/' + artistId + '"><div class="thumbnail-container pull-left"><img class="artist-thumb" src="' + thumbnail + '" alt="' + name + '" /></div><span class="label label-default">' + name + '</span></a>';
+                }},
+                { field: 'rating', title: 'Liked / Rating', sortable: true, formatter: function(value,row,index) {
+                    var part = '';
+                    if(row.isDisliked) {
+                        part = '<div class="pull-left disliked-rating" title="Disliked"><i class="fa fa-thumbs-down fa-2x"></i></div>'
+                    } else if(row.isFavorite){
+                        part = '<div class="pull-left liked-rating" title="Favorited"><i class="fa fa-heart fa-2x"></i></div>'
+                    }
+                    return part + '<div class="release-rating-container pull-left"><input type="hidden" class="rating" data-readonly value="' + row.rating + '"/></div>';
+                }},
+                { field: 'lastPlayed', title: 'Last Played', sortable: true}
+            ]
+        });
+
 
     });
 

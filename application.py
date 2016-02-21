@@ -21,7 +21,7 @@ from flask_login import LoginManager, login_user, logout_user, \
     current_user, login_required
 from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Integer, desc, Numeric, String, event, exc
+from sqlalchemy import Integer, desc, Numeric, String, event, exc, or_
 from sqlalchemy.pool import Pool
 from sqlalchemy.sql import text, func
 from tornado.ioloop import IOLoop
@@ -1451,6 +1451,79 @@ def deleteReleaseImage(release_id, image_id):
         logger.exception("Error Delete Release Image")
         dbSession.rollback()
         return jsonify(message="ERROR")
+
+
+@app.route('/user/<roadieId>/randomizer/<random_type>')
+@login_required
+def userPlayType(roadieId, random_type):
+    userPlayerUser = getUser(roadieId)
+    if not userPlayerUser:
+        return render_template('404.html'), 404
+    if random_type == "artist":
+        artist = dbSession.query(Artist)\
+            .join(UserArtist, UserArtist.artistId == Artist.id)\
+            .filter(or_(UserArtist.isFavorite, UserArtist.rating > 0))\
+            .order_by(func.random()).first()
+        return playArtist(artist.roadieId, "0")
+    elif random_type == "release":
+        randomizerRelease = dbSession.query(Release)\
+            .join(UserRelease, UserRelease.releaseId == Release.id)\
+            .filter(or_(UserRelease.isFavorite, UserRelease.rating > 0))\
+            .order_by(func.random()).first()
+        return playRelease(randomizerRelease.roadieId)
+    else:
+        sql = ("SELECT t.*, r.roadieId AS releaseRoadieId, r.title AS releaseTitle, "
+                   "rm.releaseMediaNumber AS releaseMediaNumber, r.releaseDate AS releaseDate, "
+                   "ta.roadieId AS trackArtistRoadieId, ta.name AS trackArtistName, a.id AS artistId, "
+                   "a.roadieId AS artistRoadieId, a.name AS artistName, rm.releaseMediaNumber "
+                   "FROM `track` t "
+                   "JOIN `releasemedia` rm ON (rm.id = t.releaseMediaId) "
+                   "JOIN `release` r ON (r.id = rm.releaseId) "
+                   "JOIN `artist` a ON (a.id = r.artistId) "
+                   "LEFT JOIN `artist` ta ON (ta.id = t.artistId) "
+                   "JOIN `usertrack` ut ON (ut.trackId = t.id AND ut.userId = " + str(userPlayerUser.id) +
+                   ") WHERE (RAND()<(SELECT ((1/COUNT(*))*100000) FROM `track`)) "
+                   "AND (HASH IS NOT NULL) "
+                   "AND (ut.rating > 0) "
+                   "ORDER BY RAND() "
+                   "LIMIT 100;")
+        tracks = []
+        t = text(sql)
+        for trackRow in conn.execute(t):
+            track = Track()
+            track.id = trackRow.id
+            track.roadieId = trackRow.roadieId
+            track.duration = trackRow.duration
+            track.title = trackRow.title
+            track.trackNumber = trackRow.trackNumber
+            track.rating = trackRow.rating
+            track.playedCount = trackRow.playedCount
+            if track.artistId:
+                track = Release()
+                track.artist = Artist()
+                track.artist.id = trackRow.artistId
+                track.artist.roadieId = trackRow.trackArtistRoadieId
+                track.artist.name = trackRow.trackArtistName
+            release = Release()
+            release.roadieId = trackRow.releaseRoadieId
+            release.artist = Artist()
+            release.artist.id = trackRow.artistId
+            release.artist.roadieId = trackRow.artistRoadieId
+            release.artist.name = trackRow.artistName
+            release.title = trackRow.releaseTitle
+            release.releaseDate = trackRow.releaseDate
+            track.releasemedia = ReleaseMedia()
+            track.releasemedia.releaseMediaNumber = trackRow.releaseMediaNumber
+            t = M3U.makeTrackInfo(userPlayerUser, release, track)
+            if t:
+                tracks.append(t)
+        if userPlayerUser.doUseHtmlPlayer:
+            session['tracks'] = tracks
+            return player()
+        return send_file(M3U.generate(tracks),
+                         as_attachment=True,
+                         attachment_filename="playlist.m3u")
+
 
 
 @app.route('/user/<roadieId>')

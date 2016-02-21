@@ -16,9 +16,6 @@ class UserRelease(Base):
         return self.user.name + "::" + self.release.title
 
     def serialize(self, includes, conn):
-        release = None
-        if includes and 'artist' in includes:
-            release = "" if not self.release else self.release.serialize(includes, conn)
         return {
             'id': self.roadieId,
             'createdDate': self.createdDate.isoformat(),
@@ -30,5 +27,5 @@ class UserRelease(Base):
             'rating': self.rating,
             'userId': str(self.userId),
             'releaseId': str(self.releaseId),
-            'release': release
+            'release': "" if not self.release else self.release.serialize(includes, conn)
         }

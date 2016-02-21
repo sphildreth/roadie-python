@@ -1,6 +1,6 @@
 from flask_restful import abort, Resource, reqparse
 from flask import jsonify
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from resources.models.User import User
 from resources.models.Track import Track
 from resources.models.UserTrack import UserTrack
@@ -49,6 +49,7 @@ class UserTrackListApi(Resource):
                 .query(func.count(UserTrack.id))\
                 .join(Track, UserTrack.trackId == Track.id)\
                 .filter(Track.hash != None)\
+                .filter(or_(UserTrack.isFavorite, UserTrack.isDisliked, UserTrack.rating > 0))\
                 .filter(UserTrack.userId == self.user.id)\
                 .filter(UserTrack.track.like("%" + args.filter + "%"))\
                 .scalar()
@@ -56,6 +57,7 @@ class UserTrackListApi(Resource):
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
                 .filter(Track.hash != None)\
+                .filter(or_(UserTrack.isFavorite, UserTrack.isDisliked, UserTrack.rating > 0))\
                 .filter(UserTrack.userId == self.user.id)\
                 .filter(UserTrack.track.title.like("%" + args.filter + "%"))\
                 .order_by(order + sort)\
@@ -65,6 +67,7 @@ class UserTrackListApi(Resource):
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
                 .filter(Track.hash != None)\
+                .filter(or_(UserTrack.isFavorite, UserTrack.isDisliked, UserTrack.rating > 0))\
                 .filter(UserTrack.userId == self.user.id)\
                 .order_by(order + sort)
 
@@ -75,6 +78,7 @@ class UserTrackListApi(Resource):
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
                 .filter(Track.hash != None)\
+                .filter(or_(UserTrack.isFavorite, UserTrack.isDisliked, UserTrack.rating > 0))\
                 .filter(UserTrack.userId == self.user.id)\
                 .order_by(order + sort)\
                 .slice(get_skip, get_skip + get_limit)

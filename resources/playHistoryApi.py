@@ -39,6 +39,10 @@ class PlayHistoryApi(Resource):
         sort = args.sort or 'usertrack.lastPlayed'
         if sort == 'lastPlayed':
             sort = 'usertrack.lastPlayed'
+        # if sort == 'track.artist.name':
+        #     sort = 'artist.name'
+        # if sort == 'track.release.title':
+        #     sort = 'release.title'
         order = args.order or 'desc'
         if userId:
             self.abort_if_user_doesnt_exist(userId)
@@ -79,6 +83,9 @@ class PlayHistoryApi(Resource):
             q = self.dbSession\
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
+                .join(ReleaseMedia, Track.releaseMediaId == ReleaseMedia.id)\
+                .join(Release, ReleaseMedia.releaseId == Release.id)\
+                .join(Artist, Release.artistId == Artist.id)\
                 .filter(Track.hash != None)\
                 .filter(UserTrack.userId == self.user.id)\
                 .order_by(order + sort)
@@ -89,6 +96,9 @@ class PlayHistoryApi(Resource):
             tracks = self.dbSession\
                 .query(UserTrack)\
                 .join(Track, UserTrack.trackId == Track.id)\
+                .join(ReleaseMedia, Track.releaseMediaId == ReleaseMedia.id)\
+                .join(Release, ReleaseMedia.releaseId == Release.id)\
+                .join(Artist, Release.artistId == Artist.id)\
                 .filter(Track.hash != None)\
                 .filter(UserTrack.userId == self.user.id)\
                 .order_by(order + sort)\
