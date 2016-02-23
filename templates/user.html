@@ -294,6 +294,9 @@
             pagination: true,
             sidePagination: 'server',
             detailView: true,
+            onPostBody: function(table) {
+              setupUserRatings();
+            },
             detailFormatter: function(index,row) {
                var html = [];
                 $.each(row, function (key, value) {

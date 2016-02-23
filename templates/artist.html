@@ -280,7 +280,9 @@
                          data-release-id="{{ release.roadieId }}"
                          data-release-track-count="{{ release.trackCount }}">
                         <div>
-                            <img class="pull-left thumb" src="/images/release/thumbnail/{{ release.roadieId}}"
+                            <img class="pull-left clickable release-play-on-click thumb"
+                                title="Click To Play Release"
+                                 src="/images/release/thumbnail/{{ release.roadieId}}"
                                  alt="{{ release.title }}"/>
                             <a href="/release/{{ release.roadieId }}">
                                 <h4><span class="label label-info releasedate">{{ release.releaseDate.strftime('%Y') if release.releaseDate else '' }}</span>
@@ -303,7 +305,7 @@
                                 </h5>
                                 <ul class="tracks no-list-style">
                                     {% for track in media.tracks|sort(attribute='trackNumber') %}
-                                    <li class="track">
+                                    <li class="track clickable play-on-click" data-track-id="{{ track.roadieId }}">
                                         <span class="trackNumber label label-primary {{ '' if track.fileName else 'missing' }}">{{ '%02d' % track.trackNumber }} </span>
                                         <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
                                               class="title label label-default">{{ track.title }}</span>
@@ -488,6 +490,19 @@
 
         $(".tokenfield-readonly").tokenfield({
             delimiter: "|"
+        });
+
+        $(".play-on-click").on("click", function() {
+            var $this = $(this);
+            var releaseId = $this.parents(".release:first").data("release-id");
+            var trackId = $this.data("track-id");
+            roadieLibrary.playLoader("/track/play/" + releaseId + "/" + trackId);
+        });
+
+        $(".release-play-on-click").on("click", function() {
+            var $this = $(this);
+            var releaseId = $this.parents(".release:first").data("release-id");
+            roadieLibrary.playLoader("/release/play/" + releaseId);
         });
 
         roadieLibrary.setFavIcon("artist-thumbnail");
