@@ -317,8 +317,34 @@
         </div>
     </div>
     <div class="row tracks bordered">
+        <div class="dropdown">
+            <button id="multiTrackDropDown" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true"
+                    aria-expanded="false">
+                <i class="fa fa-check-square-o"></i> With Selected Tracks <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a href="#" class="multi-play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
+                <li><a href="#" class="multi-que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
+                {% if current_user.is_editor() %}
+                <li class="dropdown-submenu">
+                    <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i>
+                        Delete</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track"
+                               class="multi-delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete
+                            Track</a></li>
+                        <li><a href="#" data-toggle="tooltip" data-placement="left"
+                               title="Delete the Track, and delete the File"
+                               class="multi-delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i>
+                            Delete</a></li>
+                    </ul>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
         {% for media in release.media|sort(attribute='releaseMediaNumber') %}
         <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-releasemediatrackcount="{{ media.trackCount }}">
+            <button class="toggle-select btn btn-default btn-sm pull-right"><i class="fa fa-check-circle"></i> Toggle Select</button>
             <h5 class="release-cd"><span class="label label-success">CD {{ media.releaseMediaNumber }}</span></h5>
             {% if media.releaseSubTitle %}
             <h5 class="release-media-subtitle pull-right"><span class="label label-success">CD {{ media.releaseSubTitle }}</span>
@@ -328,6 +354,7 @@
             <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
                 <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
                     <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
+                    <input type="checkbox" name="selectedTracks[]" />
                 </div>
                 <div class="col-xs-2 col-sm-6 col-md-6 col-lg-7">
                     <span data-toggle="tooltip" data-placement="top" title="{{ track.title }}"
@@ -405,18 +432,30 @@
     var selectedCoverUrl = null;
     var numberOfMp3FilesInFolder = {{ numberOfMp3FilesInFolder}};
 
+    var selectedTrackIds = function() {
+        var result = [];
+        $.each($(".track input[type='checkbox']:checked"), function(i,d) {
+            result.push($(this).parents(".track").data("track-id"));
+        });
+        return result;
+    };
+
     var showInsaneMessage = function(message) {
         $("div.insane-messages dl:first").append("<dd class='label label-danger'>" + message + "</dd>").parent().show();
     };
 
-    var doTrackDelete = function(trackId, flag) {
+    var doTrackDelete = function(trackId, flag, callback) {
         $.ajax({
             type: 'POST',
             url: '/releasetrack/delete/' + releaseId + "/" + trackId + "/" + flag,
             contentType: "application/javascript",
             success: function(data) {
                 if(data.message == "OK") {
-                    location.reload();
+                    if(callback) {
+                        callback(trackId, "OK");
+                    } else {
+                        location.reload();
+                    }
                 }
             },
             error:function(jq, st, error){
@@ -459,7 +498,7 @@
         var result = true;
         $.each($("div.tracks span.length"), function(i,d) {
             var $t = $(d);
-            trackLength = parseInt($t.data("track-length"));
+            var trackLength = parseInt($t.data("track-length"));
             if(trackLength < 1) {
                 result = false;
                 showInsaneMessage("Track [" + $t.data("track-id") + "] Has Invalid Track Length");
@@ -583,6 +622,24 @@
         });
 
         roadieLibrary.setFavIcon("release-thumbnail");
+
+        $(".track input[type='checkbox']").on("change", function() {
+            var $mt = $("#multiTrackDropDown");
+            if($(".track input[type='checkbox']").is(":checked")) {
+                $mt.removeClass("disabled");
+            } else {
+                $mt.addClass("disabled");
+            }
+        });
+
+        $(".toggle-select").on("click", function(e) {
+            var $that = $(this);
+            $.each($that.parents(".release-media-container").find(".track input[type='checkbox']"), function(i,d) {
+                var $this = $(this);
+                $this.prop('checked', !$this.is(':checked'));
+                $this.trigger("change");
+            });
+        });
 
         $("#alternateNamesTokenfield").tokenfield({
             delimiter: '|',
@@ -761,8 +818,49 @@
                 if(result) {
                     doTrackDelete(trackid, 'rt');
                 }
+            });
+        });
+
+        $("div.tracks a.multi-que-track").on("click", function(e) {
+            var tracksToQue = selectedTrackIds();
+            if(tracksToQue) {
+                $.each(tracksToQue, function (i, trackId) {
+                    queManager.addToQue("track", releaseId, trackId);
+                });
+            }
+        });
+        $("div.tracks a.multi-play-track").on("click", function(e) {
+            var tracksToQue = selectedTrackIds();
+            if(tracksToQue) {
+                $.each(tracksToQue, function (i, trackId) {
+                    queManager.addToQue("track", releaseId, trackId, false);
+                });
+                queManager.playQue();
+                queManager.clearQue();
+            }
+        });
+        $("div.tracks a.multi-delete-track, div.tracks a.multi-delete-track-and-file").on("click", function(e) {
+            var type = $(this).hasClass("multi-delete-track") ? "t" : "f";
+            var tracksToDelete = selectedTrackIds();
+            if(!tracksToDelete) {
+              bootbox.alert("Select Tracks To Delete!");
+                return false;
+            }
+            bootbox.confirm("Continue To Delete [" + tracksToDelete.length +"] Release Tracks?", function(result) {
+                if(result) {
+                    var deletedCount = 0;
+                    $.each(tracksToDelete, function(i, trackId) {
+                        doTrackDelete(trackId, type, function (trackId, success) {
+                            deletedCount++;
+                            if (deletedCount === tracksToDelete.length) {
+                                location.reload();
+                            }
+                        });
+                    });
+                }
             })
         });
+
         $("div.tracks a.delete-track").on("click", function(e) {
             var trackid = $(this).closest("div.row").data("track-id");
             bootbox.confirm("Continue To Delete Release Track and Track?", function(result) {

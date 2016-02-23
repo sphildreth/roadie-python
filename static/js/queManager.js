@@ -7,26 +7,28 @@ var queManager = ( function( window, undefined ) {
         } else {
             $("#queMenuItem").addClass("hidden").hide().find("a:first").html("Que <span class='caret'></span>");
         }
-    };
+    }
     function _saveQue() {
         localStorage.setItem(storageKey, JSON.stringify(queItems));
         if(queItems.length == 0) {
             _toggleMenuItem(false);
         }
-    };
-    function addToQue(type, releaseId, trackId) {
+    }
+    function addToQue(type, releaseId, trackId, showMenu) {
         queItems.push({ type: type, releaseId: releaseId, trackId: trackId});
         _saveQue();
-        _toggleMenuItem(true);
-    };
+        if(showMenu == undefined || showMenu) {
+            _toggleMenuItem(true);
+        }
+    }
     function clearQue() {
         queItems = []
         _saveQue();
 
-    };
+    }
     function editQue() {
         bootbox.alert('edit que');
-    };
+    }
     function saveQue() {
         bootbox.prompt("Que will be saved/append as/to a Playlist. Enter a playlist name:", function(result) {
             if(result) {
@@ -50,57 +52,56 @@ var queManager = ( function( window, undefined ) {
                 });
             }
         });
-    };
+    }
     function playQue() {
         if(queItems.length == 0) {
             return false;
         }
+        //var width = 750;
+        //var height = 450;
+        //if (window.user.doUseHtmlPlayer) {
+        //    window.open(url, 'roadiePlayer');
+        //} else {
+        //    var frameName = "playlistloader";
+        //    var element = document.getElementById(frameName);
+        //    if (!element) {
+        //        element = document.createElement("iframe");
+        //        element.setAttribute('id', frameName);
+        //        document.body.appendChild(element);
+        //    }
+        //    element.setAttribute('src', url);
+        //}
+
         $.ajax({
             type: 'POST',
             data: JSON.stringify(queItems),
             url: '/que/play',
             contentType: "application/json",
             success: function(response, status, xhr) {
-                var filename = "";
-                var disposition = xhr.getResponseHeader('Content-Disposition');
-                if (!disposition) {
-                    roadieLibrary.playLoader("about:blank", response);
-                    return false;
-                }
-                if (disposition && disposition.indexOf('attachment') !== -1) {
-                    var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                    var matches = filenameRegex.exec(disposition);
-                    if (matches != null && matches[1]) filename = matches[1].replace(/['"]/g, '');
-                }
-                var type = xhr.getResponseHeader('Content-Type');
-                var blob = new Blob([response], { type: type });
-                if (typeof window.navigator.msSaveBlob !== 'undefined') {
-                    window.navigator.msSaveBlob(blob, filename);
-                } else {
-                    var URL = window.URL || window.webkitURL;
-                    var downloadUrl = URL.createObjectURL(blob);
-                    if (filename) {
-                        var a = document.createElement("a");
-                        if (typeof a.download === 'undefined') {
-                            window.location = downloadUrl;
-                        } else {
-                            a.href = downloadUrl;
-                            a.download = filename;
-                            document.body.appendChild(a);
-                            a.click();
-                        }
-                    } else {
-                        window.location = downloadUrl;
+                if (window.user.doUseHtmlPlayer) {
+                    var newWindow = window.open("", "roadiePlayer");
+                    with(newWindow.document)
+                    {
+                      open();
+                      write(response);
+                      close();
                     }
-                    setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+                } else {
+                    var frameName = "playlistloader";
+                    var element = document.getElementById(frameName);
+                    if (!element) {
+                        element = document.createElement("iframe");
+                        element.setAttribute('id', frameName);
+                        document.body.appendChild(element);
+                    }
+                    element.setAttribute('src', url);
                 }
             },
             error:function(jq, st, error){
                 roadieLibrary.showErrorMessage(error);
             }
         });
-
-    };
+    }
     function init() {
         var qi = localStorage.getItem(storageKey);
         if(qi != 'undefined' && qi != null) {
@@ -113,7 +114,7 @@ var queManager = ( function( window, undefined ) {
         $("a.clear-que").on("click", queManager.clearQue);
         $("a.save-que").on("click", queManager.saveQue);
         $("a.edit-que").on("click", queManager.editQue);
-    };
+    }
     return {
         init: init,
         addToQue : addToQue,
