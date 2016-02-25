@@ -766,8 +766,9 @@ def editArtist(roadieId):
                     for release in artist.releases:
                         for media in release.media:
                             for track in media.tracks:
-                                track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
-                                track.lastUpdated = now
+                                if track.filePath:
+                                    track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
+                                    track.lastUpdated = now
         artist.realName = form['realName']
         artist.musicBrainzId = form['musicBrainzId']
         artist.iTunesId = form['iTunesId']
