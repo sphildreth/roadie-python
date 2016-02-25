@@ -762,11 +762,12 @@ def editArtist(roadieId):
                     pass
                 dbOriginalArtistFolder = originalArtistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
                 dbArtistFolder = artistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
-                for release in artist.releases:
-                    for media in release.media:
-                        for track in media.tracks:
-                            track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
-                            track.lastUpdated = now
+                if not isEqual(dbOriginalArtistFolder, dbArtistFolder):
+                    for release in artist.releases:
+                        for media in release.media:
+                            for track in media.tracks:
+                                track.filePath = track.filePath.replace(dbOriginalArtistFolder, dbArtistFolder, 1)
+                                track.lastUpdated = now
         artist.realName = form['realName']
         artist.musicBrainzId = form['musicBrainzId']
         artist.iTunesId = form['iTunesId']
