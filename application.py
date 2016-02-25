@@ -754,12 +754,12 @@ def editArtist(roadieId):
                         except:
                             logger.warn("Unable to Remove Empty Folder [" + src_dir + "]")
                             pass
-                if not os.listdir(originalArtistFolder):
-                    try:
+                try:
+                    if not os.listdir(originalArtistFolder):
                         shutil.rmtree(originalArtistFolder)
-                    except:
-                        logger.warn("Unable to Remove Empty Folder [" + originalArtistFolder + "]")
-                        pass
+                except:
+                    logger.warn("Unable to Remove Empty Folder [" + originalArtistFolder + "]")
+                    pass
                 dbOriginalArtistFolder = originalArtistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
                 dbArtistFolder = artistFolder.replace(config['ROADIE_LIBRARY_FOLDER'], "", 1)
                 for release in artist.releases:
