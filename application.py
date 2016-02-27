@@ -1231,6 +1231,10 @@ def deleteReleaseTrack(release_id, track_id, flag):
             # Delete the track
             track = dbSession.query(Track).filter(Track.roadieId == track_id).first()
             if track:
+                # Delete any playlist item associated to track
+                for playlistItem in dbSession.query(PlaylistTrack).filter(PlaylistTrack.trackId == track.id):
+                    dbSession.delete(playlistItem)
+                    dbSession.commit()
                 dbSession.delete(track)
                 dbSession.commit()
                 trackPath = pathToTrack(track)
