@@ -318,6 +318,7 @@
     </div>
     <div class="row tracks bordered">
         <div class="dropdown">
+            <button id="showRatedTracks" class="btn btn-primary"><i class="fa fa-filter"></i> Show Rated</button>
             <button id="multiTrackDropDown" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true"
                     aria-expanded="false">
                 <i class="fa fa-check-square-o"></i> With Selected Tracks <span class="caret"></span>
@@ -351,7 +352,7 @@
             </h5>
             {% endif %}
             {% for track in media.tracks|sort(attribute='trackNumber') %}
-            <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-id="{{ track.roadieId }}">
+            <div class="row track {{ '' if track.fileName else 'missing' }}" data-track-rating="{{ track.userRatings|get_user_track_rating(user=g.user) }}" data-track-id="{{ track.roadieId }}">
                 <div class="col-xs-1 col-sm-1 col-md-1 col-lg-1">
                     <span class="trackNumber label label-primary">{{ '%02d' % track.trackNumber }}</span>
                     <input type="checkbox" name="selectedTracks[]" />
@@ -1148,7 +1149,24 @@
             })
         });
 
+        $("#showRatedTracks").on("click", function(e) {
+            var $this = $(this);
+            $(".no-missing-releases").hide();
+            if($this.hasClass("showing-rated")) {
+                $this.html("<i class='fa fa-filter'></i> Show Rated").attr("title", "Show Only Rated Tracks");
+                $(".release-media-container .track").fadeIn();
+            } else {
+                $this.html("<i class='fa fa-list-ol'></i> Show All").attr("title", "Show All Tracks");
+                $(".release-media-container .track").fadeOut();
+                $(".release-media-container .track").filter(function() {
+                    return parseInt($(this).data("track-rating")) > 0;
+                }).fadeIn();
+            }
+            $this.toggleClass("showing-rated");
+        });
+
     });
+
 
 </script>
 {% endblock %}
