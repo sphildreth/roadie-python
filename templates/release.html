@@ -319,29 +319,31 @@
     <div class="row tracks bordered">
         <div class="dropdown">
             <button id="showRatedTracks" class="btn btn-primary"><i class="fa fa-filter"></i> Show Rated</button>
-            <button id="multiTrackDropDown" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true"
-                    aria-expanded="false">
-                <i class="fa fa-check-square-o"></i> With Selected Tracks <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu">
-                <li><a href="#" class="multi-play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
-                <li><a href="#" class="multi-que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
-                {% if current_user.is_editor() %}
-                <li class="dropdown-submenu">
-                    <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i>
-                        Delete</a>
-                    <ul class="dropdown-menu">
-                        <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track"
-                               class="multi-delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete
-                            Track</a></li>
-                        <li><a href="#" data-toggle="tooltip" data-placement="left"
-                               title="Delete the Track, and delete the File"
-                               class="multi-delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i>
-                            Delete</a></li>
-                    </ul>
-                </li>
-                {% endif %}
-            </ul>
+            <div class="btn-group">
+                <button id="multiTrackDropDown" type="button" class="btn btn-default dropdown-toggle disabled" data-toggle="dropdown" aria-haspopup="true"
+                        aria-expanded="false">
+                    <i class="fa fa-check-square-o"></i> With Selected Tracks <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="#" class="multi-play-track btn btn-default"><i class="fa fa-play"></i> Play</a></li>
+                    <li><a href="#" class="multi-que-track btn btn-default"><i class="fa fa-plus"></i> Que</a></li>
+                    {% if current_user.is_editor() %}
+                    <li class="dropdown-submenu">
+                        <a tabindex="-1" href="#" class="btn btn-warning"><i class="fa fa-trash-o"></i>
+                            Delete</a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#" data-toggle="tooltip" data-placement="left" title="Delete the Track"
+                                   class="multi-delete-track btn btn-warning"><i class="fa fa-trash-o"></i> Delete
+                                Track</a></li>
+                            <li><a href="#" data-toggle="tooltip" data-placement="left"
+                                   title="Delete the Track, and delete the File"
+                                   class="multi-delete-track-and-file btn btn-warning"><i class="fa fa-trash-o"></i>
+                                Delete</a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
         {% for media in release.media|sort(attribute='releaseMediaNumber') %}
         <div class="release-media-container" data-releasemedianumber="{{ media.releaseMediaNumber }}" data-releasemediatrackcount="{{ media.trackCount }}">
