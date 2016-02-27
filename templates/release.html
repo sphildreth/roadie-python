@@ -637,8 +637,10 @@
             var $that = $(this);
             $.each($that.parents(".release-media-container").find(".track input[type='checkbox']"), function(i,d) {
                 var $this = $(this);
-                $this.prop('checked', !$this.is(':checked'));
-                $this.trigger("change");
+                if($this.is(":visible")) {
+                    $this.prop('checked', !$this.is(':checked'));
+                    $this.trigger("change");
+                }
             });
         });
 
