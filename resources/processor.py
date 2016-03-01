@@ -349,9 +349,6 @@ class Processor(ProcessorBase):
                         self.logger.info("== Skipping Artist Folder [" + artistFolder + "] No Changes Detected")
                         continue
                     for artistReleaseToValidate in artistReleasesToValidate:
-                        releaseFolder = self.albumFolder(artist, artistReleaseToValidate.releaseDate.strftime('%Y'),
-                                                         artistReleaseToValidate.title)
-                        scanner.scan(releaseFolder, artistToValidate, artistReleaseToValidate)
                         validator.validate(artistToValidate, artistReleaseToValidate)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
