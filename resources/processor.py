@@ -1,32 +1,20 @@
-import io
+import gc
 import hashlib
 import os
-import random
 import shutil
-import string
 import sqlite3
-import hashlib
-
-import arrow
-from PIL import Image
-import gc
 from collections import defaultdict
-from resources.common import *
-from resources.pathInfo import PathInfo
-from resources.models.Artist import Artist
-from resources.models.Genre import Genre
-from resources.models.Label import Label
-from resources.models.Release import Release
-from resources.models.ReleaseLabel import ReleaseLabel
-from resources.models.ReleaseMedia import ReleaseMedia
-from resources.models.Track import Track
+
 from factories.artistFactory import ArtistFactory
 from factories.releaseFactory import ReleaseFactory
-from resources.id3 import ID3
-from resources.scanner import Scanner
+from resources.common import *
 from resources.convertor import Convertor
+from resources.id3 import ID3
 from resources.logger import Logger
+from resources.models.Artist import Artist
+from resources.models.Release import Release
 from resources.processingBase import ProcessorBase
+from resources.scanner import Scanner
 from resources.validator import Validator
 
 
@@ -361,6 +349,9 @@ class Processor(ProcessorBase):
                         self.logger.info("== Skipping Artist Folder [" + artistFolder + "] No Changes Detected")
                         continue
                     for artistReleaseToValidate in artistReleasesToValidate:
+                        releaseFolder = self.albumFolder(artist, artistReleaseToValidate.releaseDate.strftime('%Y'),
+                                                         artistReleaseToValidate.title)
+                        scanner.scan(releaseFolder, artist, artistReleaseToValidate)
                         validator.validate(artistToValidate, artistReleaseToValidate)
             elapsedTime = arrow.utcnow().datetime - startTime
             self.logger.info("Processing Complete. Elapsed Time [" + str(elapsedTime) + "]")
