@@ -84,6 +84,7 @@ class ReleaseListApi(Resource):
                     "releaseDate": "" if not release.releaseDate else release.releaseDate.isoformat(),
                     "releaseYear": "----" if not release.releaseDate else release.releaseDate.strftime('%Y'),
                     "artist.name": release.artist.name,
+                    "libraryStatus": str(release.libraryStatus),
                     "title": release.title,
                     "tracks": trackInfo,
                     "trackCount": len(trackInfo) if trackInfo else int(trackCount or 0),
