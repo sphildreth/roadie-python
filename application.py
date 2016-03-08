@@ -1159,13 +1159,13 @@ def deleteRelease(release_id, delete_files):
         return jsonify(message="ERROR")
     try:
         # Delete any playlisttracks for this Release
-        dbSession.query(PlaylistTrack)\
-            .join(Track, Track.id == PlaylistTrack.trackId)\
-            .join(ReleaseMedia, ReleaseMedia.id == Track.releaseMediaId)\
-            .join(Release, Release.id == ReleaseMedia.releaseId)\
-            .filter(Release.roadieId == release_id)\
-            .delete()
-        dbSession.commit()
+        conn.execute(text(
+                "DELETE plt.* "
+                "FROM `playlisttrack` plt "
+                "JOIN `track` t on (plt.trackId = t.id) "
+                "JOIN `releasemedia` rm on (t.releaseMediaId = rm.id) "
+                "JOIN `release` r on (rm.releaseId = r.id) "
+                "where u.roadieId = '" + release_id + "';", autocommit=True))
 
         if delete_files == "true":
             try:
