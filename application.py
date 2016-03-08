@@ -144,14 +144,26 @@ def ping_connection(dbapi_connection, connection_record, connection_proxy):
     try:
         cursor.execute("SELECT 1")
     except:
-        # optional - dispose the whole pool
-        # instead of invalidating one at a time
-        # connection_proxy._pool.dispose()
-
+        dbapi_connection._pool.dispose()
         # raise DisconnectionError - pool will try
         # connecting again up to three times before raising.
         raise exc.DisconnectionError()
     cursor.close()
+
+
+@app.before_request
+def before_request():
+    g.siteName = siteName
+    g.user = current_user
+
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    try:
+        dbSession.remove()
+        logger.exception("Error In Set Release Date")
+    except:
+        pass
 
 
 def getUser(userId=None):
@@ -254,17 +266,6 @@ def pathToTrack(track):
     except:
         pass
     return None
-
-
-@app.before_request
-def before_request():
-    g.siteName = siteName
-    g.user = current_user
-
-
-# @app.teardown_appcontext
-# def shutdown_session(exception=None):
-#     dbSession.remove()
 
 
 @app.route('/')
@@ -1157,6 +1158,11 @@ def deleteRelease(release_id, delete_files):
     if not deleteReleaseRelease:
         return jsonify(message="ERROR")
     try:
+        # Delete any playlisttracks for this Release
+
+        # for deleteReleaseMedia in deleteReleaseRelease.media:
+        #     for track in deleteReleaseMedia.tracks:
+
         if delete_files == "true":
             try:
                 for deleteReleaseMedia in deleteReleaseRelease.media:

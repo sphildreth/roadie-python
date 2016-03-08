@@ -55,7 +55,7 @@ class Track(Base):
         return "[" + str(self.trackNumber) + "] " + self.title + " [" + str(self.duration) + "]"
 
     def info(self, includePathInfo=False):
-        fileAndNameInfo = "FilePath [" + str(self.filePath) + "], " +\
+        fileAndNameInfo = "FilePath [" + str(self.filePath) + "], " + \
                           "FileName [" + str(self.fileName) + "], "
         if not includePathInfo:
             fileAndNameInfo = ""
