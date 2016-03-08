@@ -1165,7 +1165,7 @@ def deleteRelease(release_id, delete_files):
                 "JOIN `track` t on (plt.trackId = t.id) "
                 "JOIN `releasemedia` rm on (t.releaseMediaId = rm.id) "
                 "JOIN `release` r on (rm.releaseId = r.id) "
-                "where u.roadieId = '" + release_id + "';", autocommit=True))
+                "where r.roadieId = '" + release_id + "';", autocommit=True))
 
         if delete_files == "true":
             try:
