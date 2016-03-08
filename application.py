@@ -1159,9 +1159,13 @@ def deleteRelease(release_id, delete_files):
         return jsonify(message="ERROR")
     try:
         # Delete any playlisttracks for this Release
-
-        # for deleteReleaseMedia in deleteReleaseRelease.media:
-        #     for track in deleteReleaseMedia.tracks:
+        dbSession.query(PlaylistTrack)\
+            .join(Track, Track.id == PlaylistTrack.trackId)\
+            .join(ReleaseMedia, ReleaseMedia.id == Track.releaseMediaId)\
+            .join(Release, Release.id == ReleaseMedia.releaseId)\
+            .filter(Release.roadieId == release_id)\
+            .delete()
+        dbSession.commit()
 
         if delete_files == "true":
             try:
