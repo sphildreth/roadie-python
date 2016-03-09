@@ -161,7 +161,9 @@ def before_request():
 def shutdown_session(exception=None):
     try:
         dbSession.remove()
-        logger.exception("Error In Set Release Date")
+        if exception and dbSession.is_active:
+            dbSession.rollback()
+        logger.exception("Shutdown Session")
     except:
         pass
 
