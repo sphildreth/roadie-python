@@ -157,7 +157,7 @@ def before_request():
     g.user = current_user
 
 
-@app.teardown_appcontext
+@app.teardown_request
 def shutdown_session(exception=None):
     try:
         dbSession.remove()
