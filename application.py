@@ -113,6 +113,11 @@ thumbnailSize = config['ROADIE_THUMBNAILS']['Height'], config['ROADIE_THUMBNAILS
 siteName = config['ROADIE_SITE_NAME']
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config['ROADIE_DATABASE_URL']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config['SQLALCHEMY_TRACK_MODIFICATIONS']
+app.config['SQLALCHEMY_POOL_RECYCLE'] = config['SQLALCHEMY_POOL_RECYCLE']
+app.config['SQLALCHEMY_POOL_SIZE'] = config['SQLALCHEMY_POOL_SIZE']
+app.config['SQLALCHEMY_POOL_TIMEOUT'] = config['SQLALCHEMY_POOL_TIMEOUT']
+
 sa = SQLAlchemy(app)
 dbSession = sa.session()
 conn = sa.engine
